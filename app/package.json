@@ -10,6 +10,7 @@
     "typecheck": "tsc"
   },
   "license": "MIT",
+  "author": "Mario Reder <mario@orderly.network>",
   "dependencies": {
     "@remix-run/node": "^2.16.4",
     "@remix-run/react": "^2.16.4",

@@ -1,4 +1,4 @@
 # Run linting and formatting checks before commit
 yarn lint
-yarn format:check
+yarn lint-staged
 yarn type-check

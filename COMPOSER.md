@@ -2,6 +2,19 @@
 
 This document provides a comprehensive guide for AI composers working on this project, focusing on the current structure and technical decisions.
 
+## For AI Composers
+
+**IMPORTANT**: This document should be automatically maintained by AI composers. As the AI composer working on this project, you are responsible for:
+
+1. Updating this document whenever you make changes to the codebase or architecture
+2. Keeping the "Known Issues" section current when resolving or discovering issues
+3. Maintaining the "Current Tasks and Roadmap" section in sync with project progress
+4. Adding new API endpoints to the documentation as they are implemented
+5. Updating file paths and code examples when the codebase structure changes
+6. Expanding technical explanations based on new implementations
+
+You should proactively update this document without waiting for explicit instructions to do so. The goal is to keep this documentation continuously accurate as the project evolves.
+
 ## Project Overview
 
 DEX Creator is a platform that lets users create their own perpetual decentralized exchanges (DEXs) using Orderly Networks infrastructure. The platform simplifies DEX creation and deployment through an intuitive UI and automated processes.
@@ -219,6 +232,25 @@ Response (201):
 - **TypeScript Strategy**: Emphasis on type inference over explicit annotations
 - **Development Tools**: tsx for running TypeScript, ESLint and Prettier for code quality
 - **Quality Assurance**: Automated checks through CI pipeline ensure consistent code quality
+
+---
+
+## Contact Information
+
+For questions or clarifications about this project:
+
+- **Project Maintainer**: Mario Reder <mario@orderly.network>
+- **Repository**: git@github.com:OrderlyNetwork/dex-creator.git
+
+## Onboarding Checklist for New AI Composers
+
+When you're first assigned to this project, follow these steps:
+
+1. Review this entire document to understand the project structure and standards
+2. Examine the key files mentioned in the [Key Components](#key-components) section
+3. Run the project locally following the [Development Instructions](#development-instructions)
+4. Review current [Known Issues](#known-issues) and [Current Tasks](#current-tasks-and-roadmap)
+5. When making changes, ensure you update this documentation as specified in the [For AI Composers](#for-ai-composers) section
 
 ---
 

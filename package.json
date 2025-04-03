@@ -20,13 +20,19 @@
     "build:api": "cd api && yarn build",
     "commitlint": "commitlint --config commitlint.config.js",
     "prepare": "husky",
-    "test": "echo \"No tests specified yet\" && exit 0"
+    "test": "echo \"No tests specified yet\" && exit 0",
+    "lint-staged": "lint-staged"
   },
   "repository": "git@github.com:OrderlyNetwork/dex-creator.git",
-  "author": "Mario Reder <mario.reder@pm.me>",
+  "author": "Mario Reder <mario@orderly.network>",
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
+  },
+  "lint-staged": {
+    "**/*.{js,ts,tsx,json,md,css}": [
+      "prettier --write"
+    ]
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -38,6 +44,7 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
     "husky": "^9.1.7",
+    "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
     "tsx": "^4.7.1",
     "typescript": "^5.8.2"
