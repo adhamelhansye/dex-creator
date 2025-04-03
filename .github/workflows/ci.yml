@@ -1,0 +1,58 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint-format-typecheck:
+    name: Lint, Format & Type Check
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      
+      - name: Run ESLint
+        run: yarn lint
+      
+      - name: Check formatting with Prettier
+        run: yarn format:check
+      
+      - name: Type check
+        run: yarn type-check
+  
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: lint-format-typecheck
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'yarn'
+      
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+      
+      - name: Build frontend
+        run: yarn build:app
+      
+      - name: Build API
+        run: yarn build:api 

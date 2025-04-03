@@ -1,0 +1,28 @@
+# <type>(<scope>): <short summary>
+#   │       │             │
+#   │       │             └─⫸ Summary in present tense. Not capitalized. No period at the end.
+#   │       │
+#   │       └─⫸ Commit Scope: Optional, can be anything specifying the scope of the commit
+#   │
+#   └─⫸ Commit Type: feat|fix|docs|style|refactor|perf|test|chore|build|ci
+#
+# Types:
+#   feat     (new feature)
+#   fix      (bug fix)
+#   docs     (changes to documentation)
+#   style    (formatting, missing semi colons, etc; no code change)
+#   refactor (refactoring code, eg. renaming a variable)
+#   perf     (code changes that improve performance)
+#   test     (adding or refactoring tests; no production code change)
+#   chore    (updating dependencies, build tasks, etc; no production code change)
+#   build    (changes that affect the build system or external dependencies)
+#   ci       (changes to CI configuration files and scripts)
+#
+# Example:
+# fix(authentication): prevent infinite redirect loop on login
+
+<type>(<scope>): <short summary>
+
+<body>
+
+<footer>

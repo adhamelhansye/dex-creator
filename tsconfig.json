@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "paths": {
+      "@dex-creator/app/*": ["app/src/*"],
+      "@dex-creator/api/*": ["api/src/*"]
+    },
+    "noEmit": true
+  },
+  "include": ["app/src", "api/src"],
+  "exclude": ["**/node_modules", "**/dist", "**/build"]
+}

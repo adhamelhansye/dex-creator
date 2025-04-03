@@ -1,0 +1,34 @@
+{
+  "name": "@dex-creator/app",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "remix vite:dev",
+    "build": "remix vite:build",
+    "start": "vite preview",
+    "typecheck": "tsc"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "@remix-run/node": "^2.16.4",
+    "@remix-run/react": "^2.16.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "zod": "^3.24.2"
+  },
+  "devDependencies": {
+    "@remix-run/dev": "^2.16.4",
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "remix": "^2.16.4",
+    "tsx": "^4.19.3",
+    "vite": "^6.2.5",
+    "vite-tsconfig-paths": "^5.1.4"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "sideEffects": false
+}

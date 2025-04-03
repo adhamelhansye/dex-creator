@@ -1,0 +1,15 @@
+# Build outputs
+dist/
+build/
+.next/
+.cache/
+
+# Dependencies
+node_modules/
+
+# Ignore .specstory directory
+.specstory/
+
+# Misc
+.DS_Store
+*.log 

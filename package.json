@@ -1,0 +1,45 @@
+{
+  "name": "dex-creator",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "app",
+    "api"
+  ],
+  "main": "index.js",
+  "scripts": {
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "format": "prettier --write '**/*.{js,ts,tsx,json,md,css}' --ignore-path .gitignore --ignore-path .prettierignore",
+    "format:check": "prettier --check '**/*.{js,ts,tsx,json,md,css}' --ignore-path .gitignore --ignore-path .prettierignore",
+    "type-check": "tsc --noEmit",
+    "dev:app": "cd app && yarn dev",
+    "dev:api": "cd api && yarn dev",
+    "build:app": "cd app && yarn build",
+    "build:api": "cd api && yarn build",
+    "commitlint": "commitlint --config commitlint.config.js",
+    "prepare": "husky",
+    "test": "echo \"No tests specified yet\" && exit 0"
+  },
+  "repository": "git@github.com:OrderlyNetwork/dex-creator.git",
+  "author": "Mario Reder <mario.reder@pm.me>",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@eslint/js": "^9.23.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.0",
+    "@typescript-eslint/parser": "^8.29.0",
+    "eslint": "^9.23.0",
+    "eslint-config-prettier": "^10.1.1",
+    "eslint-plugin-prettier": "^5.2.6",
+    "husky": "^9.1.7",
+    "prettier": "^3.5.3",
+    "tsx": "^4.7.1",
+    "typescript": "^5.8.2"
+  }
+}
