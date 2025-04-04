@@ -46,6 +46,8 @@ dex-creator/
 │   ├── src/        # API source code
 │   │   ├── models/ # Data models
 │   │   └── routes/ # API routes
+│   └── prisma/     # Prisma ORM configuration
+│       └── schema.prisma  # Database schema
 ├── .github/        # GitHub configuration
 │   └── workflows/  # GitHub Actions workflows
 ├── tsconfig.base.json  # Shared TypeScript configuration
@@ -59,6 +61,7 @@ dex-creator/
 - **Icons**: Iconify with @iconify/react for SVG icons
 - **Notifications**: React-Toastify for toast messages
 - **Backend**: Node.js v22+, Hono, TypeScript, Ethers.js
+- **Database**: PostgreSQL with Prisma ORM
 - **Deployment**: GitHub Pages (automated through CI)
 - **Package Management**: Yarn Workspaces
 - **CI/CD**: GitHub Actions
@@ -95,6 +98,24 @@ Key files:
 - `api/src/routes/auth.ts`: API routes for wallet authentication
 - `api/src/models/dex.ts`: Data models and storage for DEXes
 - `api/src/models/user.ts`: User model for authentication
+- `api/src/lib/prisma.ts`: Prisma client configuration
+- `api/prisma/schema.prisma`: Database schema definition
+
+### Database Architecture
+
+The application uses PostgreSQL as the database with Prisma ORM for database operations:
+
+1. **Schema Definition**: Located at `api/prisma/schema.prisma`
+2. **Models**:
+   - `User`: Stores user information and authentication details
+   - `Token`: Manages authentication tokens with expiration
+3. **Database Connection**: Managed through the Prisma client in `api/src/lib/prisma.ts`
+4. **Migrations**: Automatically generated in `api/prisma/migrations/` folder
+
+The database is configured with proper indexes and relations to ensure efficient queries and data integrity:
+- The `User` model has an index on the `address` field for quick lookups
+- The `Token` model has indexes on both `token` and `userId` fields
+- Cascading deletes ensure that when a user is deleted, their tokens are automatically removed
 
 ### Authentication Flow
 
@@ -174,11 +195,19 @@ The project uses GitHub Actions for continuous integration:
    - CI pipeline ensures these standards are maintained
 
 8. **Authentication and Security**:
+
    - Always validate tokens on application load
    - Include token expiration checks
    - Handle expired tokens gracefully with user feedback
    - Do not store sensitive information in localStorage
    - Implement periodic token validation for long-lived sessions
+
+9. **Database Operations**:
+   - Use Prisma's type-safe operations for all database interactions
+   - Keep transactions atomic when performing related operations
+   - Include proper error handling for database operations
+   - Use async/await for all database operations (Prisma methods return Promises)
+   - Implement periodic cleanup for expired tokens
 
 ## UI Design Patterns
 
@@ -275,11 +304,9 @@ Currently, there are no known issues in the project.
    - Add documentation for API endpoints (OpenAPI/Swagger)
    - Implement testing for API endpoints
    - Improve error handling with more specific error messages
-   - Replace the in-memory user store with a database
 
 2. **Medium-term tasks**:
 
-   - Implement proper storage solution instead of in-memory storage
    - Create UI components for the DEX customization
    - Implement the forking and deployment workflow
    - Add JWT tokens for more secure authentication
@@ -294,6 +321,38 @@ Currently, there are no known issues in the project.
 ### Node.js Requirements
 
 The project requires Node.js v22 or later for improved ES module support, performance, and modern JavaScript features.
+
+### Database Configuration
+
+The project uses PostgreSQL with Prisma ORM:
+
+1. **Setup with Docker**:
+
+   ```bash
+   # Start a PostgreSQL container
+   docker run --name dex-creator-postgres \
+     -e POSTGRES_PASSWORD=postgres \
+     -e POSTGRES_USER=postgres \
+     -e POSTGRES_DB=dex_creator \
+     -p 5432:5432 \
+     -d postgres:16
+   ```
+
+2. **Connection String**:
+   The database connection string is configured in the `.env` file:
+   ```
+   DATABASE_URL="postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public"
+   ```
+
+3. **Prisma Commands**:
+   - `yarn db:migrate:dev`: Create and apply development migrations
+   - `yarn db:migrate:deploy`: Apply migrations in production
+   - `yarn db:generate`: Generate Prisma client after schema changes
+   - `yarn db:studio`: Open Prisma Studio to browse and edit data
+   - `yarn db:push`: Push schema changes directly to the database (dev only)
+
+4. **Schema Location**:
+   The Prisma schema is defined in `api/prisma/schema.prisma`
 
 ### TypeScript Configuration
 
@@ -356,7 +415,14 @@ The project uses GitHub Actions for continuous integration:
 To run the project locally:
 
 1. Install dependencies: `yarn install`
-2. Start both frontend and backend with auto-reloading: `yarn dev`
+2. Set up PostgreSQL using Docker (see Database Configuration section)
+3. Initialize the database:
+   ```bash
+   cd api
+   yarn db:generate
+   yarn db:migrate:dev --name initial_migration
+   ```
+4. Start both frontend and backend with auto-reloading: `yarn dev`
    - This uses concurrently to run both servers in parallel
    - The frontend runs on http://localhost:3000 with hot module replacement
    - The backend runs on http://localhost:3001 with auto-reloading
@@ -382,6 +448,7 @@ Alternative individual commands:
 | POST   | /api/auth/nonce    | Get a nonce for authentication    | Implemented |
 | POST   | /api/auth/verify   | Verify signature and authenticate | Implemented |
 | POST   | /api/auth/validate | Validate authentication token     | Implemented |
+| POST   | /api/auth/cleanup-tokens | Clean up expired tokens     | Implemented |
 
 ### Authentication API Endpoints
 
@@ -459,6 +526,17 @@ Error Response (401):
 }
 ```
 
+#### Clean Up Expired Tokens (POST /api/auth/cleanup-tokens)
+
+Response (200):
+
+```json
+{
+  "success": true,
+  "message": "Cleaned up 5 expired tokens"
+}
+```
+
 ## Technical Decisions
 
 ### Technology Choices
@@ -469,6 +547,8 @@ Error Response (401):
 - **Iconify**: Comprehensive icon solution with thousands of icons and no bundle size impact
 - **React-Toastify**: Flexible, customizable toast notification system
 - **Zod for Validation**: Type-safe schema validation with TypeScript integration
+- **Prisma ORM**: Type-safe database access with excellent TypeScript integration and auto-generated client
+- **PostgreSQL**: Robust, reliable relational database with excellent JSON support
 - **Yarn Workspaces**: Efficient dependency management for monorepo structure
 - **GitHub Actions**: Automated CI/CD pipeline for quality control and deployment
 - **Wagmi**: Modern React hooks library for Ethereum
@@ -482,6 +562,7 @@ Error Response (401):
 - **CSS Strategy**: UnoCSS utility classes for styling, with direct composition in JSX
 - **Mobile-First Approach**: Base styles for mobile with responsive modifiers for larger screens
 - **TypeScript Strategy**: Emphasis on type inference over explicit annotations
+- **Database Strategy**: Type-safe operations with Prisma, organized schema with proper indexing
 - **Development Tools**: tsx for running TypeScript, ESLint and Prettier for code quality
 - **Quality Assurance**: Automated checks through CI pipeline ensure consistent code quality
 - **Authentication**: EVM wallet-based authentication with message signing for security

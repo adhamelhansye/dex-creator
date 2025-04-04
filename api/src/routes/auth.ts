@@ -1,16 +1,14 @@
 import { Hono } from 'hono';
 import { zValidator } from '@hono/zod-validator';
 import { ethers } from 'ethers';
-import { userStore, authRequestSchema, authVerifySchema } from '../models/user';
-import { z } from 'zod';
+import {
+  userStore,
+  authRequestSchema,
+  authVerifySchema,
+  tokenValidationSchema,
+} from '../models/user';
 
 const app = new Hono();
-
-// Schema for token verification
-const tokenVerifySchema = z.object({
-  address: z.string(),
-  token: z.string(),
-});
 
 // Generate a nonce for the user to sign
 app.post('/nonce', zValidator('json', authRequestSchema), async c => {
@@ -53,7 +51,7 @@ app.post('/verify', zValidator('json', authVerifySchema), async c => {
     await userStore.generateNonce(address);
 
     // Create a token with expiration
-    const token = userStore.createToken(user.id!);
+    const token = await userStore.createToken(user.id);
 
     return c.json({
       user: {
@@ -69,7 +67,7 @@ app.post('/verify', zValidator('json', authVerifySchema), async c => {
 });
 
 // Verify if a token is still valid
-app.post('/validate', zValidator('json', tokenVerifySchema), async c => {
+app.post('/validate', zValidator('json', tokenValidationSchema), async c => {
   const { address, token } = c.req.valid('json');
 
   try {
@@ -79,7 +77,7 @@ app.post('/validate', zValidator('json', tokenVerifySchema), async c => {
     }
 
     // Validate the token
-    const isValid = userStore.validateToken(token, user.id!);
+    const isValid = await userStore.validateToken(token, user.id);
 
     if (!isValid) {
       return c.json(
@@ -101,6 +99,20 @@ app.post('/validate', zValidator('json', tokenVerifySchema), async c => {
   } catch (error) {
     console.error('Error validating token:', error);
     return c.json({ valid: false, error: 'Token validation failed' }, 500);
+  }
+});
+
+// Add a periodic token cleanup endpoint (could be called via cron job)
+app.post('/cleanup-tokens', async c => {
+  try {
+    const count = await userStore.cleanupExpiredTokens();
+    return c.json({
+      success: true,
+      message: `Cleaned up ${count} expired tokens`,
+    });
+  } catch (error) {
+    console.error('Error cleaning up tokens:', error);
+    return c.json({ error: 'Failed to clean up tokens' }, 500);
   }
 });
 

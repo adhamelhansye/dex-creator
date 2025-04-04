@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { prisma } from '../lib/prisma';
 
 // User schema
 export const userSchema = z.object({
@@ -22,30 +23,42 @@ export const authVerifySchema = z.object({
   signature: z.string(),
 });
 
-// In-memory user store (replace with a database in production)
-class UserStore {
-  private users: Map<string, User> = new Map();
-  private tokens: Map<string, { userId: string; expiresAt: Date }> = new Map();
+// Token validation schema
+export const tokenValidationSchema = z.object({
+  address: z.string(),
+  token: z.string(),
+});
 
-  async findByAddress(address: string): Promise<User | undefined> {
-    return Array.from(this.users.values()).find(
-      user => user.address.toLowerCase() === address.toLowerCase()
-    );
+// Database-backed user store
+class UserStore {
+  async findByAddress(address: string) {
+    return prisma.user.findUnique({
+      where: {
+        address: address.toLowerCase(),
+      },
+    });
   }
 
-  async createOrUpdate(user: User): Promise<User> {
-    const now = new Date().toISOString();
+  async createOrUpdate(user: User) {
+    const now = new Date();
     const existingUser = await this.findByAddress(user.address);
 
-    const updatedUser: User = {
-      ...user,
-      id: existingUser?.id || crypto.randomUUID(),
-      createdAt: existingUser?.createdAt || now,
-      updatedAt: now,
-    };
-
-    this.users.set(updatedUser.id!, updatedUser);
-    return updatedUser;
+    if (existingUser) {
+      return prisma.user.update({
+        where: { id: existingUser.id },
+        data: {
+          nonce: user.nonce,
+          updatedAt: now,
+        },
+      });
+    } else {
+      return prisma.user.create({
+        data: {
+          address: user.address.toLowerCase(),
+          nonce: user.nonce,
+        },
+      });
+    }
   }
 
   async generateNonce(address: string): Promise<string> {
@@ -53,21 +66,23 @@ class UserStore {
     const existingUser = await this.findByAddress(address);
 
     if (existingUser) {
-      await this.createOrUpdate({
-        ...existingUser,
-        nonce,
+      await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { nonce },
       });
     } else {
-      await this.createOrUpdate({
-        address,
-        nonce,
+      await prisma.user.create({
+        data: {
+          address: address.toLowerCase(),
+          nonce,
+        },
       });
     }
 
     return nonce;
   }
 
-  createToken(userId: string): string {
+  async createToken(userId: string): Promise<string> {
     // Generate a new token
     const token = crypto.randomUUID();
 
@@ -76,13 +91,22 @@ class UserStore {
     expiresAt.setHours(expiresAt.getHours() + 24);
 
     // Store the token
-    this.tokens.set(token, { userId, expiresAt });
+    await prisma.token.create({
+      data: {
+        token,
+        userId,
+        expiresAt,
+      },
+    });
 
     return token;
   }
 
-  validateToken(token: string, userId: string): boolean {
-    const tokenData = this.tokens.get(token);
+  async validateToken(token: string, userId: string): Promise<boolean> {
+    // Find the token in the database
+    const tokenData = await prisma.token.findUnique({
+      where: { token },
+    });
 
     // Check if token exists
     if (!tokenData) {
@@ -97,15 +121,38 @@ class UserStore {
     // Check if token is expired
     if (new Date() > tokenData.expiresAt) {
       // Remove expired token
-      this.tokens.delete(token);
+      await prisma.token.delete({
+        where: { id: tokenData.id },
+      });
       return false;
     }
 
     return true;
   }
 
-  revokeToken(token: string): boolean {
-    return this.tokens.delete(token);
+  async revokeToken(token: string): Promise<boolean> {
+    try {
+      await prisma.token.delete({
+        where: { token },
+      });
+      return true;
+    } catch (error) {
+      console.error('Error revoking token:', error);
+      return false;
+    }
+  }
+
+  // Clean up expired tokens (this can be called periodically)
+  async cleanupExpiredTokens(): Promise<number> {
+    const result = await prisma.token.deleteMany({
+      where: {
+        expiresAt: {
+          lt: new Date(),
+        },
+      },
+    });
+
+    return result.count;
   }
 }
 

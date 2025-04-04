@@ -26,6 +26,7 @@ This is a monorepo managed with Yarn Workspaces:
 
 - Node.js (v22 or later)
 - Yarn (v1.22 or later)
+- Docker and Docker Compose (for PostgreSQL database)
 
 ### Installation
 
@@ -35,6 +36,42 @@ Clone the repository and install dependencies:
 git clone git@github.com:OrderlyNetwork/dex-creator.git
 cd dex-creator
 yarn install
+```
+
+### Database Setup
+
+The application uses PostgreSQL for data storage. You can run it using Docker:
+
+```bash
+# Start a PostgreSQL container
+docker run --name dex-creator-postgres \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=dex_creator \
+  -p 5432:5432 \
+  -d postgres:16
+```
+
+**Note on Docker Networking**: If you encounter network-related Docker errors, use host networking mode:
+
+```bash
+# Alternative setup with host networking
+docker run --name dex-creator-postgres \
+  --network host \
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=dex_creator \
+  -d postgres:16
+```
+
+Once PostgreSQL is running, initialize the database schema:
+
+```bash
+# Generate Prisma client
+cd api && yarn db:generate
+
+# Create initial database migration and apply it
+yarn db:migrate:dev --name initial_migration
 ```
 
 ### Development
@@ -61,6 +98,24 @@ yarn dev:app
 
 # For the backend API
 yarn dev:api
+```
+
+### Database Management
+
+The project includes several commands for managing the database:
+
+```bash
+# Open Prisma Studio to view and edit the database
+yarn db:studio
+
+# Apply all pending migrations (for production environments)
+yarn db:migrate:deploy
+
+# Generate the Prisma client after schema changes
+yarn db:generate
+
+# Push schema changes directly to the database (for development only)
+yarn db:push
 ```
 
 ## Deployment
