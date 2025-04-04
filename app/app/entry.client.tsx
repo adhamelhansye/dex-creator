@@ -5,14 +5,13 @@
  */
 
 import { RemixBrowser } from '@remix-run/react';
-import { startTransition, StrictMode } from 'react';
+import { startTransition } from 'react';
 import { hydrateRoot } from 'react-dom/client';
 
+// Import UnoCSS
+import 'virtual:uno.css';
+import './styles/global.css';
+
 startTransition(() => {
-  hydrateRoot(
-    document,
-    <StrictMode>
-      <RemixBrowser />
-    </StrictMode>
-  );
+  hydrateRoot(document, <RemixBrowser />);
 });

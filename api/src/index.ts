@@ -3,6 +3,7 @@ import { Hono } from 'hono';
 import { logger } from 'hono/logger';
 import { cors } from 'hono/cors';
 import dexRoutes from './routes/dex';
+import authRoutes from './routes/auth';
 
 const app = new Hono();
 
@@ -13,6 +14,7 @@ app.use('*', cors());
 // Routes
 app.get('/', c => c.json({ message: 'DEX Creator API is running' }));
 app.route('/api/dex', dexRoutes);
+app.route('/api/auth', authRoutes);
 
 // Error handling
 app.notFound(c => {

@@ -39,17 +39,28 @@ yarn install
 
 ### Development
 
-To start the development servers for both the app and api:
+To start both the frontend and backend development servers simultaneously with auto-reloading:
 
 ```bash
-# In separate terminals:
-# For the frontend app
-cd app
+# Start both frontend and backend with a single command
 yarn dev
+```
+
+This will launch:
+
+- The frontend Remix app on http://localhost:3000 (with Vite hot module replacement)
+- The backend API on http://localhost:3001 (with tsx watch for auto-reloading)
+
+Both servers are configured to auto-reload when changes are detected in their respective source files.
+
+If you prefer to run them separately:
+
+```bash
+# For the frontend app
+yarn dev:app
 
 # For the backend API
-cd api
-yarn dev
+yarn dev:api
 ```
 
 ## Deployment

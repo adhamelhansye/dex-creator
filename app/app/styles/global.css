@@ -1,40 +1,261 @@
+@import '@unocss/reset/tailwind.css';
+
 :root {
-  --color-primary: #4f46e5;
-  --color-secondary: #8b5cf6;
-  --color-dark: #111827;
-  --color-light: #f9fafb;
-  --color-gray: #6b7280;
+  --color-primary: 89, 91, 255;
+  --color-primary-light: 125, 125, 255;
+  --color-secondary: 157, 78, 221;
+  --color-secondary-light: 187, 118, 242;
+  --color-background: 12, 14, 30;
+  --color-background-light: 22, 24, 48;
+  --color-background-dark: 8, 10, 20;
+  --color-teal: 0, 209, 255;
+  --color-teal-light: 129, 229, 247;
 }
 
-html,
 body {
-  margin: 0;
-  padding: 0;
-  font-family:
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    Oxygen,
-    Ubuntu,
-    Cantarell,
-    'Open Sans',
-    'Helvetica Neue',
-    sans-serif;
-  color: var(--color-dark);
-  background-color: var(--color-light);
+  background-color: rgba(var(--color-background), 1);
+  color: #fff;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
 }
 
-a {
-  color: var(--color-primary);
-  text-decoration: none;
+/* Layout containers */
+.page-container {
+  min-height: 100vh;
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 1.5rem;
 }
 
-a:hover {
-  text-decoration: underline;
+.section-container {
+  padding: 2rem 0;
 }
 
-button {
+/* Custom utility classes */
+.gradient-text {
+  background: linear-gradient(
+    to right,
+    rgba(var(--color-primary-light), 1),
+    rgba(var(--color-secondary-light), 1)
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.btn {
+  padding: 0.75rem 1.5rem;
+  font-weight: 600;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.rounded-full {
+  border-radius: 9999px;
+}
+
+.btn-connect {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary), 0.9),
+    rgba(var(--color-secondary), 0.9)
+  );
+  color: white;
+  border: none;
+}
+
+.btn-connect:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-light), 1),
+    rgba(var(--color-secondary-light), 1)
+  );
+  transform: translateY(-2px);
+}
+
+.btn-secondary {
+  background: rgba(var(--color-background-light), 0.5);
+  border: 1px solid rgba(var(--color-secondary-light), 0.3);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background: rgba(var(--color-background-light), 0.7);
+  border: 1px solid rgba(var(--color-secondary-light), 0.5);
+}
+
+/* Icon button styles */
+.btn-icon {
+  transition: all 0.2s ease;
+  color: white;
   cursor: pointer;
+  background: rgba(var(--color-background-light), 0.5);
+  border: 1px solid rgba(var(--color-secondary-light), 0.3);
+}
+
+.btn-icon:hover {
+  background: rgba(var(--color-background-light), 0.7);
+  border: 1px solid rgba(var(--color-secondary-light), 0.5);
+  transform: translateY(-2px);
+}
+
+.btn-disconnect {
+  color: rgba(255, 120, 120, 0.9);
+}
+
+.btn-disconnect:hover {
+  color: rgba(255, 120, 120, 1);
+}
+
+.card {
+  background: rgba(var(--color-background-light), 0.3);
+  border: 1px solid rgba(var(--color-primary-light), 0.1);
+  border-radius: 1rem;
+  padding: 2rem;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  border-color: rgba(var(--color-primary-light), 0.2);
+  box-shadow: 0 0 20px rgba(var(--color-primary-light), 0.05);
+}
+
+.glow-effect {
+  position: relative;
+  z-index: 1;
+}
+
+.glow-effect::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 0.5rem;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary), 0.5),
+    rgba(var(--color-secondary), 0.5)
+  );
+  filter: blur(15px);
+  z-index: -1;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.glow-effect:hover::after {
+  opacity: 0.7;
+}
+
+/* Z-index utilities */
+.z-modal-base {
+  z-index: 1000;
+}
+
+.z-modal-backdrop {
+  z-index: 1001;
+}
+
+.z-modal-content {
+  z-index: 1002;
+}
+
+/* Modal background color classes */
+.bg-background-dark\/80 {
+  background-color: rgba(var(--color-background-dark), 0.8);
+}
+
+.bg-background-dark\/50 {
+  background-color: rgba(var(--color-background-dark), 0.5);
+}
+
+/* Toast styling */
+.Toastify__toast {
+  border-radius: 8px;
+  background-color: rgba(var(--color-background-light), 0.9) !important;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(var(--color-primary-light), 0.1);
+  color: white !important;
+}
+
+.Toastify__toast--error {
+  border-left: 4px solid #ff5252 !important;
+}
+
+.Toastify__toast--success {
+  border-left: 4px solid #4caf50 !important;
+}
+
+.Toastify__toast--info {
+  border-left: 4px solid #2196f3 !important;
+}
+
+.Toastify__toast--warning {
+  border-left: 4px solid #ff9800 !important;
+}
+
+.Toastify__progress-bar {
+  background: linear-gradient(
+    to right,
+    rgba(var(--color-primary), 0.7),
+    rgba(var(--color-secondary), 0.7)
+  ) !important;
+}
+
+.Toastify__close-button {
+  color: rgba(255, 255, 255, 0.7) !important;
+}
+
+.Toastify__close-button:hover {
+  color: white !important;
+}
+
+/* AppKit styling */
+appkit-button {
+  width: 100%;
+}
+
+/* Target the button inside the appkit-button */
+appkit-button button,
+wui-connect-button {
+  width: 100% !important;
+  max-width: 250px !important;
+  height: 48px !important;
+  padding: 0.75rem 1.5rem !important;
+  border-radius: 9999px !important; /* rounded-full */
+  font-weight: 600 !important;
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary), 0.9),
+    rgba(var(--color-secondary), 0.9)
+  ) !important;
+  color: white !important;
+  transition: all 0.2s ease !important;
+  box-shadow: 0 0 10px rgba(var(--color-primary), 0.2) !important;
+}
+
+appkit-button button:hover,
+wui-connect-button:hover {
+  background: linear-gradient(
+    135deg,
+    rgba(var(--color-primary-light), 1),
+    rgba(var(--color-secondary-light), 1)
+  ) !important;
+  transform: translateY(-2px) !important;
+  box-shadow: 0 0 15px rgba(var(--color-primary), 0.3) !important;
+}
+
+/* For the paragraph inside the button */
+wui-text[variant='paragraph-600'] {
+  font-weight: 600 !important;
+  font-size: 16px !important;
+}
+
+/* Make sure Reown AppKit modal is behind our custom modals */
+appkit-modal {
+  z-index: 999 !important;
 }

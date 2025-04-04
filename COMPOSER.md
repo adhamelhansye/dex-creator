@@ -15,6 +15,16 @@ This document provides a comprehensive guide for AI composers working on this pr
 
 You should proactively update this document without waiting for explicit instructions to do so. The goal is to keep this documentation continuously accurate as the project evolves.
 
+**TERMINAL USAGE**: Do not start any terminal processes or run commands. The project maintainer will handle running the necessary commands and starting development servers.
+
+**DOCUMENTATION GUIDELINES**:
+
+- When a task is completed, remove it entirely from the tasks list
+- When a bug or issue is fixed, remove it entirely from the tasks list or known issues
+- When adding new components or features, ensure they're properly documented with file paths and descriptions
+- Keep the roadmap updated based on current priorities
+- Use consistent formatting throughout the document
+
 ## Project Overview
 
 DEX Creator is a platform that lets users create their own perpetual decentralized exchanges (DEXs) using Orderly Networks infrastructure. The platform simplifies DEX creation and deployment through an intuitive UI and automated processes.
@@ -27,9 +37,15 @@ This is a monorepo managed with Yarn Workspaces:
 dex-creator/
 ├── app/            # Remix-based frontend (SPA)
 │   ├── app/        # Application source code
+│   │   ├── components/ # React components
+│   │   ├── context/    # React contexts
+│   │   ├── utils/      # Utility functions
 │   │   └── styles/ # Source styles (including global.css)
 │   └── public/     # Public assets
 ├── api/            # Node.js API server (Hono)
+│   ├── src/        # API source code
+│   │   ├── models/ # Data models
+│   │   └── routes/ # API routes
 ├── .github/        # GitHub configuration
 │   └── workflows/  # GitHub Actions workflows
 ├── tsconfig.base.json  # Shared TypeScript configuration
@@ -38,11 +54,15 @@ dex-creator/
 
 ### Technology Stack
 
-- **Frontend**: Remix (SPA mode), React 19, TypeScript
-- **Backend**: Node.js v22+, Hono, TypeScript
+- **Frontend**: Remix (SPA mode), React 19, TypeScript, Wagmi, TanStack React Query
+- **Styling**: UnoCSS, a utility-first CSS framework with atomic CSS capabilities
+- **Icons**: Iconify with @iconify/react for SVG icons
+- **Notifications**: React-Toastify for toast messages
+- **Backend**: Node.js v22+, Hono, TypeScript, Ethers.js
 - **Deployment**: GitHub Pages (automated through CI)
 - **Package Management**: Yarn Workspaces
 - **CI/CD**: GitHub Actions
+- **Authentication**: EVM Wallet (Ethereum) signature-based authentication
 
 ## Key Components
 
@@ -52,22 +72,44 @@ The frontend is a Remix-based Single Page Application (SPA) for DEX creation and
 
 Key files:
 
-- `app/vite.config.ts`: Configuration for Vite
+- `app/vite.config.ts`: Configuration for Vite with Node.js polyfills
 - `app/remix.config.js`: Remix configuration with SPA mode enabled
 - `app/app/entry.client.tsx`: Client entry point
-- `app/app/root.tsx`: Root component
+- `app/app/root.tsx`: Root component with Wagmi and Auth providers
 - `app/app/routes/_index.tsx`: Home page component
 - `app/app/styles/global.css`: Stylesheets directly imported in components
+- `app/app/components/WalletConnect.tsx`: Component for wallet connection and authentication
+- `app/app/components/LoginModal.tsx`: Modal explaining the wallet signing process
+- `app/app/context/AuthContext.tsx`: Authentication context for wallet auth state management
+- `app/app/utils/wagmiConfig.ts`: Configuration for Wagmi web3 provider
+- `app/uno.config.ts`: UnoCSS configuration file defining themes, colors, and shortcuts
 
 ### Backend API (`api/`)
 
-The backend is a Node.js API server built with Hono for storing user DEX configurations.
+The backend is a Node.js API server built with Hono for storing user DEX configurations and handling authentication.
 
 Key files:
 
 - `api/src/index.ts`: Main server entry point
 - `api/src/routes/dex.ts`: API routes for DEX operations
-- `api/src/models/dex.ts`: Data models and storage
+- `api/src/routes/auth.ts`: API routes for wallet authentication
+- `api/src/models/dex.ts`: Data models and storage for DEXes
+- `api/src/models/user.ts`: User model for authentication
+
+### Authentication Flow
+
+The platform uses EVM wallet authentication with token validation:
+
+1. User connects their wallet (e.g., MetaMask) using Wagmi
+2. A login explainer modal appears automatically to guide users through signing
+3. Backend generates a random nonce for the user's address
+4. User signs a message containing the nonce
+5. Backend verifies the signature using ethers.js
+6. Upon verification, a token is issued with a 24-hour expiration and the user is authenticated
+7. On page refresh or application restart, the token is validated with the server
+8. Expired or invalid tokens trigger automatic logout with notification
+9. Background validation occurs every 15 minutes to ensure token freshness
+10. Toast notifications provide feedback throughout the process
 
 ### CI/CD Pipeline
 
@@ -96,38 +138,151 @@ The project uses GitHub Actions for continuous integration:
 
 3. **CSS Strategy**:
 
-   - Keep source CSS files in `app/app/styles/`
-   - Import CSS files directly in components where needed
-   - Leverage Vite's built-in CSS handling for processing and bundling
+   - **IMPORTANT**: Always prefer UnoCSS utility classes over manual CSS
+   - UnoCSS configuration in `app/uno.config.ts` defines shortcuts, themes, and colors
+   - For complex components, use composition of UnoCSS utility classes instead of writing custom CSS
+   - Only use global.css for base styles and overrides that cannot be achieved with UnoCSS
+   - When using icons, prefer Iconify with the @iconify/react package
 
-4. **Code Quality**:
+4. **UI Components**:
+
+   - Use pill-shaped designs for interactive elements (rounded-full)
+   - Maintain consistent padding and font sizes across similar components
+   - Use subtle background colors with transparency (background-light/30)
+   - Prefer subtle borders to define component boundaries
+   - Follow the Orderly color palette defined in UnoCSS config
+
+5. **Responsive Design**:
+
+   - Use mobile-first approach with responsive utility classes (e.g., `md:px-4`)
+   - Reduce paddings, margins, and font sizes on mobile screens
+   - Hide non-essential UI elements on small screens using `hidden md:block`
+   - Scale down icon sizes and interactive elements for better mobile ergonomics
+   - Test all UI components on multiple device sizes during development
+
+6. **Error Handling**:
+
+   - Use toast notifications for error feedback instead of inline error messages
+   - Log errors to console for debugging
+   - Provide clear user feedback for all interactions
+
+7. **Code Quality**:
+
    - All code must pass ESLint rules
    - All code must be properly formatted with Prettier
    - All TypeScript code must type check without errors
    - CI pipeline ensures these standards are maintained
 
+8. **Authentication and Security**:
+   - Always validate tokens on application load
+   - Include token expiration checks
+   - Handle expired tokens gracefully with user feedback
+   - Do not store sensitive information in localStorage
+   - Implement periodic token validation for long-lived sessions
+
+## UI Design Patterns
+
+### Wallet Connection
+
+The application uses a consistent wallet connection pattern:
+
+1. **Connect Wallet Button**: Initial state showing a prominent gradient button
+2. **Connected Wallet Pill**: After connection, shows a pill with:
+
+   - Wallet address with a colored indicator dot
+   - Login/Disconnect actions grouped in the same container
+   - Consistent hover and active states
+
+3. **Authentication States**:
+
+   - Unauthenticated: Gray address text with login button
+   - Authenticated: Colored address text showing successful authentication
+   - Loading states for all operations
+
+4. **Modals**:
+
+   - Login explainer modal appears automatically after wallet connection
+   - Modals use consistent styling with the main UI
+   - Z-index management ensures proper modal layering
+   - Options to proceed or defer authentication
+
+5. **Mobile Adaptations**:
+   - Login button hidden on mobile screens
+   - Reduced padding and margins for space efficiency
+   - Smaller text and icon sizes
+   - Compact wallet pill to fit smaller screens
+
+Example implementation in `WalletConnect.tsx` shows the pattern with all states.
+
+### Responsive Design
+
+The application follows a mobile-first approach with these key principles:
+
+1. **Base Mobile Styles**:
+
+   - Smaller text sizes: `text-xs` for mobile, `md:text-sm` for larger screens
+   - Compact padding: `p-1 md:p-1.5`, `px-2 py-1 md:px-4 md:py-2`
+   - Reduced margins: `gap-1 md:gap-2`, `mr-2 md:mr-3`
+   - Smaller interactive elements: `w-1.5 h-1.5 md:w-2 md:h-2`
+
+2. **Progressive Enhancement**:
+
+   - Features appear as screen size increases
+   - More generous spacing on larger screens
+   - Additional UI elements become visible (e.g., `hidden md:block`)
+
+3. **Flexible Layouts**:
+
+   - Elements naturally adapt to available space
+   - Maintain readability at all screen sizes
+   - Avoid fixed-width elements that might break on small screens
+
+4. **Touch Consideration**:
+   - Ensure tap targets are at least 44x44px on mobile
+   - Provide enough spacing between interactive elements
+   - Use simpler interactions on touch devices
+
+### Notifications
+
+The application uses React-Toastify for notifications:
+
+1. **Toast Types**:
+
+   - Error notifications (red left border)
+   - Success notifications (green left border)
+   - Info notifications (blue left border)
+
+2. **Styling**:
+
+   - Custom styling in global.css matching the application theme
+   - Semi-transparent backgrounds with blur effect
+   - Consistent animation and positioning
+   - Auto-dismiss after 5 seconds
+
+3. **Usage Pattern**:
+   - Call `toast.error()`, `toast.success()`, etc. directly
+   - Provide clear, concise messages
+   - Log to console simultaneously for debugging
+
 ## Known Issues
 
-1. **TypeScript type compatibility issues with Hono zValidator**:
-   - zValidator middleware has type compatibility issues with Hono's Context
-   - Currently ignoring these TypeScript errors
-   - Error: "Argument of type '"json"' is not assignable to parameter of type 'never'"
+Currently, there are no known issues in the project.
 
 ## Current Tasks and Roadmap
 
 1. **Short-term tasks**:
 
-   - Fix TypeScript type compatibility with zValidator
    - Add documentation for API endpoints (OpenAPI/Swagger)
    - Implement testing for API endpoints
    - Improve error handling with more specific error messages
+   - Replace the in-memory user store with a database
 
 2. **Medium-term tasks**:
 
    - Implement proper storage solution instead of in-memory storage
-   - Add authentication for API endpoints
    - Create UI components for the DEX customization
    - Implement the forking and deployment workflow
+   - Add JWT tokens for more secure authentication
 
 3. **Long-term vision**:
    - Add dashboard for DEX operators to monitor performance
@@ -148,6 +303,45 @@ The project uses a shared base TypeScript configuration (`tsconfig.base.json`) w
 - Module resolution set to "bundler"
 - Strict type-checking enabled
 
+### UnoCSS Configuration
+
+The project uses UnoCSS for styling with a configuration file at `app/uno.config.ts`:
+
+- Custom color palette aligned with the Orderly design system
+- Presets including UnoCSS default and web fonts
+- Custom shortcuts for common UI patterns (buttons, cards, etc.)
+- Responsive design utilities
+
+### Responsive Breakpoints
+
+The application uses the following responsive breakpoints with UnoCSS:
+
+- `sm`: 640px (small tablets and large phones)
+- `md`: 768px (tablets and small laptops)
+- `lg`: 1024px (laptops and desktops)
+- `xl`: 1280px (large desktops)
+- `2xl`: 1536px (extra large screens)
+
+Default (no prefix) styles apply to mobile first, with larger screen adjustments using prefixes.
+
+### Icons
+
+The project uses Iconify for SVG icons:
+
+- @iconify/react package provides React components for icons
+- Icons can be loaded dynamically from various icon sets
+- Heroicons is the primary icon set used for UI elements
+- Usage pattern: `<Icon icon="heroicons:icon-name" width={14} className="md:w-4" />`
+
+### Notifications
+
+The application uses React-Toastify for toast notifications:
+
+- Configured in the root component with global settings
+- Custom theme matching the application's dark mode
+- Custom CSS styling in global.css
+- Z-index management to ensure proper layering
+
 ### CI Configuration
 
 The project uses GitHub Actions for continuous integration:
@@ -162,57 +356,106 @@ The project uses GitHub Actions for continuous integration:
 To run the project locally:
 
 1. Install dependencies: `yarn install`
-2. Start the frontend: `cd app && yarn dev`
-3. Start the API server: `cd api && yarn dev`
+2. Start both frontend and backend with auto-reloading: `yarn dev`
+   - This uses concurrently to run both servers in parallel
+   - The frontend runs on http://localhost:3000 with hot module replacement
+   - The backend runs on http://localhost:3001 with auto-reloading
+
+Alternative individual commands:
+
+- Start only the frontend: `yarn dev:app`
+- Start only the backend: `yarn dev:api`
+- Build the frontend: `yarn build:app`
+- Build the backend: `yarn build:api`
 
 ## API Documentation
 
-### Planned API Endpoints
+### Implemented API Endpoints
 
-Note: These API endpoints are currently placeholders and not yet implemented. The actual implementation is pending.
+| Method | Endpoint           | Description                       | Status      |
+| ------ | ------------------ | --------------------------------- | ----------- |
+| GET    | /api/dex           | List all DEXes                    | Planned     |
+| GET    | /api/dex/:id       | Get a specific DEX                | Planned     |
+| POST   | /api/dex           | Create a new DEX                  | Planned     |
+| PUT    | /api/dex/:id       | Update a DEX                      | Planned     |
+| DELETE | /api/dex/:id       | Delete a DEX                      | Planned     |
+| POST   | /api/auth/nonce    | Get a nonce for authentication    | Implemented |
+| POST   | /api/auth/verify   | Verify signature and authenticate | Implemented |
+| POST   | /api/auth/validate | Validate authentication token     | Implemented |
 
-| Method | Endpoint     | Description        | Status  |
-| ------ | ------------ | ------------------ | ------- |
-| GET    | /api/dex     | List all DEXes     | Planned |
-| GET    | /api/dex/:id | Get a specific DEX | Planned |
-| POST   | /api/dex     | Create a new DEX   | Planned |
-| PUT    | /api/dex/:id | Update a DEX       | Planned |
-| DELETE | /api/dex/:id | Delete a DEX       | Planned |
+### Authentication API Endpoints
 
-### Sample API Design
-
-The following represents the planned request/response format (subject to change):
-
-#### Create a DEX (POST /api/dex)
+#### Request a Nonce (POST /api/auth/nonce)
 
 Request:
 
 ```json
 {
-  "name": "My Awesome DEX",
-  "description": "A custom perpetual DEX powered by Orderly",
-  "logo": "https://example.com/logo.png",
-  "theme": {
-    "primaryColor": "#3B82F6",
-    "secondaryColor": "#10B981"
+  "address": "0x1234567890123456789012345678901234567890"
+}
+```
+
+Response (200):
+
+```json
+{
+  "message": "Sign this message to authenticate with DEX Creator: 123456",
+  "nonce": "123456"
+}
+```
+
+#### Verify Signature (POST /api/auth/verify)
+
+Request:
+
+```json
+{
+  "address": "0x1234567890123456789012345678901234567890",
+  "signature": "0xabcdef123456789...signature-data"
+}
+```
+
+Response (200):
+
+```json
+{
+  "user": {
+    "id": "user-uuid",
+    "address": "0x1234567890123456789012345678901234567890"
+  },
+  "token": "auth-token"
+}
+```
+
+#### Validate Token (POST /api/auth/validate)
+
+Request:
+
+```json
+{
+  "address": "0x1234567890123456789012345678901234567890",
+  "token": "auth-token"
+}
+```
+
+Response (200):
+
+```json
+{
+  "valid": true,
+  "user": {
+    "id": "user-uuid",
+    "address": "0x1234567890123456789012345678901234567890"
   }
 }
 ```
 
-Response (201):
+Error Response (401):
 
 ```json
 {
-  "id": "abc123",
-  "name": "My Awesome DEX",
-  "description": "A custom perpetual DEX powered by Orderly",
-  "logo": "https://example.com/logo.png",
-  "theme": {
-    "primaryColor": "#3B82F6",
-    "secondaryColor": "#10B981"
-  },
-  "createdAt": "2023-04-03T10:30:00.000Z",
-  "updatedAt": "2023-04-03T10:30:00.000Z"
+  "valid": false,
+  "error": "Token invalid or expired"
 }
 ```
 
@@ -222,16 +465,31 @@ Response (201):
 
 - **Hono for API**: Lightweight, fast, TypeScript-friendly API framework with middleware support
 - **Remix for Frontend**: Excellent DX, built-in SPA mode, React 19 compatibility
+- **UnoCSS**: Atomic CSS framework for efficient, maintainable styling with excellent performance
+- **Iconify**: Comprehensive icon solution with thousands of icons and no bundle size impact
+- **React-Toastify**: Flexible, customizable toast notification system
 - **Zod for Validation**: Type-safe schema validation with TypeScript integration
 - **Yarn Workspaces**: Efficient dependency management for monorepo structure
 - **GitHub Actions**: Automated CI/CD pipeline for quality control and deployment
+- **Wagmi**: Modern React hooks library for Ethereum
+- **ethers.js**: Complete Ethereum library for signature verification
+- **vite-plugin-node-polyfills**: Provides Node.js polyfills for web3 libraries in the browser
+- **Concurrently**: Tool for running multiple commands simultaneously with organized output
+- **TSX**: TypeScript execution and watch mode for Node.js applications
 
 ### Development Approach
 
-- **CSS Strategy**: Direct imports in components, utilizing Vite's built-in CSS processing
+- **CSS Strategy**: UnoCSS utility classes for styling, with direct composition in JSX
+- **Mobile-First Approach**: Base styles for mobile with responsive modifiers for larger screens
 - **TypeScript Strategy**: Emphasis on type inference over explicit annotations
 - **Development Tools**: tsx for running TypeScript, ESLint and Prettier for code quality
 - **Quality Assurance**: Automated checks through CI pipeline ensure consistent code quality
+- **Authentication**: EVM wallet-based authentication with message signing for security
+- **Error Handling**: Toast notifications for user feedback, console logging for debugging
+- **Auto-Reloading**: Concurrent dev environment with automatic reloading for seamless development
+  - Frontend uses Vite's hot module replacement for instantaneous updates without page refresh
+  - Backend uses tsx watch mode to automatically restart the server on file changes
+  - Concurrently package runs both servers with organized, color-coded output
 
 ---
 
