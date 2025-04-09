@@ -27,6 +27,7 @@
     "zod": "^3.24.2"
   },
   "devDependencies": {
+    "@iconify-json/svg-spinners": "^1.2.2",
     "@remix-run/dev": "^2.16.4",
     "@types/node": "^22.14.0",
     "@types/react": "^19.0.0",

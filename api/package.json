@@ -23,9 +23,12 @@
     "@prisma/client": "^6.5.0",
     "ethers": "^6.13.5",
     "hono": "^4.3.0",
+    "libsodium-wrappers": "^0.7.15",
+    "octokit": "^4.1.2",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^22.14.0",
     "prisma": "^6.5.0",
     "tsx": "^4.7.1",

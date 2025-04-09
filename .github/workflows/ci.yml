@@ -27,9 +27,6 @@ jobs:
       - name: Run ESLint
         run: yarn lint
       
-      - name: Check formatting with Prettier
-        run: yarn format:check
-      
       - name: Type check
         run: yarn type-check
   

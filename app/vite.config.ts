@@ -1,9 +1,9 @@
-import { defineConfig } from 'vite';
-import { vitePlugin as remix } from '@remix-run/dev';
-import tsconfigPaths from 'vite-tsconfig-paths';
-import { resolve } from 'path';
-import { nodePolyfills } from 'vite-plugin-node-polyfills';
-import UnoCSS from 'unocss/vite';
+import { defineConfig } from "vite";
+import { vitePlugin as remix } from "@remix-run/dev";
+import tsconfigPaths from "vite-tsconfig-paths";
+import { resolve } from "path";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
+import UnoCSS from "unocss/vite";
 
 export default defineConfig({
   plugins: [
@@ -16,7 +16,7 @@ export default defineConfig({
       // Whether to polyfill `node:` protocol imports.
       protocolImports: true,
       // Polyfills needed for specific libraries
-      include: ['buffer', 'process', 'util', 'stream', 'events'],
+      include: ["buffer", "process", "util", "stream", "events"],
     }),
   ],
   server: {
@@ -24,11 +24,11 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '~': resolve(__dirname, './app'),
+      "~": resolve(__dirname, "./app"),
     },
   },
-  publicDir: 'public',
+  publicDir: "public",
   build: {
-    outDir: 'dist',
+    outDir: "dist",
   },
 });

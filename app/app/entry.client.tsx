@@ -4,13 +4,13 @@
  * For more information, see https://remix.run/file-conventions/entry.client
  */
 
-import { RemixBrowser } from '@remix-run/react';
-import { startTransition } from 'react';
-import { hydrateRoot } from 'react-dom/client';
+import { RemixBrowser } from "@remix-run/react";
+import { startTransition } from "react";
+import { hydrateRoot } from "react-dom/client";
 
 // Import UnoCSS
-import 'virtual:uno.css';
-import './styles/global.css';
+import "virtual:uno.css";
+import "./styles/global.css";
 
 startTransition(() => {
   hydrateRoot(document, <RemixBrowser />);

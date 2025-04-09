@@ -5,10 +5,10 @@ import {
   useCallback,
   ReactNode,
   useEffect,
-} from 'react';
-import { useAccount, useSignMessage, useDisconnect } from 'wagmi';
-import { API_BASE_URL } from '../utils/wagmiConfig';
-import { toast } from 'react-toastify';
+} from "react";
+import { useAccount, useSignMessage, useDisconnect } from "wagmi";
+import { API_BASE_URL } from "../utils/wagmiConfig";
+import { toast } from "react-toastify";
 
 interface User {
   id: string;
@@ -27,6 +27,8 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export { AuthContext };
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -48,9 +50,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     try {
       const response = await fetch(`${API_BASE_URL}/api/auth/validate`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           address: user.address,
@@ -67,7 +69,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const data = await response.json();
       return data.valid;
     } catch (error) {
-      console.error('Token validation error:', error);
+      console.error("Token validation error:", error);
       logout();
       return false;
     }
@@ -79,8 +81,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsValidating(true);
 
       try {
-        const savedToken = localStorage.getItem('auth_token');
-        const savedUser = localStorage.getItem('auth_user');
+        const savedToken = localStorage.getItem("auth_token");
+        const savedUser = localStorage.getItem("auth_user");
 
         if (savedToken && savedUser) {
           // Set the saved values first
@@ -93,13 +95,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
           if (!isValid) {
             // If not valid, clear the auth state
-            console.log('Saved token is invalid, logging out');
+            console.log("Saved token is invalid, logging out");
             logout();
-            toast.warning('Your session has expired. Please log in again.');
+            toast.warning("Your session has expired. Please log in again.");
           }
         }
       } catch (error) {
-        console.error('Error validating saved auth:', error);
+        console.error("Error validating saved auth:", error);
         logout();
       } finally {
         setIsValidating(false);
@@ -119,7 +121,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const login = useCallback(async () => {
     if (!address) {
-      const errorMsg = 'No wallet connected';
+      const errorMsg = "No wallet connected";
       setError(errorMsg);
       throw new Error(errorMsg);
     }
@@ -130,15 +132,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Step 1: Request a nonce from the server
       const nonceResponse = await fetch(`${API_BASE_URL}/api/auth/nonce`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ address }),
       });
 
       if (!nonceResponse.ok) {
-        const errorMsg = 'Failed to get authentication nonce';
+        const errorMsg = "Failed to get authentication nonce";
         throw new Error(errorMsg);
       }
 
@@ -149,15 +151,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       // Step 3: Verify the signature on the server
       const verifyResponse = await fetch(`${API_BASE_URL}/api/auth/verify`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ address, signature }),
       });
 
       if (!verifyResponse.ok) {
-        const errorMsg = 'Signature verification failed';
+        const errorMsg = "Signature verification failed";
         throw new Error(errorMsg);
       }
 
@@ -166,11 +168,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       // Step 4: Save the authentication data
       setUser(userData);
       setToken(authToken);
-      localStorage.setItem('auth_token', authToken);
-      localStorage.setItem('auth_user', JSON.stringify(userData));
+      localStorage.setItem("auth_token", authToken);
+      localStorage.setItem("auth_user", JSON.stringify(userData));
     } catch (err) {
       const errorMsg =
-        err instanceof Error ? err.message : 'Authentication failed';
+        err instanceof Error ? err.message : "Authentication failed";
       setError(errorMsg);
       throw err; // Re-throw the error so it can be caught by the component
     } finally {
@@ -181,8 +183,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = useCallback(() => {
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
     disconnect();
   }, [disconnect]);
 
@@ -207,7 +209,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

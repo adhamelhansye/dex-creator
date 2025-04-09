@@ -1,27 +1,41 @@
-import type { MetaFunction } from '@remix-run/node';
-import WalletConnect from '../components/WalletConnect';
+import type { MetaFunction } from "@remix-run/node";
+import { Button } from "../components/Button";
+import { Card } from "../components/Card";
+import { useAuth } from "../context/AuthContext";
+import { useNavigate } from "@remix-run/react";
 
 export const meta: MetaFunction = () => [
-  { title: 'DEX Creator | Orderly Network' },
+  { title: "DEX Creator | Orderly Network" },
 ];
 
 export default function Index() {
+  const { isAuthenticated } = useAuth();
+  const navigate = useNavigate();
+
+  const handleStartBuilding = () => {
+    if (isAuthenticated) {
+      navigate("/dex");
+    } else {
+      // If not authenticated, this will trigger the wallet connection flow
+      const walletConnectElement = document.querySelector(
+        ".wallet-connect-button"
+      );
+      if (walletConnectElement) {
+        (walletConnectElement as HTMLElement).click();
+      }
+    }
+  };
+
   return (
     <div className="page-container relative overflow-hidden">
       {/* Background effects */}
       <div className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full bg-primary-light/5 filter blur-3xl"></div>
       <div className="absolute bottom-1/4 right-1/4 w-96 h-96 rounded-full bg-secondary-light/5 filter blur-3xl"></div>
 
-      {/* Header */}
-      <header className="flex justify-between items-center py-6 z-10 relative">
-        <h1 className="text-3xl font-bold gradient-text">DEX Creator</h1>
-        <WalletConnect />
-      </header>
-
       {/* Hero section */}
       <div className="section-container flex flex-col items-center text-center mb-12 pt-16 relative z-1">
         <h2 className="text-5xl md:text-6xl font-bold mb-8 max-w-4xl leading-tight">
-          Create your own <span className="gradient-text">perpetual DEX</span>{' '}
+          Create your own <span className="gradient-text">perpetual DEX</span>{" "}
           with Orderly
         </h2>
         <p className="text-xl text-gray-300 max-w-2xl mb-12">
@@ -30,17 +44,19 @@ export default function Index() {
         </p>
 
         <div className="flex gap-4 flex-wrap justify-center">
-          <button className="btn btn-connect glow-effect">
+          <Button variant="primary" size="md" onClick={handleStartBuilding}>
             Start Building Now
-          </button>
-          <a
+          </Button>
+          <Button
+            variant="secondary"
+            size="md"
+            as="a"
             href="https://orderly.network/docs"
             target="_blank"
             rel="noopener noreferrer"
-            className="btn btn-secondary"
           >
             Explore Docs
-          </a>
+          </Button>
         </div>
       </div>
 
@@ -50,7 +66,7 @@ export default function Index() {
           Features
         </h3>
 
-        <div className="card max-w-5xl mx-auto backdrop-blur-sm">
+        <Card className="max-w-5xl mx-auto">
           <ul className="space-y-6">
             <li className="flex items-start gap-4">
               <div className="w-2.5 h-2.5 rounded-full bg-teal-light mt-2.5"></div>
@@ -101,7 +117,7 @@ export default function Index() {
               </div>
             </li>
           </ul>
-        </div>
+        </Card>
       </div>
     </div>
   );

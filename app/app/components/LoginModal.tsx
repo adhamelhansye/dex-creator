@@ -1,3 +1,6 @@
+import { useState } from "react";
+import { Button } from "./Button";
+
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -9,14 +12,25 @@ export default function LoginModal({
   onClose,
   onLogin,
 }: LoginModalProps) {
+  const [isLoading, setIsLoading] = useState(false);
+
   if (!isOpen) return null;
+
+  const handleLogin = async () => {
+    setIsLoading(true);
+    try {
+      await onLogin();
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-[1000] flex items-center justify-center">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-[1001]"
-        onClick={onClose}
+        onClick={isLoading ? undefined : onClose}
       ></div>
 
       {/* Modal */}
@@ -44,15 +58,17 @@ export default function LoginModal({
         </div>
 
         <div className="flex gap-3 justify-end">
-          <button onClick={onClose} className="btn btn-secondary rounded-full">
+          <Button variant="secondary" onClick={onClose} disabled={isLoading}>
             Later
-          </button>
-          <button
-            onClick={onLogin}
-            className="btn btn-connect glow-effect rounded-full"
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleLogin}
+            isLoading={isLoading}
+            loadingText="Signing"
           >
             Sign Message
-          </button>
+          </Button>
         </div>
       </div>
     </div>

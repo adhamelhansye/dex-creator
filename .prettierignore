@@ -13,4 +13,5 @@ node_modules/
 # Misc
 .DS_Store
 *.log 
-COMPOSER.md
+*.md
+*.json

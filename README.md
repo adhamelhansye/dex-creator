@@ -18,7 +18,26 @@ This is a monorepo managed with Yarn Workspaces:
 1. Users configure their DEX parameters through our intuitive UI
 2. The API server stores the configuration and user information
 3. The system forks a base repository and customizes it based on user preferences
-4. CI/CD automatically deploys the DEX to GitHub Pages
+4. GitHub Actions are automatically enabled on the forked repository
+5. A deployment token is securely added as a repository secret
+6. CI/CD automatically deploys the DEX to GitHub Pages without any user intervention
+
+## Features
+
+### User Features
+
+- Create and customize a DEX with your own branding
+- Configure social media links and appearance
+- Deploy your DEX through an automated process
+
+### Admin Features
+
+- Role-based access control for platform administrators
+- Manage DEX instances across the platform
+- Delete DEXes by wallet address
+- View admin-only information
+
+For detailed documentation on the admin implementation, see [composer.md](./composer.md).
 
 ## Getting Started
 
@@ -33,7 +52,7 @@ This is a monorepo managed with Yarn Workspaces:
 Clone the repository and install dependencies:
 
 ```bash
-git clone git@github.com:OrderlyNetwork/dex-creator.git
+git clone git@github.com:OrderlyNetworkDexCreator/dex-creator.git
 cd dex-creator
 yarn install
 ```

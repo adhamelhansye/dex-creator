@@ -1,18 +1,18 @@
-import { Hono } from 'hono';
-import { zValidator } from '@hono/zod-validator';
-import { ethers } from 'ethers';
+import { Hono } from "hono";
+import { zValidator } from "@hono/zod-validator";
+import { ethers } from "ethers";
 import {
   userStore,
   authRequestSchema,
   authVerifySchema,
   tokenValidationSchema,
-} from '../models/user';
+} from "../models/user";
 
 const app = new Hono();
 
 // Generate a nonce for the user to sign
-app.post('/nonce', zValidator('json', authRequestSchema), async c => {
-  const { address } = c.req.valid('json');
+app.post("/nonce", zValidator("json", authRequestSchema), async c => {
+  const { address } = c.req.valid("json");
 
   try {
     const nonce = await userStore.generateNonce(address);
@@ -23,19 +23,19 @@ app.post('/nonce', zValidator('json', authRequestSchema), async c => {
       nonce,
     });
   } catch (error) {
-    console.error('Error generating nonce:', error);
-    return c.json({ error: 'Failed to generate authentication nonce' }, 500);
+    console.error("Error generating nonce:", error);
+    return c.json({ error: "Failed to generate authentication nonce" }, 500);
   }
 });
 
 // Verify signature and authenticate user
-app.post('/verify', zValidator('json', authVerifySchema), async c => {
-  const { address, signature } = c.req.valid('json');
+app.post("/verify", zValidator("json", authVerifySchema), async c => {
+  const { address, signature } = c.req.valid("json");
 
   try {
     const user = await userStore.findByAddress(address);
     if (!user) {
-      return c.json({ error: 'User not found' }, 404);
+      return c.json({ error: "User not found" }, 404);
     }
 
     const message = `Sign this message to authenticate with DEX Creator: ${user.nonce}`;
@@ -44,7 +44,7 @@ app.post('/verify', zValidator('json', authVerifySchema), async c => {
     const recoveredAddress = ethers.verifyMessage(message, signature);
 
     if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
-      return c.json({ error: 'Invalid signature' }, 401);
+      return c.json({ error: "Invalid signature" }, 401);
     }
 
     // Generate a new nonce for security
@@ -61,19 +61,19 @@ app.post('/verify', zValidator('json', authVerifySchema), async c => {
       token,
     });
   } catch (error) {
-    console.error('Error verifying signature:', error);
-    return c.json({ error: 'Authentication failed' }, 500);
+    console.error("Error verifying signature:", error);
+    return c.json({ error: "Authentication failed" }, 500);
   }
 });
 
 // Verify if a token is still valid
-app.post('/validate', zValidator('json', tokenValidationSchema), async c => {
-  const { address, token } = c.req.valid('json');
+app.post("/validate", zValidator("json", tokenValidationSchema), async c => {
+  const { address, token } = c.req.valid("json");
 
   try {
     const user = await userStore.findByAddress(address);
     if (!user) {
-      return c.json({ valid: false, error: 'User not found' }, 404);
+      return c.json({ valid: false, error: "User not found" }, 404);
     }
 
     // Validate the token
@@ -83,7 +83,7 @@ app.post('/validate', zValidator('json', tokenValidationSchema), async c => {
       return c.json(
         {
           valid: false,
-          error: 'Token invalid or expired',
+          error: "Token invalid or expired",
         },
         401
       );
@@ -97,13 +97,13 @@ app.post('/validate', zValidator('json', tokenValidationSchema), async c => {
       },
     });
   } catch (error) {
-    console.error('Error validating token:', error);
-    return c.json({ valid: false, error: 'Token validation failed' }, 500);
+    console.error("Error validating token:", error);
+    return c.json({ valid: false, error: "Token validation failed" }, 500);
   }
 });
 
 // Add a periodic token cleanup endpoint (could be called via cron job)
-app.post('/cleanup-tokens', async c => {
+app.post("/cleanup-tokens", async c => {
   try {
     const count = await userStore.cleanupExpiredTokens();
     return c.json({
@@ -111,8 +111,8 @@ app.post('/cleanup-tokens', async c => {
       message: `Cleaned up ${count} expired tokens`,
     });
   } catch (error) {
-    console.error('Error cleaning up tokens:', error);
-    return c.json({ error: 'Failed to clean up tokens' }, 500);
+    console.error("Error cleaning up tokens:", error);
+    return c.json({ error: "Failed to clean up tokens" }, 500);
   }
 });
 

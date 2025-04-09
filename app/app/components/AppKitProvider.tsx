@@ -1,7 +1,7 @@
-import { ReactNode, useEffect } from 'react';
-import { WagmiProvider } from 'wagmi';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { wagmiAdapter } from '../utils/wagmiConfig';
+import { ReactNode, useEffect } from "react";
+import { WagmiProvider } from "wagmi";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { wagmiAdapter } from "../utils/wagmiConfig";
 
 // Create a client
 const queryClient = new QueryClient({

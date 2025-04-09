@@ -67,6 +67,113 @@ dex-creator/
 - **CI/CD**: GitHub Actions
 - **Authentication**: EVM Wallet (Ethereum) signature-based authentication
 
+## Admin Functionality
+
+The DEX Creator platform includes a comprehensive admin system that allows privileged users to manage DEX instances across the platform.
+
+### Key Features
+
+1. **Role-Based Access Control**: Users can be assigned admin privileges through a database flag
+2. **Admin Dashboard**: A secure interface for performing administrative actions
+3. **DEX Management**: Ability to delete DEXes associated with specific wallet addresses
+4. **Security**: Multi-layered authentication and authorization checks
+
+### Technical Implementation
+
+#### Database Schema
+
+The admin functionality is built upon a `isAdmin` boolean field in the User model:
+
+```prisma
+model User {
+  id        String   @id @default(uuid())
+  address   String   @unique
+  nonce     String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  isAdmin   Boolean  @default(false)
+  // other fields...
+}
+```
+
+#### Backend Implementation
+
+##### Admin Model (`api/src/models/admin.ts`)
+
+The admin model provides core functions for admin management:
+
+- `isUserAdmin(userId: string)`: Checks if a user has admin privileges
+- `getAllAdmins()`: Retrieves all admin users from the database
+
+These functions use raw SQL queries to avoid TypeScript issues with the Prisma schema, providing a pragmatic approach to handling the admin functionality.
+
+##### Admin Routes (`api/src/routes/admin.ts`)
+
+Secure API endpoints for admin operations:
+
+- `GET /api/admin/users`: List all admin users (admin only)
+- `GET /api/admin/check`: Check if the current user is an admin
+
+The admin routes implementation uses function declarations with explicit type annotations rather than arrow functions with implicit types. This approach improves code reliability and maintainability.
+
+Note: Admin privileges are set directly in the database, not through API endpoints.
+
+##### Middleware
+
+The admin system implements middleware functions to secure admin routes:
+
+- `checkAdminUser`: Verifies that a user has admin privileges before allowing access to protected endpoints
+
+##### DEX Management Routes
+
+Admin functionality for managing DEXes:
+
+- `DELETE /api/dex/admin/delete`: Allows admins to delete a DEX by wallet address
+
+#### Frontend Implementation
+
+##### Admin Page (`app/app/routes/admin.tsx`)
+
+The admin interface provides:
+
+- Admin status checking on page load
+- Proper authorization flow with clear user feedback
+- Interface for deleting DEXes by wallet address
+- Comprehensive error handling and result display
+
+##### Auth Context Integration
+
+The admin functionality integrates with the existing authentication system:
+
+- Admin status is checked on page load through the Auth context
+- The API client handles authentication headers for admin requests
+
+### Security Considerations
+
+1. **Multiple Authorization Layers**:
+   - Bearer token authentication
+   - Admin role verification
+   - Raw SQL queries for admin checks to ensure database-level security
+
+2. **Error Handling**:
+   - Consistent error responses
+   - Limited error information exposure
+   - Comprehensive logging
+
+3. **Access Control**:
+   - Strict middleware checks
+   - Clear separation between admin and regular user routes
+
+### Type Safety in Server Code
+
+In our server-side code, we prioritize explicit typing and standard patterns:
+
+1. **Function Declarations**: Use standard function declarations with explicit parameter types rather than arrow functions with implicit types
+2. **Context Typing**: Use Hono's built-in Context type rather than creating custom context types
+3. **Type Assertions**: Minimize use of type assertions and prefer proper type definitions
+
+This approach improves code clarity, helps catch errors during development, and makes the codebase more maintainable.
+
 ## Key Components
 
 ### Frontend Application (`app/`)
@@ -87,6 +194,16 @@ Key files:
 - `app/app/utils/wagmiConfig.ts`: Configuration for Wagmi web3 provider
 - `app/uno.config.ts`: UnoCSS configuration file defining themes, colors, and shortcuts
 
+#### Loading Animations
+
+The application uses SVG Spinners via Iconify and UnoCSS for beautiful and consistent loading animations:
+
+- **Package**: `@iconify-json/svg-spinners` provides high-quality animated SVG loaders
+- **Integration**: UnoCSS's `presetIcons` enables direct use in className strings
+- **Usage Example**: `i-svg-spinners:pulse-rings-multiple` class renders the spinner
+
+This approach provides a consistent, visually appealing loading experience throughout the application without additional JavaScript or animation libraries.
+
 ### Backend API (`api/`)
 
 The backend is a Node.js API server built with Hono for storing user DEX configurations and handling authentication.
@@ -96,8 +213,10 @@ Key files:
 - `api/src/index.ts`: Main server entry point
 - `api/src/routes/dex.ts`: API routes for DEX operations
 - `api/src/routes/auth.ts`: API routes for wallet authentication
+- `api/src/routes/admin.ts`: API routes for admin operations
 - `api/src/models/dex.ts`: Data models and storage for DEXes
 - `api/src/models/user.ts`: User model for authentication
+- `api/src/models/admin.ts`: Admin model for admin management
 - `api/src/lib/prisma.ts`: Prisma client configuration
 - `api/prisma/schema.prisma`: Database schema definition
 
@@ -271,6 +390,36 @@ The application follows a mobile-first approach with these key principles:
    - Provide enough spacing between interactive elements
    - Use simpler interactions on touch devices
 
+### Mobile Navigation
+
+The application uses a responsive mobile-first navigation approach:
+
+1. **Desktop Navigation**:
+   - Horizontal navigation in the header with pill-shaped links
+   - Always visible on medium and larger screens
+   - Clear active state indication
+
+2. **Mobile Navigation**:
+   - Hamburger menu button that appears on small screens
+   - Slide-in drawer from the right side with animation
+   - Full-height navigation with larger touch targets
+   - Semi-transparent backdrop overlay
+   - Close button for easy dismissal
+
+3. **Implementation Details**:
+   - Responsive visibility using `hidden md:block` and JavaScript detection
+   - Z-index management to ensure proper layering
+   - `transform` and `transition` for smooth animation effects
+   - State management via React `useState` for menu open/close
+   - Common navigation links shared between mobile and desktop
+
+4. **Mobile Design Considerations**:
+   - Larger touch targets for links (at least 44px high)
+   - Extra padding inside the mobile menu
+   - Clear visual hierarchy with larger font sizes
+   - Proper spacing between menu items
+   - Dismissible via overlay tap or close button
+
 ### Notifications
 
 The application uses React-Toastify for notifications:
@@ -281,12 +430,14 @@ The application uses React-Toastify for notifications:
    - Success notifications (green left border)
    - Info notifications (blue left border)
 
-2. **Styling**:
+2. **Styling (Exception to Utility-First Approach)**:
 
-   - Custom styling in global.css matching the application theme
-   - Semi-transparent backgrounds with blur effect
-   - Consistent animation and positioning
-   - Auto-dismiss after 5 seconds
+   - **Uses global CSS**: React-Toastify is one of the few components that requires global styling as an exception to our utility-first approach
+   - Custom styling in `global.css` matching the application theme
+   - Semi-transparent backgrounds with backdrop blur effect
+   - Color-coded left borders to indicate notification type
+   - Custom progress bars and transitions
+   - Z-index management to ensure proper layering
 
 3. **Usage Pattern**:
    - Call `toast.error()`, `toast.success()`, etc. directly
@@ -297,24 +448,43 @@ The application uses React-Toastify for notifications:
 
 Currently, there are no known issues in the project.
 
-## Current Tasks and Roadmap
+## Repository Forking
 
-1. **Short-term tasks**:
+The DEX Creator implements GitHub repository forking to create customized DEX repositories for users. This process is integrated with the DEX creation flow.
 
-   - Add documentation for API endpoints (OpenAPI/Swagger)
-   - Implement testing for API endpoints
-   - Improve error handling with more specific error messages
+### Implementation Details
 
-2. **Medium-term tasks**:
+1. **Immediate Forking**:
+   - When a user creates a new DEX, the system automatically attempts to fork the template repository
+   - Repository names use a simplified dash-case version of the broker name with a minimal suffix for uniqueness
+   - The naming approach prioritizes shorter URLs for GitHub Pages deployment (e.g., `broker-name-1234`)
+   - Repository forking happens in parallel with DEX database entry creation
 
-   - Create UI components for the DEX customization
-   - Implement the forking and deployment workflow
-   - Add JWT tokens for more secure authentication
+2. **Error Handling**:
+   - If repository forking fails, the DEX is still created in the database without a repository URL
+   - Users can retry the forking process from the UI using a dedicated "Retry Repository Creation" button
+   - Detailed error information is logged for debugging purposes
 
-3. **Long-term vision**:
-   - Add dashboard for DEX operators to monitor performance
-   - Implement templates for different types of DEXes
-   - Add white-labeling options
+3. **Repository Creation Process**:
+   - The system creates a new empty repository under the authenticated GitHub user
+   - Contents from the template repository are copied recursively to the new repository
+   - Directories and files are processed with proper error handling for individual files
+   - User-specific configuration (like broker name) is applied to the repository
+
+4. **GitHub Pages Deployment**:
+   - A GitHub Pages deployment token is automatically added as a secret to each forked repository
+   - This token (`GITHUB_PAGES_DEPLOYMENT_TOKEN`) enables GitHub Actions to deploy the DEX to GitHub Pages
+   - The token is securely encrypted using libsodium before being added as a repository secret
+   - If the token is not found in environment variables, a warning is logged but the fork process continues
+   - GitHub Actions are automatically enabled on forked repositories (addressing GitHub's default security policy)
+   - The system makes appropriate API calls to enable workflows despite GitHub's default restriction on forked repos
+
+5. **Security Considerations**:
+   - GitHub API tokens are stored securely and never exposed to clients
+   - Only necessary repository permissions are requested
+   - Rate limiting and error handling prevent abuse
+
+This approach provides a reliable way to create user-specific DEX instances while maintaining a graceful degradation path when GitHub API issues occur.
 
 ## Configuration Details
 
@@ -371,6 +541,63 @@ The project uses UnoCSS for styling with a configuration file at `app/uno.config
 - Custom shortcuts for common UI patterns (buttons, cards, etc.)
 - Responsive design utilities
 
+### Styling Approach and Priorities
+
+The DEX Creator application follows a utility-first CSS approach with clear priorities for styling implementation:
+
+1. **UnoCSS Utility Classes (First Priority)**:
+   - Use utility classes directly in component JSX whenever possible
+   - Leverage UnoCSS shortcuts for common patterns (defined in `app/uno.config.ts`)
+   - Compose complex styles directly in the markup rather than creating custom CSS
+   - Example: `<div className="flex flex-col gap-2 mt-4 text-sm text-gray-300 rounded-lg p-4 bg-background-card"></div>`
+
+2. **Component-Specific Styling with clsx (Second Priority)**:
+   - Use the `clsx` library to conditionally apply classes
+   - Build variant styles as objects in component files
+   - Example from Button component:
+     ```tsx
+     const variantClasses = {
+       primary: 'btn-connect',
+       secondary: 'btn-secondary',
+       danger: 'bg-red-500 text-white hover:bg-red-600',
+     };
+     ```
+
+3. **Global Styles (Use Sparingly)**:
+   - Global styles should be limited to:
+     - Reset styles (already provided by UnoCSS)
+     - Base HTML element styles
+     - CSS variables (colors, transitions, etc.)
+     - Third-party library overrides (like Toastify)
+   - Located in `app/app/styles/global.css`
+   - Should never override or duplicate utility classes
+
+4. **When to Use Global Styles**:
+   - Styling third-party components that can't be styled with classes (React-Toastify, Reown AppKit)
+   - Defining CSS variables for theme consistency
+   - Applying base styles to HTML elements
+   - Custom animations or complex CSS that can't be expressed with utility classes
+
+5. **Examples**:
+   - **Preferred (UnoCSS)**: `<button className="btn btn-connect glow-effect">Button</button>`
+   - **Acceptable (clsx)**: 
+     ```tsx
+     <button className={clsx(
+       'btn',
+       variantClasses[variant],
+       glowClass
+     )}>Button</button>
+     ```
+   - **Only When Necessary (global CSS)**: 
+     ```css
+     /* In global.css - for third-party components */
+     .Toastify__toast--error {
+       border-left: 4px solid #ff5252 !important;
+     }
+     ```
+
+By prioritizing utility classes, we achieve consistent styling, reduce CSS bloat, and make component styling self-contained and explicit.
+
 ### Responsive Breakpoints
 
 The application uses the following responsive breakpoints with UnoCSS:
@@ -391,15 +618,6 @@ The project uses Iconify for SVG icons:
 - Icons can be loaded dynamically from various icon sets
 - Heroicons is the primary icon set used for UI elements
 - Usage pattern: `<Icon icon="heroicons:icon-name" width={14} className="md:w-4" />`
-
-### Notifications
-
-The application uses React-Toastify for toast notifications:
-
-- Configured in the root component with global settings
-- Custom theme matching the application's dark mode
-- Custom CSS styling in global.css
-- Z-index management to ensure proper layering
 
 ### CI Configuration
 
@@ -556,6 +774,7 @@ Response (200):
 - **vite-plugin-node-polyfills**: Provides Node.js polyfills for web3 libraries in the browser
 - **Concurrently**: Tool for running multiple commands simultaneously with organized output
 - **TSX**: TypeScript execution and watch mode for Node.js applications
+- **libsodium-wrappers**: Used for encrypting GitHub secrets during repository forking
 
 ### Development Approach
 
@@ -579,7 +798,7 @@ Response (200):
 For questions or clarifications about this project:
 
 - **Project Maintainer**: Mario Reder <mario@orderly.network>
-- **Repository**: git@github.com:OrderlyNetwork/dex-creator.git
+- **Repository**: git@github.com:OrderlyNetworkDexCreator/dex-creator.git
 
 ## Onboarding Checklist for New AI Composers
 
@@ -588,7 +807,7 @@ When you're first assigned to this project, follow these steps:
 1. Review this entire document to understand the project structure and standards
 2. Examine the key files mentioned in the [Key Components](#key-components) section
 3. Run the project locally following the [Development Instructions](#development-instructions)
-4. Review current [Known Issues](#known-issues) and [Current Tasks](#current-tasks-and-roadmap)
+4. Review current [Known Issues](#known-issues)
 5. When making changes, ensure you update this documentation as specified in the [For AI Composers](#for-ai-composers) section
 
 ---

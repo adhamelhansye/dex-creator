@@ -1,5 +1,5 @@
-import { z } from 'zod';
-import { prisma } from '../lib/prisma';
+import { z } from "zod";
+import { prisma } from "../lib/prisma";
 
 // User schema
 export const userSchema = z.object({
@@ -137,7 +137,7 @@ class UserStore {
       });
       return true;
     } catch (error) {
-      console.error('Error revoking token:', error);
+      console.error("Error revoking token:", error);
       return false;
     }
   }

@@ -1,0 +1,23 @@
+import React from "react";
+import { clsx } from "clsx";
+
+interface CardProps {
+  children: React.ReactNode;
+  className?: string;
+  variant?: "default" | "error" | "success" | "warning";
+}
+
+export function Card({ children, className, variant = "default" }: CardProps) {
+  const baseClasses = "rounded-xl backdrop-blur-sm p-4 md:p-6";
+
+  const variantClasses = {
+    default: "bg-background-light/30 border border-primary-light/10 shadow-lg",
+    error: "bg-red-500/10 border border-red-500/20",
+    success: "bg-green-500/10 border border-green-500/20",
+    warning: "bg-yellow-500/10 border border-yellow-500/20",
+  };
+
+  const classes = clsx(baseClasses, variantClasses[variant], className);
+
+  return <div className={classes}>{children}</div>;
+}

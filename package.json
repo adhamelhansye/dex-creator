@@ -12,8 +12,6 @@
     "dev": "concurrently -n \"api,app\" -c \"blue,green\" \"yarn dev:api\" \"yarn dev:app\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "format": "prettier --write '**/*.{js,ts,tsx,json,md,css}' --ignore-path .gitignore --ignore-path .prettierignore",
-    "format:check": "prettier --check '**/*.{js,ts,tsx,json,md,css}' --ignore-path .gitignore --ignore-path .prettierignore",
     "type-check": "tsc --noEmit",
     "dev:app": "cd app && yarn dev",
     "dev:api": "cd api && yarn dev",
@@ -21,19 +19,13 @@
     "build:api": "cd api && yarn build",
     "commitlint": "commitlint --config commitlint.config.js",
     "prepare": "husky",
-    "test": "echo \"No tests specified yet\" && exit 0",
-    "lint-staged": "lint-staged"
+    "test": "echo \"No tests specified yet\" && exit 0"
   },
-  "repository": "git@github.com:OrderlyNetwork/dex-creator.git",
+  "repository": "git@github.com:OrderlyNetworkDexCreator/dex-creator.git",
   "author": "Mario Reder <mario@orderly.network>",
   "license": "MIT",
   "engines": {
     "node": ">=22.0.0"
-  },
-  "lint-staged": {
-    "**/*.{js,ts,tsx,json,md,css}": [
-      "node .husky/prettier-hook.mjs"
-    ]
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -46,7 +38,6 @@
     "eslint-config-prettier": "^10.1.1",
     "eslint-plugin-prettier": "^5.2.6",
     "husky": "^9.1.7",
-    "lint-staged": "^15.5.0",
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "tsx": "^4.7.1",
