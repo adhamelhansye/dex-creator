@@ -2,6 +2,7 @@ import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import type { Prisma, Dex } from "@prisma/client";
 import { forkTemplateRepository } from "../lib/github";
+import { generateRepositoryName } from "../lib/nameGenerator";
 
 // Create schema for validation with base64-encoded image data
 export const dexSchema = z.object({
@@ -51,21 +52,8 @@ export async function createDex(
   // Generate a repository name based on the broker name or a default
   const brokerName = data.brokerName || "Orderly DEX";
 
-  // Sanitize broker name to a clean dash-case format for shorter URLs
-  // This creates a cleaner, shorter GitHub Pages URL
-  let repoName = brokerName
-    .toLowerCase()
-    .trim()
-    .replace(/\s+/g, "-") // Replace spaces with hyphens
-    .replace(/[^a-z0-9-]/g, "") // Remove any characters that aren't alphanumeric or hyphens
-    .replace(/-+/g, "-") // Replace multiple hyphens with a single one
-    .replace(/^-|-$/g, "") // Remove leading and trailing hyphens
-    .substring(0, 30); // Keep it reasonably short
-
-  // Add a short, unique suffix ONLY if we're concerned about name collisions
-  // Just use last 4 digits of the timestmap to keep it short
-  const shortUniqueSuffix = Date.now().toString().slice(-4);
-  repoName = `${repoName}-${shortUniqueSuffix}`;
+  // Use the helper function to generate a standardized repository name
+  const repoName = generateRepositoryName(brokerName);
 
   console.log(
     `Generated repository name: ${repoName} for wallet address ${user.address}`

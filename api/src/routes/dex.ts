@@ -17,6 +17,7 @@ import {
   uploadLogoFiles,
 } from "../lib/github";
 import { PrismaClient } from "@prisma/client";
+import { generateRepositoryName } from "../lib/nameGenerator";
 
 const prisma = new PrismaClient();
 
@@ -226,29 +227,16 @@ dexRoutes.post("/:id/fork", async c => {
       return c.json({ message: "User not found" }, 404);
     }
 
-    // Generate repo name using broker name and wallet address suffix
-    // Sanitize broker name for use in repo name (alphanumeric and hyphens only)
-    const sanitizedBrokerName = dex.brokerName
-      .toLowerCase()
-      .replace(/[^a-z0-9]/g, "-")
-      .replace(/-+/g, "-")
-      .replace(/^-|-$/g, "");
+    // Use the standardized repository name generator - same as in createDex
+    const baseRepoName = generateRepositoryName(dex.brokerName);
 
-    // Take the last 10 characters of the wallet address for uniqueness
-    const walletSuffix = user.address
-      .substring(user.address.length - 10)
-      .toLowerCase();
-
-    // Generate base repo name
-    let baseRepoName = `${sanitizedBrokerName}-${walletSuffix}`;
-
-    // Ensure repo name doesn't exceed GitHub's limits
+    // Ensure repo name doesn't exceed GitHub's limits (90 chars)
     let repoName = baseRepoName.substring(0, 90);
+    let finalRepoName = repoName;
 
     // Check for name collision and append timestamp if needed
     let nameCollision = true;
     let attemptCount = 0;
-    let finalRepoName = repoName;
 
     while (nameCollision && attemptCount < 5) {
       try {

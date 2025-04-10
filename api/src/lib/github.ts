@@ -1,8 +1,10 @@
-import { Octokit } from "octokit";
-import * as sodium from "libsodium-wrappers";
+import { Octokit } from "@octokit/core";
+import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
+import sodium from "libsodium-wrappers";
 
 // Initialize Octokit with GitHub token
-const octokit = new Octokit({
+const MyOctokit = Octokit.plugin(restEndpointMethods);
+const octokit = new MyOctokit({
   auth: process.env.GITHUB_TOKEN,
 });
 
@@ -21,6 +23,25 @@ export async function forkTemplateRepository(
   repoName: string
 ): Promise<string> {
   try {
+    // Validate repository name
+    if (!repoName || repoName.trim() === "") {
+      throw new Error("Repository name cannot be empty");
+    }
+
+    // GitHub has specific repo name requirements
+    if (!/^[a-z0-9-]+$/i.test(repoName)) {
+      throw new Error(
+        "Repository name can only contain alphanumeric characters and hyphens"
+      );
+    }
+
+    // GitHub has a 100 character limit for repo names
+    if (repoName.length > 100) {
+      throw new Error(
+        "Repository name exceeds GitHub's maximum length of 100 characters"
+      );
+    }
+
     console.log(
       `Forking repository ${templateOwner}/${templateRepoName} to OrderlyNetworkDexCreator/${repoName}`
     );
@@ -42,32 +63,23 @@ export async function forkTemplateRepository(
     // GitHub forks happen asynchronously, so the fork might not be immediately available
     // We'll wait for a few seconds to ensure the fork is created
     console.log("Waiting for fork to be fully created...");
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 10_000));
 
     // Enable GitHub Actions on the forked repository
-    try {
-      await enableRepositoryActions(orgName, repoName);
-      console.log(`Successfully enabled Actions on ${orgName}/${repoName}`);
-    } catch (actionsError) {
-      console.error(
-        "Error enabling GitHub Actions on repository:",
-        actionsError
-      );
-      // Continue even if enabling Actions fails - we don't want to fail the fork operation
-    }
+    await enableRepositoryActions(orgName, repoName);
 
     // Add GitHub Pages deployment token as a secret if available
-    const deploymentToken = process.env.GITHUB_PAGES_DEPLOYMENT_TOKEN;
+    const deploymentToken = process.env.PAGES_DEPLOYMENT_TOKEN;
     if (deploymentToken) {
       try {
         await addSecretToRepository(
           orgName,
           repoName,
-          "GITHUB_PAGES_DEPLOYMENT_TOKEN",
+          "PAGES_DEPLOYMENT_TOKEN",
           deploymentToken
         );
         console.log(
-          `Added GITHUB_PAGES_DEPLOYMENT_TOKEN secret to ${orgName}/${repoName}`
+          `Added PAGES_DEPLOYMENT_TOKEN secret to ${orgName}/${repoName}`
         );
       } catch (secretError) {
         console.error(
@@ -77,9 +89,7 @@ export async function forkTemplateRepository(
         // Continue even if adding the secret fails - we don't want to fail the fork operation
       }
     } else {
-      console.warn(
-        "GITHUB_PAGES_DEPLOYMENT_TOKEN not found in environment variables"
-      );
+      console.warn("PAGES_DEPLOYMENT_TOKEN not found in environment variables");
       console.warn("GitHub Pages deployment may not work without this token");
     }
 
@@ -109,6 +119,7 @@ async function enableRepositoryActions(
       owner,
       repo,
       enabled: true,
+      allowed_actions: "all",
     });
 
     // Then, enable all workflows
@@ -117,19 +128,8 @@ async function enableRepositoryActions(
         owner,
         repo,
         default_workflow_permissions: "write",
-        can_approve_pull_request_reviews: true,
       }
     );
-
-    // Additionally, explicitly enable workflows from the template repository
-    await octokit.rest.actions.setAllowedActionsRepository({
-      owner,
-      repo,
-      github_owned_allowed: true,
-      verified_allowed: true,
-      patterns_allowed: ["*"],
-    });
-
     console.log(`GitHub Actions successfully enabled on ${owner}/${repo}`);
   } catch (error) {
     console.error(`Error enabling GitHub Actions on ${owner}/${repo}:`, error);
@@ -151,7 +151,10 @@ async function addSecretToRepository(
   secretValue: string
 ): Promise<void> {
   try {
+    console.log(`Adding secret ${secretName} to ${owner}/${repo}...`);
+
     // Get the repository's public key for encrypting secrets
+    console.log(`Fetching public key for ${owner}/${repo}...`);
     const { data: publicKeyData } = await octokit.rest.actions.getRepoPublicKey(
       {
         owner,
@@ -159,10 +162,13 @@ async function addSecretToRepository(
       }
     );
 
+    console.log(`Received public key: ${publicKeyData.key}`);
+
     // Encrypt the secret using the repository's public key
     const encryptedValue = await encryptSecret(publicKeyData.key, secretValue);
 
     // Add the encrypted secret to the repository
+    console.log(`Submitting encrypted secret to GitHub...`);
     await octokit.rest.actions.createOrUpdateRepoSecret({
       owner,
       repo,
@@ -170,6 +176,8 @@ async function addSecretToRepository(
       encrypted_value: encryptedValue,
       key_id: publicKeyData.key_id,
     });
+
+    console.log(`Successfully added secret ${secretName} to ${owner}/${repo}`);
   } catch (error) {
     console.error(
       `Error adding secret ${secretName} to ${owner}/${repo}:`,
@@ -189,20 +197,50 @@ async function encryptSecret(
   publicKey: string,
   secretValue: string
 ): Promise<string> {
-  // Ensure sodium is ready
-  await sodium.ready;
+  try {
+    // Ensure sodium is ready
+    await sodium.ready;
 
-  // Convert the public key from base64 to binary
-  const publicKeyBinary = sodium.from_base64(publicKey);
+    console.log("Processing public key:", publicKey);
 
-  // Convert the secret value to a binary buffer
-  const secretBinary = sodium.from_string(secretValue);
+    // Ensure the key has correct base64 padding if needed
+    let normalizedKey = publicKey;
+    if (publicKey.length % 4 !== 0) {
+      const padding = 4 - (publicKey.length % 4);
+      normalizedKey = publicKey + "=".repeat(padding);
+      console.log("Added padding to key:", normalizedKey);
+    }
 
-  // Encrypt the secret using the public key
-  const encryptedBinary = sodium.crypto_box_seal(secretBinary, publicKeyBinary);
+    const buffer = Buffer.from(normalizedKey, "base64");
+    const publicKeyBinary = new Uint8Array(buffer);
 
-  // Convert the encrypted value to base64 for GitHub API
-  return sodium.to_base64(encryptedBinary);
+    // GitHub requires keys to be 32 bytes (256 bits)
+    if (publicKeyBinary.length !== 32) {
+      console.error(
+        `Invalid key length: ${publicKeyBinary.length} bytes, expected 32 bytes`
+      );
+      throw new Error("Invalid key length for GitHub encryption");
+    }
+
+    // Convert the secret value to a binary buffer
+    const secretBinary = sodium.from_string(secretValue);
+
+    // Encrypt the secret using the public key
+    const encryptedBinary = sodium.crypto_box_seal(
+      secretBinary,
+      publicKeyBinary
+    );
+
+    // Convert the encrypted value to standard base64 for GitHub API
+    // (NOT URL-safe base64 which uses - and _)
+    const base64 = Buffer.from(encryptedBinary).toString("base64");
+    console.log("Encrypted value (first 20 chars):", base64.substring(0, 20));
+
+    return base64;
+  } catch (error) {
+    console.error("Error encrypting secret:", error);
+    throw error;
+  }
 }
 
 /**

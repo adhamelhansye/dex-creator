@@ -498,7 +498,7 @@ The DEX Creator implements GitHub repository forking to create customized DEX re
 
 4. **GitHub Pages Deployment**:
    - A GitHub Pages deployment token is automatically added as a secret to each forked repository
-   - This token (`GITHUB_PAGES_DEPLOYMENT_TOKEN`) enables GitHub Actions to deploy the DEX to GitHub Pages
+   - This token (`PAGES_DEPLOYMENT_TOKEN`) enables GitHub Actions to deploy the DEX to GitHub Pages
    - The token is securely encrypted using libsodium before being added as a repository secret
    - If the token is not found in environment variables, a warning is logged but the fork process continues
    - GitHub Actions are automatically enabled on forked repositories (addressing GitHub's default security policy)
