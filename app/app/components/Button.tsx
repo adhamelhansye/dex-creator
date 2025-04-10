@@ -129,6 +129,7 @@ export function Button({
     <button
       className={classes}
       disabled={disabled || isLoading}
+      data-variant={variant}
       {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
     >
       {buttonContent}
