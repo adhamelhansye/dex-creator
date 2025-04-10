@@ -1,0 +1,65 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  # Allow manual triggers from GitHub UI
+  workflow_dispatch:
+
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Allow only one concurrent deployment
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Extract repository name
+        run: echo "REPO_NAME=$(echo ${{ github.repository }} | cut -d'/' -f2)" >> $GITHUB_ENV
+
+      - name: Build
+        run: yarn build:spa
+        env:
+          # Set the base path for GitHub Pages
+          PUBLIC_PATH: /${{ env.REPO_NAME }}/
+          # Also set it as VITE environment variables
+          VITE_PUBLIC_PATH: /${{ env.REPO_NAME }}/
+          VITE_BASE_URL: /${{ env.REPO_NAME }}
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+        with:
+          token: ${{ secrets.PAGES_DEPLOYMENT_TOKEN }}
+          enablement: true
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./build/client"
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

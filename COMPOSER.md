@@ -301,7 +301,13 @@ The project uses GitHub Actions for continuous integration:
    - Use PascalCase for classes, interfaces, types, and React components
    - Use UPPER_CASE for constants
 
-3. **CSS Strategy**:
+3. **Node.js Imports**:
+
+   - Always use the `node:` prefix for built-in Node.js modules (e.g., `import fs from "node:fs"`)
+   - This ensures you're using the Node.js implementation rather than potentially conflicting with NPM packages
+   - Example: Use `import path from "node:path"` instead of `import path from "path"`
+
+4. **CSS Strategy**:
 
    - **IMPORTANT**: Always prefer UnoCSS utility classes over manual CSS
    - UnoCSS configuration in `app/uno.config.ts` defines shortcuts, themes, and colors
@@ -309,7 +315,7 @@ The project uses GitHub Actions for continuous integration:
    - Only use global.css for base styles and overrides that cannot be achieved with UnoCSS
    - When using icons, prefer Iconify with the @iconify/react package
 
-4. **UI Components**:
+5. **UI Components**:
 
    - Use pill-shaped designs for interactive elements (rounded-full)
    - Maintain consistent padding and font sizes across similar components
@@ -317,7 +323,7 @@ The project uses GitHub Actions for continuous integration:
    - Prefer subtle borders to define component boundaries
    - Follow the Orderly color palette defined in UnoCSS config
 
-5. **Responsive Design**:
+6. **Responsive Design**:
 
    - Use mobile-first approach with responsive utility classes (e.g., `md:px-4`)
    - Reduce paddings, margins, and font sizes on mobile screens
@@ -325,20 +331,20 @@ The project uses GitHub Actions for continuous integration:
    - Scale down icon sizes and interactive elements for better mobile ergonomics
    - Test all UI components on multiple device sizes during development
 
-6. **Error Handling**:
+7. **Error Handling**:
 
    - Use toast notifications for error feedback instead of inline error messages
    - Log errors to console for debugging
    - Provide clear user feedback for all interactions
 
-7. **Code Quality**:
+8. **Code Quality**:
 
    - All code must pass ESLint rules
    - All code must be properly formatted with Prettier
    - All TypeScript code must type check without errors
    - CI pipeline ensures these standards are maintained
 
-8. **Authentication and Security**:
+9. **Authentication and Security**:
 
    - Always validate tokens on application load
    - Include token expiration checks
@@ -346,7 +352,7 @@ The project uses GitHub Actions for continuous integration:
    - Do not store sensitive information in localStorage
    - Implement periodic token validation for long-lived sessions
 
-9. **Database Operations**:
+10. **Database Operations**:
    - Use Prisma's type-safe operations for all database interactions
    - Keep transactions atomic when performing related operations
    - Include proper error handling for database operations

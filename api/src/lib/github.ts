@@ -1,6 +1,13 @@
 import { Octokit } from "@octokit/core";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import sodium from "libsodium-wrappers";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+// Get current file's directory (ES module replacement for __dirname)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Initialize Octokit with GitHub token
 const MyOctokit = Octokit.plugin(restEndpointMethods);
@@ -63,7 +70,7 @@ export async function forkTemplateRepository(
     // GitHub forks happen asynchronously, so the fork might not be immediately available
     // We'll wait for a few seconds to ensure the fork is created
     console.log("Waiting for fork to be fully created...");
-    await new Promise(resolve => setTimeout(resolve, 10_000));
+    await new Promise(resolve => setTimeout(resolve, 5_000));
 
     // Enable GitHub Actions on the forked repository
     await enableRepositoryActions(orgName, repoName);
@@ -91,6 +98,24 @@ export async function forkTemplateRepository(
     } else {
       console.warn("PAGES_DEPLOYMENT_TOKEN not found in environment variables");
       console.warn("GitHub Pages deployment may not work without this token");
+    }
+
+    // Add workflow files to the repository
+    try {
+      await addWorkflowFilesToRepository(orgName, repoName);
+      console.log(`Added workflow files to ${orgName}/${repoName}`);
+    } catch (workflowError) {
+      console.error("Error adding workflow files:", workflowError);
+      // Continue even if adding the workflow files fails
+    }
+
+    // Enable GitHub Pages on the repository
+    try {
+      await enableGitHubPages(orgName, repoName);
+      console.log(`Enabled GitHub Pages for ${orgName}/${repoName}`);
+    } catch (pagesError) {
+      console.error("Error enabling GitHub Pages:", pagesError);
+      // Continue even if enabling GitHub Pages fails
     }
 
     return repoUrl;
@@ -432,30 +457,145 @@ async function updateFileInRepo(
   commitMessage: string,
   isBinary = false
 ) {
-  try {
-    // First get the current file to get its SHA
-    const currentFile = await getFileFromRepo(owner, repo, path);
+  // First get the current file to get its SHA
+  const currentFile = await getFileFromRepo(owner, repo, path);
 
-    // Convert content to base64 if not already
-    let contentBase64 = content;
-    if (!isBinary) {
-      contentBase64 = Buffer.from(content).toString("base64");
-    }
+  // Convert content to base64 if not already
+  let contentBase64 = content;
+  if (!isBinary) {
+    contentBase64 = Buffer.from(content).toString("base64");
+  }
 
-    // Create or update the file
-    await octokit.rest.repos.createOrUpdateFileContents({
+  // Create or update the file
+  await octokit.rest.repos.createOrUpdateFileContents({
+    owner,
+    repo,
+    path,
+    message: commitMessage,
+    content: contentBase64,
+    sha: currentFile?.sha,
+  });
+}
+
+/**
+ * Adds workflow files to a GitHub repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ */
+async function addWorkflowFilesToRepository(
+  owner: string,
+  repo: string
+): Promise<void> {
+  console.log(`Adding workflow files to ${owner}/${repo}...`);
+
+  // Path to workflow files
+  const workflowsDir = path.resolve(__dirname, "../workflows");
+
+  // Check if workflows directory exists
+  if (!fs.existsSync(workflowsDir)) {
+    throw new Error(`Workflows directory not found at ${workflowsDir}`);
+  }
+
+  // Read deploy.yml
+  const deployYmlPath = path.join(workflowsDir, "deploy.yml");
+  if (!fs.existsSync(deployYmlPath)) {
+    throw new Error(`deploy.yml not found at ${deployYmlPath}`);
+  }
+  const deployYmlContent = fs.readFileSync(deployYmlPath, "utf-8");
+
+  // Read sync-fork.yml
+  const syncForkYmlPath = path.join(workflowsDir, "sync-fork.yml");
+  if (!fs.existsSync(syncForkYmlPath)) {
+    throw new Error(`sync-fork.yml not found at ${syncForkYmlPath}`);
+  }
+  const syncForkYmlContent = fs.readFileSync(syncForkYmlPath, "utf-8");
+
+  // Get the latest commit SHA from the default branch
+  console.log(`Getting latest commit for ${owner}/${repo}...`);
+  const { data: refData } = await octokit.rest.git.getRef({
+    owner,
+    repo,
+    ref: "heads/main",
+  });
+  const latestCommitSha = refData.object.sha;
+
+  // Create blobs for each file
+  console.log("Creating blobs for workflow files...");
+  const [deployYmlBlob, syncForkYmlBlob] = await Promise.all([
+    octokit.rest.git.createBlob({
       owner,
       repo,
-      path,
-      message: commitMessage,
-      content: contentBase64,
-      sha: currentFile?.sha,
-    });
-  } catch (error: unknown) {
-    console.error(`Error updating file ${path}:`, error);
-    if (error instanceof Error) {
-      throw error;
-    }
-    throw new Error(`Unknown error updating file ${path}`);
-  }
+      content: Buffer.from(deployYmlContent).toString("base64"),
+      encoding: "base64",
+    }),
+    octokit.rest.git.createBlob({
+      owner,
+      repo,
+      content: Buffer.from(syncForkYmlContent).toString("base64"),
+      encoding: "base64",
+    }),
+  ]);
+
+  // Create a tree with both files
+  console.log("Creating git tree with workflow files...");
+  const { data: newTree } = await octokit.rest.git.createTree({
+    owner,
+    repo,
+    base_tree: latestCommitSha,
+    tree: [
+      {
+        path: ".github/workflows/deploy.yml",
+        mode: "100644", // file mode (100644 = file)
+        type: "blob",
+        sha: deployYmlBlob.data.sha,
+      },
+      {
+        path: ".github/workflows/sync-fork.yml",
+        mode: "100644", // file mode (100644 = file)
+        type: "blob",
+        sha: syncForkYmlBlob.data.sha,
+      },
+    ],
+  });
+
+  // Create a commit
+  console.log("Creating commit with workflow files...");
+  const { data: newCommit } = await octokit.rest.git.createCommit({
+    owner,
+    repo,
+    message: "Add GitHub workflow files",
+    tree: newTree.sha,
+    parents: [latestCommitSha],
+  });
+
+  // Update the reference
+  console.log("Updating branch reference...");
+  await octokit.rest.git.updateRef({
+    owner,
+    repo,
+    ref: "heads/main",
+    sha: newCommit.sha,
+  });
+
+  console.log(
+    `Successfully added workflow files to ${owner}/${repo} in a single commit`
+  );
+}
+
+/**
+ * Enables GitHub Pages for a repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ */
+async function enableGitHubPages(owner: string, repo: string): Promise<void> {
+  console.log(`Enabling GitHub Pages for ${owner}/${repo}...`);
+
+  // Configure GitHub Pages with GitHub Actions deployment
+  await octokit.rest.repos.createPagesSite({
+    owner,
+    repo,
+    build_type: "workflow",
+  });
+
+  console.log(`Successfully enabled GitHub Pages for ${owner}/${repo}`);
 }
