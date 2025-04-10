@@ -3,6 +3,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { useAuth } from "../context/AuthContext";
 import { useNavigate } from "@remix-run/react";
+import { useAppKit } from "@reown/appkit/react";
 
 export const meta: MetaFunction = () => [
   { title: "DEX Creator | Orderly Network" },
@@ -11,18 +12,14 @@ export const meta: MetaFunction = () => [
 export default function Index() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const appKit = useAppKit();
 
   const handleStartBuilding = () => {
     if (isAuthenticated) {
       navigate("/dex");
     } else {
-      // If not authenticated, this will trigger the wallet connection flow
-      const walletConnectElement = document.querySelector(
-        ".wallet-connect-button"
-      );
-      if (walletConnectElement) {
-        (walletConnectElement as HTMLElement).click();
-      }
+      // If not authenticated, open the AppKit modal directly
+      appKit?.open();
     }
   };
 
