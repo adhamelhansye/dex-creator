@@ -237,7 +237,7 @@ export default function DexRoute() {
           </div>
 
           {dexData?.repoUrl ? (
-            <div className="mb-6">
+            <Card variant="success" className="mb-6">
               <h3 className="text-lg font-semibold mb-2">
                 Your DEX Repository
               </h3>
@@ -252,7 +252,7 @@ export default function DexRoute() {
               >
                 {dexData.repoUrl}
               </a>
-            </div>
+            </Card>
           ) : dexData && !dexData.repoUrl ? (
             // Repository creation failed but DEX was created
             // Show retry button

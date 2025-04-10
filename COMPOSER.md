@@ -29,6 +29,31 @@ You should proactively update this document without waiting for explicit instruc
 
 DEX Creator is a platform that lets users create their own perpetual decentralized exchanges (DEXs) using Orderly Networks infrastructure. The platform simplifies DEX creation and deployment through an intuitive UI and automated processes.
 
+## Git Hooks and Module Configuration
+
+The project uses Husky for Git hooks to ensure code quality standards are maintained.
+
+### Git Hooks Setup
+
+- **Husky**: Used for managing Git hooks (v9+)
+- **Prettier Hook**: Custom implementation in `.husky/prettier-hook.mjs` for running Prettier on staged files
+- **Lint Staged**: Configured to run hooks on staged files before commits
+- **Commitlint**: Ensures commit messages follow conventional commit format
+
+### Module System Configuration
+
+The project uses a hybrid approach to JavaScript modules:
+
+1. **Package Configuration**: The root `package.json` specifies `"type": "module"` which means:
+   - `.js` files are treated as ES Modules by default
+   - Import/export syntax is used instead of require/module.exports
+   - Node.js native ES Modules features are leveraged
+
+2. **File Extensions**: 
+   - Use `.cjs` extension for files that must be CommonJS (like configuration files used by older tools)
+   - Use `.mjs` extension for files that must be ES Modules within a CommonJS context
+   - Follow the module system specified by the containing package's `"type"` field
+
 ## System Architecture
 
 This is a monorepo managed with Yarn Workspaces:
