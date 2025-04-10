@@ -18,6 +18,7 @@ import {
 } from "../lib/github";
 import { PrismaClient } from "@prisma/client";
 import { generateRepositoryName } from "../lib/nameGenerator";
+import { isUserAdmin } from "../models/admin";
 
 const prisma = new PrismaClient();
 
@@ -369,11 +370,15 @@ dexRoutes.post("/:id/repo", async c => {
 // Admin endpoint to update brokerId
 dexRoutes.post("/:id/broker-id", async c => {
   const id = c.req.param("id");
+  const userId = c.get("userId");
+
+  if (!userId) {
+    return c.json({ message: "Unauthorized" }, 401);
+  }
 
   // Validate the request body
   const brokerIdSchema = z.object({
     brokerId: z.string().min(1).max(50),
-    adminKey: z.string(), // Admin API key for authorization
   });
 
   // Validate body
@@ -385,13 +390,14 @@ dexRoutes.post("/:id/broker-id", async c => {
     return c.json({ message: "Invalid request body", error: String(e) }, 400);
   }
 
-  // Check admin API key (this should be properly implemented with a secure method)
-  const adminApiKey = process.env.ADMIN_API_KEY;
-  if (!adminApiKey || body.adminKey !== adminApiKey) {
-    return c.json({ message: "Unauthorized: Invalid admin credentials" }, 403);
-  }
-
   try {
+    // Check if the user is an admin
+    const isAdmin = await isUserAdmin(userId);
+
+    if (!isAdmin) {
+      return c.json({ message: "Forbidden: Admin access required" }, 403);
+    }
+
     const updatedDex = await updateBrokerId(id, body.brokerId);
     return c.json(updatedDex);
   } catch (error) {
@@ -429,17 +435,8 @@ dexRoutes.delete("/admin/delete", async c => {
   const { walletAddress } = result.data;
 
   try {
-    // Check if the user is an admin using raw query
-    const adminCheck = await prisma.$queryRawUnsafe(
-      `SELECT "isAdmin" FROM "User" WHERE id = $1`,
-      userId
-    );
-
-    const isAdmin =
-      adminCheck &&
-      Array.isArray(adminCheck) &&
-      adminCheck.length > 0 &&
-      adminCheck[0].isAdmin === true;
+    // Check if the user is an admin
+    const isAdmin = await isUserAdmin(userId);
 
     if (!isAdmin) {
       return c.json({ error: "Forbidden: Admin access required" }, 403);
@@ -456,11 +453,12 @@ dexRoutes.delete("/admin/delete", async c => {
       return c.json({ error: "User not found" }, 404);
     }
 
-    // Delete the DEX
-    await prisma.$queryRawUnsafe(
-      `DELETE FROM "Dex" WHERE "userId" = $1`,
-      targetUser.id
-    );
+    // Delete the DEX using Prisma's type-safe query
+    await prisma.dex.deleteMany({
+      where: {
+        userId: targetUser.id,
+      },
+    });
 
     return c.json({ success: true, message: "DEX deleted successfully" });
   } catch (error) {

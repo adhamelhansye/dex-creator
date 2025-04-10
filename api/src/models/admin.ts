@@ -2,22 +2,16 @@ import { prisma } from "../lib/prisma";
 
 /**
  * Check if a user is an admin by their user ID
- * This uses a raw query to avoid TypeScript issues
+ * Uses Prisma's type-safe query API
  */
 export async function isUserAdmin(userId: string): Promise<boolean> {
   try {
-    // Use raw query to avoid TypeScript issues
-    const result = await prisma.$queryRawUnsafe(
-      `SELECT "isAdmin" FROM "User" WHERE id = $1`,
-      userId
-    );
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isAdmin: true },
+    });
 
-    // Result is an array of objects with the isAdmin property
-    if (result && Array.isArray(result) && result.length > 0) {
-      return result[0].isAdmin === true;
-    }
-
-    return false;
+    return user?.isAdmin === true;
   } catch (error) {
     console.error("Error checking admin status:", error);
     return false;
@@ -26,14 +20,20 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
 
 /**
  * Get all admin users
- * This uses a raw query to avoid TypeScript issues with the schema
+ * Uses Prisma's type-safe query API
  */
 export async function getAllAdmins() {
   try {
-    // Use raw query to avoid TypeScript issues
-    return await prisma.$queryRawUnsafe(
-      `SELECT id, address, "isAdmin", "createdAt", "updatedAt" FROM "User" WHERE "isAdmin" = true`
-    );
+    return await prisma.user.findMany({
+      where: { isAdmin: true },
+      select: {
+        id: true,
+        address: true,
+        isAdmin: true,
+        createdAt: true,
+        updatedAt: true,
+      },
+    });
   } catch (error) {
     console.error("Error getting all admins:", error);
     throw error;
