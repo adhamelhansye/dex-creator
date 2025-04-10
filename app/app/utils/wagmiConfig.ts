@@ -6,7 +6,7 @@ import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 // You should replace this with your actual projectId from Reown Cloud
 // Get one at: https://cloud.reown.com/
 export const projectId =
-  process.env.WALLET_CONNECT_PROJECT_ID || "YOUR_PROJECT_ID";
+  process.env.WALLET_CONNECT_PROJECT_ID || "67f3ccbaec6f6119a5c91a22793c89e3";
 
 // 2. Create a metadata object
 const metadata = {
