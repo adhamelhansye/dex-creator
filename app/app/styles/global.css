@@ -16,18 +16,45 @@
   --color-background-dark: 8, 10, 20;
   --color-teal: 0, 209, 255;
   --color-teal-light: 129, 229, 247;
+  --header-height: 5rem; /* Default header height */
+}
+
+html, body {
+  height: 100%;
+  overflow: hidden;
 }
 
 body {
   background-color: rgba(var(--color-background), 1);
   color: #fff;
   font-family: "Inter", sans-serif;
-  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Fixed header styles */
+header {
+  position: sticky;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 100;
+  background-color: rgba(var(--color-background), 0.95);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(var(--color-primary-light), 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+/* Main content area - scrollable */
+main {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding-bottom: 1.5rem; /* Add bottom padding to ensure content isn't cut off */
 }
 
 /* Layout containers */
 .page-container {
-  min-height: 100vh;
   width: 100%;
   max-width: 1280px;
   margin: 0 auto;
@@ -193,4 +220,16 @@ wui-text[variant="paragraph-600"] {
 /* Make sure Reown AppKit modal is behind our custom modals */
 appkit-modal {
   z-index: 999 !important;
+}
+
+/* Adjust z-index for Toast notifications to appear above the fixed header */
+.Toastify {
+  z-index: 2000 !important;
+}
+
+/* Media query for mobile adjustments */
+@media (max-width: 768px) {
+  :root {
+    --header-height: 4rem; /* Smaller header height for mobile */
+  }
 }

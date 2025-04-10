@@ -1,8 +1,35 @@
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import type { Prisma, Dex } from "@prisma/client";
-import { forkTemplateRepository } from "../lib/github";
+import {
+  forkTemplateRepository,
+  updateDexConfig,
+  uploadLogoFiles,
+} from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
+
+/**
+ * Helper function to extract owner and repo from GitHub URL
+ * (Duplicated from routes/dex.ts to avoid circular imports)
+ */
+function extractRepoInfoFromUrl(
+  repoUrl: string
+): { owner: string; repo: string } | null {
+  if (!repoUrl) return null;
+
+  try {
+    const repoPath = repoUrl.split("github.com/")[1];
+    if (!repoPath) return null;
+
+    const [owner, repo] = repoPath.split("/");
+    if (!owner || !repo) return null;
+
+    return { owner, repo };
+  } catch (error) {
+    console.error("Error extracting repo info from URL:", error);
+    return null;
+  }
+}
 
 // Create schema for validation with base64-encoded image data
 export const dexSchema = z.object({
@@ -69,6 +96,39 @@ export async function createDex(
     );
     repoUrl = await forkTemplateRepository(repoName);
     console.log(`Successfully forked repository: ${repoUrl}`);
+
+    // If forking was successful, extract repo info from URL using the helper function
+    const repoInfo = extractRepoInfoFromUrl(repoUrl);
+    if (repoInfo) {
+      // Generate a broker ID based on broker name if not provided
+      // This ensures we have a brokerId for the config
+      const brokerId = brokerName.toLowerCase().replace(/\s+/g, "-");
+
+      // Update DEX config in the new repository
+      await updateDexConfig(repoInfo.owner, repoInfo.repo, {
+        brokerId: brokerId,
+        brokerName: brokerName,
+        themeCSS: data.themeCSS?.toString(),
+        telegramLink: data.telegramLink || undefined,
+        discordLink: data.discordLink || undefined,
+        xLink: data.xLink || undefined,
+      });
+
+      // Upload logo files if available
+      await uploadLogoFiles(repoInfo.owner, repoInfo.repo, {
+        primaryLogo: data.primaryLogo || undefined,
+        secondaryLogo: data.secondaryLogo || undefined,
+        favicon: data.favicon || undefined,
+      });
+
+      console.log(
+        `Successfully updated repository configuration for ${brokerName}`
+      );
+    } else {
+      console.warn(
+        `Failed to extract repository information from URL: ${repoUrl}`
+      );
+    }
   } catch (error) {
     console.error("Error forking repository:", error);
 
@@ -99,11 +159,15 @@ export async function createDex(
 
   // Create the DEX with base64-encoded image data and the repo URL (if available)
   try {
+    // Generate a broker ID based on broker name if not provided
+    const brokerId = brokerName.toLowerCase().replace(/\s+/g, "-");
+
     const dex = await prisma.$transaction(async tx => {
       // Create properly typed data object
       return tx.dex.create({
         data: {
           brokerName: data.brokerName,
+          brokerId: brokerId, // Use the generated broker ID
           themeCSS: data.themeCSS,
           primaryLogo: data.primaryLogo,
           secondaryLogo: data.secondaryLogo,

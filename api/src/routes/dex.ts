@@ -112,6 +112,26 @@ dexRoutes.post("/", zValidator("json", dexSchema), async c => {
   }
 });
 
+// Helper function to extract owner and repo from GitHub URL
+function extractRepoInfoFromUrl(
+  repoUrl: string
+): { owner: string; repo: string } | null {
+  if (!repoUrl) return null;
+
+  try {
+    const repoPath = repoUrl.split("github.com/")[1];
+    if (!repoPath) return null;
+
+    const [owner, repo] = repoPath.split("/");
+    if (!owner || !repo) return null;
+
+    return { owner, repo };
+  } catch (error) {
+    console.error("Error extracting repo info from URL:", error);
+    return null;
+  }
+}
+
 // Update an existing DEX
 dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   const id = c.req.param("id");
@@ -123,7 +143,43 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   }
 
   try {
+    // Update the DEX in the database
     const updatedDex = await updateDex(id, data, userId);
+
+    // Check if the DEX has a repository URL and update the config files if needed
+    if (updatedDex.repoUrl) {
+      const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
+
+      if (repoInfo) {
+        try {
+          // Update DEX config in the repository
+          await updateDexConfig(repoInfo.owner, repoInfo.repo, {
+            brokerId: updatedDex.brokerId,
+            brokerName: updatedDex.brokerName,
+            themeCSS: updatedDex.themeCSS?.toString(),
+            telegramLink: updatedDex.telegramLink || undefined,
+            discordLink: updatedDex.discordLink || undefined,
+            xLink: updatedDex.xLink || undefined,
+          });
+
+          // Upload logo files if available
+          await uploadLogoFiles(repoInfo.owner, repoInfo.repo, {
+            primaryLogo: updatedDex.primaryLogo || undefined,
+            secondaryLogo: updatedDex.secondaryLogo || undefined,
+            favicon: updatedDex.favicon || undefined,
+          });
+
+          console.log(
+            `Successfully updated repository files for ${updatedDex.brokerName}`
+          );
+        } catch (configError) {
+          // Log the error but don't fail the update
+          console.error("Error updating repository files:", configError);
+          // We continue and return the updated DEX even if the repo update failed
+        }
+      }
+    }
+
     return c.json(updatedDex);
   } catch (error) {
     console.error("Error updating DEX:", error);
@@ -318,55 +374,6 @@ dexRoutes.post("/:id/fork", async c => {
   }
 });
 
-// Update repository URL after forking
-dexRoutes.post("/:id/repo", async c => {
-  const id = c.req.param("id");
-  const userId = c.get("userId");
-
-  // Validate the request body
-  const repoSchema = z.object({
-    repoUrl: z.string().url(),
-  });
-
-  // Validate body
-  let body;
-  try {
-    body = await c.req.json();
-    repoSchema.parse(body);
-  } catch (e) {
-    return c.json({ message: "Invalid request body", error: String(e) }, 400);
-  }
-
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
-  try {
-    const updatedDex = await updateDexRepoUrl(id, body.repoUrl, userId);
-    return c.json(updatedDex);
-  } catch (error) {
-    console.error("Error updating repository URL:", error);
-
-    // Handle unauthorized access
-    if (
-      error instanceof Error &&
-      error.message.includes("user is not authorized")
-    ) {
-      return c.json({ message: error.message }, 403);
-    }
-
-    // Handle DEX not found
-    if (error instanceof Error && error.message.includes("DEX not found")) {
-      return c.json({ message: "DEX not found" }, 404);
-    }
-
-    return c.json(
-      { message: "Error updating repository URL", error: String(error) },
-      500
-    );
-  }
-});
-
 // Admin endpoint to update brokerId
 dexRoutes.post("/:id/broker-id", async c => {
   const id = c.req.param("id");
@@ -398,7 +405,42 @@ dexRoutes.post("/:id/broker-id", async c => {
       return c.json({ message: "Forbidden: Admin access required" }, 403);
     }
 
+    // Get the DEX with current data before updating
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    // Update the broker ID in the database
     const updatedDex = await updateBrokerId(id, body.brokerId);
+
+    // If the DEX has a repository, update the config files
+    if (updatedDex.repoUrl) {
+      const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
+
+      if (repoInfo) {
+        try {
+          // Update DEX config in the repository with the new broker ID
+          await updateDexConfig(repoInfo.owner, repoInfo.repo, {
+            brokerId: body.brokerId, // Use the new broker ID
+            brokerName: updatedDex.brokerName,
+            themeCSS: updatedDex.themeCSS?.toString(),
+            telegramLink: updatedDex.telegramLink || undefined,
+            discordLink: updatedDex.discordLink || undefined,
+            xLink: updatedDex.xLink || undefined,
+          });
+
+          console.log(
+            `Admin updated broker ID in repository for ${updatedDex.brokerName}`
+          );
+        } catch (configError) {
+          // Log the error but don't fail the update
+          console.error("Error updating repository config:", configError);
+          // We continue even if the repo update failed
+        }
+      }
+    }
+
     return c.json(updatedDex);
   } catch (error) {
     console.error("Error updating broker ID:", error);

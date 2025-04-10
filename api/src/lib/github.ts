@@ -287,14 +287,19 @@ export async function updateDexConfig(
   }
 ): Promise<void> {
   try {
-    // Update .env file with broker ID and name
-    const envContent = `# Broker settings
+    // Update .env file with broker ID, name, and social media links
+    let envContent = `# Broker settings
 VITE_ORDERLY_BROKER_ID=${config.brokerId}
 VITE_ORDERLY_BROKER_NAME=${config.brokerName}
 
 # Meta tags
 VITE_APP_NAME=${config.brokerName}
 VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
+
+# Social Media Links
+VITE_TELEGRAM_URL=${config.telegramLink || ""}
+VITE_DISCORD_URL=${config.discordLink || ""}
+VITE_TWITTER_URL=${config.xLink || ""}
 `;
 
     await updateFileInRepo(
@@ -302,7 +307,7 @@ VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
       repo,
       ".env",
       envContent,
-      "Update broker configuration"
+      "Update broker configuration and social links"
     );
 
     // Update theme.css if provided
@@ -314,52 +319,6 @@ VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
         config.themeCSS,
         "Update theme CSS"
       );
-    }
-
-    // Update config.tsx with social links if provided
-    if (config.telegramLink || config.discordLink || config.xLink) {
-      // First get the current file to modify it
-      const configFile = await getFileFromRepo(
-        owner,
-        repo,
-        "app/utils/config.tsx"
-      );
-
-      if (configFile) {
-        let configContent = Buffer.from(configFile.content, "base64").toString(
-          "utf-8"
-        );
-
-        // Replace social links
-        if (config.telegramLink) {
-          configContent = configContent.replace(
-            /telegramLink:.*,/,
-            `telegramLink: "${config.telegramLink}",`
-          );
-        }
-
-        if (config.discordLink) {
-          configContent = configContent.replace(
-            /discordLink:.*,/,
-            `discordLink: "${config.discordLink}",`
-          );
-        }
-
-        if (config.xLink) {
-          configContent = configContent.replace(
-            /xLink:.*,/,
-            `xLink: "${config.xLink}",`
-          );
-        }
-
-        await updateFileInRepo(
-          owner,
-          repo,
-          "app/utils/config.tsx",
-          configContent,
-          "Update social links"
-        );
-      }
     }
   } catch (error: unknown) {
     console.error("Error updating DEX configuration:", error);

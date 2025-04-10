@@ -5,6 +5,15 @@ import { get, post, put } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
+import FormInput from "../components/FormInput";
+import Form, { FormErrors } from "../components/Form";
+import {
+  validateUrl,
+  required,
+  minLength,
+  maxLength,
+  composeValidators,
+} from "../utils/validation";
 
 // Define type for DEX data
 interface DexData {
@@ -23,6 +32,9 @@ interface DexData {
 export default function DexRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
   const [brokerName, setBrokerName] = useState("");
+  const [telegramLink, setTelegramLink] = useState("");
+  const [discordLink, setDiscordLink] = useState("");
+  const [xLink, setXLink] = useState("");
   const [isSaving, setIsSaving] = useState(false);
   const [isForking, setIsForking] = useState(false);
   const [forkingStatus, setForkingStatus] = useState("");
@@ -40,9 +52,18 @@ export default function DexRoute() {
         if (data && "id" in data) {
           setDexData(data);
 
-          // If DEX exists, populate the broker name
+          // If DEX exists, populate the form fields
           if (data.brokerName) {
             setBrokerName(data.brokerName);
+          }
+          if (data.telegramLink) {
+            setTelegramLink(data.telegramLink);
+          }
+          if (data.discordLink) {
+            setDiscordLink(data.discordLink);
+          }
+          if (data.xLink) {
+            setXLink(data.xLink);
           }
         }
       } catch (error) {
@@ -83,17 +104,47 @@ export default function DexRoute() {
     }
   };
 
-  // Handle saving the broker name
-  const handleSaveBrokerName = async (e: FormEvent) => {
-    e.preventDefault();
+  // Validation functions for form fields
+  const brokerNameValidator = composeValidators(
+    required("Broker name"),
+    minLength(3, "Broker name"),
+    maxLength(50, "Broker name")
+  );
 
+  const urlValidator = validateUrl();
+
+  // Handle form field changes
+  const handleInputChange =
+    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+      const value = e.target.value;
+
+      // Update the state based on the field
+      switch (field) {
+        case "brokerName":
+          setBrokerName(value);
+          break;
+        case "telegramLink":
+          setTelegramLink(value);
+          break;
+        case "discordLink":
+          setDiscordLink(value);
+          break;
+        case "xLink":
+          setXLink(value);
+          break;
+      }
+    };
+
+  // Handle saving the DEX information
+  const handleSubmit = async (_: FormEvent, errors: FormErrors) => {
     if (!isAuthenticated) {
       toast.error("Please connect your wallet and login first");
       return;
     }
 
-    if (!brokerName.trim()) {
-      toast.error("Please enter a broker name");
+    // Check if there are any validation errors
+    if (Object.values(errors).some(error => error !== null)) {
+      // Don't submit if validation errors exist
       return;
     }
 
@@ -105,6 +156,14 @@ export default function DexRoute() {
     }
 
     try {
+      // Prepare data to send
+      const dexFormData = {
+        brokerName: brokerName.trim(),
+        telegramLink: telegramLink.trim() || undefined,
+        discordLink: discordLink.trim() || undefined,
+        xLink: xLink.trim() || undefined,
+      };
+
       // If DEX already exists, update it; otherwise create a new one
       let savedData: DexData;
 
@@ -112,18 +171,14 @@ export default function DexRoute() {
         // Update existing DEX
         savedData = await put<DexData>(
           `api/dex/${dexData.id}`,
-          { brokerName: brokerName.trim() },
+          dexFormData,
           token
         );
         toast.success("DEX information updated successfully!");
       } else {
         // Create new DEX
         setForkingStatus("Creating repository from template...");
-        savedData = await post<DexData>(
-          "api/dex",
-          { brokerName: brokerName.trim() },
-          token
-        );
+        savedData = await post<DexData>("api/dex", dexFormData, token);
 
         // Check if we got a repo URL back
         if (savedData.repoUrl) {
@@ -212,29 +267,65 @@ export default function DexRoute() {
           Basic Information
         </h2>
 
-        <form onSubmit={handleSaveBrokerName}>
-          <div className="mb-4 md:mb-6">
-            <label
-              htmlFor="brokerName"
-              className="block text-sm font-medium mb-1 md:mb-2"
-            >
-              Broker Name
-            </label>
-            <input
-              id="brokerName"
-              type="text"
-              value={brokerName}
-              onChange={e => setBrokerName(e.target.value)}
-              placeholder="Enter your broker name"
-              className="w-full px-3 md:px-4 py-2 bg-dark/50 border border-light/10 rounded-lg focus:ring-1 focus:ring-primary focus:border-primary text-sm md:text-base"
-              maxLength={50}
-              minLength={3}
-            />
-            <p className="mt-1 text-xs text-gray-400">
-              This name will be used in the HTML metadata, environment
-              configuration, and other places throughout your DEX
-            </p>
-          </div>
+        <Form
+          onSubmit={handleSubmit}
+          submitText={
+            dexData && dexData.id ? "Update DEX Information" : "Create Your DEX"
+          }
+          isLoading={isSaving}
+          loadingText="Saving"
+          disabled={isForking}
+        >
+          <FormInput
+            id="brokerName"
+            label="Broker Name"
+            value={brokerName}
+            onChange={handleInputChange("brokerName")}
+            placeholder="Enter your broker name"
+            helpText="This name will be used in the HTML metadata, environment configuration, and other places throughout your DEX"
+            required={true}
+            minLength={3}
+            maxLength={50}
+            validator={brokerNameValidator}
+          />
+
+          <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+            Social Media Links
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            Add social media links that will appear in your DEX footer. Leave
+            empty if not applicable.
+          </p>
+
+          <FormInput
+            id="telegramLink"
+            label="Telegram URL"
+            value={telegramLink}
+            onChange={handleInputChange("telegramLink")}
+            type="url"
+            placeholder="https://t.me/your-group"
+            validator={urlValidator}
+          />
+
+          <FormInput
+            id="discordLink"
+            label="Discord URL"
+            value={discordLink}
+            onChange={handleInputChange("discordLink")}
+            type="url"
+            placeholder="https://discord.gg/your-server"
+            validator={urlValidator}
+          />
+
+          <FormInput
+            id="xLink"
+            label="Twitter/X URL"
+            value={xLink}
+            onChange={handleInputChange("xLink")}
+            type="url"
+            placeholder="https://twitter.com/your-account"
+            validator={urlValidator}
+          />
 
           {dexData?.repoUrl ? (
             <Card variant="success" className="mb-6">
@@ -277,20 +368,7 @@ export default function DexRoute() {
               </Button>
             </Card>
           ) : null}
-
-          <Button
-            type="submit"
-            variant="primary"
-            size="md"
-            disabled={isSaving || isForking}
-            isLoading={isSaving}
-            loadingText="Saving"
-          >
-            {dexData && dexData.id
-              ? "Update DEX Information"
-              : "Create Your DEX"}
-          </Button>
-        </form>
+        </Form>
       </Card>
     </div>
   );

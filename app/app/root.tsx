@@ -33,7 +33,7 @@ export default function App() {
   }, []);
 
   return (
-    <html lang="en">
+    <html lang="en" className="h-full">
       <head>
         <meta charSet="utf-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -42,30 +42,39 @@ export default function App() {
         <Meta />
         <Links />
       </head>
-      <body>
+      <body className="h-full">
         <ScrollRestoration />
         <Scripts />
         <AppKitProvider>
           <AuthProvider>
-            {/* Global header */}
-            <header className="flex justify-between items-center py-4 px-4 md:py-6 md:px-8 z-10 relative">
-              <div className="flex items-center">
-                <h1 className="text-xl md:text-2xl lg:text-3xl font-bold gradient-text">
-                  Orderly DEX Creator
-                </h1>
-                {/* Desktop navigation - hidden on mobile */}
-                <div className="hidden md:block ml-8">
-                  <Navigation />
+            <div className="flex flex-col h-full">
+              {/* Fixed header - uses the header styles from global.css */}
+              <header>
+                <div className="flex justify-between items-center py-4 px-4 md:py-6 md:px-8">
+                  <div className="flex items-center">
+                    <h1 className="text-xl md:text-2xl lg:text-3xl font-bold gradient-text">
+                      Orderly DEX Creator
+                    </h1>
+                    {/* Desktop navigation - hidden on mobile */}
+                    <div className="hidden md:block ml-8">
+                      <Navigation />
+                    </div>
+                  </div>
+                  {/* Wallet connect and mobile navigation */}
+                  <div className="flex items-center gap-3">
+                    <WalletConnect />
+                    {/* Mobile navigation - visible only on mobile */}
+                    {isMobile && <MobileNavigation />}
+                  </div>
                 </div>
-              </div>
-              {/* Wallet connect and mobile navigation */}
-              <div className="flex items-center gap-3">
-                <WalletConnect />
-                {/* Mobile navigation - visible only on mobile */}
-                {isMobile && <MobileNavigation />}
-              </div>
-            </header>
-            <Outlet />
+              </header>
+
+              {/* Scrollable content area */}
+              <main>
+                <Outlet />
+              </main>
+            </div>
+
             <ToastContainer
               position="top-right"
               autoClose={5000}
