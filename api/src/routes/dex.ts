@@ -13,8 +13,7 @@ import {
 } from "../models/dex";
 import {
   forkTemplateRepository,
-  updateDexConfig,
-  uploadLogoFiles,
+  setupRepositoryWithSingleCommit,
 } from "../lib/github";
 import { PrismaClient } from "@prisma/client";
 import { generateRepositoryName } from "../lib/nameGenerator";
@@ -152,25 +151,27 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
 
       if (repoInfo) {
         try {
-          // Update DEX config in the repository
-          await updateDexConfig(repoInfo.owner, repoInfo.repo, {
-            brokerId: updatedDex.brokerId,
-            brokerName: updatedDex.brokerName,
-            themeCSS: updatedDex.themeCSS?.toString(),
-            telegramLink: updatedDex.telegramLink || undefined,
-            discordLink: updatedDex.discordLink || undefined,
-            xLink: updatedDex.xLink || undefined,
-          });
-
-          // Upload logo files if available
-          await uploadLogoFiles(repoInfo.owner, repoInfo.repo, {
-            primaryLogo: updatedDex.primaryLogo || undefined,
-            secondaryLogo: updatedDex.secondaryLogo || undefined,
-            favicon: updatedDex.favicon || undefined,
-          });
+          // Use our new function to update everything in one commit
+          await setupRepositoryWithSingleCommit(
+            repoInfo.owner,
+            repoInfo.repo,
+            {
+              brokerId: updatedDex.brokerId,
+              brokerName: updatedDex.brokerName,
+              themeCSS: updatedDex.themeCSS?.toString(),
+              telegramLink: updatedDex.telegramLink || undefined,
+              discordLink: updatedDex.discordLink || undefined,
+              xLink: updatedDex.xLink || undefined,
+            },
+            {
+              primaryLogo: updatedDex.primaryLogo || undefined,
+              secondaryLogo: updatedDex.secondaryLogo || undefined,
+              favicon: updatedDex.favicon || undefined,
+            }
+          );
 
           console.log(
-            `Successfully updated repository files for ${updatedDex.brokerName}`
+            `Successfully updated repository files for ${updatedDex.brokerName} with a single commit`
           );
         } catch (configError) {
           // Log the error but don't fail the update
@@ -341,22 +342,24 @@ dexRoutes.post("/:id/fork", async c => {
     const repoPath = repoUrl.split("github.com/")[1];
     const [owner, repo] = repoPath.split("/");
 
-    // Update DEX config in the new repository
-    await updateDexConfig(owner, repo, {
-      brokerId: dex.brokerId,
-      brokerName: dex.brokerName,
-      themeCSS: dex.themeCSS?.toString(),
-      telegramLink: dex.telegramLink || undefined,
-      discordLink: dex.discordLink || undefined,
-      xLink: dex.xLink || undefined,
-    });
-
-    // Upload logo files if available
-    await uploadLogoFiles(owner, repo, {
-      primaryLogo: dex.primaryLogo || undefined,
-      secondaryLogo: dex.secondaryLogo || undefined,
-      favicon: dex.favicon || undefined,
-    });
+    // Use our new function to update DEX config, workflow files, and logo files in a single commit
+    await setupRepositoryWithSingleCommit(
+      owner,
+      repo,
+      {
+        brokerId: dex.brokerId,
+        brokerName: dex.brokerName,
+        themeCSS: dex.themeCSS?.toString(),
+        telegramLink: dex.telegramLink || undefined,
+        discordLink: dex.discordLink || undefined,
+        xLink: dex.xLink || undefined,
+      },
+      {
+        primaryLogo: dex.primaryLogo || undefined,
+        secondaryLogo: dex.secondaryLogo || undefined,
+        favicon: dex.favicon || undefined,
+      }
+    );
 
     // Update the DEX record with the repository URL
     const updatedDex = await updateDexRepoUrl(id, repoUrl, userId);
@@ -420,22 +423,31 @@ dexRoutes.post("/:id/broker-id", async c => {
 
       if (repoInfo) {
         try {
-          // Update DEX config in the repository with the new broker ID
-          await updateDexConfig(repoInfo.owner, repoInfo.repo, {
-            brokerId: body.brokerId, // Use the new broker ID
-            brokerName: updatedDex.brokerName,
-            themeCSS: updatedDex.themeCSS?.toString(),
-            telegramLink: updatedDex.telegramLink || undefined,
-            discordLink: updatedDex.discordLink || undefined,
-            xLink: updatedDex.xLink || undefined,
-          });
+          // Use our new function to update everything in one commit
+          await setupRepositoryWithSingleCommit(
+            repoInfo.owner,
+            repoInfo.repo,
+            {
+              brokerId: body.brokerId,
+              brokerName: updatedDex.brokerName,
+              themeCSS: updatedDex.themeCSS?.toString(),
+              telegramLink: updatedDex.telegramLink || undefined,
+              discordLink: updatedDex.discordLink || undefined,
+              xLink: updatedDex.xLink || undefined,
+            },
+            {
+              primaryLogo: updatedDex.primaryLogo || undefined,
+              secondaryLogo: updatedDex.secondaryLogo || undefined,
+              favicon: updatedDex.favicon || undefined,
+            }
+          );
 
           console.log(
-            `Admin updated broker ID in repository for ${updatedDex.brokerName}`
+            `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
           );
         } catch (configError) {
           // Log the error but don't fail the update
-          console.error("Error updating repository config:", configError);
+          console.error("Error updating repository files:", configError);
           // We continue even if the repo update failed
         }
       }

@@ -27,7 +27,7 @@ export const validateUrl =
       // Check if URL is valid
       new URL(value);
       return null;
-    } catch (e) {
+    } catch {
       return "Please enter a valid URL";
     }
   };

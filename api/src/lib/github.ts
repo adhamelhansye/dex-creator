@@ -100,15 +100,6 @@ export async function forkTemplateRepository(
       console.warn("GitHub Pages deployment may not work without this token");
     }
 
-    // Add workflow files to the repository
-    try {
-      await addWorkflowFilesToRepository(orgName, repoName);
-      console.log(`Added workflow files to ${orgName}/${repoName}`);
-    } catch (workflowError) {
-      console.error("Error adding workflow files:", workflowError);
-      // Continue even if adding the workflow files fails
-    }
-
     // Enable GitHub Pages on the repository
     try {
       await enableGitHubPages(orgName, repoName);
@@ -437,111 +428,6 @@ async function updateFileInRepo(
 }
 
 /**
- * Adds workflow files to a GitHub repository
- * @param owner The repository owner (username or organization)
- * @param repo The repository name
- */
-async function addWorkflowFilesToRepository(
-  owner: string,
-  repo: string
-): Promise<void> {
-  console.log(`Adding workflow files to ${owner}/${repo}...`);
-
-  // Path to workflow files
-  const workflowsDir = path.resolve(__dirname, "../workflows");
-
-  // Check if workflows directory exists
-  if (!fs.existsSync(workflowsDir)) {
-    throw new Error(`Workflows directory not found at ${workflowsDir}`);
-  }
-
-  // Read deploy.yml
-  const deployYmlPath = path.join(workflowsDir, "deploy.yml");
-  if (!fs.existsSync(deployYmlPath)) {
-    throw new Error(`deploy.yml not found at ${deployYmlPath}`);
-  }
-  const deployYmlContent = fs.readFileSync(deployYmlPath, "utf-8");
-
-  // Read sync-fork.yml
-  const syncForkYmlPath = path.join(workflowsDir, "sync-fork.yml");
-  if (!fs.existsSync(syncForkYmlPath)) {
-    throw new Error(`sync-fork.yml not found at ${syncForkYmlPath}`);
-  }
-  const syncForkYmlContent = fs.readFileSync(syncForkYmlPath, "utf-8");
-
-  // Get the latest commit SHA from the default branch
-  console.log(`Getting latest commit for ${owner}/${repo}...`);
-  const { data: refData } = await octokit.rest.git.getRef({
-    owner,
-    repo,
-    ref: "heads/main",
-  });
-  const latestCommitSha = refData.object.sha;
-
-  // Create blobs for each file
-  console.log("Creating blobs for workflow files...");
-  const [deployYmlBlob, syncForkYmlBlob] = await Promise.all([
-    octokit.rest.git.createBlob({
-      owner,
-      repo,
-      content: Buffer.from(deployYmlContent).toString("base64"),
-      encoding: "base64",
-    }),
-    octokit.rest.git.createBlob({
-      owner,
-      repo,
-      content: Buffer.from(syncForkYmlContent).toString("base64"),
-      encoding: "base64",
-    }),
-  ]);
-
-  // Create a tree with both files
-  console.log("Creating git tree with workflow files...");
-  const { data: newTree } = await octokit.rest.git.createTree({
-    owner,
-    repo,
-    base_tree: latestCommitSha,
-    tree: [
-      {
-        path: ".github/workflows/deploy.yml",
-        mode: "100644", // file mode (100644 = file)
-        type: "blob",
-        sha: deployYmlBlob.data.sha,
-      },
-      {
-        path: ".github/workflows/sync-fork.yml",
-        mode: "100644", // file mode (100644 = file)
-        type: "blob",
-        sha: syncForkYmlBlob.data.sha,
-      },
-    ],
-  });
-
-  // Create a commit
-  console.log("Creating commit with workflow files...");
-  const { data: newCommit } = await octokit.rest.git.createCommit({
-    owner,
-    repo,
-    message: "Add GitHub workflow files",
-    tree: newTree.sha,
-    parents: [latestCommitSha],
-  });
-
-  // Update the reference
-  console.log("Updating branch reference...");
-  await octokit.rest.git.updateRef({
-    owner,
-    repo,
-    ref: "heads/main",
-    sha: newCommit.sha,
-  });
-
-  console.log(
-    `Successfully added workflow files to ${owner}/${repo} in a single commit`
-  );
-}
-
-/**
  * Enables GitHub Pages for a repository
  * @param owner The repository owner (username or organization)
  * @param repo The repository name
@@ -557,4 +443,247 @@ async function enableGitHubPages(owner: string, repo: string): Promise<void> {
   });
 
   console.log(`Successfully enabled GitHub Pages for ${owner}/${repo}`);
+}
+
+/**
+ * Setup repository with one commit - combining workflow files and DEX configuration
+ * This prevents multiple GitHub Actions triggers
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @param config The DEX configuration to apply
+ * @param files Logo files to upload
+ */
+export async function setupRepositoryWithSingleCommit(
+  owner: string,
+  repo: string,
+  config: {
+    brokerId: string;
+    brokerName: string;
+    themeCSS?: string;
+    telegramLink?: string;
+    discordLink?: string;
+    xLink?: string;
+  },
+  files: {
+    primaryLogo?: string;
+    secondaryLogo?: string;
+    favicon?: string;
+  }
+): Promise<void> {
+  console.log(`Setting up repository ${owner}/${repo} with a single commit...`);
+
+  try {
+    // Path to workflow files
+    const workflowsDir = path.resolve(__dirname, "../workflows");
+
+    // Check if workflows directory exists
+    if (!fs.existsSync(workflowsDir)) {
+      throw new Error(`Workflows directory not found at ${workflowsDir}`);
+    }
+
+    // Read workflow files
+    const deployYmlContent = fs.readFileSync(
+      path.join(workflowsDir, "deploy.yml"),
+      "utf-8"
+    );
+    const syncForkYmlContent = fs.readFileSync(
+      path.join(workflowsDir, "sync-fork.yml"),
+      "utf-8"
+    );
+
+    // Get the latest commit SHA from the default branch
+    console.log(`Getting latest commit for ${owner}/${repo}...`);
+    const { data: refData } = await octokit.rest.git.getRef({
+      owner,
+      repo,
+      ref: "heads/main",
+    });
+    const latestCommitSha = refData.object.sha;
+
+    // Create ENV file content
+    const envContent = `# Broker settings
+VITE_ORDERLY_BROKER_ID=${config.brokerId}
+VITE_ORDERLY_BROKER_NAME=${config.brokerName}
+
+# Meta tags
+VITE_APP_NAME=${config.brokerName}
+VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
+
+# Social Media Links
+VITE_TELEGRAM_URL=${config.telegramLink || ""}
+VITE_DISCORD_URL=${config.discordLink || ""}
+VITE_TWITTER_URL=${config.xLink || ""}
+`;
+
+    // Create blobs for all files
+    console.log("Creating blobs for all files...");
+    const blobPromises = [
+      // Workflow files
+      octokit.rest.git.createBlob({
+        owner,
+        repo,
+        content: Buffer.from(deployYmlContent).toString("base64"),
+        encoding: "base64",
+      }),
+      octokit.rest.git.createBlob({
+        owner,
+        repo,
+        content: Buffer.from(syncForkYmlContent).toString("base64"),
+        encoding: "base64",
+      }),
+      // ENV file
+      octokit.rest.git.createBlob({
+        owner,
+        repo,
+        content: Buffer.from(envContent).toString("base64"),
+        encoding: "base64",
+      }),
+    ];
+
+    // Add theme CSS if provided
+    if (config.themeCSS) {
+      blobPromises.push(
+        octokit.rest.git.createBlob({
+          owner,
+          repo,
+          content: Buffer.from(config.themeCSS).toString("base64"),
+          encoding: "base64",
+        })
+      );
+    }
+
+    // Add logo files if provided
+    if (files.primaryLogo) {
+      blobPromises.push(
+        octokit.rest.git.createBlob({
+          owner,
+          repo,
+          content: files.primaryLogo,
+          encoding: "base64",
+        })
+      );
+    }
+
+    if (files.secondaryLogo) {
+      blobPromises.push(
+        octokit.rest.git.createBlob({
+          owner,
+          repo,
+          content: files.secondaryLogo,
+          encoding: "base64",
+        })
+      );
+    }
+
+    if (files.favicon) {
+      blobPromises.push(
+        octokit.rest.git.createBlob({
+          owner,
+          repo,
+          content: files.favicon,
+          encoding: "base64",
+        })
+      );
+    }
+
+    // Wait for all blobs to be created
+    const blobs = await Promise.all(blobPromises);
+
+    // Create tree entries
+    const treeEntries = [
+      {
+        path: ".github/workflows/deploy.yml",
+        mode: "100644" as const, // file mode (100644 = file)
+        type: "blob" as const,
+        sha: blobs[0].data.sha,
+      },
+      {
+        path: ".github/workflows/sync-fork.yml",
+        mode: "100644" as const, // file mode (100644 = file)
+        type: "blob" as const,
+        sha: blobs[1].data.sha,
+      },
+      {
+        path: ".env",
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: blobs[2].data.sha,
+      },
+    ];
+
+    // Add theme CSS if provided
+    if (config.themeCSS) {
+      treeEntries.push({
+        path: "app/styles/theme.css",
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: blobs[3].data.sha,
+      });
+    }
+
+    // Add logo files if provided
+    let blobIndex = config.themeCSS ? 4 : 3;
+
+    if (files.primaryLogo) {
+      treeEntries.push({
+        path: "public/orderly-logo.svg",
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: blobs[blobIndex++].data.sha,
+      });
+    }
+
+    if (files.secondaryLogo) {
+      treeEntries.push({
+        path: "public/orderly-logo-secondary.svg",
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: blobs[blobIndex++].data.sha,
+      });
+    }
+
+    if (files.favicon) {
+      treeEntries.push({
+        path: "public/favicon.png",
+        mode: "100644" as const,
+        type: "blob" as const,
+        sha: blobs[blobIndex++].data.sha,
+      });
+    }
+
+    // Create a tree with all files
+    console.log("Creating git tree with all files...");
+    const { data: newTree } = await octokit.rest.git.createTree({
+      owner,
+      repo,
+      base_tree: latestCommitSha,
+      tree: treeEntries,
+    });
+
+    // Create a commit
+    console.log("Creating commit with all files...");
+    const { data: newCommit } = await octokit.rest.git.createCommit({
+      owner,
+      repo,
+      message: "Setup DEX with workflow files and configuration",
+      tree: newTree.sha,
+      parents: [latestCommitSha],
+    });
+
+    // Update the reference
+    console.log("Updating branch reference...");
+    await octokit.rest.git.updateRef({
+      owner,
+      repo,
+      ref: "heads/main",
+      sha: newCommit.sha,
+    });
+
+    console.log(
+      `Successfully set up repository ${owner}/${repo} with a single commit`
+    );
+  } catch (error) {
+    console.error(`Error setting up repository ${owner}/${repo}:`, error);
+    throw error;
+  }
 }

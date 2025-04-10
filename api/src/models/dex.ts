@@ -3,8 +3,7 @@ import { prisma } from "../lib/prisma";
 import type { Prisma, Dex } from "@prisma/client";
 import {
   forkTemplateRepository,
-  updateDexConfig,
-  uploadLogoFiles,
+  setupRepositoryWithSingleCommit,
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
 
@@ -104,25 +103,27 @@ export async function createDex(
       // This ensures we have a brokerId for the config
       const brokerId = brokerName.toLowerCase().replace(/\s+/g, "-");
 
-      // Update DEX config in the new repository
-      await updateDexConfig(repoInfo.owner, repoInfo.repo, {
-        brokerId: brokerId,
-        brokerName: brokerName,
-        themeCSS: data.themeCSS?.toString(),
-        telegramLink: data.telegramLink || undefined,
-        discordLink: data.discordLink || undefined,
-        xLink: data.xLink || undefined,
-      });
-
-      // Upload logo files if available
-      await uploadLogoFiles(repoInfo.owner, repoInfo.repo, {
-        primaryLogo: data.primaryLogo || undefined,
-        secondaryLogo: data.secondaryLogo || undefined,
-        favicon: data.favicon || undefined,
-      });
+      // Use the new function to set up the repository with a single commit
+      await setupRepositoryWithSingleCommit(
+        repoInfo.owner,
+        repoInfo.repo,
+        {
+          brokerId,
+          brokerName,
+          themeCSS: data.themeCSS?.toString(),
+          telegramLink: data.telegramLink || undefined,
+          discordLink: data.discordLink || undefined,
+          xLink: data.xLink || undefined,
+        },
+        {
+          primaryLogo: data.primaryLogo || undefined,
+          secondaryLogo: data.secondaryLogo || undefined,
+          favicon: data.favicon || undefined,
+        }
+      );
 
       console.log(
-        `Successfully updated repository configuration for ${brokerName}`
+        `Successfully set up repository for ${brokerName} with a single commit`
       );
     } else {
       console.warn(
