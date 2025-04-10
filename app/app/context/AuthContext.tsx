@@ -43,9 +43,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   // Validate token function
   const validateToken = useCallback(async (): Promise<boolean> => {
-    // If no token or user, not valid
+    // If no token or user in memory, check localStorage before determining validity
     if (!token || !user?.address) {
-      return false;
+      // Check if we have values in localStorage
+      const savedToken = localStorage.getItem("auth_token");
+      const savedUser = localStorage.getItem("auth_user");
+
+      if (savedToken && savedUser) {
+        // Data exists in localStorage, but hasn't been loaded into state yet
+        // We'll consider it valid and let the useEffect's validation handle it properly
+        return true;
+      }
+      return false; // No auth data exists anywhere
     }
 
     try {
