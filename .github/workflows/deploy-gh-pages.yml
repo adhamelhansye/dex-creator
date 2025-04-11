@@ -44,6 +44,7 @@ jobs:
           find gh-pages-repo -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} \;
           
           ls app/build/client
+          ls app/build/client/assets
           # Copy built files from app/build/client to GitHub Pages repo
           cp -r app/build/client/* gh-pages-repo/
           
