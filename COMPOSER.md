@@ -555,6 +555,35 @@ The project uses PostgreSQL with Prisma ORM:
 4. **Schema Location**:
    The Prisma schema is defined in `api/prisma/schema.prisma`
 
+## Docker Deployment
+
+The API can be deployed using Docker with a simple approach:
+
+### Key Components
+
+- **`Dockerfile`**: Multi-stage build that handles TypeScript compilation with tsup and Prisma generation
+- **`docker-entrypoint.sh`**: Handles database migrations and application startup
+- **Environment Variables**: 
+  - `MIGRATE_DB=true`: Enables automatic database migrations on startup
+  - `DATABASE_URL`: PostgreSQL connection string
+  - `GITHUB_TOKEN`: For repository forking
+  - `PAGES_DEPLOYMENT_TOKEN`: For GitHub Pages deployments
+
+### Quick Deployment
+
+```bash
+# Build the image
+docker build -t dex-creator-api --network host .
+
+# Run the container with host networking (recommended on Linux)
+docker run -d \
+  --name dex-creator-api \
+  -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public \
+  -e GITHUB_TOKEN=your-github-token \
+  -e MIGRATE_DB=true \
+  dex-creator-api
+```
+
 ### TypeScript Configuration
 
 The project uses a shared base TypeScript configuration (`tsconfig.base.json`) with:
@@ -822,29 +851,6 @@ Response (200):
   - Backend uses tsx watch mode to automatically restart the server on file changes
   - Concurrently package runs both servers with organized, color-coded output
 
----
-
-## Contact Information
-
-For questions or clarifications about this project:
-
-- **Project Maintainer**: Mario Reder <mario@orderly.network>
-- **Repository**: git@github.com:OrderlyNetworkDexCreator/dex-creator.git
-
-## Onboarding Checklist for New AI Composers
-
-When you're first assigned to this project, follow these steps:
-
-1. Review this entire document to understand the project structure and standards
-2. Examine the key files mentioned in the [Key Components](#key-components) section
-3. Run the project locally following the [Development Instructions](#development-instructions)
-4. Review current [Known Issues](#known-issues)
-5. When making changes, ensure you update this documentation as specified in the [For AI Composers](#for-ai-composers) section
-
----
-
-_This document will be continuously updated as the project evolves._
-
 ## Animation System
 
 We've implemented CSS-based animations similar to Svelte's "slide" transitions to provide smooth UI feedback when elements appear or change in the interface.
@@ -976,3 +982,26 @@ These animations are currently implemented in:
 3. Prefer class-based animations for consistency
 4. Use inline style animations only for complex/dynamic scenarios
 5. Keep animations short (0.2-0.3s) and subtle
+
+---
+
+## Contact Information
+
+For questions or clarifications about this project:
+
+- **Project Maintainer**: Mario Reder <mario@orderly.network>
+- **Repository**: git@github.com:OrderlyNetworkDexCreator/dex-creator.git
+
+## Onboarding Checklist for New AI Composers
+
+When you're first assigned to this project, follow these steps:
+
+1. Review this entire document to understand the project structure and standards
+2. Examine the key files mentioned in the [Key Components](#key-components) section
+3. Run the project locally following the [Development Instructions](#development-instructions)
+4. Review current [Known Issues](#known-issues)
+5. When making changes, ensure you update this documentation as specified in the [For AI Composers](#for-ai-composers) section
+
+---
+
+_This document will be continuously updated as the project evolves._

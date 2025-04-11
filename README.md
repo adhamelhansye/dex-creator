@@ -119,6 +119,23 @@ yarn dev:app
 yarn dev:api
 ```
 
+### Building
+
+The project uses high-performance build tools:
+
+- **Frontend**: Built with Vite for fast bundling
+- **API**: Built with tsup for ultra-fast TypeScript compilation (30-50x faster than tsc)
+
+To build both packages:
+
+```bash
+# Build everything
+yarn build:app && yarn build:api
+
+# Build just the API
+cd api && yarn build
+```
+
 ### Database Management
 
 The project includes several commands for managing the database:
@@ -139,7 +156,46 @@ yarn db:push
 
 ## Deployment
 
-The project automatically deploys to GitHub Pages through the CI pipeline when changes are pushed to the main branch.
+### Frontend Deployment
+
+The frontend is automatically deployed to GitHub Pages via GitHub Actions when changes are pushed to the main branch. The workflow:
+
+1. Builds the Remix app in SPA mode
+2. Deploys the build to the `orderlynetworkdexcreator.github.io` repository 
+3. Sets up the custom domain `dex.orderly.network` via a CNAME file
+
+To enable this deployment, you'll need:
+- A GitHub Personal Access Token with repo permissions added as a repository secret named `GH_PAGES_DEPLOY_TOKEN`
+- A CNAME DNS record pointing `dex.orderly.network` to `orderlynetworkdexcreator.github.io`
+
+### API Deployment with Docker
+
+The backend API can be deployed using Docker:
+
+```bash
+# Build the API Docker image (use host networking to avoid bridge driver issues)
+docker build -t dex-creator-api --network host .
+
+# Run the API container with host networking
+docker run -d \
+  --name dex-creator-api \
+  --network host \
+  -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public \
+  -e GITHUB_TOKEN=your-github-token \
+  -e GITHUB_TEMPLATE_REPO=OrderlyNetworkDexCreator/dex-creator-template \
+  -e PAGES_DEPLOYMENT_TOKEN=your-pages-token \
+  -e MIGRATE_DB=true \
+  dex-creator-api
+```
+
+#### Automatic Database Migrations
+
+The API container includes automatic database migration capabilities:
+
+- Set `MIGRATE_DB=true` to run Prisma migrations on container startup
+- Set `MIGRATE_DB=false` (default) to skip migrations
+
+This is useful for fresh deployments or when applying schema changes. For production environments, you may want to run migrations manually or separately to have more control over the process.
 
 ## License
 
