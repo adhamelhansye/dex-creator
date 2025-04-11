@@ -14,6 +14,8 @@ import {
 import {
   forkTemplateRepository,
   setupRepositoryWithSingleCommit,
+  getWorkflowRunStatus,
+  getWorkflowRunDetails,
 } from "../lib/github";
 import { PrismaClient } from "@prisma/client";
 import { generateRepositoryName } from "../lib/nameGenerator";
@@ -458,6 +460,115 @@ dexRoutes.post("/:id/broker-id", async c => {
     console.error("Error updating broker ID:", error);
     return c.json(
       { message: "Error updating broker ID", error: String(error) },
+      500
+    );
+  }
+});
+
+// Get workflow runs for a DEX
+dexRoutes.get("/:id/workflow-status", async c => {
+  const id = c.req.param("id");
+  const userId = c.get("userId");
+  const workflowName = c.req.query("workflow");
+
+  if (!userId) {
+    return c.json({ message: "Unauthorized" }, 401);
+  }
+
+  try {
+    // Get the DEX details
+    const dex = await getDexById(id);
+
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    // Check if the DEX belongs to the user
+    if (dex.userId !== userId) {
+      return c.json({ message: "Unauthorized to access this DEX" }, 403);
+    }
+
+    // Check if this DEX has a repository
+    if (!dex.repoUrl) {
+      return c.json({ message: "This DEX does not have a repository" }, 400);
+    }
+
+    // Extract owner and repo from GitHub URL
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, 400);
+    }
+
+    // Get workflow runs
+    const workflowRuns = await getWorkflowRunStatus(
+      repoInfo.owner,
+      repoInfo.repo,
+      workflowName
+    );
+
+    return c.json(workflowRuns);
+  } catch (error) {
+    console.error("Error fetching workflow status:", error);
+    return c.json(
+      { message: "Error fetching workflow status", error: String(error) },
+      500
+    );
+  }
+});
+
+// Get details for a specific workflow run
+dexRoutes.get("/:id/workflow-runs/:runId", async c => {
+  const id = c.req.param("id");
+  const runId = parseInt(c.req.param("runId"), 10);
+  const userId = c.get("userId");
+
+  if (!userId) {
+    return c.json({ message: "Unauthorized" }, 401);
+  }
+
+  if (isNaN(runId)) {
+    return c.json({ message: "Invalid run ID" }, 400);
+  }
+
+  try {
+    // Get the DEX details
+    const dex = await getDexById(id);
+
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    // Check if the DEX belongs to the user
+    if (dex.userId !== userId) {
+      return c.json({ message: "Unauthorized to access this DEX" }, 403);
+    }
+
+    // Check if this DEX has a repository
+    if (!dex.repoUrl) {
+      return c.json({ message: "This DEX does not have a repository" }, 400);
+    }
+
+    // Extract owner and repo from GitHub URL
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, 400);
+    }
+
+    // Get workflow run details
+    const runDetails = await getWorkflowRunDetails(
+      repoInfo.owner,
+      repoInfo.repo,
+      runId
+    );
+
+    return c.json(runDetails);
+  } catch (error) {
+    console.error("Error fetching workflow run details:", error);
+    return c.json(
+      {
+        message: "Error fetching workflow run details",
+        error: String(error),
+      },
       500
     );
   }

@@ -9,6 +9,8 @@
   ],
   "main": "index.js",
   "scripts": {
+    "app": "yarn workspace @dex-creator/app",
+    "api": "yarn workspace @dex-creator/api",
     "dev": "concurrently -n \"api,app\" -c \"blue,green\" \"yarn dev:api\" \"yarn dev:app\"",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",

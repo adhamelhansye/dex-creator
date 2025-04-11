@@ -844,3 +844,135 @@ When you're first assigned to this project, follow these steps:
 ---
 
 _This document will be continuously updated as the project evolves._
+
+## Animation System
+
+We've implemented CSS-based animations similar to Svelte's "slide" transitions to provide smooth UI feedback when elements appear or change in the interface.
+
+### Available Animation Classes
+
+The following animation classes are available in `app/styles/global.css`:
+
+```css
+.slide-fade-in {
+  animation: slideFadeIn 0.3s ease forwards;
+  transform-origin: top center;
+}
+
+.slide-fade-in-delayed {
+  animation: slideFadeIn 0.3s ease 0.1s forwards;
+  opacity: 0;
+  transform: translateY(-10px);
+  transform-origin: top center;
+}
+
+.item-slide-in {
+  animation: slideFadeIn 0.25s ease forwards;
+  transform-origin: top center;
+}
+
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Staggered animation for lists */
+.staggered-item {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.staggered-item:nth-child(1) { animation: slideFadeIn 0.25s ease 0.05s forwards; }
+.staggered-item:nth-child(2) { animation: slideFadeIn 0.25s ease 0.1s forwards; }
+.staggered-item:nth-child(3) { animation: slideFadeIn 0.25s ease 0.15s forwards; }
+.staggered-item:nth-child(4) { animation: slideFadeIn 0.25s ease 0.2s forwards; }
+.staggered-item:nth-child(5) { animation: slideFadeIn 0.25s ease 0.25s forwards; }
+```
+
+### How to Use Animations
+
+#### Basic Slide-In Animation
+
+Apply the `slide-fade-in` class to elements that should animate when they first appear:
+
+```jsx
+<Card className="slide-fade-in">
+  <h3>Content that slides in</h3>
+</Card>
+```
+
+#### Delayed Animation
+
+Use `slide-fade-in-delayed` for elements that should animate slightly after their parent elements:
+
+```jsx
+<div className="slide-fade-in">
+  <h3>This appears first</h3>
+  <p className="slide-fade-in-delayed">This appears with a slight delay</p>
+</div>
+```
+
+#### Staggered List Animations
+
+For lists where each item should appear one after another:
+
+```jsx
+<div className="list">
+  {items.map(item => (
+    <div key={item.id} className="staggered-item">
+      {item.name}
+    </div>
+  ))}
+</div>
+```
+
+#### Dynamic Animation Delays
+
+For more control, you can use inline styles to set custom animation delays:
+
+```jsx
+<div>
+  {items.map((item, index) => (
+    <div
+      key={item.id}
+      style={{
+        animation: `slideFadeIn 0.25s ease ${0.1 + index * 0.05}s forwards`,
+        opacity: 0,
+        transform: "translateY(-10px)"
+      }}
+    >
+      {item.content}
+    </div>
+  ))}
+</div>
+```
+
+### Current Usage
+
+These animations are currently implemented in:
+
+1. The WorkflowStatus component:
+   - Main card uses `slide-fade-in`
+   - Workflow runs use `staggered-item` for sequential animation
+   - Run details use `slide-fade-in` when selected
+   - Job details use `slide-fade-in-delayed` and dynamic delays
+
+2. The DEX deployment URL section:
+   - Uses `slide-fade-in` when it appears after successful deployment
+
+### Best Practices
+
+1. Use animations sparingly to avoid overwhelming the user
+2. Apply animations primarily to elements that:
+   - Appear as a result of user action
+   - Represent new or updated information
+   - Need to draw user attention
+3. Prefer class-based animations for consistency
+4. Use inline style animations only for complex/dynamic scenarios
+5. Keep animations short (0.2-0.3s) and subtle

@@ -12,6 +12,7 @@
   "license": "MIT",
   "author": "Mario Reder <mario@orderly.network>",
   "dependencies": {
+    "@iconify-json/mdi": "^1.2.3",
     "@iconify/react": "^5.2.1",
     "@remix-run/node": "^2.16.4",
     "@remix-run/react": "^2.16.4",

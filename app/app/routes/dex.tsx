@@ -14,6 +14,7 @@ import {
   maxLength,
   composeValidators,
 } from "../utils/validation";
+import WorkflowStatus from "../components/WorkflowStatus";
 
 // Define type for DEX data
 interface DexData {
@@ -39,6 +40,7 @@ export default function DexRoute() {
   const [isForking, setIsForking] = useState(false);
   const [forkingStatus, setForkingStatus] = useState("");
   const [dexData, setDexData] = useState<DexData | null>(null);
+  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
 
   // Fetch existing DEX data if available
   useEffect(() => {
@@ -64,6 +66,23 @@ export default function DexRoute() {
           }
           if (data.xLink) {
             setXLink(data.xLink);
+          }
+
+          // Try to construct the deployment URL if a repo exists
+          if (data.repoUrl) {
+            try {
+              const match = data.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
+              if (match && match[1]) {
+                const repoName = match[1];
+                const deploymentUrl = `https://dex.orderly.network/${repoName}/`;
+                setDeploymentUrl(deploymentUrl);
+
+                // We set this as a potential URL, but the WorkflowStatus component
+                // will verify if a successful deployment actually exists
+              }
+            } catch (error) {
+              console.error("Error constructing deployment URL:", error);
+            }
           }
         }
       } catch (error) {
@@ -196,6 +215,19 @@ export default function DexRoute() {
     } finally {
       setIsSaving(false);
       setForkingStatus("");
+    }
+  };
+
+  // Handler for when a successful deployment is detected
+  const handleSuccessfulDeployment = (
+    url: string,
+    isNewDeployment: boolean
+  ) => {
+    setDeploymentUrl(url);
+
+    // Only show the toast notification if this is a new deployment
+    if (isNewDeployment) {
+      toast.success("Your DEX has been successfully deployed!");
     }
   };
 
@@ -343,6 +375,37 @@ export default function DexRoute() {
               >
                 {dexData.repoUrl}
               </a>
+
+              {/* Show the deployment URL if available */}
+              {deploymentUrl && (
+                <div className="mt-3 mb-4 p-3 bg-success/10 rounded-lg border border-success/20 slide-fade-in">
+                  <h4 className="text-md font-medium mb-2 flex items-center">
+                    <div className="i-mdi:check-circle text-success mr-2 h-5 w-5"></div>
+                    Live DEX Available
+                  </h4>
+                  <p className="text-sm text-gray-300 mb-3">
+                    Your DEX is now live and accessible at:
+                  </p>
+                  <a
+                    href={deploymentUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded text-primary-light transition-colors"
+                  >
+                    <span className="break-all">{deploymentUrl}</span>
+                    <div className="i-mdi:open-in-new h-4 w-4"></div>
+                  </a>
+                </div>
+              )}
+
+              <div className="mt-4 pt-4 border-t border-light/10">
+                <h4 className="text-md font-medium mb-3">Deployment Status</h4>
+                <WorkflowStatus
+                  dexId={dexData.id}
+                  workflowName="Deploy to GitHub Pages"
+                  onSuccessfulDeployment={handleSuccessfulDeployment}
+                />
+              </div>
             </Card>
           ) : dexData && !dexData.repoUrl ? (
             // Repository creation failed but DEX was created

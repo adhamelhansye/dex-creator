@@ -687,3 +687,200 @@ VITE_TWITTER_URL=${config.xLink || ""}
     throw error;
   }
 }
+
+/**
+ * Get the status of workflow runs for a repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @param workflowName Optional workflow name to filter by
+ * @returns The workflow runs with their statuses
+ */
+export async function getWorkflowRunStatus(
+  owner: string,
+  repo: string,
+  workflowName?: string
+): Promise<{
+  totalCount: number;
+  workflowRuns: Array<{
+    id: number;
+    name: string;
+    status: string;
+    conclusion: string | null;
+    createdAt: string;
+    updatedAt: string;
+    htmlUrl: string;
+  }>;
+}> {
+  try {
+    console.log(`Fetching workflow runs for ${owner}/${repo}...`);
+
+    // First, try to get workflows to check if they exist
+    const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
+      owner,
+      repo,
+    });
+
+    if (workflows.total_count === 0) {
+      console.log(`No workflows found in ${owner}/${repo}`);
+      return { totalCount: 0, workflowRuns: [] };
+    }
+
+    // If a specific workflow name is provided, find its ID
+    let workflowId: number | undefined;
+
+    if (workflowName) {
+      const workflow = workflows.workflows.find(
+        (wf: { name: string }) => wf.name === workflowName
+      );
+      if (workflow) {
+        workflowId = workflow.id;
+      } else {
+        console.warn(
+          `Workflow "${workflowName}" not found in ${owner}/${repo}`
+        );
+      }
+    }
+
+    // Get workflow runs, either for all workflows or a specific one
+    // Use separate logic for with/without workflow_id to satisfy TypeScript
+    if (workflowId) {
+      const { data: runs } = await octokit.rest.actions.listWorkflowRuns({
+        owner,
+        repo,
+        per_page: 10,
+        workflow_id: workflowId,
+      });
+
+      // Format the response with proper type assertions
+      const workflowRuns = runs.workflow_runs.map(run => ({
+        id: run.id,
+        name: run.name || "Unnamed workflow",
+        status: run.status || "unknown",
+        conclusion: run.conclusion,
+        createdAt: run.created_at,
+        updatedAt: run.updated_at,
+        htmlUrl: run.html_url,
+      }));
+
+      return {
+        totalCount: runs.total_count,
+        workflowRuns,
+      };
+    } else {
+      // Get runs for all workflows
+      const { data: runs } = await octokit.rest.actions.listWorkflowRunsForRepo(
+        {
+          owner,
+          repo,
+          per_page: 10,
+        }
+      );
+
+      // Format the response with proper type assertions
+      const workflowRuns = runs.workflow_runs.map(run => ({
+        id: run.id,
+        name: run.name || "Unnamed workflow",
+        status: run.status || "unknown",
+        conclusion: run.conclusion,
+        createdAt: run.created_at,
+        updatedAt: run.updated_at,
+        htmlUrl: run.html_url,
+      }));
+
+      return {
+        totalCount: runs.total_count,
+        workflowRuns,
+      };
+    }
+  } catch (error) {
+    console.error(`Error fetching workflow runs for ${owner}/${repo}:`, error);
+    throw new Error(
+      `Failed to get workflow status: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+// Add a function to get detailed info for a specific workflow run
+export async function getWorkflowRunDetails(
+  owner: string,
+  repo: string,
+  runId: number
+): Promise<{
+  id: number;
+  name: string;
+  status: string;
+  conclusion: string | null;
+  createdAt: string;
+  updatedAt: string;
+  htmlUrl: string;
+  jobs: Array<{
+    id: number;
+    name: string;
+    status: string;
+    conclusion: string | null;
+    startedAt: string | null;
+    completedAt: string | null;
+    steps: Array<{
+      name: string;
+      status: string;
+      conclusion: string | null;
+      number: number;
+    }>;
+  }>;
+}> {
+  try {
+    console.log(
+      `Fetching details for workflow run ${runId} in ${owner}/${repo}...`
+    );
+
+    // Get the run details
+    const { data: run } = await octokit.rest.actions.getWorkflowRun({
+      owner,
+      repo,
+      run_id: runId,
+    });
+
+    // Get jobs for this run
+    const { data: jobsData } =
+      await octokit.rest.actions.listJobsForWorkflowRun({
+        owner,
+        repo,
+        run_id: runId,
+      });
+
+    // Format the jobs data with proper type checking
+    const jobs = jobsData.jobs.map(job => ({
+      id: job.id,
+      name: job.name || "Unnamed job",
+      status: job.status || "unknown",
+      conclusion: job.conclusion,
+      startedAt: job.started_at,
+      completedAt: job.completed_at,
+      steps: (job.steps || []).map(step => ({
+        name: step.name || "Unnamed step",
+        status: step.status || "unknown",
+        conclusion: step.conclusion,
+        number: step.number,
+      })),
+    }));
+
+    return {
+      id: run.id,
+      name: run.name || "Unnamed workflow run",
+      status: run.status || "unknown",
+      conclusion: run.conclusion,
+      createdAt: run.created_at,
+      updatedAt: run.updated_at,
+      htmlUrl: run.html_url,
+      jobs,
+    };
+  } catch (error) {
+    console.error(
+      `Error fetching workflow run details for ${runId} in ${owner}/${repo}:`,
+      error
+    );
+    throw new Error(
+      `Failed to get workflow run details: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}

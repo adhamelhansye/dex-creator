@@ -233,3 +233,44 @@ appkit-modal {
     --header-height: 4rem; /* Smaller header height for mobile */
   }
 }
+
+/* Animation utilities */
+.slide-fade-in {
+  animation: slideFadeIn 0.3s ease forwards;
+  transform-origin: top center;
+}
+
+.slide-fade-in-delayed {
+  animation: slideFadeIn 0.3s ease 0.1s forwards;
+  opacity: 0;
+  transform: translateY(-10px);
+  transform-origin: top center;
+}
+
+.item-slide-in {
+  animation: slideFadeIn 0.25s ease forwards;
+  transform-origin: top center;
+}
+
+@keyframes slideFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Adding staggered animation for lists */
+.staggered-item {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.staggered-item:nth-child(1) { animation: slideFadeIn 0.25s ease 0.05s forwards; }
+.staggered-item:nth-child(2) { animation: slideFadeIn 0.25s ease 0.1s forwards; }
+.staggered-item:nth-child(3) { animation: slideFadeIn 0.25s ease 0.15s forwards; }
+.staggered-item:nth-child(4) { animation: slideFadeIn 0.25s ease 0.2s forwards; }
+.staggered-item:nth-child(5) { animation: slideFadeIn 0.25s ease 0.25s forwards; }
