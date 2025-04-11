@@ -30,6 +30,7 @@ jobs:
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
+          git config --global init.defaultBranch main
       
       - name: Create GitHub Pages Repository
         run: |
@@ -42,6 +43,7 @@ jobs:
         run: |
           cd gh-pages-repo
           git init
+          git branch -m main
           git remote add origin https://${{ secrets.GH_PAGES_DEPLOY_TOKEN }}@github.com/OrderlyNetworkDexCreator/orderlynetworkdexcreator.github.io.git
           git add -A
           git commit -m "Deploy: $(date +%Y-%m-%d_%H-%M-%S)"
