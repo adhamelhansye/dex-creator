@@ -1,3 +1,20 @@
+/**
+ * GitHub API client with ETag caching
+ *
+ * This module wraps the Octokit client with a proxy that implements
+ * ETag-based caching to reduce GitHub API rate limit consumption.
+ *
+ * The proxy:
+ * 1. Intercepts all GET requests to GitHub's API
+ * 2. Stores ETag headers and response data from successful requests
+ * 3. Adds If-None-Match headers for subsequent requests to the same endpoints
+ * 4. Returns cached data when GitHub responds with 304 Not Modified
+ *
+ * This implementation helps to:
+ * - Reduce rate limit usage (304 responses don't count against rate limits)
+ * - Improve response times for repeated requests
+ * - Work seamlessly with existing code using the Octokit client
+ */
 import { Octokit } from "@octokit/core";
 import { restEndpointMethods } from "@octokit/plugin-rest-endpoint-methods";
 import sodium from "libsodium-wrappers";
@@ -11,9 +28,143 @@ const __dirname = path.dirname(__filename);
 
 // Initialize Octokit with GitHub token
 const MyOctokit = Octokit.plugin(restEndpointMethods);
-const octokit = new MyOctokit({
+const _originalOctokit = new MyOctokit({
   auth: process.env.GITHUB_TOKEN,
 });
+
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// Simple in-memory cache for ETags
+const etagCache = new Map<string, { etag: string; data: any }>();
+let cacheHits = 0;
+let cacheMisses = 0;
+
+/**
+ * Returns stats about the GitHub ETag cache
+ */
+export function getGitHubETagCacheStats() {
+  return {
+    cacheSize: etagCache.size,
+    hits: cacheHits,
+    misses: cacheMisses,
+    hitRate:
+      cacheHits + cacheMisses > 0
+        ? (cacheHits / (cacheHits + cacheMisses)) * 100
+        : 0,
+    savedApiCalls: cacheHits,
+  };
+}
+
+// Create a proxy for the octokit client to add ETag caching
+const octokit = new Proxy(_originalOctokit, {
+  get(target, prop, receiver) {
+    const originalValue = Reflect.get(target, prop, receiver);
+
+    // If we're accessing the request method
+    if (prop === "request" && typeof originalValue === "function") {
+      // Return a proxied version of the request method
+      return async function (route: string, params: any = {}) {
+        // Only apply caching for GET requests to conserve memory
+        if (!route.startsWith("GET ")) {
+          return Reflect.apply(originalValue, target, [route, params]);
+        }
+
+        // Create a cache key from the route and params
+        const cacheKey = `${route}:${JSON.stringify(params)}`;
+        const cachedItem = etagCache.get(cacheKey);
+
+        // Add If-None-Match header if we have a cached ETag
+        const requestParams = {
+          ...params,
+          headers: {
+            ...params.headers,
+            ...(cachedItem ? { "If-None-Match": cachedItem.etag } : {}),
+          },
+        };
+
+        try {
+          // Make the request
+          const response = (await Reflect.apply(originalValue, target, [
+            route,
+            requestParams,
+          ])) as any;
+
+          // Store the ETag if present in the response
+          if (response?.headers?.etag) {
+            etagCache.set(cacheKey, {
+              etag: response.headers.etag,
+              data: response.data,
+            });
+            cacheMisses++;
+            console.log(
+              `[GitHub ETag] Cache MISS for ${route} - stored ETag: ${response.headers.etag}`
+            );
+          }
+
+          return response;
+        } catch (error: any) {
+          // Handle 304 Not Modified response
+          if (error.status === 304 && cachedItem) {
+            cacheHits++;
+            console.log(
+              `[GitHub ETag] Cache HIT for ${route} - using cached data`
+            );
+            // Return a successful response with cached data
+            return {
+              data: cachedItem.data,
+              headers: { ...error.response?.headers, "x-cached": "true" },
+              status: 200,
+              url: error.response?.url,
+            };
+          }
+
+          console.log(
+            `[GitHub ETag] Error for ${route}:`,
+            error.status,
+            error.message
+          );
+          // Re-throw any other errors
+          throw error;
+        }
+      };
+    }
+
+    // Handle rest namespace
+    if (prop === "rest" && originalValue && typeof originalValue === "object") {
+      return new Proxy(originalValue, {
+        get(restTarget, restProp, restReceiver) {
+          const restValue = Reflect.get(restTarget, restProp, restReceiver);
+
+          // If this is a namespace object (like repos, issues, etc.)
+          if (restValue && typeof restValue === "object") {
+            return new Proxy(restValue, {
+              get(namespaceTarget, methodProp, namespaceReceiver) {
+                const methodValue = Reflect.get(
+                  namespaceTarget,
+                  methodProp,
+                  namespaceReceiver
+                );
+
+                // If this is a method, ensure it goes through our request proxy
+                if (typeof methodValue === "function") {
+                  return function (this: any, ...args: any[]) {
+                    return methodValue.apply(this, args);
+                  };
+                }
+
+                return methodValue;
+              },
+            });
+          }
+
+          return restValue;
+        },
+      });
+    }
+
+    return originalValue;
+  },
+});
+/* eslint-enable @typescript-eslint/no-explicit-any */
 
 // Template repository information
 const templateRepo =

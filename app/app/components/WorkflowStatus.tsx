@@ -122,12 +122,11 @@ export default function WorkflowStatus({
     // Set up auto-refresh if enabled
     let interval: NodeJS.Timeout | null = null;
     if (autoRefresh) {
-      // If no workflows are found yet, refresh every 5 seconds
-      // Once workflows are found, refresh every 30 seconds
+      // Use much longer intervals to reduce API load
       const refreshInterval =
         !workflowStatus || workflowStatus.totalCount === 0
-          ? 5000 // 5 seconds when no workflows found
-          : 30000; // 30 seconds otherwise
+          ? 60000 // 1 minute when no workflows found (was 5 seconds)
+          : 180000; // 3 minutes otherwise (was 30 seconds)
 
       interval = setInterval(fetchWorkflowStatus, refreshInterval);
     }
@@ -135,7 +134,7 @@ export default function WorkflowStatus({
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [fetchWorkflowStatus, autoRefresh, workflowStatus]);
+  }, [fetchWorkflowStatus, autoRefresh]);
 
   // Function to construct deployment URL from repo URL
   const getGitHubPagesUrl = useCallback((repoUrl: string): string => {
