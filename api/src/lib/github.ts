@@ -1,11 +1,11 @@
 /**
  * GitHub API client with ETag caching
  *
- * This module wraps the Octokit client with a proxy that implements
+ * This module wraps the Octokit client with hooks that implement
  * ETag-based caching to reduce GitHub API rate limit consumption.
  *
- * The proxy:
- * 1. Intercepts all GET requests to GitHub's API
+ * The implementation:
+ * 1. Uses Octokit hooks to intercept requests and responses
  * 2. Stores ETag headers and response data from successful requests
  * 3. Adds If-None-Match headers for subsequent requests to the same endpoints
  * 4. Returns cached data when GitHub responds with 304 Not Modified
@@ -25,12 +25,6 @@ import { fileURLToPath } from "node:url";
 // Get current file's directory (ES module replacement for __dirname)
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
-// Initialize Octokit with GitHub token
-const MyOctokit = Octokit.plugin(restEndpointMethods);
-const _originalOctokit = new MyOctokit({
-  auth: process.env.GITHUB_TOKEN,
-});
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Simple in-memory cache for ETags
@@ -54,115 +48,156 @@ export function getGitHubETagCacheStats() {
   };
 }
 
-// Create a proxy for the octokit client to add ETag caching
-const octokit = new Proxy(_originalOctokit, {
-  get(target, prop, receiver) {
-    const originalValue = Reflect.get(target, prop, receiver);
+// Initialize Octokit with GitHub token and plugins
+const MyOctokit = Octokit.plugin(restEndpointMethods);
+const octokit = new MyOctokit({
+  auth: process.env.GITHUB_TOKEN,
+});
 
-    // If we're accessing the request method
-    if (prop === "request" && typeof originalValue === "function") {
-      // Return a proxied version of the request method
-      return async function (route: string, params: any = {}) {
-        // Only apply caching for GET requests to conserve memory
-        if (!route.startsWith("GET ")) {
-          return Reflect.apply(originalValue, target, [route, params]);
-        }
+// Helper function to generate a consistent cache key from request options
+function getCacheKey(options: any): string {
+  // For URL templates like '/repos/{owner}/{repo}'
+  // Try to replace placeholders with their actual values
+  let url = options.url;
 
-        // Create a cache key from the route and params
-        const cacheKey = `${route}:${JSON.stringify(params)}`;
-        const cachedItem = etagCache.get(cacheKey);
+  if (url) {
+    url = url.replace(/{([^}]+)}/g, (_: any, key: string) => {
+      return options[key] ?? `{${key}}`;
+    });
+  }
 
-        // Add If-None-Match header if we have a cached ETag
-        const requestParams = {
-          ...params,
-          headers: {
-            ...params.headers,
-            ...(cachedItem ? { "If-None-Match": cachedItem.etag } : {}),
-          },
+  // For REST API methods, reconstruct the full URL
+  if (options.method && options.baseUrl && options.url) {
+    return `${options.method} ${options.baseUrl}${url}`;
+  }
+
+  // For direct request() calls
+  if (typeof options === "string") {
+    return options;
+  }
+
+  // Fallback for other scenarios
+  return `${options.method || "GET"} ${options.url || ""}:${JSON.stringify(options.params || {})}`;
+}
+
+// Register hooks for ETag caching
+octokit.hook.before("request", async options => {
+  try {
+    // Only apply caching for GET requests to conserve memory
+    if (options.method !== "GET") {
+      return;
+    }
+
+    const cacheKey = getCacheKey(options);
+    const cachedItem = etagCache.get(cacheKey);
+
+    // Add If-None-Match header if we have a cached ETag
+    if (cachedItem) {
+      // Initialize headers with required properties if not present
+      if (!options.headers) {
+        options.headers = {
+          accept: "application/vnd.github.v3+json",
+          "user-agent": "orderly-dex-creator",
         };
+      } else {
+        // Ensure required properties exist
+        options.headers.accept =
+          options.headers.accept || "application/vnd.github.v3+json";
+        options.headers["user-agent"] =
+          options.headers["user-agent"] || "orderly-dex-creator";
+      }
 
-        try {
-          // Make the request
-          const response = (await Reflect.apply(originalValue, target, [
-            route,
-            requestParams,
-          ])) as any;
+      options.headers["If-None-Match"] = cachedItem.etag;
+      console.log(`[GitHub ETag] Using cached ETag for ${cacheKey}`);
+    }
+  } catch (error) {
+    console.error("[GitHub ETag] Error in before hook:", error);
+  }
+});
 
-          // Store the ETag if present in the response
-          if (response?.headers?.etag) {
-            etagCache.set(cacheKey, {
-              etag: response.headers.etag,
-              data: response.data,
-            });
-            cacheMisses++;
-            console.log(
-              `[GitHub ETag] Cache MISS for ${route} - stored ETag: ${response.headers.etag}`
-            );
-          }
+octokit.hook.after("request", async (response, options) => {
+  try {
+    // Only cache GET requests
+    if (options.method !== "GET") {
+      return;
+    }
 
-          return response;
-        } catch (error: any) {
-          // Handle 304 Not Modified response
-          if (error.status === 304 && cachedItem) {
-            cacheHits++;
-            console.log(
-              `[GitHub ETag] Cache HIT for ${route} - using cached data`
-            );
-            // Return a successful response with cached data
-            return {
-              data: cachedItem.data,
-              headers: { ...error.response?.headers, "x-cached": "true" },
-              status: 200,
-              url: error.response?.url,
-            };
-          }
+    const cacheKey = getCacheKey(options);
 
-          console.log(
-            `[GitHub ETag] Error for ${route}:`,
-            error.status,
-            error.message
-          );
-          // Re-throw any other errors
+    // Store the ETag if present in the response
+    if (response.headers?.etag) {
+      etagCache.set(cacheKey, {
+        etag: response.headers.etag,
+        data: response.data,
+      });
+      cacheMisses++;
+      console.log(
+        `[GitHub ETag] Cache MISS for ${cacheKey} - stored ETag: ${response.headers.etag}`
+      );
+    }
+  } catch (error) {
+    console.error("[GitHub ETag] Error in after hook:", error);
+  }
+});
+
+// Type guard for RequestError
+function isRequestError(
+  error: Error | any
+): error is { status: number; response?: { headers?: any; url?: string } } {
+  return error && typeof error === "object" && "status" in error;
+}
+
+octokit.hook.error("request", async (error, options) => {
+  try {
+    // Ensure we're dealing with a RequestError before accessing status/response
+    if (isRequestError(error)) {
+      // Check if this is a 304 Not Modified response, which is what we're expecting for cached resources
+      if (error.status === 304) {
+        // Only handle 304 responses for GET requests
+        if (options.method !== "GET") {
           throw error;
         }
-      };
+
+        const cacheKey = getCacheKey(options);
+        const cachedItem = etagCache.get(cacheKey);
+
+        // If we have a cached response for a 304, return it
+        if (cachedItem) {
+          cacheHits++;
+          console.log(
+            `[GitHub ETag] Cache HIT for ${cacheKey} - using cached data`
+          );
+
+          // Return a successful response with cached data
+          return {
+            data: cachedItem.data,
+            headers: { ...error.response?.headers, "x-cached": "true" },
+            status: 200,
+            url: error.response?.url,
+          };
+        }
+      }
+
+      // Log other errors (but not for debugging purposes)
+      console.error(
+        `[GitHub ETag] Error for ${getCacheKey(options)}:`,
+        error.status,
+        error.message
+      );
+    } else {
+      // Not a RequestError
+      console.error(
+        `[GitHub ETag] Error for ${getCacheKey(options)}:`,
+        error instanceof Error ? error.message : String(error)
+      );
     }
 
-    // Handle rest namespace
-    if (prop === "rest" && originalValue && typeof originalValue === "object") {
-      return new Proxy(originalValue, {
-        get(restTarget, restProp, restReceiver) {
-          const restValue = Reflect.get(restTarget, restProp, restReceiver);
-
-          // If this is a namespace object (like repos, issues, etc.)
-          if (restValue && typeof restValue === "object") {
-            return new Proxy(restValue, {
-              get(namespaceTarget, methodProp, namespaceReceiver) {
-                const methodValue = Reflect.get(
-                  namespaceTarget,
-                  methodProp,
-                  namespaceReceiver
-                );
-
-                // If this is a method, ensure it goes through our request proxy
-                if (typeof methodValue === "function") {
-                  return function (this: any, ...args: any[]) {
-                    return methodValue.apply(this, args);
-                  };
-                }
-
-                return methodValue;
-              },
-            });
-          }
-
-          return restValue;
-        },
-      });
-    }
-
-    return originalValue;
-  },
+    // Re-throw the error regardless of type
+    throw error;
+  } catch (hookError) {
+    console.error("[GitHub ETag] Error in error hook:", hookError);
+    throw error; // Still throw the original error
+  }
 });
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
