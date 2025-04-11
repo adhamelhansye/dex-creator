@@ -38,6 +38,8 @@ jobs:
           cp -r app/build/client/* gh-pages-repo/
           cp gh-pages-repo/index.html gh-pages-repo/404.html
           echo "dex.orderly.network" > gh-pages-repo/CNAME
+          # Add .nojekyll file to disable Jekyll processing
+          touch gh-pages-repo/.nojekyll
       
       - name: Deploy to GitHub Pages
         run: |
