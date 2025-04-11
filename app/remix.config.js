@@ -17,4 +17,6 @@ export default {
     v3_relativeSplatPath: true,
     v3_singleFetch: true,
   },
+  // Hydration Fallback will help prevent infinite reload loops
+  unstable_clientRouteHydration: false,
 };
