@@ -4,6 +4,7 @@ import type { Prisma, Dex } from "@prisma/client";
 import {
   forkTemplateRepository,
   setupRepositoryWithSingleCommit,
+  deleteRepository,
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
 
@@ -271,6 +272,21 @@ export async function deleteDex(id: string, userId: string): Promise<Dex> {
     throw new Error("DEX not found or user is not authorized to delete it");
   }
 
+  // If the DEX has a GitHub repository, attempt to delete it
+  if (dex.repoUrl) {
+    try {
+      const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+      if (repoInfo) {
+        // Attempt to delete the repository, but continue even if it fails
+        await deleteRepository(repoInfo.owner, repoInfo.repo);
+      }
+    } catch (error) {
+      console.error("Error deleting GitHub repository:", error);
+      // Continue with DEX deletion even if repository deletion fails
+    }
+  }
+
+  // Delete the DEX from the database
   return prisma.dex.delete({
     where: {
       id,
@@ -336,6 +352,21 @@ export async function deleteDexByWalletAddress(
   }
 
   const dexId = user.dex.id;
+  const dex = user.dex;
+
+  // If the DEX has a GitHub repository, attempt to delete it
+  if (dex.repoUrl) {
+    try {
+      const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+      if (repoInfo) {
+        // Attempt to delete the repository, but continue even if it fails
+        await deleteRepository(repoInfo.owner, repoInfo.repo);
+      }
+    } catch (error) {
+      console.error("Error deleting GitHub repository:", error);
+      // Continue with DEX deletion even if repository deletion fails
+    }
+  }
 
   // Delete the DEX
   return prisma.dex.delete({

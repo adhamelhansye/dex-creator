@@ -1070,3 +1070,29 @@ export async function getWorkflowRunDetails(
     );
   }
 }
+
+/**
+ * Deletes a GitHub repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @returns A boolean indicating success
+ */
+export async function deleteRepository(
+  owner: string,
+  repo: string
+): Promise<boolean> {
+  try {
+    console.log(`Deleting repository ${owner}/${repo}...`);
+
+    await octokit.rest.repos.delete({
+      owner,
+      repo,
+    });
+
+    console.log(`Successfully deleted repository ${owner}/${repo}`);
+    return true;
+  } catch (error) {
+    console.error(`Error deleting repository ${owner}/${repo}:`, error);
+    return false;
+  }
+}

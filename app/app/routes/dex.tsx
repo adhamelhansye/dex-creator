@@ -1,12 +1,13 @@
 import { useState, useEffect, FormEvent } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
-import { get, post, put } from "../utils/apiClient";
+import { get, post, put, del } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import FormInput from "../components/FormInput";
 import Form, { FormErrors } from "../components/Form";
+import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import {
   validateUrl,
   required,
@@ -15,6 +16,7 @@ import {
   composeValidators,
 } from "../utils/validation";
 import WorkflowStatus from "../components/WorkflowStatus";
+import { useNavigate } from "@remix-run/react";
 
 // Define type for DEX data
 interface DexData {
@@ -32,6 +34,7 @@ interface DexData {
 
 export default function DexRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
+  const navigate = useNavigate();
   const [brokerName, setBrokerName] = useState("");
   const [telegramLink, setTelegramLink] = useState("");
   const [discordLink, setDiscordLink] = useState("");
@@ -41,6 +44,8 @@ export default function DexRoute() {
   const [forkingStatus, setForkingStatus] = useState("");
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Fetch existing DEX data if available
   useEffect(() => {
@@ -231,6 +236,37 @@ export default function DexRoute() {
     }
   };
 
+  // Handle deleting the DEX
+  const handleDelete = async () => {
+    if (!dexData || !dexData.id || !token) {
+      toast.error("DEX information is not available");
+      return;
+    }
+
+    setIsDeleting(true);
+
+    try {
+      await del<{ message: string }>(`api/dex/${dexData.id}`, null, token);
+      toast.success("DEX deleted successfully!");
+
+      // Reset state and redirect to home page
+      setDexData(null);
+      setBrokerName("");
+      setTelegramLink("");
+      setDiscordLink("");
+      setXLink("");
+      setDeploymentUrl(null);
+
+      // Redirect to home
+      navigate("/");
+    } catch (error) {
+      console.error("Error deleting DEX:", error);
+      toast.error("Failed to delete the DEX. Please try again later.");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
@@ -289,75 +325,92 @@ export default function DexRoute() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 py-4 md:py-6">
-      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">
-        Create Your DEX
-      </h1>
+    <div className="container mx-auto p-4 max-w-3xl">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+        <h1 className="text-2xl md:text-3xl font-bold gradient-text">
+          {dexData ? "Manage Your DEX" : "Create Your DEX"}
+        </h1>
+        <div className="mt-4 md:mt-0">
+          <WalletConnect />
+        </div>
+      </div>
 
-      <Card>
-        <h2 className="text-lg md:text-xl font-medium mb-3 md:mb-4">
-          Basic Information
-        </h2>
+      {!isAuthenticated && !isLoading ? (
+        <div className="text-center mt-16">
+          <Card className="p-8">
+            <p className="text-lg mb-6">
+              Please connect your wallet to create or manage your DEX.
+            </p>
+            <div className="flex justify-center">
+              <WalletConnect />
+            </div>
+          </Card>
+        </div>
+      ) : (
+        <div className="space-y-8">
+          <Form
+            onSubmit={handleSubmit}
+            className="space-y-6"
+            submitText={
+              dexData && dexData.id
+                ? "Update DEX Information"
+                : "Create Your DEX"
+            }
+            isLoading={isSaving}
+            loadingText="Saving"
+            disabled={isForking || isDeleting}
+          >
+            <FormInput
+              id="brokerName"
+              label="Broker Name"
+              value={brokerName}
+              onChange={handleInputChange("brokerName")}
+              placeholder="Enter your broker name"
+              helpText="This name will be used in the HTML metadata, environment configuration, and other places throughout your DEX"
+              required={true}
+              minLength={3}
+              maxLength={50}
+              validator={brokerNameValidator}
+            />
 
-        <Form
-          onSubmit={handleSubmit}
-          submitText={
-            dexData && dexData.id ? "Update DEX Information" : "Create Your DEX"
-          }
-          isLoading={isSaving}
-          loadingText="Saving"
-          disabled={isForking}
-        >
-          <FormInput
-            id="brokerName"
-            label="Broker Name"
-            value={brokerName}
-            onChange={handleInputChange("brokerName")}
-            placeholder="Enter your broker name"
-            helpText="This name will be used in the HTML metadata, environment configuration, and other places throughout your DEX"
-            required={true}
-            minLength={3}
-            maxLength={50}
-            validator={brokerNameValidator}
-          />
+            <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+              Social Media Links
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Add social media links that will appear in your DEX footer. Leave
+              empty if not applicable.
+            </p>
 
-          <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
-            Social Media Links
-          </h3>
-          <p className="text-xs text-gray-400 mb-4">
-            Add social media links that will appear in your DEX footer. Leave
-            empty if not applicable.
-          </p>
+            <FormInput
+              id="telegramLink"
+              label="Telegram URL"
+              value={telegramLink}
+              onChange={handleInputChange("telegramLink")}
+              type="url"
+              placeholder="https://t.me/your-group"
+              validator={urlValidator}
+            />
 
-          <FormInput
-            id="telegramLink"
-            label="Telegram URL"
-            value={telegramLink}
-            onChange={handleInputChange("telegramLink")}
-            type="url"
-            placeholder="https://t.me/your-group"
-            validator={urlValidator}
-          />
+            <FormInput
+              id="discordLink"
+              label="Discord URL"
+              value={discordLink}
+              onChange={handleInputChange("discordLink")}
+              type="url"
+              placeholder="https://discord.gg/your-server"
+              validator={urlValidator}
+            />
 
-          <FormInput
-            id="discordLink"
-            label="Discord URL"
-            value={discordLink}
-            onChange={handleInputChange("discordLink")}
-            type="url"
-            placeholder="https://discord.gg/your-server"
-            validator={urlValidator}
-          />
-
-          <FormInput
-            id="xLink"
-            label="Twitter/X URL"
-            value={xLink}
-            onChange={handleInputChange("xLink")}
-            type="url"
-            placeholder="https://twitter.com/your-account"
-            validator={urlValidator}
-          />
+            <FormInput
+              id="xLink"
+              label="Twitter/X URL"
+              value={xLink}
+              onChange={handleInputChange("xLink")}
+              type="url"
+              placeholder="https://twitter.com/your-account"
+              validator={urlValidator}
+            />
+          </Form>
 
           {dexData?.repoUrl ? (
             <Card variant="success" className="mb-6">
@@ -431,8 +484,43 @@ export default function DexRoute() {
               </Button>
             </Card>
           ) : null}
-        </Form>
-      </Card>
+
+          {/* Danger Zone card */}
+          {dexData && dexData.id && (
+            <div className="mt-12 pt-6 border-t border-primary-light/10">
+              <Card variant="error">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                  <div>
+                    <h3 className="text-lg font-semibold text-red-500">
+                      Danger Zone
+                    </h3>
+                    <p className="text-sm text-gray-400 mt-1">
+                      This action permanently deletes your DEX and its GitHub
+                      repository.
+                    </p>
+                  </div>
+                  <Button
+                    variant="danger"
+                    onClick={() => setDeleteConfirmOpen(true)}
+                    className="mt-4 md:mt-0 shrink-0"
+                    disabled={isDeleting || isLoading || isSaving}
+                  >
+                    Delete DEX
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+
+          {/* Delete confirmation modal */}
+          <DeleteConfirmModal
+            isOpen={deleteConfirmOpen}
+            onClose={() => setDeleteConfirmOpen(false)}
+            onConfirm={handleDelete}
+            entityName="DEX"
+          />
+        </div>
+      )}
     </div>
   );
 }

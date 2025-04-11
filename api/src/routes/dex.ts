@@ -204,7 +204,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   }
 });
 
-// Delete a DEX
+// Delete a user's DEX
 dexRoutes.delete("/:id", async c => {
   const id = c.req.param("id");
   const userId = c.get("userId");
@@ -214,8 +214,8 @@ dexRoutes.delete("/:id", async c => {
   }
 
   try {
-    await deleteDex(id, userId);
-    return c.json({ message: "DEX deleted successfully" });
+    const deletedDex = await deleteDex(id, userId);
+    return c.json({ message: "DEX deleted successfully", dex: deletedDex });
   } catch (error) {
     console.error("Error deleting DEX:", error);
 

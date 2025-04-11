@@ -389,14 +389,23 @@ export default function WorkflowStatus({
                   <h4 className="font-medium">
                     Run Details: {selectedRun.name}
                   </h4>
-                  <a
-                    href={selectedRun.htmlUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-xs text-primary-light hover:underline"
-                  >
-                    View on GitHub
-                  </a>
+                  <div className="flex items-center space-x-2">
+                    <a
+                      href={selectedRun.htmlUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary-light hover:underline"
+                    >
+                      View on GitHub
+                    </a>
+                    <button
+                      onClick={() => setSelectedRun(null)}
+                      className="p-1 rounded hover:bg-dark/50 ml-2"
+                      title="Close details"
+                    >
+                      <div className="i-mdi:close h-4 w-4"></div>
+                    </button>
+                  </div>
                 </div>
                 <div className="my-2 text-xs">
                   <div className="flex justify-between mb-1">
