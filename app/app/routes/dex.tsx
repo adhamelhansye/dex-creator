@@ -47,6 +47,14 @@ export default function DexRoute() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
+  // Keep track of original values for change detection
+  const [originalValues, setOriginalValues] = useState({
+    brokerName: "",
+    telegramLink: "",
+    discordLink: "",
+    xLink: "",
+  });
+
   // Fetch existing DEX data if available
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -72,6 +80,14 @@ export default function DexRoute() {
           if (data.xLink) {
             setXLink(data.xLink);
           }
+
+          // Store original values for change detection
+          setOriginalValues({
+            brokerName: data.brokerName || "",
+            telegramLink: data.telegramLink || "",
+            discordLink: data.discordLink || "",
+            xLink: data.xLink || "",
+          });
 
           // Try to construct the deployment URL if a repo exists
           if (data.repoUrl) {
@@ -172,6 +188,26 @@ export default function DexRoute() {
       return;
     }
 
+    // Prepare trimmed values
+    const trimmedBrokerName = brokerName.trim();
+    const trimmedTelegramLink = telegramLink.trim();
+    const trimmedDiscordLink = discordLink.trim();
+    const trimmedXLink = xLink.trim();
+
+    // If this is an update (DEX already exists), check for changes
+    if (dexData && dexData.id) {
+      const hasChanges =
+        trimmedBrokerName !== originalValues.brokerName ||
+        trimmedTelegramLink !== originalValues.telegramLink ||
+        trimmedDiscordLink !== originalValues.discordLink ||
+        trimmedXLink !== originalValues.xLink;
+
+      if (!hasChanges) {
+        toast.info("No changes detected");
+        return;
+      }
+    }
+
     setIsSaving(true);
 
     // For new DEX, show forking status
@@ -182,10 +218,10 @@ export default function DexRoute() {
     try {
       // Prepare data to send
       const dexFormData = {
-        brokerName: brokerName.trim(),
-        telegramLink: telegramLink.trim() || undefined,
-        discordLink: discordLink.trim() || undefined,
-        xLink: xLink.trim() || undefined,
+        brokerName: trimmedBrokerName,
+        telegramLink: trimmedTelegramLink || undefined,
+        discordLink: trimmedDiscordLink || undefined,
+        xLink: trimmedXLink || undefined,
       };
 
       // If DEX already exists, update it; otherwise create a new one
@@ -198,11 +234,28 @@ export default function DexRoute() {
           dexFormData,
           token
         );
+
+        // Update originalValues after successful save
+        setOriginalValues({
+          brokerName: trimmedBrokerName,
+          telegramLink: trimmedTelegramLink,
+          discordLink: trimmedDiscordLink,
+          xLink: trimmedXLink,
+        });
+
         toast.success("DEX information updated successfully!");
       } else {
         // Create new DEX
         setForkingStatus("Creating repository from template...");
         savedData = await post<DexData>("api/dex", dexFormData, token);
+
+        // Update originalValues after successful save
+        setOriginalValues({
+          brokerName: trimmedBrokerName,
+          telegramLink: trimmedTelegramLink,
+          discordLink: trimmedDiscordLink,
+          xLink: trimmedXLink,
+        });
 
         // Check if we got a repo URL back
         if (savedData.repoUrl) {
@@ -424,9 +477,10 @@ export default function DexRoute() {
                 href={dexData.repoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-light hover:underline break-all block mb-4"
+                className="text-primary-light hover:underline break-all block mb-4 flex items-center"
               >
-                {dexData.repoUrl}
+                <span className="break-all">{dexData.repoUrl}</span>
+                <div className="i-mdi:open-in-new h-4 w-4 ml-1 flex-shrink-0"></div>
               </a>
 
               {/* Show the deployment URL if available */}

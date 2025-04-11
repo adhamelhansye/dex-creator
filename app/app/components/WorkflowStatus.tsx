@@ -64,10 +64,12 @@ export default function WorkflowStatus({
 }: WorkflowStatusProps) {
   const { token } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const [isLoadingDetails, setIsLoadingDetails] = useState(false);
   const [workflowStatus, setWorkflowStatus] =
     useState<WorkflowStatusResponse | null>(null);
   const [selectedRun, setSelectedRun] =
     useState<WorkflowRunDetailsResponse | null>(null);
+  const [selectedRunId, setSelectedRunId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [deploymentChecked, setDeploymentChecked] = useState(false);
 
@@ -102,6 +104,9 @@ export default function WorkflowStatus({
     async (runId: number) => {
       if (!token || !dexId) return;
 
+      setIsLoadingDetails(true);
+      setSelectedRunId(runId);
+
       try {
         const data = await get<WorkflowRunDetailsResponse>(
           `api/dex/${dexId}/workflow-runs/${runId}`,
@@ -111,6 +116,10 @@ export default function WorkflowStatus({
       } catch (error) {
         console.error("Error fetching run details:", error);
         toast.error("Could not fetch workflow run details");
+        // Reset selected run ID on error
+        setSelectedRunId(null);
+      } finally {
+        setIsLoadingDetails(false);
       }
     },
     [token, dexId]
@@ -125,8 +134,8 @@ export default function WorkflowStatus({
       // Use much longer intervals to reduce API load
       const refreshInterval =
         !workflowStatus || workflowStatus.totalCount === 0
-          ? 60000 // 1 minute when no workflows found (was 5 seconds)
-          : 180000; // 3 minutes otherwise (was 30 seconds)
+          ? 5_000 // 5 seconds when no workflows found
+          : 20_000; // 10 seconds otherwise
 
       interval = setInterval(fetchWorkflowStatus, refreshInterval);
     }
@@ -351,21 +360,36 @@ export default function WorkflowStatus({
               {workflowStatus.workflowRuns.slice(0, 5).map(run => (
                 <div
                   key={run.id}
-                  className="p-3 mb-2 bg-dark/30 rounded-lg hover:bg-dark/50 cursor-pointer staggered-item"
-                  onClick={() => fetchRunDetails(run.id)}
+                  className={`p-3 mb-2 bg-dark/30 rounded-lg hover:bg-dark/50 cursor-pointer staggered-item ${
+                    selectedRunId === run.id
+                      ? "border border-primary-light/30"
+                      : ""
+                  }`}
+                  onClick={() => {
+                    // If this run is already selected, close it instead of re-fetching
+                    if (selectedRun && selectedRun.id === run.id) {
+                      setSelectedRun(null);
+                      setSelectedRunId(null);
+                    } else {
+                      fetchRunDetails(run.id);
+                    }
+                  }}
                 >
                   <div className="flex justify-between items-center">
                     <div className="flex items-center">
                       <div
-                        className={`h-3 w-3 rounded-full mr-2 ${getStatusBadgeClass(
-                          run.status,
-                          run.conclusion
-                        )}`}
+                        className={`h-3 w-3 rounded-full mr-2 ${
+                          isLoadingDetails && selectedRunId === run.id
+                            ? "bg-blue-500 animate-pulse"
+                            : getStatusBadgeClass(run.status, run.conclusion)
+                        }`}
                       ></div>
                       <span className="font-medium">{run.name}</span>
                     </div>
                     <span className="text-xs text-gray-400">
-                      {getStatusText(run.status, run.conclusion)}
+                      {isLoadingDetails && selectedRunId === run.id
+                        ? "Loading..."
+                        : getStatusText(run.status, run.conclusion)}
                     </span>
                   </div>
                   <div className="mt-1 text-xs text-gray-400 flex justify-between">
@@ -383,113 +407,132 @@ export default function WorkflowStatus({
             </div>
 
             {/* Selected run details */}
-            {selectedRun && (
+            {selectedRunId && (
               <div className="bg-dark/20 p-3 rounded-lg mt-4 border border-light/10 slide-fade-in">
-                <div className="flex justify-between items-center mb-2">
-                  <h4 className="font-medium">
-                    Run Details: {selectedRun.name}
-                  </h4>
-                  <div className="flex items-center space-x-2">
-                    <a
-                      href={selectedRun.htmlUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary-light hover:underline"
-                    >
-                      View on GitHub
-                    </a>
-                    <button
-                      onClick={() => setSelectedRun(null)}
-                      className="p-1 rounded hover:bg-dark/50 ml-2"
-                      title="Close details"
-                    >
-                      <div className="i-mdi:close h-4 w-4"></div>
-                    </button>
+                {isLoadingDetails ? (
+                  <div className="py-4">
+                    <div className="i-svg-spinners:pulse-rings-multiple h-6 w-6 mx-auto text-primary-light mb-2"></div>
+                    <p className="text-center text-sm text-gray-400">
+                      Loading workflow details...
+                    </p>
                   </div>
-                </div>
-                <div className="my-2 text-xs">
-                  <div className="flex justify-between mb-1">
-                    <span className="text-gray-400">Status</span>
-                    <span className="font-medium">
-                      {getStatusText(
-                        selectedRun.status,
-                        selectedRun.conclusion
-                      )}
-                    </span>
-                  </div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-gray-400">Started</span>
-                    <span>{formatDate(selectedRun.createdAt)}</span>
-                  </div>
-                  <div className="flex justify-between mb-1">
-                    <span className="text-gray-400">Last updated</span>
-                    <span>{formatDate(selectedRun.updatedAt)}</span>
-                  </div>
-                </div>
-
-                {selectedRun.jobs.length > 0 && (
-                  <div className="mt-3 slide-fade-in-delayed">
-                    <h5 className="text-sm font-medium mb-2">Jobs</h5>
-                    <div className="space-y-2">
-                      {selectedRun.jobs.map((job, index) => (
-                        <div
-                          key={job.id}
-                          className="bg-dark/30 p-2 rounded text-xs"
-                          style={{
-                            animation: `slideFadeIn 0.25s ease ${0.1 + index * 0.05}s forwards`,
-                            opacity: 0,
-                            transform: "translateY(-10px)",
-                          }}
+                ) : selectedRun ? (
+                  <>
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-medium">
+                        Run Details: {selectedRun.name}
+                      </h4>
+                      <div className="flex items-center space-x-2">
+                        <a
+                          href={selectedRun.htmlUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs text-primary-light hover:underline flex items-center"
                         >
-                          <div className="flex justify-between items-center">
-                            <span className="font-medium">{job.name}</span>
-                            <div
-                              className={`px-2 py-0.5 rounded-full text-xs ${
-                                job.conclusion === "success"
-                                  ? "bg-green-900/30 text-green-300"
-                                  : job.conclusion === "failure"
-                                    ? "bg-red-900/30 text-red-300"
-                                    : job.status === "in_progress"
-                                      ? "bg-blue-900/30 text-blue-300"
-                                      : "bg-gray-900/30 text-gray-300"
-                              }`}
-                            >
-                              {getStatusText(job.status, job.conclusion)}
-                            </div>
-                          </div>
-
-                          {job.steps && job.steps.length > 0 && (
-                            <div className="mt-2 pl-2 border-l border-light/10">
-                              {job.steps.map(step => (
-                                <div
-                                  key={step.number}
-                                  className="flex justify-between py-1"
-                                >
-                                  <span className="text-gray-400">
-                                    {step.name}
-                                  </span>
-                                  <span
-                                    className={
-                                      step.conclusion === "success"
-                                        ? "text-green-400"
-                                        : step.conclusion === "failure"
-                                          ? "text-red-400"
-                                          : "text-gray-400"
-                                    }
-                                  >
-                                    {getStatusText(
-                                      step.status,
-                                      step.conclusion
-                                    )}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      ))}
+                          <span>View on GitHub</span>
+                          <div className="i-mdi:open-in-new h-3 w-3 ml-1"></div>
+                        </a>
+                        <button
+                          onClick={() => {
+                            setSelectedRun(null);
+                            setSelectedRunId(null);
+                          }}
+                          className="p-1 rounded hover:bg-dark/50 ml-2"
+                          title="Close details"
+                        >
+                          <div className="i-mdi:close h-4 w-4"></div>
+                        </button>
+                      </div>
                     </div>
-                  </div>
+                    <div className="my-2 text-xs">
+                      <div className="flex justify-between mb-1">
+                        <span className="text-gray-400">Status</span>
+                        <span className="font-medium">
+                          {getStatusText(
+                            selectedRun.status,
+                            selectedRun.conclusion
+                          )}
+                        </span>
+                      </div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-gray-400">Started</span>
+                        <span>{formatDate(selectedRun.createdAt)}</span>
+                      </div>
+                      <div className="flex justify-between mb-1">
+                        <span className="text-gray-400">Last updated</span>
+                        <span>{formatDate(selectedRun.updatedAt)}</span>
+                      </div>
+                    </div>
+
+                    {selectedRun.jobs.length > 0 && (
+                      <div className="mt-3 slide-fade-in-delayed">
+                        <h5 className="text-sm font-medium mb-2">Jobs</h5>
+                        <div className="space-y-2">
+                          {selectedRun.jobs.map((job, index) => (
+                            <div
+                              key={job.id}
+                              className="bg-dark/30 p-2 rounded text-xs"
+                              style={{
+                                animation: `slideFadeIn 0.25s ease ${0.1 + index * 0.05}s forwards`,
+                                opacity: 0,
+                                transform: "translateY(-10px)",
+                              }}
+                            >
+                              <div className="flex justify-between items-center">
+                                <span className="font-medium">{job.name}</span>
+                                <div
+                                  className={`px-2 py-0.5 rounded-full text-xs ${
+                                    job.conclusion === "success"
+                                      ? "bg-green-900/30 text-green-300"
+                                      : job.conclusion === "failure"
+                                        ? "bg-red-900/30 text-red-300"
+                                        : job.status === "in_progress"
+                                          ? "bg-blue-900/30 text-blue-300"
+                                          : "bg-gray-900/30 text-gray-300"
+                                  }`}
+                                >
+                                  {getStatusText(job.status, job.conclusion)}
+                                </div>
+                              </div>
+
+                              {job.steps && job.steps.length > 0 && (
+                                <div className="mt-2 pl-2 border-l border-light/10">
+                                  {job.steps.map(step => (
+                                    <div
+                                      key={step.number}
+                                      className="flex justify-between py-1"
+                                    >
+                                      <span className="text-gray-400">
+                                        {step.name}
+                                      </span>
+                                      <span
+                                        className={
+                                          step.conclusion === "success"
+                                            ? "text-green-400"
+                                            : step.conclusion === "failure"
+                                              ? "text-red-400"
+                                              : "text-gray-400"
+                                        }
+                                      >
+                                        {getStatusText(
+                                          step.status,
+                                          step.conclusion
+                                        )}
+                                      </span>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <p className="text-sm text-gray-400 text-center py-2">
+                    Failed to load workflow details
+                  </p>
                 )}
               </div>
             )}

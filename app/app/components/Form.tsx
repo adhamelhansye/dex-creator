@@ -52,6 +52,17 @@ export default function Form({
     (e: FormEvent) => {
       e.preventDefault();
 
+      // Prevent auto-submissions during hot-reloading in development
+      // by checking if the event has an isTrusted property set to true (actual user action)
+      // @ts-ignore - isTrusted exists on native events but might not be in the FormEvent type
+      if (
+        process.env.NODE_ENV === "development" &&
+        (!e.nativeEvent || !e.nativeEvent.isTrusted)
+      ) {
+        console.log("Prevented automatic form submission during development");
+        return;
+      }
+
       // Call the parent onSubmit handler with the current errors
       onSubmit(e, errors);
     },
