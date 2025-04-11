@@ -43,6 +43,7 @@ jobs:
           # Remove all files from the GitHub Pages repo except .git directory
           find gh-pages-repo -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} \;
           
+          ls app/build/client
           # Copy built files from app/build/client to GitHub Pages repo
           cp -r app/build/client/* gh-pages-repo/
           
@@ -55,6 +56,8 @@ jobs:
       - name: Commit and push changes
         run: |
           cd gh-pages-repo
+          git status
           git add -A
+          git status
           git commit -m "Deploy: $(date +%Y-%m-%d_%H-%M-%S)"
           git push origin main 
