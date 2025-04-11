@@ -25,40 +25,24 @@ jobs:
       
       - name: Build Remix app in SPA mode
         run: yarn build:app
-        
+      
       - name: Setup Git for GitHub Pages deployment
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
       
-      - name: Clone GitHub Pages Repository
-        uses: actions/checkout@v4
-        with:
-          repository: OrderlyNetworkDexCreator/orderlynetworkdexcreator.github.io
-          path: gh-pages-repo
-          token: ${{ secrets.GH_PAGES_DEPLOY_TOKEN }}
-      
-      - name: Copy build files to GitHub Pages repo
+      - name: Create GitHub Pages Repository
         run: |
-          # Remove all files from the GitHub Pages repo except .git directory
-          find gh-pages-repo -mindepth 1 -maxdepth 1 -not -name '.git' -exec rm -rf {} \;
-          
-          ls app/build/client
-          ls app/build/client/assets
-          # Copy built files from app/build/client to GitHub Pages repo
+          mkdir -p gh-pages-repo
           cp -r app/build/client/* gh-pages-repo/
-          
-          # Create a 404.html file that's identical to index.html for SPA routing
           cp gh-pages-repo/index.html gh-pages-repo/404.html
-          
-          # Add CNAME file with the custom domain
           echo "dex.orderly.network" > gh-pages-repo/CNAME
       
-      - name: Commit and push changes
+      - name: Deploy to GitHub Pages
         run: |
           cd gh-pages-repo
-          git status
+          git init
+          git remote add origin https://${{ secrets.GH_PAGES_DEPLOY_TOKEN }}@github.com/OrderlyNetworkDexCreator/orderlynetworkdexcreator.github.io.git
           git add -A
-          git status
           git commit -m "Deploy: $(date +%Y-%m-%d_%H-%M-%S)"
-          git push origin main 
+          git push -f origin main 
