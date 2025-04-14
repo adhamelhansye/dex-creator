@@ -1,21 +1,21 @@
 import { useState, useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
 import { useAuth } from "../context/AuthContext";
+import { useModal } from "../context/ModalContext";
 import { useAppKit } from "@reown/appkit/react";
 import { toast } from "react-toastify";
 import { Icon } from "@iconify/react";
-import LoginModal from "./LoginModal";
 import { Button } from "./Button";
 import { useLocation } from "@remix-run/react";
 
 export default function WalletConnect() {
   const [connectError, setConnectError] = useState<string | null>(null);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const [hasUserDismissedModal, setHasUserDismissedModal] = useState(false);
   const { address, isConnected } = useAccount();
   const { disconnect } = useDisconnect();
   const appKit = useAppKit();
   const location = useLocation();
+  const { openModal, closeModal } = useModal();
   const {
     user,
     isAuthenticated,
@@ -68,13 +68,12 @@ export default function WalletConnect() {
     if (
       isConnected &&
       !isAuthenticated &&
-      !showLoginModal &&
       !hasUserDismissedModal &&
       !isDexPage // Don't show on DEX page
     ) {
       // Short delay to ensure the wallet modal is fully closed first
       const timer = setTimeout(() => {
-        setShowLoginModal(true);
+        openModal("login", { onLogin: handleLogin });
       }, 500);
 
       return () => clearTimeout(timer);
@@ -82,9 +81,9 @@ export default function WalletConnect() {
   }, [
     isConnected,
     isAuthenticated,
-    showLoginModal,
     hasUserDismissedModal,
     location.pathname,
+    openModal,
   ]);
 
   // Clear any connection errors when connection state changes
@@ -108,22 +107,23 @@ export default function WalletConnect() {
     appKit?.open();
   };
 
-  // Handle login through modal - always close modal regardless of outcome
-  const handleLoginFromModal = async () => {
-    setShowLoginModal(false); // Close modal immediately
-
+  // Handle login
+  const handleLogin = async () => {
     try {
       await login();
+      // Close the modal after successful login
+      closeModal();
     } catch (error) {
       // Error will be handled by the authError useEffect
       console.error("Login failed:", error);
+      // Don't close the modal on failure
     }
   };
 
-  // Handle closing the modal with "Later" button
-  const handleDismissModal = () => {
-    setShowLoginModal(false);
-    setHasUserDismissedModal(true);
+  // Handle showing the login modal
+  const handleShowLoginModal = () => {
+    setHasUserDismissedModal(false);
+    openModal("login", { onLogin: handleLogin });
   };
 
   return (
@@ -156,10 +156,7 @@ export default function WalletConnect() {
                 variant="primary"
                 size="sm"
                 withGlow
-                onClick={() => {
-                  setHasUserDismissedModal(false);
-                  setShowLoginModal(true);
-                }}
+                onClick={handleShowLoginModal}
                 isLoading={isLoading}
                 loadingText="Validating"
               >
@@ -178,13 +175,6 @@ export default function WalletConnect() {
               </Button>
             </div>
           </div>
-
-          {/* Login Modal */}
-          <LoginModal
-            isOpen={showLoginModal}
-            onClose={handleDismissModal}
-            onLogin={handleLoginFromModal}
-          />
         </div>
       ) : (
         /* Authenticated state */

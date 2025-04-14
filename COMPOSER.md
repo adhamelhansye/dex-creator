@@ -393,6 +393,39 @@ The application uses a consistent wallet connection pattern:
 
 Example implementation in `WalletConnect.tsx` shows the pattern with all states.
 
+### Modal Management System
+
+The application uses a centralized modal management system to prevent duplicate modals and ensure consistent positioning across pages.
+
+1. **Architecture**:
+   - Context-based solution (`app/app/context/ModalContext.tsx`) that renders modals at the root level
+   - Modals are displayed through the `useModal` hook rather than being directly included in components
+   - Ensures modals appear in the same position regardless of where they're triggered from
+
+2. **Implementation**:
+   ```tsx
+   // Component using the modal system
+   import { useModal } from "../context/ModalContext";
+   
+   function Component() {
+     const { openModal } = useModal();
+     
+     const handleAction = () => {
+       openModal("login", { onLogin: handleLogin });
+     };
+     
+     return <Button onClick={handleAction}>Login</Button>;
+   }
+   ```
+
+3. **Benefits**:
+   - Prevents duplicate modals in the DOM
+   - Consistent positioning across different pages
+   - Simpler component code without direct modal dependencies
+   - Works seamlessly with the animation system
+
+This system resolves layout issues that were occurring when modals were rendered at different levels of the DOM tree.
+
 ### Responsive Design
 
 The application follows a mobile-first approach with these key principles:

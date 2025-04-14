@@ -26,7 +26,7 @@ export default function LoginModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center">
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center h-screen">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-[1001]"

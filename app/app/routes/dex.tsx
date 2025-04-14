@@ -1,13 +1,13 @@
 import { useState, useEffect, FormEvent } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { useModal } from "../context/ModalContext";
 import { get, post, put, del } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import FormInput from "../components/FormInput";
 import Form, { FormErrors } from "../components/Form";
-import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import {
   validateUrl,
   required,
@@ -34,6 +34,7 @@ interface DexData {
 
 export default function DexRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
+  const { openModal } = useModal();
   const navigate = useNavigate();
   const [brokerName, setBrokerName] = useState("");
   const [telegramLink, setTelegramLink] = useState("");
@@ -45,7 +46,6 @@ export default function DexRoute() {
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
 
   // Keep track of original values for change detection
   const [originalValues, setOriginalValues] = useState({
@@ -320,6 +320,14 @@ export default function DexRoute() {
     }
   };
 
+  // Handle showing delete confirmation
+  const handleShowDeleteConfirm = () => {
+    openModal("deleteConfirm", {
+      onConfirm: handleDelete,
+      entityName: "DEX",
+    });
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
@@ -383,9 +391,6 @@ export default function DexRoute() {
         <h1 className="text-2xl md:text-3xl font-bold gradient-text">
           {dexData ? "Manage Your DEX" : "Create Your DEX"}
         </h1>
-        <div className="mt-4 md:mt-0">
-          <WalletConnect />
-        </div>
       </div>
 
       {!isAuthenticated && !isLoading ? (
@@ -477,7 +482,7 @@ export default function DexRoute() {
                 href={dexData.repoUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-light hover:underline break-all block mb-4 flex items-center"
+                className="text-primary-light hover:underline break-all mb-4 flex items-center"
               >
                 <span className="break-all">{dexData.repoUrl}</span>
                 <div className="i-mdi:open-in-new h-4 w-4 ml-1 flex-shrink-0"></div>
@@ -555,7 +560,7 @@ export default function DexRoute() {
                   </div>
                   <Button
                     variant="danger"
-                    onClick={() => setDeleteConfirmOpen(true)}
+                    onClick={handleShowDeleteConfirm}
                     className="mt-4 md:mt-0 shrink-0"
                     disabled={isDeleting || isLoading || isSaving}
                   >
@@ -565,14 +570,6 @@ export default function DexRoute() {
               </Card>
             </div>
           )}
-
-          {/* Delete confirmation modal */}
-          <DeleteConfirmModal
-            isOpen={deleteConfirmOpen}
-            onClose={() => setDeleteConfirmOpen(false)}
-            onConfirm={handleDelete}
-            entityName="DEX"
-          />
         </div>
       )}
     </div>
