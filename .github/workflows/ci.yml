@@ -23,7 +23,10 @@ jobs:
       
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      
+
+      - name: Run Prisma generate
+        run: yarn db:generate
+
       - name: Run ESLint
         run: yarn lint
       
