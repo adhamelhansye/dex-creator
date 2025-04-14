@@ -76,7 +76,6 @@ docker run --name dex-creator-postgres \
 ```bash
 # Alternative setup with host networking
 docker run --name dex-creator-postgres \
-  --network host \
   -e POSTGRES_PASSWORD=postgres \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_DB=dex_creator \
@@ -173,13 +172,12 @@ To enable this deployment, you'll need:
 The backend API can be deployed using Docker:
 
 ```bash
-# Build the API Docker image (use host networking to avoid bridge driver issues)
-docker build -t dex-creator-api --network host .
+# Build the API Docker image
+docker build -t dex-creator-api .
 
 # Run the API container with host networking
 docker run -d \
   --name dex-creator-api \
-  --network host \
   -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public \
   -e GITHUB_TOKEN=your-github-token \
   -e GITHUB_TEMPLATE_REPO=OrderlyNetworkDexCreator/dex-creator-template \

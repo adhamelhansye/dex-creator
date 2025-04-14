@@ -573,7 +573,7 @@ The API can be deployed using Docker with a simple approach:
 
 ```bash
 # Build the image
-docker build -t dex-creator-api --network host .
+docker build -t dex-creator-api .
 
 # Run the container with host networking (recommended on Linux)
 docker run -d \
