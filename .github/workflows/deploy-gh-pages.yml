@@ -24,7 +24,9 @@ jobs:
         run: yarn install --frozen-lockfile
       
       - name: Build Remix app in SPA mode
-        run: yarn build:app
+        run: |
+          echo "VITE_API_URL: ${{ env.VITE_API_URL }}"
+          yarn app build
         env:
           VITE_API_URL: ${{ env.VITE_API_URL }}
       
