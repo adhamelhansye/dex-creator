@@ -25,6 +25,8 @@ jobs:
       
       - name: Build Remix app in SPA mode
         run: yarn build:app
+        env:
+          VITE_API_URL: ${{ env.VITE_API_URL }}
       
       - name: Setup Git for GitHub Pages deployment
         run: |
