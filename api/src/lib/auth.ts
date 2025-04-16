@@ -60,15 +60,12 @@ export async function authMiddleware(c: Context, next: () => Promise<void>) {
       return c.json({ error: "Unauthorized: Invalid or expired token" }, 401);
     }
 
-    // Set user ID in context for routes to use
     c.set("userId", userId);
-
-    // Continue to the next middleware or route handler
-    await next();
   } catch (error) {
     console.error("Authentication error:", error);
     return c.json({ error: "Authentication error" }, 500);
   }
+  await next();
 }
 
 /**
@@ -99,14 +96,11 @@ export async function adminMiddleware(c: Context, next: () => Promise<void>) {
       return c.json({ error: "Forbidden: Admin access required" }, 403);
     }
 
-    // Set user ID in context for routes to use
     c.set("userId", userId);
     c.set("isAdmin", true);
-
-    // Continue to the next middleware or route handler
-    await next();
   } catch (error) {
     console.error("Admin authentication error:", error);
     return c.json({ error: "Authentication error" }, 500);
   }
+  await next();
 }

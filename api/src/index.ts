@@ -29,7 +29,7 @@ app.use("/api/dex/*", authMiddleware);
 app.use("/api/admin/*", async (c, next) => {
   // Skip adminMiddleware for the /check endpoint
   if (c.req.path === "/api/admin/check") {
-    await next();
+    await authMiddleware(c, next);
   } else {
     await adminMiddleware(c, next);
   }

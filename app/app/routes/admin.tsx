@@ -22,7 +22,7 @@ export default function AdminRoute() {
   >(null);
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, token } = useAuth();
 
   // Check if the current user is an admin
   useEffect(() => {
@@ -34,7 +34,10 @@ export default function AdminRoute() {
       }
 
       try {
-        const response = await get<AdminCheckResponse>("api/admin/check");
+        const response = await get<AdminCheckResponse>(
+          "api/admin/check",
+          token
+        );
         setIsAdmin(response.isAdmin);
       } catch (error) {
         console.error("Error checking admin status:", error);
@@ -45,7 +48,7 @@ export default function AdminRoute() {
     }
 
     checkAdmin();
-  }, [isAuthenticated]);
+  }, [isAuthenticated, token]);
 
   // Handle deleting a DEX by wallet address
   const handleDeleteDex = async (e: FormEvent) => {
@@ -65,7 +68,7 @@ export default function AdminRoute() {
         {
           walletAddress: walletAddress.trim(),
         },
-        undefined, // Use the authenticated token
+        token, // Use the authentication token
         { showToastOnError: false } // We'll handle the toast ourselves for a better UX
       );
 

@@ -32,9 +32,10 @@ adminRoutes.get("/users", async (c: AdminContext) => {
 });
 
 // Check if current user is admin (public endpoint - always returns 200)
-adminRoutes.get("/check", async (c: Context) => {
+adminRoutes.get("/check", async c => {
   // Get userId from context if it exists (user might not be logged in)
   const userId = c.get("userId") as string | undefined;
+  console.log("userId", userId);
 
   // If no userId is provided, user is not logged in, so definitely not admin
   if (!userId) {
