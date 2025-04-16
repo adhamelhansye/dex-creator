@@ -1,7 +1,12 @@
 import { Context, Hono } from "hono";
 import { z } from "zod";
 import { getAllAdmins, isUserAdmin } from "../models/admin";
-import { getDexById, updateBrokerId, updateDexRepoUrl } from "../models/dex";
+import {
+  getDexById,
+  updateBrokerId,
+  updateDexRepoUrl,
+  getAllDexes,
+} from "../models/dex";
 import { PrismaClient } from "@prisma/client";
 import {
   setupRepositoryWithSingleCommit,
@@ -45,6 +50,17 @@ adminRoutes.get("/check", async c => {
   // Check if user is admin
   const isAdmin = await isUserAdmin(userId);
   return c.json({ isAdmin }, 200);
+});
+
+// Get all DEXes (admin only)
+adminRoutes.get("/dexes", async (c: AdminContext) => {
+  try {
+    const dexes = await getAllDexes();
+    return c.json({ dexes });
+  } catch (error) {
+    console.error("Error fetching all DEXes:", error);
+    return c.json({ error: "Failed to fetch DEXes" }, 500);
+  }
 });
 
 // Helper function to extract owner and repo from GitHub URL

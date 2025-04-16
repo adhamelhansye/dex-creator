@@ -357,3 +357,19 @@ export async function deleteDexByWalletAddress(
     },
   });
 }
+
+// Get all DEXes with associated user data (admin only)
+export async function getAllDexes() {
+  return prisma.dex.findMany({
+    include: {
+      user: {
+        select: {
+          address: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
