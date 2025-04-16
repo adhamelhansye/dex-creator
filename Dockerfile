@@ -46,6 +46,7 @@ COPY --from=builder /app/api/prisma/schema.prisma ./prisma/
 COPY --from=builder /app/api/prisma/migrations ./prisma/migrations
 COPY --from=builder /app/node_modules /app/node_modules
 COPY --from=builder /app/api/node_modules ./node_modules
+COPY --from=builder /app/api/src/workflows /app/api/workflows
 
 # Copy entrypoint script
 COPY api/docker-entrypoint.sh ./docker-entrypoint.sh
