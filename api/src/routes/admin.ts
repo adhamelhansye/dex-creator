@@ -1,9 +1,12 @@
 import { Context, Hono } from "hono";
 import { z } from "zod";
 import { getAllAdmins, isUserAdmin } from "../models/admin";
-import { getDexById, updateBrokerId } from "../models/dex";
+import { getDexById, updateBrokerId, updateDexRepoUrl } from "../models/dex";
 import { PrismaClient } from "@prisma/client";
-import { setupRepositoryWithSingleCommit } from "../lib/github";
+import {
+  setupRepositoryWithSingleCommit,
+  renameRepository,
+} from "../lib/github";
 
 const prisma = new PrismaClient();
 
@@ -178,6 +181,99 @@ adminRoutes.delete("/dex/delete", async (c: AdminContext) => {
   } catch (error) {
     console.error("Error deleting DEX:", error);
     return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+// Admin endpoint to rename a repository (protected by adminMiddleware)
+adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
+  const id = c.req.param("id");
+
+  // Validate the request body
+  const renameSchema = z.object({
+    newName: z
+      .string()
+      .min(1)
+      .max(90)
+      .regex(
+        /^[a-z0-9-]+$/,
+        "Repository name must contain only lowercase letters, numbers, and hyphens"
+      ),
+  });
+
+  // Validate body
+  let body;
+  try {
+    body = await c.req.json();
+    renameSchema.parse(body);
+  } catch (e) {
+    return c.json({ message: "Invalid request body", error: String(e) }, 400);
+  }
+
+  try {
+    // Get the DEX with current data
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    // Check if the DEX has a repository URL
+    if (!dex.repoUrl) {
+      return c.json({ message: "This DEX does not have a repository" }, 400);
+    }
+
+    // Extract owner and repo from GitHub URL
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, 400);
+    }
+
+    try {
+      // Use the renameRepository function from github.ts
+      const newRepoUrl = await renameRepository(
+        repoInfo.owner,
+        repoInfo.repo,
+        body.newName
+      );
+
+      // Update the DEX record with the new repository URL
+      // No need to pass userId since we removed the authorization check in the model
+      const updatedDex = await updateDexRepoUrl(id, newRepoUrl);
+
+      return c.json({
+        message: "Repository renamed successfully",
+        dex: updatedDex,
+        oldName: repoInfo.repo,
+        newName: body.newName,
+      });
+    } catch (githubError) {
+      // Handle GitHub API errors
+      console.error("GitHub API error:", githubError);
+
+      // Check for specific GitHub errors
+      if (
+        githubError instanceof Error &&
+        githubError.message.includes("Repository with this name already exists")
+      ) {
+        return c.json(
+          {
+            message: "Repository name already exists",
+            error: githubError.message,
+          },
+          400
+        );
+      }
+
+      return c.json(
+        { message: "Error renaming repository", error: String(githubError) },
+        500
+      );
+    }
+  } catch (error) {
+    console.error("Error renaming repository:", error);
+    return c.json(
+      { message: "Error renaming repository", error: String(error) },
+      500
+    );
   }
 });
 

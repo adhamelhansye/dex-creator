@@ -7,19 +7,12 @@ import {
   getDexById,
   updateDex,
   deleteDex,
-  updateDexRepoUrl,
 } from "../models/dex";
 import {
-  forkTemplateRepository,
-  setupRepositoryWithSingleCommit,
   getWorkflowRunStatus,
   getWorkflowRunDetails,
   updateDexConfig,
 } from "../lib/github";
-import { PrismaClient } from "@prisma/client";
-import { generateRepositoryName } from "../lib/nameGenerator";
-
-const prisma = new PrismaClient();
 
 // Create a router for authenticated routes
 const dexRoutes = new Hono();
@@ -132,7 +125,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
             repoInfo.owner,
             repoInfo.repo,
             {
-              brokerId: updatedDex.brokerId,
+              brokerId: updatedDex.brokerId, // Use the existing broker ID from the database to preserve admin changes
               brokerName: updatedDex.brokerName,
               themeCSS: updatedDex.themeCSS?.toString(),
               telegramLink: updatedDex.telegramLink || undefined,
@@ -203,145 +196,6 @@ dexRoutes.delete("/:id", async c => {
     }
 
     return c.json({ message: "Error deleting DEX", error: String(error) }, 500);
-  }
-});
-
-// Fork the template repository and set up DEX
-dexRoutes.post("/:id/fork", async c => {
-  const id = c.req.param("id");
-  const userId = c.get("userId");
-
-  try {
-    // Get the DEX details
-    const dex = await getDexById(id);
-
-    if (!dex) {
-      return c.json({ message: "DEX not found" }, 404);
-    }
-
-    // Check if the DEX belongs to the user
-    if (dex.userId !== userId) {
-      return c.json({ message: "Unauthorized to access this DEX" }, 403);
-    }
-
-    // Check if this DEX already has a repository
-    if (dex.repoUrl) {
-      return c.json(
-        {
-          message: "This DEX already has a repository",
-          repoUrl: dex.repoUrl,
-        },
-        400
-      );
-    }
-
-    // Check if broker name exists
-    if (!dex.brokerName || dex.brokerName.trim() === "") {
-      return c.json(
-        { message: "Broker name is required to create a repository" },
-        400
-      );
-    }
-
-    // Get user's wallet address
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { address: true },
-    });
-
-    if (!user) {
-      return c.json({ message: "User not found" }, 404);
-    }
-
-    // Use the standardized repository name generator - same as in createDex
-    const baseRepoName = generateRepositoryName(dex.brokerName);
-
-    // Ensure repo name doesn't exceed GitHub's limits (90 chars)
-    let repoName = baseRepoName.substring(0, 90);
-    let finalRepoName = repoName;
-
-    // Check for name collision and append timestamp if needed
-    let nameCollision = true;
-    let attemptCount = 0;
-
-    while (nameCollision && attemptCount < 5) {
-      try {
-        // Assume no collision for the first attempt
-        nameCollision = false;
-
-        if (attemptCount > 0) {
-          // If we've tried before, add a timestamp
-          const timestamp = Date.now().toString().slice(-6);
-          const suffix = `-${timestamp}`;
-          finalRepoName = repoName.substring(0, 90 - suffix.length) + suffix;
-        }
-
-        attemptCount++;
-      } catch (error: unknown) {
-        // If this is a 404 error, the repo doesn't exist
-        if (
-          typeof error === "object" &&
-          error !== null &&
-          "status" in error &&
-          error.status === 404
-        ) {
-          nameCollision = false;
-        } else {
-          // For other errors, just continue with the loop
-          attemptCount++;
-        }
-      }
-    }
-
-    if (nameCollision) {
-      return c.json(
-        {
-          message:
-            "Could not generate a unique repository name after multiple attempts",
-        },
-        500
-      );
-    }
-
-    // Fork the template repository
-    const repoUrl = await forkTemplateRepository(finalRepoName);
-
-    // Extract repo name from URL for further operations
-    const repoPath = repoUrl.split("github.com/")[1];
-    const [owner, repo] = repoPath.split("/");
-
-    // Use our new function to update DEX config, workflow files, and logo files in a single commit
-    await setupRepositoryWithSingleCommit(
-      owner,
-      repo,
-      {
-        brokerId: dex.brokerId,
-        brokerName: dex.brokerName,
-        themeCSS: dex.themeCSS?.toString(),
-        telegramLink: dex.telegramLink || undefined,
-        discordLink: dex.discordLink || undefined,
-        xLink: dex.xLink || undefined,
-      },
-      {
-        primaryLogo: dex.primaryLogo || undefined,
-        secondaryLogo: dex.secondaryLogo || undefined,
-        favicon: dex.favicon || undefined,
-      }
-    );
-
-    // Update the DEX record with the repository URL
-    const updatedDex = await updateDexRepoUrl(id, repoUrl, userId);
-
-    return c.json({
-      message: "Repository forked successfully",
-      dex: updatedDex,
-    });
-  } catch (error) {
-    console.error("Error forking repository:", error);
-    return c.json(
-      { message: "Error forking repository", error: String(error) },
-      500
-    );
   }
 });
 

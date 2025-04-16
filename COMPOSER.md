@@ -315,7 +315,16 @@ The project uses GitHub Actions for continuous integration:
    - Only use global.css for base styles and overrides that cannot be achieved with UnoCSS
    - When using icons, prefer Iconify with the @iconify/react package
 
-5. **UI Components**:
+5. **Comment Philosophy**:
+
+   - **IMPORTANT**: Avoid redundant comments that simply restate what the code does
+   - Do not add comments like "// Get the user's address" or "// Create the DEX in the database"
+   - Only add comments for complex logic that isn't immediately obvious 
+   - Use function/variable names that make the code self-documenting
+   - Remove redundant comments during refactoring
+   - JSDoc comments should be reserved for public APIs or complex functions
+
+6. **UI Components**:
 
    - Use pill-shaped designs for interactive elements (rounded-full)
    - Maintain consistent padding and font sizes across similar components
@@ -323,7 +332,7 @@ The project uses GitHub Actions for continuous integration:
    - Prefer subtle borders to define component boundaries
    - Follow the Orderly color palette defined in UnoCSS config
 
-6. **Responsive Design**:
+7. **Responsive Design**:
 
    - Use mobile-first approach with responsive utility classes (e.g., `md:px-4`)
    - Reduce paddings, margins, and font sizes on mobile screens
@@ -331,20 +340,20 @@ The project uses GitHub Actions for continuous integration:
    - Scale down icon sizes and interactive elements for better mobile ergonomics
    - Test all UI components on multiple device sizes during development
 
-7. **Error Handling**:
+8. **Error Handling**:
 
    - Use toast notifications for error feedback instead of inline error messages
    - Log errors to console for debugging
    - Provide clear user feedback for all interactions
 
-8. **Code Quality**:
+9. **Code Quality**:
 
    - All code must pass ESLint rules
    - All code must be properly formatted with Prettier
    - All TypeScript code must type check without errors
    - CI pipeline ensures these standards are maintained
 
-9. **Authentication and Security**:
+10. **Authentication and Security**:
 
    - Always validate tokens on application load
    - Include token expiration checks
@@ -352,7 +361,7 @@ The project uses GitHub Actions for continuous integration:
    - Do not store sensitive information in localStorage
    - Implement periodic token validation for long-lived sessions
 
-10. **Database Operations**:
+11. **Database Operations**:
    - Use Prisma's type-safe operations for all database interactions
    - Keep transactions atomic when performing related operations
    - Include proper error handling for database operations

@@ -10,7 +10,6 @@ import { generateRepositoryName } from "../lib/nameGenerator";
 
 /**
  * Helper function to extract owner and repo from GitHub URL
- * (Duplicated from routes/dex.ts to avoid circular imports)
  */
 function extractRepoInfoFromUrl(
   repoUrl: string
@@ -82,128 +81,119 @@ export async function createDex(
   // Use the helper function to generate a standardized repository name
   const repoName = generateRepositoryName(brokerName);
 
-  console.log(
-    `Generated repository name: ${repoName} for wallet address ${user.address}`
-  );
+  let repoUrl: string;
 
-  let repoUrl = null;
-  let forkError = null;
-
-  // Try to fork the template repository, but don't prevent DEX creation if it fails
+  // First create the repository - this is required for DEX creation
   try {
     console.log(
-      "Attempting to create repository in OrderlyNetworkDexCreator organization..."
+      "Creating repository in OrderlyNetworkDexCreator organization..."
     );
     repoUrl = await forkTemplateRepository(repoName);
     console.log(`Successfully forked repository: ${repoUrl}`);
 
-    // If forking was successful, extract repo info from URL using the helper function
+    // Extract repo info from URL
     const repoInfo = extractRepoInfoFromUrl(repoUrl);
-    if (repoInfo) {
-      // Generate a broker ID based on broker name if not provided
-      // This ensures we have a brokerId for the config
-      const brokerId = brokerName.toLowerCase().replace(/\s+/g, "-");
-
-      // Use the new function to set up the repository with a single commit
-      await setupRepositoryWithSingleCommit(
-        repoInfo.owner,
-        repoInfo.repo,
-        {
-          brokerId,
-          brokerName,
-          themeCSS: data.themeCSS?.toString(),
-          telegramLink: data.telegramLink || undefined,
-          discordLink: data.discordLink || undefined,
-          xLink: data.xLink || undefined,
-        },
-        {
-          primaryLogo: data.primaryLogo || undefined,
-          secondaryLogo: data.secondaryLogo || undefined,
-          favicon: data.favicon || undefined,
-        }
-      );
-
-      console.log(
-        `Successfully set up repository for ${brokerName} with a single commit`
-      );
-    } else {
-      console.warn(
+    if (!repoInfo) {
+      throw new Error(
         `Failed to extract repository information from URL: ${repoUrl}`
       );
     }
-  } catch (error) {
-    console.error("Error forking repository:", error);
 
-    // Enhance error information for debugging
+    // Always use 'demo' as the brokerId - only admins can change this
+    const brokerId = "demo";
+
+    // Set up the repository with a single commit
+    await setupRepositoryWithSingleCommit(
+      repoInfo.owner,
+      repoInfo.repo,
+      {
+        brokerId,
+        brokerName,
+        themeCSS: data.themeCSS?.toString(),
+        telegramLink: data.telegramLink || undefined,
+        discordLink: data.discordLink || undefined,
+        xLink: data.xLink || undefined,
+      },
+      {
+        primaryLogo: data.primaryLogo || undefined,
+        secondaryLogo: data.secondaryLogo || undefined,
+        favicon: data.favicon || undefined,
+      }
+    );
+    console.log(`Successfully set up repository for ${brokerName}`);
+  } catch (error) {
+    // If repository creation fails, the entire DEX creation fails
+    console.error("Error creating repository:", error);
+
     let errorMessage = "Unknown error";
     if (error instanceof Error) {
       errorMessage = error.message;
 
-      // Check for common GitHub API errors
+      // Provide more context for common errors
       if (
         errorMessage.includes(
           "Resource not accessible by personal access token"
         )
       ) {
-        console.error(
-          "Permission error: The GitHub token does not have sufficient permissions to create repositories in the OrderlyNetworkDexCreator organization."
+        throw new Error(
+          "Repository creation failed: The GitHub token does not have sufficient permissions"
         );
       } else if (errorMessage.includes("Not Found")) {
-        console.error(
-          "Not Found error: The GitHub template repository or organization may not exist or is not accessible."
+        throw new Error(
+          "Repository creation failed: Template repository or organization not found"
+        );
+      } else if (errorMessage.includes("already exists")) {
+        throw new Error(
+          "Repository creation failed: A repository with this name already exists"
         );
       }
     }
 
-    forkError = new Error(`Repository creation failed: ${errorMessage}`);
-    // Continue with DEX creation even though forking failed
+    throw new Error(`Repository creation failed: ${errorMessage}`);
   }
 
-  // Create the DEX with base64-encoded image data and the repo URL (if available)
+  // If we get here, repository creation was successful
+  // Now create the DEX in the database
   try {
-    // Generate a broker ID based on broker name if not provided
-    const brokerId = brokerName.toLowerCase().replace(/\s+/g, "-");
+    // Always use 'demo' as the brokerId - only admins can change this
+    const brokerId = "demo";
 
-    const dex = await prisma.$transaction(async tx => {
-      // Create properly typed data object
-      return tx.dex.create({
-        data: {
-          brokerName: data.brokerName ?? undefined,
-          brokerId: brokerId, // Use the generated broker ID
-          themeCSS: data.themeCSS,
-          primaryLogo: data.primaryLogo,
-          secondaryLogo: data.secondaryLogo,
-          favicon: data.favicon,
-          telegramLink: data.telegramLink,
-          discordLink: data.discordLink,
-          xLink: data.xLink,
-          repoUrl: repoUrl, // This will be null if forking failed
-          user: {
-            connect: {
-              id: userId,
-            },
+    return await prisma.dex.create({
+      data: {
+        brokerName: data.brokerName ?? undefined,
+        brokerId: brokerId,
+        themeCSS: data.themeCSS,
+        primaryLogo: data.primaryLogo,
+        secondaryLogo: data.secondaryLogo,
+        favicon: data.favicon,
+        telegramLink: data.telegramLink,
+        discordLink: data.discordLink,
+        xLink: data.xLink,
+        repoUrl: repoUrl, // Repository URL is now guaranteed to exist
+        user: {
+          connect: {
+            id: userId,
           },
         },
-      });
+      },
     });
-
-    // If there was a forking error, log it but return the DEX anyway
-    if (forkError) {
-      console.warn(`DEX created but repository forking failed: ${forkError}`);
-    }
-
-    return dex;
   } catch (dbError) {
     console.error("Error creating DEX in database:", dbError);
 
-    // If we had a forking error earlier, include it in the error message
-    if (forkError) {
-      throw new Error(
-        `Database error: ${dbError}. Additionally, repository forking failed: ${forkError}`
-      );
+    // Try to clean up by deleting the repository we just created
+    try {
+      const repoInfo = extractRepoInfoFromUrl(repoUrl);
+      if (repoInfo) {
+        await deleteRepository(repoInfo.owner, repoInfo.repo);
+        console.log(`Cleaned up repository after database creation failure`);
+      }
+    } catch (cleanupError) {
+      console.error("Failed to clean up repository:", cleanupError);
     }
 
-    throw dbError;
+    throw new Error(
+      `Failed to create DEX in database: ${dbError instanceof Error ? dbError.message : String(dbError)}`
+    );
   }
 }
 
@@ -295,16 +285,10 @@ export async function deleteDex(id: string, userId: string): Promise<Dex> {
 // Update DEX repository URL after forking
 export async function updateDexRepoUrl(
   id: string,
-  repoUrl: string,
-  userId: string
+  repoUrl: string
 ): Promise<Dex> {
-  // Ensure the DEX belongs to the user
-  const dex = await getDexById(id);
-
-  if (!dex || dex.userId !== userId) {
-    throw new Error("DEX not found or user is not authorized to update it");
-  }
-
+  // Simply update the repository URL without any ownership checks
+  // Authorization should be handled at the controller/route level
   return prisma.dex.update({
     where: {
       id,

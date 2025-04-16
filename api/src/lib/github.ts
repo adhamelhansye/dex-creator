@@ -500,7 +500,7 @@ function prepareDexConfigContent(
 
   // Create ENV file content
   let envContent = `# Broker settings
-VITE_ORDERLY_BROKER_ID=${config.brokerId}
+VITE_ORDERLY_BROKER_ID=demo
 VITE_ORDERLY_BROKER_NAME=${config.brokerName}
 
 # Meta tags
@@ -1001,6 +1001,53 @@ export async function getWorkflowRunDetails(
     );
     throw new Error(
       `Failed to get workflow run details: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+/**
+ * Renames a GitHub repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The current repository name
+ * @param newName The new repository name
+ * @returns The new repository URL
+ */
+export async function renameRepository(
+  owner: string,
+  repo: string,
+  newName: string
+): Promise<string> {
+  try {
+    console.log(
+      `Renaming repository ${owner}/${repo} to ${owner}/${newName}...`
+    );
+
+    // Validate the new repository name
+    if (!newName || !/^[a-z0-9-]+$/i.test(newName)) {
+      throw new Error(
+        "Repository name can only contain alphanumeric characters and hyphens"
+      );
+    }
+
+    if (newName.length > 100) {
+      throw new Error(
+        "Repository name exceeds GitHub's maximum length of 100 characters"
+      );
+    }
+
+    // Call GitHub API to rename the repository
+    const { data } = await octokit.rest.repos.update({
+      owner,
+      repo,
+      name: newName,
+    });
+
+    // Return the new repository URL
+    return data.html_url;
+  } catch (error) {
+    console.error(`Error renaming repository ${owner}/${repo}:`, error);
+    throw new Error(
+      `Failed to rename repository: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
