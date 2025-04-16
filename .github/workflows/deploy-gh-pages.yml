@@ -25,7 +25,6 @@ jobs:
       
       - name: Build Remix app in SPA mode
         run: |
-          echo "VITE_API_URL: ${{ vars.VITE_API_URL }}"
           yarn app build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
