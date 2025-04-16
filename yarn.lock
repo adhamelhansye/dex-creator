@@ -1169,6 +1169,28 @@
   resolved "https://registry.yarnpkg.com/@jspm/core/-/core-2.1.0.tgz#ee21ff64591d68de98b79ca8e4bd6c5249fded53"
   integrity sha512-3sRl+pkyFY/kLmHl0cgHiFp2xEqErA8N3ECjMs7serSUBmoJ70lBa0PG5t0IM6WJgdZNyyI0R8YFfi5wM8+mzg==
 
+"@jsquash/jpeg@^1.5.0":
+  version "1.5.0"
+  resolved "https://registry.yarnpkg.com/@jsquash/jpeg/-/jpeg-1.5.0.tgz#c927b29ad75ea2c066cf6cbacd2476e3c2e846fa"
+  integrity sha512-Jam3X9BhbP1f+d58TfYobV/ZpYhCnawBF7YMS0Vt5Gi1v5Rk+xUdqYiZarAn0PwAzy2Zm2pPU/VzXHsLhwT9QQ==
+
+"@jsquash/png@^3.0.1":
+  version "3.0.1"
+  resolved "https://registry.yarnpkg.com/@jsquash/png/-/png-3.0.1.tgz#dc4c775e2fda3abd5d2f6e7971f6ce0c11b6a952"
+  integrity sha512-Bnvv93Y5LL92cuk2r2gpV+9JKuDo2/w7bOODw1iPxk8VARknky0sS1tSDgMosUdhNb4CdMlcCm3TMzTaqa3zZw==
+
+"@jsquash/resize@^2.1.0":
+  version "2.1.0"
+  resolved "https://registry.yarnpkg.com/@jsquash/resize/-/resize-2.1.0.tgz#af3751e9f4702512d9a03200521c8e69b54ae082"
+  integrity sha512-UxF45pe5a84GrleHichsnGHyFAJhOu4Ms9L1UQYXhhmDifRm4U3pMEzgly+m3xDe+h4XZyDlpr9f8FBB1LZ+LA==
+
+"@jsquash/webp@^1.4.0":
+  version "1.4.0"
+  resolved "https://registry.yarnpkg.com/@jsquash/webp/-/webp-1.4.0.tgz#8b28656a724434987dab230aa2a26c24b4cc5437"
+  integrity sha512-yKJb6Hilq+qV/4C4qTDEalBobNwJO09LeHHtilmWg5mYHFUDwMunfeAap/r3cL5KsHkGOoI0IjY2nKbTaHq9Bw==
+  dependencies:
+    wasm-feature-detect "^1.2.11"
+
 "@lit-labs/ssr-dom-shim@^1.0.0", "@lit-labs/ssr-dom-shim@^1.1.0", "@lit-labs/ssr-dom-shim@^1.2.0":
   version "1.3.0"
   resolved "https://registry.yarnpkg.com/@lit-labs/ssr-dom-shim/-/ssr-dom-shim-1.3.0.tgz#a28799c463177d1a0b0e5cefdc173da5ac859eb4"
@@ -4360,6 +4382,11 @@ dotenv@^16.0.0:
   version "16.4.7"
   resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.4.7.tgz#0e20c5b82950140aa99be360a8a5f52335f53c26"
   integrity sha512-47qPchRCykZC03FhkYAhrvwU4xDBFIj1QPqaarj6mdM/hgUzfPHcpkHJOn3mJAufFeeAxAzeGsr5X0M4k6fLZQ==
+
+dotenv@^16.4.5:
+  version "16.5.0"
+  resolved "https://registry.yarnpkg.com/dotenv/-/dotenv-16.5.0.tgz#092b49f25f808f020050051d1ff258e404c78692"
+  integrity sha512-m/C+AwOAr9/W1UOIZUo232ejMNnJAJtYQjUbHoNTBNTJSvqzzDh7vnrei3o3r3m9blf6ZoDkvcw0VmozNRFJxg==
 
 dunder-proto@^1.0.1:
   version "1.0.1"
@@ -9235,6 +9262,11 @@ wagmi@^2.14.16:
     "@wagmi/connectors" "5.7.12"
     "@wagmi/core" "2.16.7"
     use-sync-external-store "1.4.0"
+
+wasm-feature-detect@^1.2.11:
+  version "1.8.0"
+  resolved "https://registry.yarnpkg.com/wasm-feature-detect/-/wasm-feature-detect-1.8.0.tgz#4e9f55b0a64d801f372fbb0324ed11ad3abd0c78"
+  integrity sha512-zksaLKM2fVlnB5jQQDqKXXwYHLQUVH9es+5TOOHwGOVJOCeRBCiPjwSg+3tN2AdTCzjgli4jijCH290kXb/zWQ==
 
 wcwidth@^1.0.1:
   version "1.0.1"

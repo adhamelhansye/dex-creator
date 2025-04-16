@@ -73,6 +73,36 @@ export default function WorkflowStatus({
   const [error, setError] = useState<string | null>(null);
   const [deploymentChecked, setDeploymentChecked] = useState(false);
 
+  // Define fetchRunDetails before fetchWorkflowStatus to avoid circular dependency
+  const fetchRunDetails = useCallback(
+    async (runId: number, showLoading = true) => {
+      if (!token || !dexId) return;
+
+      if (showLoading) {
+        setIsLoadingDetails(true);
+      }
+      setSelectedRunId(runId);
+
+      try {
+        const data = await get<WorkflowRunDetailsResponse>(
+          `api/dex/${dexId}/workflow-runs/${runId}`,
+          token
+        );
+        setSelectedRun(data);
+      } catch (error) {
+        console.error("Error fetching run details:", error);
+        toast.error("Could not fetch workflow run details");
+        // Reset selected run ID on error
+        setSelectedRunId(null);
+      } finally {
+        if (showLoading) {
+          setIsLoadingDetails(false);
+        }
+      }
+    },
+    [token, dexId]
+  );
+
   const fetchWorkflowStatus = useCallback(async () => {
     if (!token || !dexId) return;
 
@@ -90,6 +120,26 @@ export default function WorkflowStatus({
 
       // If this is a manual refresh, reset the deployment checked flag
       setDeploymentChecked(false);
+
+      // If we have a selectedRun and the workflow is refreshed,
+      // check if that run exists in the new data and update it if needed
+      if (
+        selectedRunId &&
+        data.workflowRuns.some(run => run.id === selectedRunId)
+      ) {
+        // Only refresh the run details if it's in progress
+        const selectedWorkflow = data.workflowRuns.find(
+          run => run.id === selectedRunId
+        );
+        if (
+          selectedWorkflow &&
+          (selectedWorkflow.status === "in_progress" ||
+            selectedWorkflow.status === "queued")
+        ) {
+          // Use silent refresh (no loading indicator) during auto-updates
+          fetchRunDetails(selectedRunId, false);
+        }
+      }
     } catch (error) {
       console.error("Error fetching workflow status:", error);
       const message = error instanceof Error ? error.message : "Unknown error";
@@ -98,32 +148,7 @@ export default function WorkflowStatus({
     } finally {
       setIsLoading(false);
     }
-  }, [token, dexId, workflowName]);
-
-  const fetchRunDetails = useCallback(
-    async (runId: number) => {
-      if (!token || !dexId) return;
-
-      setIsLoadingDetails(true);
-      setSelectedRunId(runId);
-
-      try {
-        const data = await get<WorkflowRunDetailsResponse>(
-          `api/dex/${dexId}/workflow-runs/${runId}`,
-          token
-        );
-        setSelectedRun(data);
-      } catch (error) {
-        console.error("Error fetching run details:", error);
-        toast.error("Could not fetch workflow run details");
-        // Reset selected run ID on error
-        setSelectedRunId(null);
-      } finally {
-        setIsLoadingDetails(false);
-      }
-    },
-    [token, dexId]
-  );
+  }, [token, dexId, workflowName, selectedRunId, fetchRunDetails]);
 
   useEffect(() => {
     fetchWorkflowStatus();
@@ -261,9 +286,9 @@ export default function WorkflowStatus({
     if (status === "completed") {
       switch (conclusion) {
         case "success":
-          return "bg-green-500";
+          return "bg-success";
         case "failure":
-          return "bg-red-500";
+          return "bg-error";
         case "cancelled":
           return "bg-gray-500";
         default:
@@ -366,10 +391,9 @@ export default function WorkflowStatus({
                       : ""
                   }`}
                   onClick={() => {
-                    // If this run is already selected, close it instead of re-fetching
+                    // If this run is already selected, refresh it without showing the loading state
                     if (selectedRun && selectedRun.id === run.id) {
-                      setSelectedRun(null);
-                      setSelectedRunId(null);
+                      fetchRunDetails(run.id, false);
                     } else {
                       fetchRunDetails(run.id);
                     }
@@ -481,17 +505,30 @@ export default function WorkflowStatus({
                               <div className="flex justify-between items-center">
                                 <span className="font-medium">{job.name}</span>
                                 <div
-                                  className={`px-2 py-0.5 rounded-full text-xs ${
+                                  className={`${
                                     job.conclusion === "success"
-                                      ? "bg-green-900/30 text-green-300"
+                                      ? "bg-success/30 text-success"
                                       : job.conclusion === "failure"
-                                        ? "bg-red-900/30 text-red-300"
-                                        : job.status === "in_progress"
-                                          ? "bg-blue-900/30 text-blue-300"
-                                          : "bg-gray-900/30 text-gray-300"
-                                  }`}
+                                        ? "bg-error/30 text-error"
+                                        : "bg-yellow-500/30 text-yellow-300"
+                                  } px-2 py-0.5 rounded text-xs font-medium flex items-center`}
                                 >
-                                  {getStatusText(job.status, job.conclusion)}
+                                  <span
+                                    className={`${
+                                      job.conclusion === "success"
+                                        ? "text-success"
+                                        : job.conclusion === "failure"
+                                          ? "text-error"
+                                          : "text-yellow-400"
+                                    } mr-1`}
+                                  >
+                                    {/* Icons remain the same */}
+                                  </span>
+                                  {job.conclusion === "success"
+                                    ? "Success"
+                                    : job.conclusion === "failure"
+                                      ? "Failed"
+                                      : "In Progress"}
                                 </div>
                               </div>
 
@@ -508,10 +545,10 @@ export default function WorkflowStatus({
                                       <span
                                         className={
                                           step.conclusion === "success"
-                                            ? "text-green-400"
+                                            ? "text-success"
                                             : step.conclusion === "failure"
-                                              ? "text-red-400"
-                                              : "text-gray-400"
+                                              ? "text-error"
+                                              : "text-yellow-400"
                                         }
                                       >
                                         {getStatusText(

@@ -1,9 +1,10 @@
 import { createContext, useContext, useState, ReactNode, useMemo } from "react";
 import LoginModal from "../components/LoginModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import ImageCropModal from "../components/ImageCropModal";
 
 // Define types for our modals
-type ModalType = "login" | "deleteConfirm" | null;
+type ModalType = "login" | "deleteConfirm" | "imageCrop" | null;
 
 interface ModalContextType {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -101,6 +102,18 @@ function ModalManager() {
           onClose={closeModal}
           onConfirm={currentModalProps.onConfirm}
           entityName={currentModalProps.entityName || "Item"}
+        />
+      );
+    case "imageCrop":
+      return (
+        <ImageCropModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onApply={currentModalProps.onApply}
+          imageSource={currentModalProps.imageSource}
+          originalDimensions={currentModalProps.originalDimensions}
+          initialCrop={currentModalProps.initialCrop}
+          enforceSquare={currentModalProps.enforceSquare}
         />
       );
     default:

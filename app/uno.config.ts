@@ -34,6 +34,10 @@ export default defineConfig({
         DEFAULT: "rgb(0, 209, 255)",
         light: "rgb(129, 229, 247)",
       },
+      // Status colors
+      success: "rgb(48, 208, 88)",
+      warning: "rgb(242, 153, 74)",
+      error: "rgb(242, 78, 78)",
     },
     extend: {
       backgroundImage: {

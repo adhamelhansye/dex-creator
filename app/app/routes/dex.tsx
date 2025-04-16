@@ -8,6 +8,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import FormInput from "../components/FormInput";
 import Form, { FormErrors } from "../components/Form";
+import ImagePaste from "../components/ImagePaste";
 import {
   validateUrl,
   required,
@@ -24,6 +25,9 @@ interface DexData {
   brokerName: string;
   brokerId: string;
   themeCSS?: string | null;
+  primaryLogo?: string | null;
+  secondaryLogo?: string | null;
+  favicon?: string | null;
   telegramLink?: string | null;
   discordLink?: string | null;
   xLink?: string | null;
@@ -40,6 +44,9 @@ export default function DexRoute() {
   const [telegramLink, setTelegramLink] = useState("");
   const [discordLink, setDiscordLink] = useState("");
   const [xLink, setXLink] = useState("");
+  const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
+  const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
+  const [favicon, setFavicon] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isForking, setIsForking] = useState(false);
   const [forkingStatus, setForkingStatus] = useState("");
@@ -53,6 +60,9 @@ export default function DexRoute() {
     telegramLink: "",
     discordLink: "",
     xLink: "",
+    primaryLogo: null as string | null,
+    secondaryLogo: null as string | null,
+    favicon: null as string | null,
   });
 
   // Fetch existing DEX data if available
@@ -80,6 +90,15 @@ export default function DexRoute() {
           if (data.xLink) {
             setXLink(data.xLink);
           }
+          if (data.primaryLogo) {
+            setPrimaryLogo(data.primaryLogo);
+          }
+          if (data.secondaryLogo) {
+            setSecondaryLogo(data.secondaryLogo);
+          }
+          if (data.favicon) {
+            setFavicon(data.favicon);
+          }
 
           // Store original values for change detection
           setOriginalValues({
@@ -87,6 +106,9 @@ export default function DexRoute() {
             telegramLink: data.telegramLink || "",
             discordLink: data.discordLink || "",
             xLink: data.xLink || "",
+            primaryLogo: data.primaryLogo || null,
+            secondaryLogo: data.secondaryLogo || null,
+            favicon: data.favicon || null,
           });
 
           // Try to construct the deployment URL if a repo exists
@@ -175,6 +197,21 @@ export default function DexRoute() {
       }
     };
 
+  // Handle image field changes
+  const handleImageChange = (field: string) => (value: string | null) => {
+    switch (field) {
+      case "primaryLogo":
+        setPrimaryLogo(value);
+        break;
+      case "secondaryLogo":
+        setSecondaryLogo(value);
+        break;
+      case "favicon":
+        setFavicon(value);
+        break;
+    }
+  };
+
   // Handle saving the DEX information
   const handleSubmit = async (_: FormEvent, errors: FormErrors) => {
     if (!isAuthenticated) {
@@ -200,32 +237,37 @@ export default function DexRoute() {
         trimmedBrokerName !== originalValues.brokerName ||
         trimmedTelegramLink !== originalValues.telegramLink ||
         trimmedDiscordLink !== originalValues.discordLink ||
-        trimmedXLink !== originalValues.xLink;
+        trimmedXLink !== originalValues.xLink ||
+        primaryLogo !== originalValues.primaryLogo ||
+        secondaryLogo !== originalValues.secondaryLogo ||
+        favicon !== originalValues.favicon;
 
       if (!hasChanges) {
-        toast.info("No changes detected");
+        toast.info("No changes to save");
         return;
       }
     }
 
     setIsSaving(true);
 
-    // For new DEX, show forking status
+    // If we're creating the DEX for the first time, show a forking status
     if (!dexData || !dexData.id) {
-      setForkingStatus("Saving DEX information...");
+      setForkingStatus("Creating DEX and forking repository...");
     }
 
     try {
-      // Prepare data to send
+      let savedData: DexData;
+
+      // Prepare the form data
       const dexFormData = {
         brokerName: trimmedBrokerName,
-        telegramLink: trimmedTelegramLink || undefined,
-        discordLink: trimmedDiscordLink || undefined,
-        xLink: trimmedXLink || undefined,
+        telegramLink: trimmedTelegramLink || null,
+        discordLink: trimmedDiscordLink || null,
+        xLink: trimmedXLink || null,
+        primaryLogo: primaryLogo,
+        secondaryLogo: secondaryLogo,
+        favicon: favicon,
       };
-
-      // If DEX already exists, update it; otherwise create a new one
-      let savedData: DexData;
 
       if (dexData && dexData.id) {
         // Update existing DEX
@@ -241,12 +283,14 @@ export default function DexRoute() {
           telegramLink: trimmedTelegramLink,
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
+          primaryLogo,
+          secondaryLogo,
+          favicon,
         });
 
         toast.success("DEX information updated successfully!");
       } else {
         // Create new DEX
-        setForkingStatus("Creating repository from template...");
         savedData = await post<DexData>("api/dex", dexFormData, token);
 
         // Update originalValues after successful save
@@ -255,6 +299,9 @@ export default function DexRoute() {
           telegramLink: trimmedTelegramLink,
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
+          primaryLogo,
+          secondaryLogo,
+          favicon,
         });
 
         // Check if we got a repo URL back
@@ -308,6 +355,9 @@ export default function DexRoute() {
       setTelegramLink("");
       setDiscordLink("");
       setXLink("");
+      setPrimaryLogo(null);
+      setSecondaryLogo(null);
+      setFavicon(null);
       setDeploymentUrl(null);
 
       // Redirect to home
@@ -432,6 +482,48 @@ export default function DexRoute() {
             />
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+              Branding
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Customize your DEX with your own branding by pasting your logos
+              below. Copy an image to your clipboard (from any image editor or
+              browser), then click in the paste area and press Ctrl+V or ⌘+V.
+            </p>
+
+            {/* Primary Logo - Full width */}
+            <div className="mb-6">
+              <ImagePaste
+                id="primaryLogo"
+                label="Primary Logo"
+                value={primaryLogo || undefined}
+                onChange={handleImageChange("primaryLogo")}
+                imageType="primaryLogo"
+                helpText="This will be used as the main logo in your DEX"
+              />
+            </div>
+
+            {/* Secondary Logo and Favicon in a grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <ImagePaste
+                id="secondaryLogo"
+                label="Secondary Logo"
+                value={secondaryLogo || undefined}
+                onChange={handleImageChange("secondaryLogo")}
+                imageType="secondaryLogo"
+                helpText="This will be used in the footer and other areas"
+              />
+
+              <ImagePaste
+                id="favicon"
+                label="Favicon"
+                value={favicon || undefined}
+                onChange={handleImageChange("favicon")}
+                imageType="favicon"
+                helpText="This will be shown in browser tabs"
+              />
+            </div>
+
+            <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
               Social Media Links
             </h3>
             <p className="text-xs text-gray-400 mb-4">
@@ -473,30 +565,48 @@ export default function DexRoute() {
           {dexData?.repoUrl ? (
             <Card variant="success" className="mb-6">
               <h3 className="text-lg font-semibold mb-2">
-                Your DEX Repository
+                DEX Creation Status
               </h3>
-              <p className="text-sm text-gray-300 mb-2">
-                Your DEX has been created and is available at:
+              <p className="text-sm text-gray-300 mb-4">
+                We've created the source code for your DEX! Here's what's
+                happening now:
               </p>
-              <a
-                href={dexData.repoUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-light hover:underline break-all mb-4 flex items-center"
-              >
-                <span className="break-all">{dexData.repoUrl}</span>
-                <div className="i-mdi:open-in-new h-4 w-4 ml-1 flex-shrink-0"></div>
-              </a>
+
+              <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
+                <h4 className="text-md font-medium mb-2 flex items-center">
+                  <div className="i-mdi:code-tags text-primary-light mr-2 h-5 w-5"></div>
+                  Step 1: Source Code Created
+                </h4>
+                <p className="text-sm text-gray-300 mb-2">
+                  We've created a GitHub repository containing all the code
+                  needed for your DEX. Think of this as the blueprint for your
+                  exchange:
+                </p>
+                <a
+                  href={dexData.repoUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-primary-light hover:underline break-all mb-1 flex items-center text-sm"
+                >
+                  <span className="break-all">{dexData.repoUrl}</span>
+                  <div className="i-mdi:open-in-new h-4 w-4 ml-1 flex-shrink-0"></div>
+                </a>
+                <p className="text-xs text-gray-400 italic">
+                  (You don't need to do anything with this link unless you're a
+                  developer)
+                </p>
+              </div>
 
               {/* Show the deployment URL if available */}
-              {deploymentUrl && (
-                <div className="mt-3 mb-4 p-3 bg-success/10 rounded-lg border border-success/20 slide-fade-in">
+              {deploymentUrl ? (
+                <div className="mb-4 p-3 bg-success/10 rounded-lg border border-success/20 slide-fade-in">
                   <h4 className="text-md font-medium mb-2 flex items-center">
                     <div className="i-mdi:check-circle text-success mr-2 h-5 w-5"></div>
-                    Live DEX Available
+                    Step 2: Your DEX is Live!
                   </h4>
                   <p className="text-sm text-gray-300 mb-3">
-                    Your DEX is now live and accessible at:
+                    Congratulations! Your DEX website is fully built and ready
+                    to use. Your users can access it at:
                   </p>
                   <a
                     href={deploymentUrl}
@@ -507,11 +617,74 @@ export default function DexRoute() {
                     <span className="break-all">{deploymentUrl}</span>
                     <div className="i-mdi:open-in-new h-4 w-4"></div>
                   </a>
+
+                  {/* Add the update explanation section */}
+                  <div className="mt-4 pt-3 border-t border-light/10">
+                    <h5 className="text-sm font-medium mb-2 flex items-center">
+                      <div className="i-mdi:information-outline text-primary-light mr-2 h-4 w-4"></div>
+                      Making Changes to Your DEX
+                    </h5>
+                    <p className="text-xs text-gray-300 mb-2">
+                      When you update any information above (like your broker
+                      name, logos, or social links):
+                    </p>
+                    <ul className="text-xs text-gray-300 list-disc ml-5 space-y-1">
+                      <li>Your changes are first saved to our system</li>
+                      <li>
+                        An automatic update process (workflow) runs to rebuild
+                        your DEX
+                      </li>
+                      <li>
+                        Once complete, your changes will appear live on your DEX
+                        website
+                      </li>
+                      <li>This process typically takes 2-5 minutes</li>
+                    </ul>
+                    <p className="text-xs text-gray-400 mt-2 italic">
+                      You can track the progress of your updates in the
+                      "Deployment Progress" section below
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                  <h4 className="text-md font-medium mb-2 flex items-center">
+                    <div className="i-mdi:progress-clock text-warning mr-2 h-5 w-5"></div>
+                    Step 2: Building Your DEX Website
+                  </h4>
+                  <p className="text-sm text-gray-300 mb-2">
+                    We're currently building your DEX website from the source
+                    code. This process usually takes 2-5 minutes to complete.
+                  </p>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Once complete, you'll see a link to your live DEX here.
+                  </p>
+
+                  {/* Add note about future changes */}
+                  <div className="mt-3 pt-3 border-t border-light/10">
+                    <h5 className="text-sm font-medium mb-2 flex items-center">
+                      <div className="i-mdi:information-outline text-warning mr-2 h-4 w-4"></div>
+                      About Future Updates
+                    </h5>
+                    <p className="text-xs text-gray-300">
+                      Whenever you make changes to your DEX (updating logos,
+                      social links, etc.), this same build process will run
+                      again. Your changes will be live after the process
+                      completes, which typically takes 2-5 minutes.
+                    </p>
+                  </div>
                 </div>
               )}
 
               <div className="mt-4 pt-4 border-t border-light/10">
-                <h4 className="text-md font-medium mb-3">Deployment Status</h4>
+                <h4 className="text-md font-medium mb-3">
+                  Updates & Deployment Status
+                </h4>
+                <p className="text-xs text-gray-400 mb-3">
+                  This shows the current status of your DEX updates. When the
+                  latest run shows "completed", your changes are live on your
+                  DEX website:
+                </p>
                 <WorkflowStatus
                   dexId={dexData.id}
                   workflowName="Deploy to GitHub Pages"

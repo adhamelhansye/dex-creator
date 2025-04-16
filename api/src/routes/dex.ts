@@ -1,6 +1,5 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import {
   createDex,
   dexSchema,
@@ -9,17 +8,16 @@ import {
   updateDex,
   deleteDex,
   updateDexRepoUrl,
-  updateBrokerId,
 } from "../models/dex";
 import {
   forkTemplateRepository,
   setupRepositoryWithSingleCommit,
   getWorkflowRunStatus,
   getWorkflowRunDetails,
+  updateDexConfig,
 } from "../lib/github";
 import { PrismaClient } from "@prisma/client";
 import { generateRepositoryName } from "../lib/nameGenerator";
-import { isUserAdmin } from "../models/admin";
 
 const prisma = new PrismaClient();
 
@@ -28,18 +26,21 @@ const dexRoutes = new Hono();
 
 // Get the current user's DEX
 dexRoutes.get("/", async c => {
-  // Get the authenticated user's ID from the context
-  const userId = c.get("userId");
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
   try {
+    // Get userId from context (set by authMiddleware)
+    const userId = c.get("userId");
+
+    // Get the user's DEX
     const dex = await getUserDex(userId);
-    return c.json(dex || { exists: false });
+    if (!dex) {
+      return c.json({ exists: false }, { status: 200 });
+    }
+
+    // Return the DEX
+    return c.json(dex, { status: 200 });
   } catch (error) {
-    console.error("Error fetching DEX:", error);
-    return c.json({ message: "Error fetching DEX", error: String(error) }, 500);
+    console.error("Error getting DEX:", error);
+    return c.json({ error: "Failed to get DEX information" }, { status: 500 });
   }
 });
 
@@ -47,10 +48,6 @@ dexRoutes.get("/", async c => {
 dexRoutes.get("/:id", async c => {
   const id = c.req.param("id");
   const userId = c.get("userId");
-
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
 
   try {
     const dex = await getDexById(id);
@@ -73,43 +70,24 @@ dexRoutes.get("/:id", async c => {
 
 // Create a new DEX
 dexRoutes.post("/", zValidator("json", dexSchema), async c => {
-  const data = c.req.valid("json");
-  const userId = c.get("userId");
-
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
   try {
-    const newDex = await createDex(data, userId);
-    return c.json(newDex, 201);
+    // Get userId from context (set by authMiddleware)
+    const userId = c.get("userId");
+
+    // Parse the request body
+    const data = await c.req.json();
+
+    // Create the DEX
+    const dex = await createDex(data, userId);
+
+    return c.json(dex, { status: 201 });
   } catch (error) {
     console.error("Error creating DEX:", error);
-
-    // Handle the case where user already has a DEX
-    if (
-      error instanceof Error &&
-      error.message.includes("User already has a DEX")
-    ) {
-      return c.json({ message: error.message }, 400);
+    let message = "Failed to create DEX";
+    if (error instanceof Error) {
+      message = error.message;
     }
-
-    // Handle GitHub API errors separately with more descriptive messages
-    if (
-      error instanceof Error &&
-      error.message.includes("Failed to fork repository")
-    ) {
-      return c.json(
-        {
-          message: "Error creating DEX repository. Please try again later.",
-          error: error.message,
-          repositoryError: true,
-        },
-        500
-      );
-    }
-
-    return c.json({ message: "Error creating DEX", error: String(error) }, 500);
+    return c.json({ error: message }, { status: 500 });
   }
 });
 
@@ -139,10 +117,6 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   const data = c.req.valid("json");
   const userId = c.get("userId");
 
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
   try {
     // Update the DEX in the database
     const updatedDex = await updateDex(id, data, userId);
@@ -154,7 +128,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
       if (repoInfo) {
         try {
           // Use our new function to update everything in one commit
-          await setupRepositoryWithSingleCommit(
+          await updateDexConfig(
             repoInfo.owner,
             repoInfo.repo,
             {
@@ -209,10 +183,6 @@ dexRoutes.delete("/:id", async c => {
   const id = c.req.param("id");
   const userId = c.get("userId");
 
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
   try {
     const deletedDex = await deleteDex(id, userId);
     return c.json({ message: "DEX deleted successfully", dex: deletedDex });
@@ -240,10 +210,6 @@ dexRoutes.delete("/:id", async c => {
 dexRoutes.post("/:id/fork", async c => {
   const id = c.req.param("id");
   const userId = c.get("userId");
-
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
 
   try {
     // Get the DEX details
@@ -379,101 +345,11 @@ dexRoutes.post("/:id/fork", async c => {
   }
 });
 
-// Admin endpoint to update brokerId
-dexRoutes.post("/:id/broker-id", async c => {
-  const id = c.req.param("id");
-  const userId = c.get("userId");
-
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
-  // Validate the request body
-  const brokerIdSchema = z.object({
-    brokerId: z.string().min(1).max(50),
-  });
-
-  // Validate body
-  let body;
-  try {
-    body = await c.req.json();
-    brokerIdSchema.parse(body);
-  } catch (e) {
-    return c.json({ message: "Invalid request body", error: String(e) }, 400);
-  }
-
-  try {
-    // Check if the user is an admin
-    const isAdmin = await isUserAdmin(userId);
-
-    if (!isAdmin) {
-      return c.json({ message: "Forbidden: Admin access required" }, 403);
-    }
-
-    // Get the DEX with current data before updating
-    const dex = await getDexById(id);
-    if (!dex) {
-      return c.json({ message: "DEX not found" }, 404);
-    }
-
-    // Update the broker ID in the database
-    const updatedDex = await updateBrokerId(id, body.brokerId);
-
-    // If the DEX has a repository, update the config files
-    if (updatedDex.repoUrl) {
-      const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
-
-      if (repoInfo) {
-        try {
-          // Use our new function to update everything in one commit
-          await setupRepositoryWithSingleCommit(
-            repoInfo.owner,
-            repoInfo.repo,
-            {
-              brokerId: body.brokerId,
-              brokerName: updatedDex.brokerName,
-              themeCSS: updatedDex.themeCSS?.toString(),
-              telegramLink: updatedDex.telegramLink || undefined,
-              discordLink: updatedDex.discordLink || undefined,
-              xLink: updatedDex.xLink || undefined,
-            },
-            {
-              primaryLogo: updatedDex.primaryLogo || undefined,
-              secondaryLogo: updatedDex.secondaryLogo || undefined,
-              favicon: updatedDex.favicon || undefined,
-            }
-          );
-
-          console.log(
-            `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
-          );
-        } catch (configError) {
-          // Log the error but don't fail the update
-          console.error("Error updating repository files:", configError);
-          // We continue even if the repo update failed
-        }
-      }
-    }
-
-    return c.json(updatedDex);
-  } catch (error) {
-    console.error("Error updating broker ID:", error);
-    return c.json(
-      { message: "Error updating broker ID", error: String(error) },
-      500
-    );
-  }
-});
-
-// Get workflow runs for a DEX
+// Get workflow status for a DEX's repository
 dexRoutes.get("/:id/workflow-status", async c => {
   const id = c.req.param("id");
-  const userId = c.get("userId");
   const workflowName = c.req.query("workflow");
-
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
+  const userId = c.get("userId");
 
   try {
     // Get the DEX details
@@ -522,10 +398,6 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
   const runId = parseInt(c.req.param("runId"), 10);
   const userId = c.get("userId");
 
-  if (!userId) {
-    return c.json({ message: "Unauthorized" }, 401);
-  }
-
   if (isNaN(runId)) {
     return c.json({ message: "Invalid run ID" }, 400);
   }
@@ -571,64 +443,6 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
       },
       500
     );
-  }
-});
-
-// Admin endpoint to delete a DEX by wallet address
-dexRoutes.delete("/admin/delete", async c => {
-  // Get the authenticated user's ID from the context
-  const userId = c.get("userId");
-
-  if (!userId) {
-    return c.json({ error: "Unauthorized" }, 401);
-  }
-
-  // Validate request body
-  const schema = z.object({
-    walletAddress: z.string(),
-  });
-
-  const result = schema.safeParse(await c.req.json());
-
-  if (!result.success) {
-    return c.json(
-      { error: "Invalid request body", details: result.error },
-      400
-    );
-  }
-
-  const { walletAddress } = result.data;
-
-  try {
-    // Check if the user is an admin
-    const isAdmin = await isUserAdmin(userId);
-
-    if (!isAdmin) {
-      return c.json({ error: "Forbidden: Admin access required" }, 403);
-    }
-
-    // Get the user whose DEX should be deleted
-    const targetUser = await prisma.user.findFirst({
-      where: {
-        address: walletAddress,
-      },
-    });
-
-    if (!targetUser) {
-      return c.json({ error: "User not found" }, 404);
-    }
-
-    // Delete the DEX using Prisma's type-safe query
-    await prisma.dex.deleteMany({
-      where: {
-        userId: targetUser.id,
-      },
-    });
-
-    return c.json({ success: true, message: "DEX deleted successfully" });
-  } catch (error) {
-    console.error("Error deleting DEX:", error);
-    return c.json({ error: "Internal Server Error" }, 500);
   }
 });
 

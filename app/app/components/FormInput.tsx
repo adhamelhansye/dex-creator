@@ -1,9 +1,16 @@
-import { useState, ChangeEvent, FocusEvent, ReactNode, useEffect } from "react";
+import {
+  useState,
+  ChangeEvent,
+  FocusEvent,
+  ReactNode,
+  useEffect,
+  useId,
+} from "react";
 
 export type ValidationFunction = (value: string) => string | null;
 
 export interface FormInputProps {
-  id: string;
+  id?: string;
   label: string;
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
@@ -16,10 +23,12 @@ export interface FormInputProps {
   minLength?: number;
   maxLength?: number;
   onError?: (error: string | null) => void;
+  showValidation?: boolean;
+  pattern?: string;
 }
 
 export default function FormInput({
-  id,
+  id: providedId,
   label,
   value,
   onChange,
@@ -32,7 +41,11 @@ export default function FormInput({
   minLength,
   maxLength,
   onError,
+  showValidation = true,
+  pattern,
 }: FormInputProps) {
+  const generatedId = useId();
+  const id = providedId || generatedId;
   const [error, setError] = useState<string | null>(null);
   const [touched, setTouched] = useState(false);
 
@@ -64,6 +77,10 @@ export default function FormInput({
       return validator(value);
     }
 
+    if (pattern && !new RegExp(pattern).test(value)) {
+      return `${label} format is invalid`;
+    }
+
     return null;
   };
 
@@ -83,11 +100,18 @@ export default function FormInput({
     }
   };
 
+  // Validate when value changes
+  useEffect(() => {
+    if (touched && showValidation) {
+      setError(validateInput(value));
+    }
+  }, [value, touched]);
+
   return (
     <div className={`mb-4 ${className}`}>
       <label htmlFor={id} className="block text-sm font-medium mb-1 md:mb-2">
         {label}
-        {required && <span className="text-red-400 ml-1">*</span>}
+        {required && <span className="text-error ml-1">*</span>}
       </label>
 
       <input
@@ -98,14 +122,15 @@ export default function FormInput({
         onBlur={handleBlur}
         placeholder={placeholder}
         className={`w-full px-3 md:px-4 py-2 bg-dark/50 border ${
-          error ? "border-red-500/50" : "border-light/10"
+          error ? "border-error/50" : "border-light/10"
         } rounded-lg focus:ring-1 focus:ring-primary focus:border-primary text-sm md:text-base`}
         minLength={minLength}
         maxLength={maxLength}
         required={required}
+        pattern={pattern}
       />
 
-      {error && <p className="mt-1 text-xs text-red-400">{error}</p>}
+      {error && <p className="mt-1 text-xs text-error">{error}</p>}
 
       {helpText && !error && (
         <p className="mt-1 text-xs text-gray-400">{helpText}</p>

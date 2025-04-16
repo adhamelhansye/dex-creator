@@ -359,154 +359,202 @@ The project uses GitHub Actions for continuous integration:
    - Use async/await for all database operations (Prisma methods return Promises)
    - Implement periodic cleanup for expired tokens
 
-## UI Design Patterns
+## UI Design System
 
-### Wallet Connection
+The DEX Creator follows a consistent design system with utility-first CSS using UnoCSS.
 
-The application uses a consistent wallet connection pattern:
+### Core Style Principles
 
-1. **Connect Wallet Button**: Initial state showing a prominent gradient button
-2. **Connected Wallet Pill**: After connection, shows a pill with:
+- **Mobile-first approach** with responsive breakpoints (sm, md, lg, xl)
+- **Dark theme** with vibrant accents for interactive elements
+- **Card-based layout** with consistent padding and rounded corners
+- **Pill-shaped buttons** with gradient backgrounds and subtle hover effects
+- **Utility-first implementation** directly in component JSX using UnoCSS
 
-   - Wallet address with a colored indicator dot
-   - Login/Disconnect actions grouped in the same container
-   - Consistent hover and active states
+### Color System
 
-3. **Authentication States**:
+#### Primary Colors
 
-   - Unauthenticated: Gray address text with login button
-   - Authenticated: Colored address text showing successful authentication
-   - Loading states for all operations
+```css
+primary: {
+  DEFAULT: "rgb(89, 91, 255)",  /* Main action color */
+  light: "rgb(125, 125, 255)",  /* Hover and accent color */
+},
+secondary: {
+  DEFAULT: "rgb(157, 78, 221)", /* Secondary actions */
+  light: "rgb(187, 118, 242)",  /* Secondary hover state */
+}
+```
 
-4. **Modals**:
+#### Status Colors
 
-   - Login explainer modal appears automatically after wallet connection
-   - Modals use consistent styling with the main UI
-   - Z-index management ensures proper modal layering
-   - Options to proceed or defer authentication
+```css
+success: "rgb(48, 208, 88)",    /* Green for success states */
+warning: "rgb(242, 153, 74)",   /* Amber for warnings */
+error: "rgb(242, 78, 78)",      /* Red for errors */
+```
 
-5. **Mobile Adaptations**:
-   - Login button hidden on mobile screens
-   - Reduced padding and margins for space efficiency
-   - Smaller text and icon sizes
-   - Compact wallet pill to fit smaller screens
+These colors should be used instead of direct color utilities:
+- Use `text-success` instead of `text-green-*`
+- Use `bg-success/10` instead of `bg-green-*/10`
+- Use `text-error` instead of `text-red-*`
 
-Example implementation in `WalletConnect.tsx` shows the pattern with all states.
+### Animation System
 
-### Modal Management System
+Subtle animations provide feedback and improve perceived performance:
 
-The application uses a centralized modal management system to prevent duplicate modals and ensure consistent positioning across pages.
+```css
+.slide-fade-in {
+  animation: slideFadeIn 0.3s ease forwards;
+  transform-origin: top center;
+}
 
-1. **Architecture**:
-   - Context-based solution (`app/app/context/ModalContext.tsx`) that renders modals at the root level
-   - Modals are displayed through the `useModal` hook rather than being directly included in components
-   - Ensures modals appear in the same position regardless of where they're triggered from
+.slide-fade-in-delayed {
+  animation: slideFadeIn 0.3s ease 0.1s forwards;
+  opacity: 0;
+}
 
-2. **Implementation**:
-   ```tsx
-   // Component using the modal system
-   import { useModal } from "../context/ModalContext";
-   
-   function Component() {
-     const { openModal } = useModal();
-     
-     const handleAction = () => {
-       openModal("login", { onLogin: handleLogin });
-     };
-     
-     return <Button onClick={handleAction}>Login</Button>;
-   }
-   ```
+.staggered-item:nth-child(1) { animation: slideFadeIn 0.25s ease 0.05s forwards; }
+.staggered-item:nth-child(2) { animation: slideFadeIn 0.25s ease 0.1s forwards; }
+```
 
-3. **Benefits**:
-   - Prevents duplicate modals in the DOM
-   - Consistent positioning across different pages
-   - Simpler component code without direct modal dependencies
-   - Works seamlessly with the animation system
+#### Sequential List Animations
 
-This system resolves layout issues that were occurring when modals were rendered at different levels of the DOM tree.
+For lists with staggered animations:
 
-### Responsive Design
+```jsx
+<div className="list">
+  {items.map(item => (
+    <div key={item.id} className="staggered-item">
+      {item.name}
+    </div>
+  ))}
+</div>
+```
 
-The application follows a mobile-first approach with these key principles:
+#### Dynamic Animations
 
-1. **Base Mobile Styles**:
+For custom animation timing:
 
-   - Smaller text sizes: `text-xs` for mobile, `md:text-sm` for larger screens
-   - Compact padding: `p-1 md:p-1.5`, `px-2 py-1 md:px-4 md:py-2`
-   - Reduced margins: `gap-1 md:gap-2`, `mr-2 md:mr-3`
-   - Smaller interactive elements: `w-1.5 h-1.5 md:w-2 md:h-2`
+```jsx
+<div>
+  {items.map((item, index) => (
+    <div
+      key={item.id}
+      style={{
+        animation: `slideFadeIn 0.25s ease ${0.1 + index * 0.05}s forwards`,
+        opacity: 0,
+        transform: "translateY(-10px)"
+      }}
+    >
+      {item.content}
+    </div>
+  ))}
+</div>
+```
 
-2. **Progressive Enhancement**:
+#### Animation Best Practices
 
-   - Features appear as screen size increases
-   - More generous spacing on larger screens
-   - Additional UI elements become visible (e.g., `hidden md:block`)
+- Use animations sparingly for user feedback and transitions
+- Apply primarily to elements that appear/update based on user actions
+- Keep animations short (0.2-0.3s) and subtle
+- Prefer class-based animations over inline styles
 
-3. **Flexible Layouts**:
+### Component Features
 
-   - Elements naturally adapt to available space
-   - Maintain readability at all screen sizes
-   - Avoid fixed-width elements that might break on small screens
+#### Button Variants
 
-4. **Touch Consideration**:
-   - Ensure tap targets are at least 44x44px on mobile
-   - Provide enough spacing between interactive elements
-   - Use simpler interactions on touch devices
+Button styles use consistent shortcuts defined in UnoCSS config:
 
-### Mobile Navigation
+```jsx
+<Button variant="primary">Connect Wallet</Button>
+<Button variant="secondary">Cancel</Button>
+<Button variant="danger">Delete</Button>
+```
 
-The application uses a responsive mobile-first navigation approach:
+#### Image Pasting
 
-1. **Desktop Navigation**:
-   - Horizontal navigation in the header with pill-shaped links
-   - Always visible on medium and larger screens
-   - Clear active state indication
+The DEX Creator provides a dedicated image paste system allowing users to customize branding:
 
-2. **Mobile Navigation**:
-   - Hamburger menu button that appears on small screens
-   - Slide-in drawer from the right side with animation
-   - Full-height navigation with larger touch targets
-   - Semi-transparent backdrop overlay
-   - Close button for easy dismissal
+- **Multiple methods for user convenience**:
+  - Dedicated "Paste Image" button that requests clipboard access
+  - Traditional paste area supporting keyboard shortcuts (Ctrl+V / ⌘+V)
+  - Visual focus states to indicate which paste area is active
 
-3. **Implementation Details**:
-   - Responsive visibility using `hidden md:block` and JavaScript detection
-   - Z-index management to ensure proper layering
-   - `transform` and `transition` for smooth animation effects
-   - State management via React `useState` for menu open/close
-   - Common navigation links shared between mobile and desktop
+- **Advanced crop and resize functionality**:
+  - Interactive crop preview with visual overlay
+  - Pixel-perfect control via numeric inputs
+  - Primary logo supports free-form aspect ratios
+  - Secondary logo and favicon maintain square aspect ratios automatically
+  - Automatic centering of initial crop area
+  - Real-time preview of final output dimensions
 
-4. **Mobile Design Considerations**:
-   - Larger touch targets for links (at least 44px high)
-   - Extra padding inside the mobile menu
-   - Clear visual hierarchy with larger font sizes
-   - Proper spacing between menu items
-   - Dismissible via overlay tap or close button
+- **Technical implementation**:
+  - Client-side processing with JSQuash library for WebP conversion and resizing
+  - Default sizes: 
+    - Primary Logo: 200x42px (horizontal logo for headers)
+    - Secondary Logo: 40x40px (square icon for UI elements)
+    - Favicon: 32x32px (browser tab icon)
+  - Canvas-based cropping with controlled dimensions
+  - Clipboard API with fallback to ClipboardEvent for cross-browser compatibility
+  - Logo files stored as WebP images in the repository:
+    - Primary logo: `public/logo.webp`
+    - Secondary logo: `public/logo-secondary.webp`
+    - Favicon: `public/favicon.webp`
+  - Environment flags (VITE_HAS_PRIMARY_LOGO, VITE_HAS_SECONDARY_LOGO) indicate if logos have been set
+  - No more base64 encoding in environment variables for better repository size management
+  
+- **User feedback**:
+  - Loading indicator during image processing
+  - Preview of pasted image with option to replace
+  - Toast notifications for success/error states
+  - Clear visual affordances for all interactions
 
-### Notifications
+Example usage:
+```tsx
+<ImagePaste
+  id="primaryLogo"
+  label="Primary Logo"
+  value={primaryLogo}
+  onChange={handleLogoChange}
+  imageType="primaryLogo"
+  helpText="This will appear in the header"
+/>
+```
 
-The application uses React-Toastify for notifications:
+#### Responsive Design
 
-1. **Toast Types**:
+The application uses these responsive breakpoints with UnoCSS:
 
-   - Error notifications (red left border)
-   - Success notifications (green left border)
-   - Info notifications (blue left border)
+- `sm`: 640px (small tablets and large phones)
+- `md`: 768px (tablets and small laptops)
+- `lg`: 1024px (laptops and desktops)
+- `xl`: 1280px (large desktops)
+- `2xl`: 1536px (extra large screens)
 
-2. **Styling (Exception to Utility-First Approach)**:
+Default (no prefix) styles apply to mobile first, with larger screen adjustments using prefixes:
 
-   - **Uses global CSS**: React-Toastify is one of the few components that requires global styling as an exception to our utility-first approach
-   - Custom styling in `global.css` matching the application theme
-   - Semi-transparent backgrounds with backdrop blur effect
-   - Color-coded left borders to indicate notification type
-   - Custom progress bars and transitions
-   - Z-index management to ensure proper layering
+```jsx
+<div className="text-xs md:text-sm lg:text-base">
+  Responsive text that scales with screen size
+</div>
+```
 
-3. **Usage Pattern**:
-   - Call `toast.error()`, `toast.success()`, etc. directly
-   - Provide clear, concise messages
-   - Log to console simultaneously for debugging
+### Icon System
+
+The project uses Iconify for SVG icons:
+
+- `@iconify/react` package provides React components
+- Icons are loaded dynamically from various icon sets
+- UnoCSS integration allows for utility-class based icons
+- Usage patterns:
+  ```jsx
+  {/* Component approach */}
+  <Icon icon="heroicons:check-circle" width={16} />
+  
+  {/* UnoCSS utility approach */}
+  <div className="i-mdi:check-circle text-success w-5 h-5"></div>
+  ```
 
 ## Known Issues
 
@@ -535,7 +583,18 @@ The DEX Creator implements GitHub repository forking to create customized DEX re
    - Directories and files are processed with proper error handling for individual files
    - User-specific configuration (like broker name) is applied to the repository
 
-4. **GitHub Pages Deployment**:
+4. **Logo and Branding Assets**:
+   - Logo files are stored as webp image files in the public folder:
+     - Primary logo: `public/logo.webp` (horizontal logo for headers)
+     - Secondary logo: `public/logo-secondary.webp` (square icon for UI elements)
+     - Favicon: `public/favicon.webp` (browser tab icon)
+   - Environment variables indicate if logos have been set:
+     - `VITE_HAS_PRIMARY_LOGO=true` when primary logo has been set
+     - `VITE_HAS_SECONDARY_LOGO=true` when secondary logo has been set
+   - This allows the frontend to use fallback logos when custom logos aren't available
+   - Binary image data is handled efficiently without base64 encoding in environment variables
+
+5. **GitHub Pages Deployment**:
    - A GitHub Pages deployment token is automatically added as a secret to each forked repository
    - This token (`PAGES_DEPLOYMENT_TOKEN`) enables GitHub Actions to deploy the DEX to GitHub Pages
    - The token is securely encrypted using libsodium before being added as a repository secret
@@ -543,12 +602,26 @@ The DEX Creator implements GitHub repository forking to create customized DEX re
    - GitHub Actions are automatically enabled on forked repositories (addressing GitHub's default security policy)
    - The system makes appropriate API calls to enable workflows despite GitHub's default restriction on forked repos
 
-5. **Security Considerations**:
+6. **Security Considerations**:
    - GitHub API tokens are stored securely and never exposed to clients
    - Only necessary repository permissions are requested
    - Rate limiting and error handling prevent abuse
 
 This approach provides a reliable way to create user-specific DEX instances while maintaining a graceful degradation path when GitHub API issues occur.
+
+### Repository Updates
+
+We use a single-commit approach for all GitHub repository updates:
+
+- **What**: All repository changes (config files, workflows, themes, logos) are batched into a single Git commit
+- **Why**: 
+  - Reduces GitHub API rate limit usage
+  - Creates cleaner commit history
+  - Prevents multiple CI/CD workflow triggers
+  - Ensures atomic updates (all changes succeed or fail together)
+  - Simplifies rollback scenarios
+
+This approach replaces the previous implementation that created individual commits for each file change, resulting in more efficient repository management and better reliability.
 
 ## Configuration Details
 

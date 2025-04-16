@@ -446,14 +446,33 @@ async function encryptSecret(
 }
 
 /**
- * Updates DEX configuration files in the repository
- * @param owner The GitHub username of the DEX owner
- * @param repo The repository name
- * @param config The DEX configuration to apply
+ * Extract image data from a data URI
+ * @param dataUri The data URI string
+ * @returns The raw binary data buffer or null if invalid
  */
-export async function updateDexConfig(
-  owner: string,
-  repo: string,
+function extractImageDataFromUri(dataUri: string | undefined): Buffer | null {
+  if (!dataUri) return null;
+
+  try {
+    // Format is typically: data:image/webp;base64,BASE64_DATA
+    const match = dataUri.match(/^data:image\/([^;]+);base64,(.+)$/);
+    if (!match || !match[2]) {
+      console.warn("Invalid data URI format for image");
+      return null;
+    }
+
+    // Convert base64 to binary buffer
+    return Buffer.from(match[2], "base64");
+  } catch (error) {
+    console.error("Error extracting image data from URI:", error);
+    return null;
+  }
+}
+
+/**
+ * Prepare DEX configuration content including extracting favicon
+ */
+function prepareDexConfigContent(
   config: {
     brokerId: string;
     brokerName: string;
@@ -461,11 +480,26 @@ export async function updateDexConfig(
     telegramLink?: string;
     discordLink?: string;
     xLink?: string;
+  },
+  files?: {
+    primaryLogo?: string;
+    secondaryLogo?: string;
+    favicon?: string;
   }
-): Promise<void> {
-  try {
-    // Update .env file with broker ID, name, and social media links
-    let envContent = `# Broker settings
+): {
+  envContent: string;
+  themeCSS?: string;
+  faviconData?: Buffer;
+  primaryLogoData?: Buffer;
+  secondaryLogoData?: Buffer;
+} {
+  // Extract image data
+  const faviconData = extractImageDataFromUri(files?.favicon);
+  const primaryLogoData = extractImageDataFromUri(files?.primaryLogo);
+  const secondaryLogoData = extractImageDataFromUri(files?.secondaryLogo);
+
+  // Create ENV file content
+  let envContent = `# Broker settings
 VITE_ORDERLY_BROKER_ID=${config.brokerId}
 VITE_ORDERLY_BROKER_NAME=${config.brokerName}
 
@@ -477,140 +511,192 @@ VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
 VITE_TELEGRAM_URL=${config.telegramLink || ""}
 VITE_DISCORD_URL=${config.discordLink || ""}
 VITE_TWITTER_URL=${config.xLink || ""}
-`;
 
-    await updateFileInRepo(
-      owner,
-      repo,
-      ".env",
-      envContent,
-      "Update broker configuration and social links"
-    );
+# Logo flags - indicates if logos have been set
+VITE_HAS_PRIMARY_LOGO=${primaryLogoData ? "true" : "false"}
+VITE_HAS_SECONDARY_LOGO=${secondaryLogoData ? "true" : "false"}`;
 
-    // Update theme.css if provided
-    if (config.themeCSS) {
-      await updateFileInRepo(
-        owner,
-        repo,
-        "app/styles/theme.css",
-        config.themeCSS,
-        "Update theme CSS"
-      );
-    }
-  } catch (error: unknown) {
-    console.error("Error updating DEX configuration:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    throw new Error(`Failed to update DEX configuration: ${errorMessage}`);
-  }
+  return {
+    envContent,
+    themeCSS: config.themeCSS,
+    faviconData: faviconData || undefined,
+    primaryLogoData: primaryLogoData || undefined,
+    secondaryLogoData: secondaryLogoData || undefined,
+  };
 }
 
 /**
- * Upload logo files to the repository
- * @param owner The GitHub username of the DEX owner
+ * Helper function to create a single commit with multiple file changes
+ * @param owner The repository owner (username or organization)
  * @param repo The repository name
- * @param files Object containing the logo files to upload
+ * @param fileContents Map of file paths to their contents
+ * @param binaryFiles Map of file paths to their binary contents
+ * @param commitMessage The commit message
  */
-export async function uploadLogoFiles(
+async function createSingleCommit(
   owner: string,
   repo: string,
-  files: {
+  fileContents: Map<string, string>,
+  binaryFiles: Map<string, Buffer> = new Map(),
+  commitMessage: string
+): Promise<void> {
+  // Get the latest commit SHA from the default branch
+  console.log(`Getting latest commit for ${owner}/${repo}...`);
+  const { data: refData } = await octokit.rest.git.getRef({
+    owner,
+    repo,
+    ref: "heads/main",
+  });
+  const latestCommitSha = refData.object.sha;
+
+  // Create blobs for text files
+  console.log("Creating blobs for text files...");
+  const textBlobPromises = Array.from(fileContents.entries()).map(
+    ([path, content]) =>
+      octokit.rest.git
+        .createBlob({
+          owner,
+          repo,
+          content: Buffer.from(content).toString("base64"),
+          encoding: "base64",
+        })
+        .then(response => ({ path, sha: response.data.sha }))
+  );
+
+  // Create blobs for binary files
+  console.log("Creating blobs for binary files...");
+  const binaryBlobPromises = Array.from(binaryFiles.entries()).map(
+    ([path, buffer]) =>
+      octokit.rest.git
+        .createBlob({
+          owner,
+          repo,
+          content: buffer.toString("base64"),
+          encoding: "base64",
+        })
+        .then(response => ({ path, sha: response.data.sha }))
+  );
+
+  // Wait for all blobs to be created
+  const textBlobs = await Promise.all(textBlobPromises);
+  const binaryBlobs = await Promise.all(binaryBlobPromises);
+
+  // Combine all blobs into tree entries
+  const treeEntries = [
+    ...textBlobs.map(({ path, sha }) => ({
+      path,
+      mode: "100644" as const, // file mode (100644 = file)
+      type: "blob" as const,
+      sha,
+    })),
+    ...binaryBlobs.map(({ path, sha }) => ({
+      path,
+      mode: "100644" as const, // file mode (100644 = file)
+      type: "blob" as const,
+      sha,
+    })),
+  ];
+
+  // Create a tree with all files
+  console.log("Creating git tree with all files...");
+  const { data: newTree } = await octokit.rest.git.createTree({
+    owner,
+    repo,
+    base_tree: latestCommitSha,
+    tree: treeEntries,
+  });
+
+  // Create a commit
+  console.log("Creating commit with all files...");
+  const { data: newCommit } = await octokit.rest.git.createCommit({
+    owner,
+    repo,
+    message: commitMessage,
+    tree: newTree.sha,
+    parents: [latestCommitSha],
+  });
+
+  // Update the reference
+  console.log("Updating branch reference...");
+  await octokit.rest.git.updateRef({
+    owner,
+    repo,
+    ref: "heads/main",
+    sha: newCommit.sha,
+  });
+
+  console.log(`Successfully committed changes to ${owner}/${repo}`);
+}
+
+/**
+ * Updates DEX configuration files in the repository using a single commit
+ */
+export async function updateDexConfig(
+  owner: string,
+  repo: string,
+  config: {
+    brokerId: string;
+    brokerName: string;
+    themeCSS?: string;
+    telegramLink?: string;
+    discordLink?: string;
+    xLink?: string;
+  },
+  files?: {
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
   }
 ): Promise<void> {
   try {
-    // Upload primary logo if provided
-    if (files.primaryLogo) {
-      await updateFileInRepo(
-        owner,
-        repo,
-        "public/orderly-logo.svg",
-        files.primaryLogo,
-        "Update primary logo",
-        true
-      );
+    // Use the helper function to prepare config content
+    const {
+      envContent,
+      themeCSS,
+      faviconData,
+      primaryLogoData,
+      secondaryLogoData,
+    } = prepareDexConfigContent(config, files);
+
+    // Prepare file contents map for text files
+    const fileContents = new Map<string, string>();
+    fileContents.set(".env", envContent);
+
+    if (themeCSS) {
+      fileContents.set("app/styles/theme.css", themeCSS);
     }
 
-    // Upload secondary logo if provided
-    if (files.secondaryLogo) {
-      await updateFileInRepo(
-        owner,
-        repo,
-        "public/orderly-logo-secondary.svg",
-        files.secondaryLogo,
-        "Update secondary logo",
-        true
-      );
+    // Prepare binary files map
+    const binaryFiles = new Map<string, Buffer>();
+
+    // Add image files if data is available
+    if (faviconData) {
+      binaryFiles.set("public/favicon.webp", faviconData);
     }
 
-    // Upload favicon if provided
-    if (files.favicon) {
-      await updateFileInRepo(
-        owner,
-        repo,
-        "public/favicon.png",
-        files.favicon,
-        "Update favicon",
-        true
-      );
+    // Add logo files if data is available
+    if (primaryLogoData) {
+      binaryFiles.set("public/logo.webp", primaryLogoData);
     }
-  } catch (error: unknown) {
-    console.error("Error uploading logo files:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    throw new Error(`Failed to upload logo files: ${errorMessage}`);
-  }
-}
 
-/**
- * Helper function to get a file from a repository
- */
-async function getFileFromRepo(owner: string, repo: string, path: string) {
-  try {
-    const response = await octokit.rest.repos.getContent({
+    if (secondaryLogoData) {
+      binaryFiles.set("public/logo-secondary.webp", secondaryLogoData);
+    }
+
+    // Create a single commit with all changes
+    await createSingleCommit(
       owner,
       repo,
-      path,
-    });
-
-    return response.data as { content: string; sha: string };
+      fileContents,
+      binaryFiles,
+      "Update DEX configuration and branding"
+    );
   } catch (error: unknown) {
-    console.error(`Error getting file ${path}:`, error);
-    return null;
+    console.error("Error updating DEX configuration:", error);
+    const errorMessage =
+      error instanceof Error ? error.message : "Unknown error";
+    throw new Error(`Failed to update DEX configuration: ${errorMessage}`);
   }
-}
-
-/**
- * Helper function to update a file in a repository
- */
-async function updateFileInRepo(
-  owner: string,
-  repo: string,
-  path: string,
-  content: string,
-  commitMessage: string,
-  isBinary = false
-) {
-  // First get the current file to get its SHA
-  const currentFile = await getFileFromRepo(owner, repo, path);
-
-  // Convert content to base64 if not already
-  let contentBase64 = content;
-  if (!isBinary) {
-    contentBase64 = Buffer.from(content).toString("base64");
-  }
-
-  // Create or update the file
-  await octokit.rest.repos.createOrUpdateFileContents({
-    owner,
-    repo,
-    path,
-    message: commitMessage,
-    content: contentBase64,
-    sha: currentFile?.sha,
-  });
 }
 
 /**
@@ -633,11 +719,6 @@ async function enableGitHubPages(owner: string, repo: string): Promise<void> {
 
 /**
  * Setup repository with one commit - combining workflow files and DEX configuration
- * This prevents multiple GitHub Actions triggers
- * @param owner The repository owner (username or organization)
- * @param repo The repository name
- * @param config The DEX configuration to apply
- * @param files Logo files to upload
  */
 export async function setupRepositoryWithSingleCommit(
   owner: string,
@@ -677,196 +758,49 @@ export async function setupRepositoryWithSingleCommit(
       "utf-8"
     );
 
-    // Get the latest commit SHA from the default branch
-    console.log(`Getting latest commit for ${owner}/${repo}...`);
-    const { data: refData } = await octokit.rest.git.getRef({
+    // Use the helper function to prepare config content
+    const {
+      envContent,
+      themeCSS,
+      faviconData,
+      primaryLogoData,
+      secondaryLogoData,
+    } = prepareDexConfigContent(config, files);
+
+    // Prepare file contents map for text files
+    const fileContents = new Map<string, string>();
+    fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
+    fileContents.set(".github/workflows/sync-fork.yml", syncForkYmlContent);
+    fileContents.set(".env", envContent);
+
+    if (themeCSS) {
+      fileContents.set("app/styles/theme.css", themeCSS);
+    }
+
+    // Prepare binary files map
+    const binaryFiles = new Map<string, Buffer>();
+
+    // Add image files if data is available
+    if (faviconData) {
+      binaryFiles.set("public/favicon.webp", faviconData);
+    }
+
+    // Add logo files if data is available
+    if (primaryLogoData) {
+      binaryFiles.set("public/logo.webp", primaryLogoData);
+    }
+
+    if (secondaryLogoData) {
+      binaryFiles.set("public/logo-secondary.webp", secondaryLogoData);
+    }
+
+    // Create a single commit with all changes
+    await createSingleCommit(
       owner,
       repo,
-      ref: "heads/main",
-    });
-    const latestCommitSha = refData.object.sha;
-
-    // Create ENV file content
-    const envContent = `# Broker settings
-VITE_ORDERLY_BROKER_ID=${config.brokerId}
-VITE_ORDERLY_BROKER_NAME=${config.brokerName}
-
-# Meta tags
-VITE_APP_NAME=${config.brokerName}
-VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
-
-# Social Media Links
-VITE_TELEGRAM_URL=${config.telegramLink || ""}
-VITE_DISCORD_URL=${config.discordLink || ""}
-VITE_TWITTER_URL=${config.xLink || ""}
-`;
-
-    // Create blobs for all files
-    console.log("Creating blobs for all files...");
-    const blobPromises = [
-      // Workflow files
-      octokit.rest.git.createBlob({
-        owner,
-        repo,
-        content: Buffer.from(deployYmlContent).toString("base64"),
-        encoding: "base64",
-      }),
-      octokit.rest.git.createBlob({
-        owner,
-        repo,
-        content: Buffer.from(syncForkYmlContent).toString("base64"),
-        encoding: "base64",
-      }),
-      // ENV file
-      octokit.rest.git.createBlob({
-        owner,
-        repo,
-        content: Buffer.from(envContent).toString("base64"),
-        encoding: "base64",
-      }),
-    ];
-
-    // Add theme CSS if provided
-    if (config.themeCSS) {
-      blobPromises.push(
-        octokit.rest.git.createBlob({
-          owner,
-          repo,
-          content: Buffer.from(config.themeCSS).toString("base64"),
-          encoding: "base64",
-        })
-      );
-    }
-
-    // Add logo files if provided
-    if (files.primaryLogo) {
-      blobPromises.push(
-        octokit.rest.git.createBlob({
-          owner,
-          repo,
-          content: files.primaryLogo,
-          encoding: "base64",
-        })
-      );
-    }
-
-    if (files.secondaryLogo) {
-      blobPromises.push(
-        octokit.rest.git.createBlob({
-          owner,
-          repo,
-          content: files.secondaryLogo,
-          encoding: "base64",
-        })
-      );
-    }
-
-    if (files.favicon) {
-      blobPromises.push(
-        octokit.rest.git.createBlob({
-          owner,
-          repo,
-          content: files.favicon,
-          encoding: "base64",
-        })
-      );
-    }
-
-    // Wait for all blobs to be created
-    const blobs = await Promise.all(blobPromises);
-
-    // Create tree entries
-    const treeEntries = [
-      {
-        path: ".github/workflows/deploy.yml",
-        mode: "100644" as const, // file mode (100644 = file)
-        type: "blob" as const,
-        sha: blobs[0].data.sha,
-      },
-      {
-        path: ".github/workflows/sync-fork.yml",
-        mode: "100644" as const, // file mode (100644 = file)
-        type: "blob" as const,
-        sha: blobs[1].data.sha,
-      },
-      {
-        path: ".env",
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blobs[2].data.sha,
-      },
-    ];
-
-    // Add theme CSS if provided
-    if (config.themeCSS) {
-      treeEntries.push({
-        path: "app/styles/theme.css",
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blobs[3].data.sha,
-      });
-    }
-
-    // Add logo files if provided
-    let blobIndex = config.themeCSS ? 4 : 3;
-
-    if (files.primaryLogo) {
-      treeEntries.push({
-        path: "public/orderly-logo.svg",
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blobs[blobIndex++].data.sha,
-      });
-    }
-
-    if (files.secondaryLogo) {
-      treeEntries.push({
-        path: "public/orderly-logo-secondary.svg",
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blobs[blobIndex++].data.sha,
-      });
-    }
-
-    if (files.favicon) {
-      treeEntries.push({
-        path: "public/favicon.png",
-        mode: "100644" as const,
-        type: "blob" as const,
-        sha: blobs[blobIndex++].data.sha,
-      });
-    }
-
-    // Create a tree with all files
-    console.log("Creating git tree with all files...");
-    const { data: newTree } = await octokit.rest.git.createTree({
-      owner,
-      repo,
-      base_tree: latestCommitSha,
-      tree: treeEntries,
-    });
-
-    // Create a commit
-    console.log("Creating commit with all files...");
-    const { data: newCommit } = await octokit.rest.git.createCommit({
-      owner,
-      repo,
-      message: "Setup DEX with workflow files and configuration",
-      tree: newTree.sha,
-      parents: [latestCommitSha],
-    });
-
-    // Update the reference
-    console.log("Updating branch reference...");
-    await octokit.rest.git.updateRef({
-      owner,
-      repo,
-      ref: "heads/main",
-      sha: newCommit.sha,
-    });
-
-    console.log(
-      `Successfully set up repository ${owner}/${repo} with a single commit`
+      fileContents,
+      binaryFiles,
+      "Setup DEX with workflow files and configuration"
     );
   } catch (error) {
     console.error(`Error setting up repository ${owner}/${repo}:`, error);

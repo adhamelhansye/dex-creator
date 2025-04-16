@@ -33,15 +33,15 @@ function extractRepoInfoFromUrl(
 
 // Create schema for validation with base64-encoded image data
 export const dexSchema = z.object({
-  brokerName: z.string().min(3).max(50).optional(),
-  themeCSS: z.string().optional(),
+  brokerName: z.string().min(3).max(50).nullish(),
+  themeCSS: z.string().nullish(),
   // For image data, expect base64-encoded strings
-  primaryLogo: z.string().optional(),
-  secondaryLogo: z.string().optional(),
-  favicon: z.string().optional(),
-  telegramLink: z.string().url().optional(),
-  discordLink: z.string().url().optional(),
-  xLink: z.string().url().optional(),
+  primaryLogo: z.string().nullish(),
+  secondaryLogo: z.string().nullish(),
+  favicon: z.string().nullish(),
+  telegramLink: z.string().url().nullish(),
+  discordLink: z.string().url().nullish(),
+  xLink: z.string().url().nullish(),
 });
 
 // Helper function to generate a simple ID
@@ -168,7 +168,7 @@ export async function createDex(
       // Create properly typed data object
       return tx.dex.create({
         data: {
-          brokerName: data.brokerName,
+          brokerName: data.brokerName ?? undefined,
           brokerId: brokerId, // Use the generated broker ID
           themeCSS: data.themeCSS,
           primaryLogo: data.primaryLogo,
@@ -242,18 +242,16 @@ export async function updateDex(
   const updateData: Prisma.DexUpdateInput = {};
 
   // Only update fields if they're provided
-  if (data.brokerName !== undefined) updateData.brokerName = data.brokerName;
-  if (data.themeCSS !== undefined) updateData.themeCSS = data.themeCSS;
-  if (data.telegramLink !== undefined)
-    updateData.telegramLink = data.telegramLink;
-  if (data.discordLink !== undefined) updateData.discordLink = data.discordLink;
-  if (data.xLink !== undefined) updateData.xLink = data.xLink;
+  if (data.brokerName != null) updateData.brokerName = data.brokerName;
+  if (data.themeCSS != null) updateData.themeCSS = data.themeCSS;
+  if (data.telegramLink != null) updateData.telegramLink = data.telegramLink;
+  if (data.discordLink != null) updateData.discordLink = data.discordLink;
+  if (data.xLink != null) updateData.xLink = data.xLink;
 
   // Handle image data with type assertions
-  if (data.primaryLogo !== undefined) updateData.primaryLogo = data.primaryLogo;
-  if (data.secondaryLogo !== undefined)
-    updateData.secondaryLogo = data.secondaryLogo;
-  if (data.favicon !== undefined) updateData.favicon = data.favicon;
+  if (data.primaryLogo != null) updateData.primaryLogo = data.primaryLogo;
+  if (data.secondaryLogo != null) updateData.secondaryLogo = data.secondaryLogo;
+  if (data.favicon != null) updateData.favicon = data.favicon;
 
   return prisma.dex.update({
     where: {

@@ -6,11 +6,13 @@ import dexRoutes from "./routes/dex";
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
 import { prisma } from "./lib/prisma";
+import { authMiddleware, adminMiddleware } from "./lib/auth";
 
 // Custom types for Hono to support typed context variables
 declare module "hono" {
   interface ContextVariableMap {
     userId: string;
+    isAdmin?: boolean;
   }
 }
 
@@ -20,67 +22,16 @@ const app = new Hono();
 app.use("*", logger());
 app.use("*", cors());
 
-// Authentication middleware for protected routes
-app.use("/api/dex/*", async (c, next) => {
-  const authHeader = c.req.header("Authorization");
+// Apply authentication middleware to protected routes
+app.use("/api/dex/*", authMiddleware);
 
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ error: "Unauthorized: No token provided" }, 401);
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    // Find the token in the database
-    const tokenRecord = await prisma.token.findUnique({
-      where: { token },
-      include: { user: true },
-    });
-
-    // Check if token exists and is not expired
-    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
-      return c.json({ error: "Unauthorized: Invalid or expired token" }, 401);
-    }
-
-    // Set user ID in context for routes to use
-    c.set("userId", tokenRecord.userId);
-
-    await next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-    return c.json({ error: "Authentication error" }, 500);
-  }
-});
-
-// Same auth middleware for admin routes
+// Apply admin middleware to admin routes, but exclude the /check endpoint
 app.use("/api/admin/*", async (c, next) => {
-  const authHeader = c.req.header("Authorization");
-
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return c.json({ error: "Unauthorized: No token provided" }, 401);
-  }
-
-  const token = authHeader.split(" ")[1];
-
-  try {
-    // Find the token in the database
-    const tokenRecord = await prisma.token.findUnique({
-      where: { token },
-      include: { user: true },
-    });
-
-    // Check if token exists and is not expired
-    if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
-      return c.json({ error: "Unauthorized: Invalid or expired token" }, 401);
-    }
-
-    // Set user ID in context for routes to use
-    c.set("userId", tokenRecord.userId);
-
+  // Skip adminMiddleware for the /check endpoint
+  if (c.req.path === "/api/admin/check") {
     await next();
-  } catch (error) {
-    console.error("Authentication error:", error);
-    return c.json({ error: "Authentication error" }, 500);
+  } else {
+    await adminMiddleware(c, next);
   }
 });
 

@@ -30,5 +30,27 @@ export default defineConfig({
   publicDir: "public",
   build: {
     outDir: "dist",
+    // Configure proper WASM support
+    // rollupOptions: {
+    //   output: {
+    //     manualChunks: {
+    //       wasm: [
+    //         "@jsquash/jpeg",
+    //         "@jsquash/png",
+    //         "@jsquash/webp",
+    //         "@jsquash/resize",
+    //       ],
+    //     },
+    //   },
+    // },
+  },
+  // Configure proper WASM file loading
+  optimizeDeps: {
+    exclude: [
+      "@jsquash/jpeg",
+      "@jsquash/png",
+      "@jsquash/webp",
+      "@jsquash/resize",
+    ],
   },
 });
