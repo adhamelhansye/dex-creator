@@ -52,7 +52,7 @@ jobs:
       - name: Setup Pages
         uses: actions/configure-pages@v4
         with:
-          token: ${{ secrets.PAGES_DEPLOYMENT_TOKEN }}
+          token: ${{ secrets.TEMPLATE_PAT }}
           enablement: true
 
       - name: Upload artifact

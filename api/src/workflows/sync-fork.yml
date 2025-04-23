@@ -27,7 +27,7 @@ jobs:
         if: steps.check_fork.outputs.result == 'true'
         uses: actions/checkout@v4
         with:
-          token: ${{ secrets.FORK_SYNC_PAT }}
+          token: ${{ secrets.TEMPLATE_PAT }}
           fetch-depth: 0
 
       - name: Configure Git

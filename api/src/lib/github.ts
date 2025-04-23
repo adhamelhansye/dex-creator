@@ -262,18 +262,16 @@ export async function forkTemplateRepository(
     await enableRepositoryActions(orgName, repoName);
 
     // Add GitHub Pages deployment token as a secret if available
-    const deploymentToken = process.env.PAGES_DEPLOYMENT_TOKEN;
+    const deploymentToken = process.env.TEMPLATE_PAT;
     if (deploymentToken) {
       try {
         await addSecretToRepository(
           orgName,
           repoName,
-          "PAGES_DEPLOYMENT_TOKEN",
+          "TEMPLATE_PAT",
           deploymentToken
         );
-        console.log(
-          `Added PAGES_DEPLOYMENT_TOKEN secret to ${orgName}/${repoName}`
-        );
+        console.log(`Added TEMPLATE_PAT secret to ${orgName}/${repoName}`);
       } catch (secretError) {
         console.error(
           "Error adding GitHub Pages deployment token secret:",
@@ -282,7 +280,7 @@ export async function forkTemplateRepository(
         // Continue even if adding the secret fails - we don't want to fail the fork operation
       }
     } else {
-      console.warn("PAGES_DEPLOYMENT_TOKEN not found in environment variables");
+      console.warn("TEMPLATE_PAT not found in environment variables");
       console.warn("GitHub Pages deployment may not work without this token");
     }
 

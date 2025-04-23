@@ -181,7 +181,7 @@ docker run -d \
   -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public \
   -e GITHUB_TOKEN=your-github-token \
   -e GITHUB_TEMPLATE_REPO=OrderlyNetworkDexCreator/dex-creator-template \
-  -e PAGES_DEPLOYMENT_TOKEN=your-pages-token \
+  -e TEMPLATE_PAT=your-template-personal-access-token \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```
