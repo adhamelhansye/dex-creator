@@ -1,5 +1,13 @@
 import { createAppKit } from "@reown/appkit/react";
-import { mainnet, sepolia } from "@reown/appkit/networks";
+import {
+  arbitrum,
+  arbitrumSepolia,
+  base,
+  baseSepolia,
+  mainnet,
+  optimism,
+  sepolia,
+} from "@reown/appkit/networks";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
 
 // 1. Get projectId from environment variable or use a default for development
@@ -17,7 +25,15 @@ const metadata = {
 };
 
 // 3. Set the networks
-const networks = [mainnet, sepolia];
+const networks = [
+  mainnet,
+  base,
+  arbitrum,
+  optimism,
+  sepolia,
+  baseSepolia,
+  arbitrumSepolia,
+];
 
 // 4. Create Wagmi Adapter
 export const wagmiAdapter = new WagmiAdapter({
@@ -29,7 +45,15 @@ export const wagmiAdapter = new WagmiAdapter({
 // 5. Create AppKit
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [mainnet, sepolia],
+  networks: [
+    mainnet,
+    base,
+    arbitrum,
+    optimism,
+    sepolia,
+    baseSepolia,
+    arbitrumSepolia,
+  ],
   projectId,
   metadata,
   features: {

@@ -531,6 +531,22 @@ Example usage:
 />
 ```
 
+#### DEX Live Preview
+
+The DEX Creator includes a preview feature showing users how their DEX will look with current configuration:
+
+- **Implementation Highlights**:
+  - Inline iframe-based preview system
+  - Custom React hook for localStorage configuration management
+  - Zod schema validation for configuration data
+  - Support for custom logos and branding
+
+- **Key Components**:
+  - `DexPreview`: Core component rendering the DEX UI
+  - `PreviewButton`: Manages preview interaction
+  - `usePreviewConfig`: Hook for configuration management
+  - Preview route handling configuration parsing
+
 #### Responsive Design
 
 The application uses these responsive breakpoints with UnoCSS:

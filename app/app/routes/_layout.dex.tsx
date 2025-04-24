@@ -9,6 +9,7 @@ import { Card } from "../components/Card";
 import FormInput from "../components/FormInput";
 import Form, { FormErrors } from "../components/Form";
 import ImagePaste from "../components/ImagePaste";
+import PreviewButton from "../components/PreviewButton";
 import {
   validateUrl,
   required,
@@ -561,6 +562,27 @@ export default function DexRoute() {
               validator={urlValidator}
             />
           </Form>
+
+          {/* DEX Preview Button - Moved outside the form */}
+          <div className="mt-6 pt-4 border-t border-light/10">
+            <h3 className="text-md font-medium mb-3">Visual Preview</h3>
+            <p className="text-xs text-gray-400 mb-4">
+              See a visual preview of how your DEX will look with the current
+              configuration. This is just a visual preview and does not create
+              or deploy your DEX.
+            </p>
+
+            <div className="flex justify-start">
+              <PreviewButton
+                brokerName={brokerName || "My DEX"}
+                initialSymbol="PERP_BTC_USDC"
+                primaryLogo={primaryLogo}
+                secondaryLogo={secondaryLogo}
+                className="rounded-full py-2 px-6 font-medium transition-all duration-200 cursor-pointer border-none bg-gradient-primaryButton text-white shadow-glow hover:bg-gradient-primaryButtonHover hover:shadow-glow-hover hover:transform hover:-translate-y-0.5 flex items-center gap-2"
+                buttonText="Preview DEX Design"
+              />
+            </div>
+          </div>
 
           {dexData?.repoUrl ? (
             <Card variant="success" className="mb-6">

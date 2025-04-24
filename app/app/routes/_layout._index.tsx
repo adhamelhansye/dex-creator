@@ -2,12 +2,17 @@ import type { MetaFunction } from "@remix-run/node";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { useAuth } from "../context/AuthContext";
-import { useNavigate } from "@remix-run/react";
+import { Outlet, useNavigate } from "@remix-run/react";
 import { useAppKit } from "@reown/appkit/react";
 
 export const meta: MetaFunction = () => [
   { title: "DEX Creator | Orderly Network" },
 ];
+
+export function Layout() {
+  console.log("INDEX Layout");
+  return <Outlet />;
+}
 
 export default function Index() {
   const { isAuthenticated } = useAuth();

@@ -15,3 +15,5 @@ node_modules/
 *.log 
 *.md
 *.json
+
+/app/public/tradingview/

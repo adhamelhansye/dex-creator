@@ -14,6 +14,7 @@ const ignores = globalIgnores([
   "**/*.json",
   "**/*.md",
   ".specstory/",
+  "app/public/tradingview/",
 ]);
 
 export default defineConfig([

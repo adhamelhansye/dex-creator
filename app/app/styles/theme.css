@@ -1,0 +1,28 @@
+/* 
+ * Orderly Theme CSS
+ * This file contains additional theme styling for the Orderly UI components.
+ */
+
+/* Override Orderly UI styles to better match our app theme when needed */
+.orderly-app-container {
+  font-family: 'Inter', sans-serif;
+}
+
+/* Custom scrollbar for Orderly components */
+.orderly-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+.orderly-scrollbar::-webkit-scrollbar-track {
+  background: rgba(var(--oui-color-base-7), 0.5);
+}
+
+.orderly-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(var(--oui-color-primary), 0.5);
+  border-radius: 3px;
+}
+
+.orderly-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(var(--oui-color-primary), 0.8);
+} 
