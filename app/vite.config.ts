@@ -20,10 +20,8 @@ export default defineConfig({
     }),
     tsconfigPaths(),
     nodePolyfills({
-      // Whether to polyfill `node:` protocol imports.
       protocolImports: true,
-      // Polyfills needed for specific libraries
-      include: ["buffer", "process", "util", "stream", "events"],
+      include: ["buffer", "process", "util", "stream", "events", "crypto"],
     }),
     cjsInterop({
       dependencies: ["bs58", "@coral-xyz/anchor", "lodash"],
