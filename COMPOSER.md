@@ -699,6 +699,8 @@ The API can be deployed using Docker with a simple approach:
   - `DATABASE_URL`: PostgreSQL connection string
   - `GITHUB_TOKEN`: For repository forking
   - `TEMPLATE_PAT`: For GitHub Pages deployments and updating the repository
+  - `CEREBRAS_API_KEY`: API key for Cerebras AI theme generation
+  - `CEREBRAS_API_URL`: Cerebras API endpoint (default: "https://api.cerebras.ai/v1")
 
 ### Quick Deployment
 
@@ -711,6 +713,9 @@ docker run -d \
   --name dex-creator-api \
   -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public \
   -e GITHUB_TOKEN=your-github-token \
+  -e TEMPLATE_PAT=your-github-pages-token \
+  -e CEREBRAS_API_KEY=your-cerebras-api-key \
+  -e CEREBRAS_API_URL=https://api.cerebras.ai/v1 \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```
@@ -974,6 +979,8 @@ Error Response (500):
   "error": "Failed to generate theme"
 }
 ```
+
+> **Implementation Note**: This endpoint requires environment variables `CEREBRAS_API_KEY` and `CEREBRAS_API_URL` to be properly configured for the AI-powered theme generation to work.
 
 ## Technical Decisions
 

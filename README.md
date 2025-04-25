@@ -182,9 +182,25 @@ docker run -d \
   -e GITHUB_TOKEN=your-github-token \
   -e GITHUB_TEMPLATE_REPO=OrderlyNetworkDexCreator/dex-creator-template \
   -e TEMPLATE_PAT=your-template-personal-access-token \
+  -e CEREBRAS_API_KEY=your-cerebras-api-key \
+  -e CEREBRAS_API_URL=https://api.cerebras.ai/v1 \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```
+
+#### Environment Variables
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `DATABASE_URL` | PostgreSQL connection string | Yes |
+| `GITHUB_TOKEN` | GitHub token for repo forking (needs 'admin:org' and 'repo' scopes) | Yes |
+| `GITHUB_TEMPLATE_REPO` | Template repository to fork (default: "OrderlyNetworkDexCreator/dex-creator-template") | Yes |
+| `TEMPLATE_PAT` | Token for GitHub Pages deployments (needs 'repo' and 'workflow' permissions) | Yes |
+| `CEREBRAS_API_KEY` | API key for Cerebras AI theme generation | Yes |
+| `CEREBRAS_API_URL` | Cerebras API endpoint (default: "https://api.cerebras.ai/v1") | Yes |
+| `MIGRATE_DB` | Whether to run database migrations on startup (true/false) | No |
+| `PORT` | API server port (default: 3001) | No |
+| `NODE_ENV` | Environment (development/production) | No |
 
 #### Automatic Database Migrations
 
