@@ -1,5 +1,4 @@
 @import "@unocss/reset/tailwind.css";
-@import "@orderly.network/ui/dist/styles.css";
 @import "../styles/theme.css";
 
 /* 
@@ -171,29 +170,6 @@ main {
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-}
-
-/* Fix for buttons with primary variant to ensure they always have background */
-button[type="submit"][data-variant="primary"]:not([disabled]),
-button[data-variant="primary"]:not([disabled]) {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary), 0.9),
-    rgba(var(--color-secondary), 0.9)
-  ) !important;
-  color: white !important;
-  box-shadow: 0 0 10px rgba(var(--color-primary), 0.2) !important;
-}
-
-button[type="submit"][data-variant="primary"]:not([disabled]):hover,
-button[data-variant="primary"]:not([disabled]):hover {
-  background: linear-gradient(
-    135deg,
-    rgba(var(--color-primary-light), 1),
-    rgba(var(--color-secondary-light), 1)
-  ) !important;
-  transform: translateY(-2px) !important;
-  box-shadow: 0 0 15px rgba(var(--color-primary), 0.3) !important;
 }
 
 .card {

@@ -5,6 +5,8 @@ import { MetaFunction } from "@remix-run/node";
 import { z } from "zod";
 import { NetworkId } from "@orderly.network/types";
 
+import "@orderly.network/ui/dist/styles.css";
+
 // Constant key for localStorage - must match the one in PreviewButton
 const DEX_PREVIEW_CONFIG_KEY = "dex-preview-config";
 

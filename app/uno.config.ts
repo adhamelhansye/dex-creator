@@ -2,7 +2,7 @@ import { defineConfig, presetUno, presetWebFonts, presetIcons } from "unocss";
 
 export default defineConfig({
   presets: [
-    presetUno(),
+    presetUno({ important: true }),
     presetWebFonts({
       provider: "google",
       fonts: {
