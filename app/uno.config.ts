@@ -11,6 +11,67 @@ export default defineConfig({
     }),
     presetIcons(),
   ],
+  safelist: [
+    "rounded-full",
+    "py-2",
+    "px-6",
+    "font-medium",
+    "transition-all",
+    "duration-200",
+    "cursor-pointer",
+    "border-none",
+    "text-xs",
+    "py-1",
+    "px-3",
+    "text-sm",
+    "py-1.5",
+    "px-4",
+    "text-lg",
+    "py-2.5",
+    "px-8",
+    "bg-gradient-to-r",
+    "from-primary",
+    "to-secondary",
+    "text-white",
+    "shadow-glow",
+    "hover:from-primary-light",
+    "hover:to-secondary-light",
+    "hover:shadow-glow-hover",
+    "hover:transform",
+    "hover:-translate-y-0.5",
+    "bg-primary/10",
+    "border-2",
+    "border-primary/50",
+    "hover:border-primary/80",
+    "hover:bg-primary/20",
+    "shadow-sm",
+    "hover:shadow",
+    "bg-red-500",
+    "hover:bg-red-600",
+    "bg-transparent",
+    "hover:bg-white/10",
+    "bg-success",
+    "hover:bg-success-light",
+    "relative",
+    "after:absolute",
+    "after:inset-0",
+    "after:rounded-full",
+    "after:bg-primary/20",
+    "after:blur-lg",
+    "after:transform",
+    "after:scale-110",
+    "after:-z-10",
+    "opacity-60",
+    "cursor-not-allowed",
+    "mr-2",
+    "inline-block",
+    "animate-spin",
+    "h-4",
+    "w-4",
+    "opacity-25",
+    "opacity-75",
+    "ml-2",
+  ],
   theme: {
     colors: {
       // Primary palette
@@ -54,43 +115,5 @@ export default defineConfig({
         "glow-hover": "0 0 15px rgba(89, 91, 255, 0.3)",
       },
     },
-  },
-  shortcuts: {
-    // Layout
-    "page-container":
-      "min-h-screen bg-background-DEFAULT text-white font-sans p-8",
-    "section-container": "max-w-6xl mx-auto py-12",
-
-    // Button styles
-    btn: "rounded-full py-2 px-6 font-medium transition-all duration-200 cursor-pointer border-none",
-    "btn-connect":
-      "bg-gradient-primaryButton text-white shadow-glow hover:bg-gradient-primaryButtonHover hover:shadow-glow-hover hover:transform hover:-translate-y-0.5",
-    "btn-auth":
-      "bg-gradient-primaryButton text-white shadow-glow hover:bg-gradient-primaryButtonHover hover:shadow-glow-hover hover:transform hover:-translate-y-0.5",
-    "btn-disconnect": "bg-red-500 text-white hover:opacity-90",
-    "btn-secondary":
-      "bg-gradient-secondaryButton text-white border border-primary-light/30 hover:border-primary-light/50",
-
-    // Card styles
-    card: "rounded-xl bg-background-card backdrop-blur-sm border border-primary-light/10 p-6 shadow-lg",
-
-    // Text styles
-    "gradient-text":
-      "bg-gradient-to-r from-primary-light to-secondary-light bg-clip-text text-transparent",
-
-    // Address display
-    "address-display": "text-sm text-gray-300 mb-1",
-    "address-authenticated": "text-primary-light font-medium",
-
-    // Container styles
-    "wallet-container": "relative font-sans",
-    "button-group": "flex flex-col gap-2 mt-2",
-
-    // Error message
-    "error-message": "text-red-500 text-sm mt-2",
-
-    // Effects
-    "glow-effect":
-      "relative after:absolute after:inset-0 after:rounded-full after:bg-primary/20 after:blur-lg after:transform after:scale-110 after:-z-10",
   },
 });

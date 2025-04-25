@@ -5,6 +5,7 @@ import { cors } from "hono/cors";
 import dexRoutes from "./routes/dex";
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
+import themeRoutes from "./routes/theme";
 import { prisma } from "./lib/prisma";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
 
@@ -24,6 +25,7 @@ app.use("*", cors());
 
 // Apply authentication middleware to protected routes
 app.use("/api/dex/*", authMiddleware);
+app.use("/api/theme/*", authMiddleware);
 
 // Apply admin middleware to admin routes, but exclude the /check endpoint
 app.use("/api/admin/*", async (c, next) => {
@@ -40,6 +42,7 @@ app.get("/", c => c.json({ message: "DEX Creator API is running" }));
 app.route("/api/dex", dexRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/api/admin", adminRoutes);
+app.route("/api/theme", themeRoutes);
 
 // Error handling
 app.notFound(c => {

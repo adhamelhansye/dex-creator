@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, FC } from "react";
 import { NetworkId } from "@orderly.network/types";
 import usePreviewConfig from "../hooks/usePreviewConfig";
+import { Button } from "./Button";
 
 interface PreviewButtonProps {
   // DEX configuration - now just needs brokerName
@@ -9,6 +10,7 @@ interface PreviewButtonProps {
   initialSymbol?: string;
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
+  themeCSS?: string | null;
 
   // Button styling
   className?: string;
@@ -27,6 +29,7 @@ const PreviewButton: FC<PreviewButtonProps> = ({
   initialSymbol = "PERP_BTC_USDC",
   primaryLogo = null,
   secondaryLogo = null,
+  themeCSS = null,
   className = "",
   buttonText = "Preview DEX",
 }) => {
@@ -40,7 +43,8 @@ const PreviewButton: FC<PreviewButtonProps> = ({
     networkId,
     initialSymbol,
     primaryLogo,
-    secondaryLogo
+    secondaryLogo,
+    themeCSS
   );
 
   const togglePreview = () => {
@@ -65,14 +69,7 @@ const PreviewButton: FC<PreviewButtonProps> = ({
 
   return (
     <div className="mt-4 w-full">
-      <button
-        type="button"
-        onClick={togglePreview}
-        className={
-          className ||
-          "rounded-full py-2 px-6 font-medium transition-all duration-200 cursor-pointer border-none bg-gradient-primaryButton text-white hover:bg-gradient-primaryButtonHover shadow-glow hover:shadow-glow-hover"
-        }
-      >
+      <Button variant="secondary" onClick={togglePreview} className={className}>
         {isPreviewVisible ? (
           <span className="flex items-center gap-1">
             <span className="i-mdi:eye-off-outline h-4 w-4"></span>
@@ -84,7 +81,7 @@ const PreviewButton: FC<PreviewButtonProps> = ({
             {buttonText}
           </span>
         )}
-      </button>
+      </Button>
 
       {isPreviewVisible && (
         <div className="mt-4 relative">

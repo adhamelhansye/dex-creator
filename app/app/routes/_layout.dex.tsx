@@ -1,4 +1,10 @@
-import { useState, useEffect, FormEvent } from "react";
+import {
+  useState,
+  useEffect,
+  FormEvent,
+  ChangeEvent,
+  useCallback,
+} from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
@@ -10,6 +16,9 @@ import FormInput from "../components/FormInput";
 import Form, { FormErrors } from "../components/Form";
 import ImagePaste from "../components/ImagePaste";
 import PreviewButton from "../components/PreviewButton";
+import ThemeColorSwatches from "../components/ThemeColorSwatches";
+import ThemeRoundedControls from "../components/ThemeRoundedControls";
+import ThemeSpacingControls from "../components/ThemeSpacingControls";
 import {
   validateUrl,
   required,
@@ -36,6 +45,129 @@ interface DexData {
   createdAt: string;
   updatedAt: string;
 }
+
+interface ThemeResponse {
+  theme: string;
+}
+
+// Define type for active tab
+type ThemeTabType = "colors" | "rounded" | "spacing";
+
+// Instead of using an external component, define Textarea inline
+const Textarea = ({
+  value,
+  onChange,
+  className,
+  placeholder,
+}: {
+  value: string | null;
+  onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
+  className?: string;
+  placeholder?: string;
+}) => (
+  <textarea
+    value={value || ""}
+    onChange={onChange}
+    className={className}
+    placeholder={placeholder}
+  />
+);
+
+// Default theme content if needed
+const defaultTheme = `:root {
+  --oui-font-family: 'Manrope', sans-serif;
+
+  /* colors */
+  --oui-color-primary: 176 132 233;
+  --oui-color-primary-light: 213 190 244;
+  --oui-color-primary-darken: 137 76 209;
+  --oui-color-primary-contrast: 255 255 255;
+
+  --oui-color-link: 189 107 237;
+  --oui-color-link-light: 217 152 250;
+
+  --oui-color-secondary: 255 255 255;
+  --oui-color-tertiary: 218 218 218;
+  --oui-color-quaternary: 218 218 218;
+
+  --oui-color-danger: 245 97 139;
+  --oui-color-danger-light: 250 167 188;
+  --oui-color-danger-darken: 237 72 122;
+  --oui-color-danger-contrast: 255 255 255;
+
+  --oui-color-success: 41 233 169;
+  --oui-color-success-light: 101 240 194;
+  --oui-color-success-darken: 0 161 120;
+  --oui-color-success-contrast: 255 255 255;
+
+  --oui-color-warning: 255 209 70;
+  --oui-color-warning-light: 255 229 133;
+  --oui-color-warning-darken: 255 152 0;
+  --oui-color-warning-contrast: 255 255 255;
+
+  --oui-color-fill: 36 32 47;
+  --oui-color-fill-active: 40 46 58;
+
+  --oui-color-base-1: 93 83 123;
+  --oui-color-base-2: 81 72 107;
+  --oui-color-base-3: 68 61 69;
+  --oui-color-base-4: 57 52 74;
+  --oui-color-base-5: 51 46 66;
+  --oui-color-base-6: 43 38 56;
+  --oui-color-base-7: 36 32 47;
+  --oui-color-base-8: 29 26 38;
+  --oui-color-base-9: 22 20 28;
+  --oui-color-base-10: 14 13 18;
+
+  --oui-color-base-foreground: 255 255 255;
+  --oui-color-line: 255 255 255;
+
+  --oui-color-trading-loss: 245 97 139;
+  --oui-color-trading-loss-contrast: 255 255 255;
+  --oui-color-trading-profit: 41 233 169;
+  --oui-color-trading-profit-contrast: 255 255 255;
+
+  /* gradients */
+  --oui-gradient-primary-start: 40 0 97;
+  --oui-gradient-primary-end: 189 107 237;
+
+  --oui-gradient-secondary-start: 81 42 121;
+  --oui-gradient-secondary-end: 176 132 233;
+
+  --oui-gradient-success-start: 1 83 68;
+  --oui-gradient-success-end: 41 223 169;
+
+  --oui-gradient-danger-start: 153 24 76;
+  --oui-gradient-danger-end: 245 97 139;
+
+  --oui-gradient-brand-start: 231 219 249;
+  --oui-gradient-brand-end: 159 107 225;
+  --oui-gradient-brand-stop-start: 6.62%;
+  --oui-gradient-brand-stop-end: 86.5%;
+  --oui-gradient-brand-angle: 17.44deg;
+
+  --oui-gradient-warning-start: 152 58 8;
+  --oui-gradient-warning-end: 255 209 70;
+
+  --oui-gradient-neutral-start: 27 29 24;
+  --oui-gradient-neutral-end: 38 41 46;
+
+  /* rounded */
+  --oui-rounded-sm: 2px;
+  --oui-rounded: 4px;
+  --oui-rounded-md: 6px;
+  --oui-rounded-lg: 8px;
+  --oui-rounded-xl: 12px;
+  --oui-rounded-2xl: 16px;
+  --oui-rounded-full: 9999px;
+
+  /* spacing */
+  --oui-spacing-xs: 20rem;
+  --oui-spacing-sm: 22.5rem;
+  --oui-spacing-md: 26.25rem;
+  --oui-spacing-lg: 30rem;
+  --oui-spacing-xl: 33.75rem;
+}`;
 
 export default function DexRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
@@ -64,7 +196,16 @@ export default function DexRoute() {
     primaryLogo: null as string | null,
     secondaryLogo: null as string | null,
     favicon: null as string | null,
+    themeCSS: null as string | null,
   });
+
+  // Theme customization states
+  const [themePrompt, setThemePrompt] = useState("");
+  const [currentTheme, setCurrentTheme] = useState<string | null>(null);
+  const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
+  const [showThemeEditor, setShowThemeEditor] = useState(false);
+  const [themeApplied, setThemeApplied] = useState(false);
+  const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
 
   // Fetch existing DEX data if available
   useEffect(() => {
@@ -100,6 +241,14 @@ export default function DexRoute() {
           if (data.favicon) {
             setFavicon(data.favicon);
           }
+          if (data.themeCSS) {
+            setCurrentTheme(data.themeCSS);
+            setThemeApplied(true);
+          } else {
+            // Set default theme if none exists
+            setCurrentTheme(defaultTheme);
+            setThemeApplied(true);
+          }
 
           // Store original values for change detection
           setOriginalValues({
@@ -110,6 +259,7 @@ export default function DexRoute() {
             primaryLogo: data.primaryLogo || null,
             secondaryLogo: data.secondaryLogo || null,
             favicon: data.favicon || null,
+            themeCSS: data.themeCSS || null,
           });
 
           // Try to construct the deployment URL if a repo exists
@@ -137,6 +287,91 @@ export default function DexRoute() {
 
     fetchDexData();
   }, [isAuthenticated, token]);
+
+  // Now, let's also set a default theme for new DEXes
+  useEffect(() => {
+    // If no theme is set at all (new DEX being created), show the default theme
+    if (!currentTheme && !originalValues.themeCSS) {
+      setCurrentTheme(defaultTheme);
+      setThemeApplied(true);
+    }
+  }, [currentTheme, originalValues.themeCSS]);
+
+  // Handle generating theme from prompt
+  const handleGenerateTheme = async () => {
+    if (!themePrompt.trim()) {
+      toast.error("Please enter a theme description");
+      return;
+    }
+
+    setIsGeneratingTheme(true);
+
+    try {
+      const response = await post<ThemeResponse>(
+        "api/theme/modify",
+        {
+          prompt: themePrompt.trim(),
+          currentTheme: currentTheme || originalValues.themeCSS,
+        },
+        token
+      );
+
+      if (response && response.theme) {
+        // Open the theme preview modal using the existing modal system
+        openModal("themePreview", {
+          theme: response.theme,
+          onApply: handleApplyGeneratedTheme,
+          onCancel: handleCancelGeneratedTheme,
+        });
+        toast.success("Theme generated successfully!");
+      } else {
+        toast.error("Failed to generate theme");
+      }
+    } catch (error) {
+      console.error("Error generating theme:", error);
+      toast.error("Error generating theme. Please try again.");
+    } finally {
+      setIsGeneratingTheme(false);
+    }
+  };
+
+  // Apply the generated theme
+  const handleApplyGeneratedTheme = (modifiedCss: string) => {
+    setCurrentTheme(modifiedCss);
+    setThemeApplied(true);
+  };
+
+  // Empty handler required by modal interface
+  const handleCancelGeneratedTheme = () => {};
+
+  // Handle theme editor changes
+  const handleThemeEditorChange = (value: string) => {
+    setCurrentTheme(value);
+    setThemeApplied(true);
+  };
+
+  // Reset theme to original
+  const handleResetTheme = () => {
+    setCurrentTheme(originalValues.themeCSS);
+    setThemeApplied(!!originalValues.themeCSS);
+    setThemePrompt("");
+    setShowThemeEditor(false);
+    toast.success("Theme reset");
+  };
+
+  // Reset theme to default
+  const handleResetToDefault = () => {
+    setCurrentTheme(defaultTheme);
+    setThemeApplied(true);
+    setThemePrompt("");
+    setShowThemeEditor(false);
+    toast.success("Theme reset to default");
+  };
+
+  // Toggle theme editor visibility
+  const toggleThemeEditor = () => {
+    setShowThemeEditor(!showThemeEditor);
+  };
 
   // Handle retrying the forking process
   const handleRetryForking = async () => {
@@ -195,6 +430,9 @@ export default function DexRoute() {
         case "xLink":
           setXLink(value);
           break;
+        case "themePrompt":
+          setThemePrompt(value);
+          break;
       }
     };
 
@@ -241,7 +479,8 @@ export default function DexRoute() {
         trimmedXLink !== originalValues.xLink ||
         primaryLogo !== originalValues.primaryLogo ||
         secondaryLogo !== originalValues.secondaryLogo ||
-        favicon !== originalValues.favicon;
+        favicon !== originalValues.favicon ||
+        (themeApplied && currentTheme !== originalValues.themeCSS);
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -268,6 +507,7 @@ export default function DexRoute() {
         primaryLogo: primaryLogo,
         secondaryLogo: secondaryLogo,
         favicon: favicon,
+        themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
       };
 
       if (dexData && dexData.id) {
@@ -287,6 +527,7 @@ export default function DexRoute() {
           primaryLogo,
           secondaryLogo,
           favicon,
+          themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         });
 
         toast.success("DEX information updated successfully!");
@@ -303,6 +544,7 @@ export default function DexRoute() {
           primaryLogo,
           secondaryLogo,
           favicon,
+          themeCSS: themeApplied ? currentTheme : null,
         });
 
         // Check if we got a repo URL back
@@ -378,6 +620,89 @@ export default function DexRoute() {
       entityName: "DEX",
     });
   };
+
+  // Convert hex color to space-separated RGB format
+  const hexToRgbSpaceSeparated = (hex: string) => {
+    // Remove the # if present
+    hex = hex.replace("#", "");
+
+    // Parse the hex values
+    const r = parseInt(hex.slice(0, 2), 16);
+    const g = parseInt(hex.slice(2, 4), 16);
+    const b = parseInt(hex.slice(4, 6), 16);
+
+    return `${r} ${g} ${b}`;
+  };
+
+  // Update the CSS with a new color
+  const updateCssColor = useCallback(
+    (variableName: string, newColorHex: string) => {
+      const newColorRgb = hexToRgbSpaceSeparated(newColorHex);
+
+      // Use functional setState to ensure we're working with the latest state
+      setCurrentTheme(prevTheme => {
+        const baseTheme = prevTheme || defaultTheme;
+        let updatedCss = baseTheme;
+
+        // Handle different variable prefixes - color or gradient
+        if (variableName.startsWith("oui-color")) {
+          const regex = new RegExp(
+            `(--${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
+            "g"
+          );
+          updatedCss = updatedCss.replace(regex, `$1${newColorRgb}`);
+        } else if (variableName.startsWith("gradient")) {
+          const regex = new RegExp(
+            `(--oui-${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
+            "g"
+          );
+          updatedCss = updatedCss.replace(regex, `$1${newColorRgb}`);
+        }
+
+        return updatedCss;
+      });
+
+      setThemeApplied(true);
+    },
+    [defaultTheme] // Only depend on defaultTheme, not currentTheme
+  );
+
+  // Update the CSS with a new value (for non-color properties)
+  const updateCssValue = useCallback(
+    (variableName: string, newValue: string) => {
+      // Use functional setState to ensure we're working with the latest state
+      setCurrentTheme(prevTheme => {
+        if (!prevTheme) return prevTheme;
+
+        const regex = new RegExp(`(--${variableName}:\\s*)([^;]+)`, "g");
+        return prevTheme.replace(regex, `$1${newValue}`);
+      });
+
+      setThemeApplied(true);
+    },
+    [] // No dependencies needed since we're using functional updates
+  );
+
+  // Tab button component for theme customization
+  const ThemeTabButton = ({
+    tab,
+    label,
+  }: {
+    tab: ThemeTabType;
+    label: string;
+  }) => (
+    <button
+      className={`px-4 py-2 text-sm font-medium rounded-t-lg ${
+        activeThemeTab === tab
+          ? "bg-background-dark/50 text-white border-t border-l border-r border-light/10"
+          : "bg-transparent text-gray-400 hover:text-white"
+      }`}
+      onClick={() => setActiveThemeTab(tab)}
+      type="button"
+    >
+      {label}
+    </button>
+  );
 
   if (isLoading) {
     return (
@@ -524,6 +849,190 @@ export default function DexRoute() {
               />
             </div>
 
+            {/* Theme Customization Section */}
+            <div className="mt-6 pt-4 border-t border-light/10">
+              <h3 className="text-md font-medium mb-3">Theme Customization</h3>
+              <p className="text-xs text-gray-400 mb-4">
+                Customize your DEX's colors and theme by editing the CSS
+                directly or describing how you want it to look for AI-assisted
+                generation.
+              </p>
+
+              {/* Current Theme Section - Always show */}
+              <div className="mt-4 rounded-lg overflow-hidden border border-light/10 p-4 bg-base-7/50">
+                <div className="flex justify-between mb-2 flex-col sm:flex-row gap-2 sm:gap-0">
+                  <span className="text-sm font-medium mb-2 text-gray-300">
+                    Current Theme
+                  </span>
+                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
+                    <Button
+                      onClick={toggleThemeEditor}
+                      variant="secondary"
+                      size="xs"
+                      className="w-full sm:w-auto"
+                    >
+                      <span className="flex items-center gap-1 justify-center sm:justify-start">
+                        <div
+                          className={
+                            showThemeEditor
+                              ? "i-mdi:eye h-3.5 w-3.5"
+                              : "i-mdi:pencil h-3.5 w-3.5"
+                          }
+                        ></div>
+                        {showThemeEditor ? "Hide Editor" : "Edit CSS"}
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={handleResetTheme}
+                      variant="danger"
+                      size="xs"
+                      className="w-full sm:w-auto"
+                    >
+                      Reset
+                    </Button>
+                    <Button
+                      onClick={handleResetToDefault}
+                      variant="danger"
+                      size="xs"
+                      className="w-full sm:w-auto"
+                    >
+                      Reset to Default
+                    </Button>
+                  </div>
+                </div>
+
+                {showThemeEditor && (
+                  <div className="mt-4">
+                    <Textarea
+                      value={currentTheme || defaultTheme}
+                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                        handleThemeEditorChange(e.target.value)
+                      }
+                      className="w-full h-80 bg-black/80 text-xs text-gray-300 font-mono p-3 rounded border border-light/10"
+                      placeholder="Edit your CSS theme here..."
+                    />
+                  </div>
+                )}
+
+                {!showThemeEditor && (
+                  <div className="mt-2 text-xs mb-4">
+                    <details>
+                      <summary className="cursor-pointer text-gray-400 hover:text-gray-300 transition-colors">
+                        View CSS code
+                      </summary>
+                      <div className="bg-base-8/50 p-4 rounded-lg overflow-auto text-xs max-h-[300px]">
+                        <pre className="language-css">
+                          {currentTheme || defaultTheme}
+                        </pre>
+                      </div>
+                    </details>
+                  </div>
+                )}
+
+                {/* Tabs for color swatches and border radius */}
+                <div className="border-b border-light/10 mt-4">
+                  <div className="flex">
+                    <ThemeTabButton tab="colors" label="Color Palette" />
+                    <ThemeTabButton tab="rounded" label="Border Radius" />
+                    <ThemeTabButton tab="spacing" label="Spacing" />
+                  </div>
+                </div>
+
+                {/* Tab Content */}
+                <div className="pt-4">
+                  {activeThemeTab === "colors" && (
+                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
+                        <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
+                        <span>
+                          Click on any color swatch below to edit with a color
+                          picker
+                        </span>
+                      </div>
+
+                      <ThemeColorSwatches
+                        css={currentTheme || defaultTheme}
+                        onColorChange={updateCssColor}
+                      />
+                    </div>
+                  )}
+
+                  {activeThemeTab === "rounded" && (
+                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
+                        <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
+                        <span>
+                          Adjust the rounded corners of your UI elements with
+                          the sliders
+                        </span>
+                      </div>
+
+                      <ThemeRoundedControls
+                        css={currentTheme || defaultTheme}
+                        onValueChange={updateCssValue}
+                      />
+                    </div>
+                  )}
+
+                  {activeThemeTab === "spacing" && (
+                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
+                        <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
+                        <span>
+                          Adjust the spacing values used throughout your DEX
+                          interface
+                        </span>
+                      </div>
+
+                      <ThemeSpacingControls
+                        css={currentTheme || defaultTheme}
+                        onValueChange={updateCssValue}
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* AI Theme Generator */}
+              <div className="flex flex-col space-y-4 mt-6">
+                <div className="flex flex-col gap-2">
+                  <h4 className="text-sm font-medium mb-1">
+                    AI Theme Generator
+                  </h4>
+                  <p className="text-xs text-gray-400 mb-2">
+                    Describe how you want your DEX theme to look and our AI will
+                    generate it for you.
+                  </p>
+                  <div className="w-full">
+                    <FormInput
+                      id="themePrompt"
+                      label="Theme Description"
+                      value={themePrompt}
+                      onChange={handleInputChange("themePrompt")}
+                      placeholder="e.g., A dark blue theme with neon green accents"
+                      helpText="Describe your desired color scheme and style"
+                      disabled={isGeneratingTheme}
+                    />
+                  </div>
+                  <div className="mt-1">
+                    <Button
+                      onClick={handleGenerateTheme}
+                      isLoading={isGeneratingTheme}
+                      loadingText="Generating..."
+                      disabled={!themePrompt.trim() || isGeneratingTheme}
+                      variant="secondary"
+                      size="sm"
+                    >
+                      <span className="flex items-center gap-1">
+                        <div className="i-mdi:magic-wand h-4 w-4"></div>
+                        Generate Theme
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
               Social Media Links
             </h3>
@@ -578,7 +1087,7 @@ export default function DexRoute() {
                 initialSymbol="PERP_BTC_USDC"
                 primaryLogo={primaryLogo}
                 secondaryLogo={secondaryLogo}
-                className="rounded-full py-2 px-6 font-medium transition-all duration-200 cursor-pointer border-none bg-gradient-primaryButton text-white shadow-glow hover:bg-gradient-primaryButtonHover hover:shadow-glow-hover hover:transform hover:-translate-y-0.5 flex items-center gap-2"
+                themeCSS={themeApplied ? currentTheme : undefined}
                 buttonText="Preview DEX Design"
               />
             </div>

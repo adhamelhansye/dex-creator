@@ -144,7 +144,6 @@ export default function WorkflowStatus({
       console.error("Error fetching workflow status:", error);
       const message = error instanceof Error ? error.message : "Unknown error";
       setError(`Failed to fetch workflow status: ${message}`);
-      toast.error("Could not fetch workflow status");
     } finally {
       setIsLoading(false);
     }

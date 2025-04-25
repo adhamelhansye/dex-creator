@@ -40,7 +40,8 @@ export function usePreviewConfig(
   networkId: NetworkId = "testnet",
   initialSymbol: string = "PERP_BTC_USDC",
   primaryLogo?: string | null,
-  secondaryLogo?: string | null
+  secondaryLogo?: string | null,
+  themeCSS?: string | null
 ) {
   // Local state to track if the config has been updated
   const [configUpdated, setConfigUpdated] = useState(false);
@@ -73,6 +74,7 @@ export function usePreviewConfig(
     appIcons,
     primaryLogo,
     secondaryLogo,
+    customStyles: themeCSS || undefined,
   };
 
   // Update localStorage whenever the props change
@@ -87,7 +89,14 @@ export function usePreviewConfig(
       console.error("Failed to store preview config in localStorage:", error);
       setConfigUpdated(false);
     }
-  }, [brokerName, networkId, initialSymbol, primaryLogo, secondaryLogo]);
+  }, [
+    brokerName,
+    networkId,
+    initialSymbol,
+    primaryLogo,
+    secondaryLogo,
+    themeCSS,
+  ]);
 
   // Read the config from localStorage
   const getStoredConfig = (): DexPreviewConfig | null => {

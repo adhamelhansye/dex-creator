@@ -2,8 +2,13 @@ import { ButtonHTMLAttributes, AnchorHTMLAttributes } from "react";
 import { clsx } from "clsx";
 import React from "react";
 
-export type ButtonVariant = "primary" | "secondary" | "danger" | "ghost";
-export type ButtonSize = "sm" | "md" | "lg";
+export type ButtonVariant =
+  | "primary"
+  | "secondary"
+  | "danger"
+  | "ghost"
+  | "success";
+export type ButtonSize = "xs" | "sm" | "md" | "lg";
 
 type ButtonAsButton = {
   as?: "button";
@@ -23,6 +28,7 @@ export type ButtonProps = {
   loadingText?: string;
   withGlow?: boolean;
   disabled?: boolean;
+  type?: "button" | "submit" | "reset";
   children: React.ReactNode;
 } & (ButtonAsButton | ButtonAsAnchor);
 
@@ -39,12 +45,14 @@ export function Button({
   as = "button",
   className,
   disabled,
+  type = "button",
   ...props
 }: ButtonProps) {
   const baseClasses =
     "rounded-full py-2 px-6 font-medium transition-all duration-200 cursor-pointer border-none";
 
   const sizeClasses = {
+    xs: "text-xs py-1 px-3",
     sm: "text-sm py-1.5 px-4",
     md: "py-2 px-6",
     lg: "text-lg py-2.5 px-8",
@@ -54,9 +62,10 @@ export function Button({
     primary:
       "bg-gradient-to-r from-primary to-secondary text-white shadow-glow hover:from-primary-light hover:to-secondary-light hover:shadow-glow-hover hover:transform hover:-translate-y-0.5",
     secondary:
-      "bg-gradient-secondaryButton text-white border border-primary-light/30 hover:border-primary-light/50",
+      "bg-primary/10 text-white border-2 border-primary/50 hover:border-primary/80 hover:bg-primary/20 shadow-sm hover:shadow",
     danger: "bg-red-500 text-white hover:bg-red-600",
     ghost: "bg-transparent text-white hover:bg-white/10",
+    success: "bg-success text-white hover:bg-success-light",
   };
 
   const glowClass = withGlow
@@ -129,6 +138,7 @@ export function Button({
     <button
       className={classes}
       disabled={disabled || isLoading}
+      type={type}
       data-variant={variant}
       {...(props as ButtonHTMLAttributes<HTMLButtonElement>)}
     >

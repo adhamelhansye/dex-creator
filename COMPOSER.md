@@ -858,6 +858,7 @@ Alternative individual commands:
 | POST   | /api/auth/verify   | Verify signature and authenticate | Implemented |
 | POST   | /api/auth/validate | Validate authentication token     | Implemented |
 | POST   | /api/auth/cleanup-tokens | Clean up expired tokens     | Implemented |
+| POST   | /api/theme/modify  | Generate theme based on AI        | Implemented |
 
 ### Authentication API Endpoints
 
@@ -943,6 +944,34 @@ Response (200):
 {
   "success": true,
   "message": "Cleaned up 5 expired tokens"
+}
+```
+
+### Theme API Endpoints
+
+#### Generate Theme Based on Description (POST /api/theme/modify)
+
+Request:
+
+```json
+{
+  "prompt": "A dark blue theme with orange accents"
+}
+```
+
+Response (200):
+
+```json
+{
+  "theme": ":root { /* Modified CSS theme content */ }"
+}
+```
+
+Error Response (500):
+
+```json
+{
+  "error": "Failed to generate theme"
 }
 ```
 

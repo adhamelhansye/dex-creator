@@ -54,11 +54,7 @@ const DexPreview: FC<DexPreviewProps> = ({
   networkId = "testnet",
   mainNavProps = {
     initialMenu: "/",
-    mainMenus: [
-      { name: "Trading", href: "/" },
-      { name: "Portfolio", href: "/portfolio" },
-      { name: "Markets", href: "/markets" },
-    ],
+    mainMenus: [{ name: "Trading", href: "/" }],
   },
   footerProps = {
     telegramUrl: "https://orderly.network",

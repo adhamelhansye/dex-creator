@@ -39,7 +39,6 @@ export default function WalletConnect() {
   // Show toast for auth errors instead of displaying in UI
   useEffect(() => {
     if (authError) {
-      toast.error(`Authentication error: ${authError}`);
       console.error("Authentication error:", authError);
     }
   }, [authError]);

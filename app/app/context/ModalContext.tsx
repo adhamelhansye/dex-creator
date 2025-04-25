@@ -2,9 +2,15 @@ import { createContext, useContext, useState, ReactNode, useMemo } from "react";
 import LoginModal from "../components/LoginModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ImageCropModal from "../components/ImageCropModal";
+import ThemePreviewModal from "../components/ThemePreviewModal";
 
 // Define types for our modals
-type ModalType = "login" | "deleteConfirm" | "imageCrop" | null;
+type ModalType =
+  | "login"
+  | "deleteConfirm"
+  | "imageCrop"
+  | "themePreview"
+  | null;
 
 interface ModalContextType {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -114,6 +120,21 @@ function ModalManager() {
           originalDimensions={currentModalProps.originalDimensions}
           initialCrop={currentModalProps.initialCrop}
           enforceSquare={currentModalProps.enforceSquare}
+        />
+      );
+    case "themePreview":
+      return (
+        <ThemePreviewModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onApply={modifiedCss => {
+            if (currentModalProps.onApply) {
+              currentModalProps.onApply(modifiedCss);
+            }
+            closeModal();
+          }}
+          onCancel={currentModalProps.onCancel}
+          css={currentModalProps.theme}
         />
       );
     default:

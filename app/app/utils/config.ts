@@ -20,11 +20,7 @@ const config: OrderlyConfig = {
   scaffold: {
     mainNavProps: {
       initialMenu: "/",
-      mainMenus: [
-        { name: "Trading", href: "/" },
-        { name: "Portfolio", href: "/portfolio" },
-        { name: "Markets", href: "/markets" },
-      ],
+      mainMenus: [{ name: "Trading", href: "/" }],
       // Simple menu structure without custom icons for preview
     },
     footerProps: {

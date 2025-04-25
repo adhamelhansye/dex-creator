@@ -25,6 +25,7 @@ export interface FormInputProps {
   onError?: (error: string | null) => void;
   showValidation?: boolean;
   pattern?: string;
+  disabled?: boolean;
 }
 
 export default function FormInput({
@@ -43,6 +44,7 @@ export default function FormInput({
   onError,
   showValidation = true,
   pattern,
+  disabled = false,
 }: FormInputProps) {
   const generatedId = useId();
   const id = providedId || generatedId;
@@ -128,6 +130,7 @@ export default function FormInput({
         maxLength={maxLength}
         required={required}
         pattern={pattern}
+        disabled={disabled}
       />
 
       {error && <p className="mt-1 text-xs text-error">{error}</p>}
