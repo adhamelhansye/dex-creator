@@ -87,7 +87,7 @@ const PreviewButton: FC<PreviewButtonProps> = ({
         <div className="mt-4 relative">
           <div
             ref={containerRef}
-            className="relative mt-4 border border-primary-light/10 rounded-xl overflow-hidden bg-background-light animate-slide-fade-in shadow-lg h-xl md:w-[calc(100%+4rem)] lg:w-[calc(100%+8rem)] xl:w-[calc(100%+12rem)] md:-mx-8 lg:-mx-16 xl:-mx-24"
+            className="relative mt-4 border border-primary-light/10 rounded-xl overflow-hidden bg-background-light animate-slide-fade-in shadow-lg h-xl lg:h-[28rem] xl:h-[32rem] 2xl:h-[40rem] 3xl:h-[50rem] md:w-[calc(100%+4rem)] lg:w-[calc(100%+8rem)] xl:w-[calc(100%+12rem)] 2xl:w-[calc(100%+16rem)] 3xl:w-[calc(100%+24rem)] md:-mx-8 lg:-mx-16 xl:-mx-24 2xl:-mx-32 3xl:-mx-48"
           >
             {/* Loading indicator */}
             {isLoading && (
