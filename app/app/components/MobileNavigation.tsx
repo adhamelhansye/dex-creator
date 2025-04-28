@@ -48,8 +48,8 @@ export default function MobileNavigation() {
       {/* Mobile menu */}
       <div
         className={`
-          fixed right-0 top-0 h-full w-64 bg-background-light border-l border-light/10
-          transform transition-transform duration-300 ease-in-out z-30
+          fixed right-0 top-0 h-[100vh] mobile-nav-height w-64 bg-background-light border-l border-light/10
+          transform transition-transform duration-300 ease-in-out z-30 flex flex-col
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
@@ -63,7 +63,7 @@ export default function MobileNavigation() {
           </button>
         </div>
 
-        <div className="px-6 py-4">
+        <div className="px-6 py-4 overflow-y-auto flex-1">
           <h2 className="text-xl font-bold gradient-text mb-6">Menu</h2>
           <nav className="flex flex-col gap-4">
             <Link
