@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, createElement } from "react";
 import DexPreview from "../components/DexPreview";
 import type { DexPreviewProps } from "../components/DexPreview";
 import { MetaFunction } from "@remix-run/node";
@@ -11,11 +11,17 @@ import "@orderly.network/ui/dist/styles.css";
 const DEX_PREVIEW_CONFIG_KEY = "dex-preview-config";
 
 // Define Zod schema for the preview configuration
-const AppIconSchema = z.object({
-  img: z.string(),
-  height: z.number().optional(),
-  width: z.number().optional(),
-});
+const AppIconSchema = z
+  .object({
+    img: z.string().optional(),
+    height: z.number().optional(),
+    width: z.number().optional(),
+    // Allow any type for component since JSX can't be serialized
+    component: z.any().optional(),
+  })
+  .refine(data => data.img || data.component, {
+    message: "Either img or component must be provided for an app icon",
+  });
 
 const AppIconsSchema = z.object({
   main: AppIconSchema.optional(),
@@ -80,8 +86,11 @@ export default function PreviewRoute() {
 
           if (validatedConfig.primaryLogo) {
             customAppIcons.main = {
-              img: validatedConfig.primaryLogo,
-              ...(customAppIcons.main || {}),
+              component: createElement("img", {
+                src: validatedConfig.primaryLogo,
+                alt: "logo",
+                style: { height: "42px" },
+              }),
             };
           }
 
