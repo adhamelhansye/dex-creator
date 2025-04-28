@@ -3,6 +3,7 @@ import { Button } from "./Button";
 import ThemeColorSwatches from "./ThemeColorSwatches";
 import ThemeRoundedControls from "./ThemeRoundedControls";
 import ThemeSpacingControls from "./ThemeSpacingControls";
+import { Card } from "./Card";
 
 interface ThemePreviewModalProps {
   isOpen: boolean;
@@ -117,6 +118,35 @@ export default function ThemePreviewModal({
       {/* Modal */}
       <div className="relative z-[1002] w-full max-w-3xl p-6 rounded-xl bg-background-light border border-light/10 shadow-2xl slide-fade-in max-h-[90vh] overflow-auto">
         <h3 className="text-xl font-bold mb-4">Theme Preview</h3>
+
+        {/* AI Disclaimer Info Card */}
+        <Card className="mb-4 p-3 slide-fade-in" variant="default">
+          <div className="flex items-start gap-3">
+            <div className="i-mdi:robot text-primary-light h-5 w-5 mt-0.5 flex-shrink-0"></div>
+            <div>
+              <h4 className="text-sm font-medium mb-1">AI-Generated Theme</h4>
+              <p className="text-xs text-gray-300 mb-2">
+                This theme was created by an AI based on your description. While
+                we strive for quality results:
+              </p>
+              <ul className="text-xs text-gray-300 list-disc pl-4 space-y-1 mb-2">
+                <li>Colors may not always perfectly match your description</li>
+                <li>Contrast ratios between elements might need adjustment</li>
+                <li>
+                  Some color combinations might not look ideal in all contexts
+                </li>
+              </ul>
+              <p className="text-xs text-gray-300">
+                <span className="text-primary-light font-medium">
+                  Recommendation:
+                </span>{" "}
+                Use the preview functionality to see how your theme looks in a
+                real DEX environment, and make adjustments as needed using the
+                color editor below.
+              </p>
+            </div>
+          </div>
+        </Card>
 
         <div className="mb-6 space-y-4">
           {/* Tabs */}

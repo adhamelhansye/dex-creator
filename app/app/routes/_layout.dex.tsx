@@ -1003,6 +1003,31 @@ export default function DexRoute() {
                     Describe how you want your DEX theme to look and our AI will
                     generate it for you.
                   </p>
+
+                  {/* AI Info Card */}
+                  <Card className="mb-3 p-3" variant="default">
+                    <div className="flex items-start gap-2">
+                      <div className="i-mdi:information-outline text-primary-light h-4 w-4 mt-0.5 flex-shrink-0"></div>
+                      <div>
+                        <p className="text-xs text-gray-300 mb-1">
+                          <span className="text-primary-light font-medium">
+                            Note:
+                          </span>{" "}
+                          AI-generated themes are a starting point and may not
+                          be perfect. After generating:
+                        </p>
+                        <ul className="text-xs text-gray-300 list-disc pl-4 space-y-0.5">
+                          <li>Review the theme in the preview modal</li>
+                          <li>Make adjustments to colors as needed</li>
+                          <li>
+                            Use the DEX preview button to see your theme in
+                            context
+                          </li>
+                        </ul>
+                      </div>
+                    </div>
+                  </Card>
+
                   <div className="w-full">
                     <FormInput
                       id="themePrompt"
