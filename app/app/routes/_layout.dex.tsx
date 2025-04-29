@@ -1338,7 +1338,6 @@ export default function DexRoute() {
             </Card>
           ) : null}
 
-          {/* Danger Zone card */}
           {dexData && dexData.id && (
             <>
               {/* Custom Domain Configuration */}
@@ -1353,6 +1352,29 @@ export default function DexRoute() {
                     default GitHub Pages URL. You'll need to configure your
                     domain's DNS settings to point to GitHub Pages.
                   </p>
+
+                  {/* Add TradingView license warning */}
+                  <div className="mb-4 p-3 bg-red-900/30 rounded-lg border border-red-500/30">
+                    <h5 className="text-sm font-medium mb-2 flex items-center">
+                      <div className="i-mdi:alert h-4 w-4 mr-2 text-red-400"></div>
+                      Important License Requirement
+                    </h5>
+                    <p className="text-xs text-gray-300 mb-2">
+                      When using your own custom domain, you are required to
+                      apply for your own
+                      <strong> TradingView Advanced Charts license</strong>. The
+                      default license only covers the default domain.
+                    </p>
+                    <a
+                      href="https://www.tradingview.com/advanced-charts/"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-primary-light hover:underline flex items-center"
+                    >
+                      Apply for TradingView Advanced Charts license
+                      <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
+                    </a>
+                  </div>
 
                   {dexData.customDomain ? (
                     <div className="mb-4">
