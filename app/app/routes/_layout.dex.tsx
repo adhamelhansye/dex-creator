@@ -42,6 +42,7 @@ interface DexData {
   discordLink?: string | null;
   xLink?: string | null;
   repoUrl?: string | null;
+  customDomain?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -182,10 +183,11 @@ export default function DexRoute() {
   const [favicon, setFavicon] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [isForking, setIsForking] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [forkingStatus, setForkingStatus] = useState("");
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [customDomain, setCustomDomain] = useState("");
 
   // Keep track of original values for change detection
   const [originalValues, setOriginalValues] = useState({
@@ -618,6 +620,36 @@ export default function DexRoute() {
     openModal("deleteConfirm", {
       onConfirm: handleDelete,
       entityName: "DEX",
+    });
+  };
+
+  // Handle showing custom domain removal confirmation
+  const handleShowDomainRemoveConfirm = () => {
+    if (!dexData || !dexData.id || !dexData.customDomain) return;
+
+    openModal("deleteConfirm", {
+      onConfirm: () => {
+        setIsSaving(true);
+
+        del(`api/dex/${dexData.id}/custom-domain`, null, token)
+          .then(() => {
+            setDexData({
+              ...dexData,
+              customDomain: null,
+            });
+            toast.success("Custom domain removed successfully");
+          })
+          .catch(error => {
+            console.error("Error removing custom domain:", error);
+            toast.error("Failed to remove custom domain");
+          })
+          .finally(() => {
+            setIsSaving(false);
+          });
+      },
+      entityName: "custom domain",
+      title: "Remove Custom Domain",
+      message: `Are you sure you want to remove the custom domain "${dexData.customDomain}"? This action cannot be undone.`,
     });
   };
 
@@ -1165,14 +1197,47 @@ export default function DexRoute() {
                     to use. Your users can access it at:
                   </p>
                   <a
-                    href={deploymentUrl}
+                    href={
+                      dexData.customDomain
+                        ? `https://${dexData.customDomain}`
+                        : deploymentUrl
+                    }
                     target="_blank"
                     rel="noopener noreferrer"
                     className="inline-flex items-center gap-2 px-4 py-2 bg-primary/20 hover:bg-primary/30 rounded text-primary-light transition-colors"
                   >
-                    <span className="break-all">{deploymentUrl}</span>
+                    <span className="break-all">
+                      {dexData.customDomain
+                        ? dexData.customDomain
+                        : deploymentUrl}
+                    </span>
                     <div className="i-mdi:open-in-new h-4 w-4"></div>
                   </a>
+
+                  {/* Show note about custom domain if active */}
+                  {dexData.customDomain && (
+                    <div className="mt-2 text-xs text-gray-400 flex items-start gap-1">
+                      <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
+                      <span>
+                        Your DEX is using a custom domain. The standard
+                        deployment URL will no longer work correctly as the
+                        build is now optimized for your custom domain.
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Add note about domain update deployment for custom domain */}
+                  {dexData.customDomain && (
+                    <div className="mt-2 text-xs text-warning flex items-start gap-1">
+                      <div className="i-mdi:alert-circle-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
+                      <span>
+                        Note: After changing any custom domain settings, you
+                        must wait for a deployment to complete (check "Updates &
+                        Deployment Status" below) for domain changes to take
+                        effect.
+                      </span>
+                    </div>
+                  )}
 
                   {/* Add the update explanation section */}
                   <div className="mt-4 pt-3 border-t border-light/10">
@@ -1198,7 +1263,7 @@ export default function DexRoute() {
                     </ul>
                     <p className="text-xs text-gray-400 mt-2 italic">
                       You can track the progress of your updates in the
-                      "Deployment Progress" section below
+                      "Deployment Progress" section above
                     </p>
                   </div>
                 </div>
@@ -1275,29 +1340,316 @@ export default function DexRoute() {
 
           {/* Danger Zone card */}
           {dexData && dexData.id && (
-            <div className="mt-12 pt-6 border-t border-primary-light/10">
-              <Card variant="error">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
-                  <div>
-                    <h3 className="text-lg font-semibold text-red-500">
-                      Danger Zone
-                    </h3>
-                    <p className="text-sm text-gray-400 mt-1">
-                      This action permanently deletes your DEX and its GitHub
-                      repository.
+            <>
+              {/* Custom Domain Configuration */}
+              <div className="mt-8 pt-6 border-t border-light/10">
+                <h3 className="text-lg font-medium mb-4">
+                  Custom Domain Setup
+                </h3>
+                <Card className="mb-6">
+                  <h4 className="text-md font-medium mb-3">Custom Domain</h4>
+                  <p className="text-sm text-gray-300 mb-4">
+                    Deploy your DEX to your own domain instead of using the
+                    default GitHub Pages URL. You'll need to configure your
+                    domain's DNS settings to point to GitHub Pages.
+                  </p>
+
+                  {dexData.customDomain ? (
+                    <div className="mb-4">
+                      <div className="flex flex-col md:flex-row gap-3 items-start md:items-center mb-4">
+                        <div className="bg-success/10 text-success px-3 py-1 rounded-full text-sm flex items-center">
+                          <div className="i-mdi:check-circle h-4 w-4 mr-1"></div>
+                          Domain Configured
+                        </div>
+                        <div className="text-sm">
+                          Your DEX is available at{" "}
+                          <a
+                            href={`https://${dexData.customDomain}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-light hover:underline inline-flex items-center"
+                          >
+                            {dexData.customDomain}
+                            <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
+                          </a>
+                        </div>
+                      </div>
+
+                      <div className="bg-info/10 rounded-lg border border-info/20 p-4 mb-4">
+                        <h5 className="text-sm font-medium mb-2 flex items-center">
+                          <div className="i-mdi:information-outline text-info mr-2 h-4 w-4"></div>
+                          DNS Configuration Status
+                        </h5>
+                        <p className="text-sm text-gray-300 mb-3">
+                          It may take up to 24 hours for DNS changes to
+                          propagate. If your domain is not working yet, please
+                          check back later.
+                        </p>
+                        <div className="flex justify-start">
+                          <Button
+                            onClick={handleShowDomainRemoveConfirm}
+                            variant="danger"
+                            size="sm"
+                            isLoading={isSaving}
+                            loadingText="Removing..."
+                            disabled={isSaving}
+                          >
+                            <span className="flex items-center gap-1">
+                              <div className="i-mdi:delete h-4 w-4"></div>
+                              Remove Custom Domain
+                            </span>
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-4">
+                      <div className="mb-4">
+                        <label
+                          htmlFor="customDomain"
+                          className="block text-sm font-medium mb-1"
+                        >
+                          Domain Name
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            id="customDomain"
+                            type="text"
+                            value={customDomain}
+                            onChange={e => setCustomDomain(e.target.value)}
+                            placeholder="example.com"
+                            className="flex-1 bg-background-dark/80 border border-light/10 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-primary-light focus:border-primary-light"
+                          />
+                          <Button
+                            onClick={() => {
+                              // Validate domain format
+                              const domainRegex =
+                                /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
+                              if (!domainRegex.test(customDomain)) {
+                                toast.error(
+                                  "Please enter a valid domain name (e.g., example.com)"
+                                );
+                                return;
+                              }
+
+                              setIsSaving(true);
+
+                              post(
+                                `api/dex/${dexData.id}/custom-domain`,
+                                { domain: customDomain },
+                                token
+                              )
+                                .then(() => {
+                                  setDexData({
+                                    ...dexData,
+                                    customDomain: customDomain,
+                                  });
+                                  toast.success(
+                                    "Custom domain configured successfully"
+                                  );
+                                })
+                                .catch(error => {
+                                  console.error(
+                                    "Error setting custom domain:",
+                                    error
+                                  );
+                                  toast.error("Failed to set custom domain");
+                                })
+                                .finally(() => {
+                                  setIsSaving(false);
+                                });
+                            }}
+                            variant="primary"
+                            size="sm"
+                            isLoading={isSaving}
+                            loadingText="Saving..."
+                            disabled={!customDomain || isSaving}
+                          >
+                            <span className="flex items-center gap-1">
+                              <div className="i-mdi:link h-4 w-4"></div>
+                              Set Domain
+                            </span>
+                          </Button>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1">
+                          Enter your domain without 'http://' or 'https://'
+                          (e.g., example.com)
+                        </p>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* DNS Setup Instructions - Always show */}
+                  <div className="rounded-lg border border-light/10 p-4 bg-base-8/50">
+                    <h5 className="text-sm font-medium mb-3 flex items-center">
+                      <div className="i-mdi:dns h-4 w-4 mr-2 text-primary-light"></div>
+                      DNS Configuration Instructions
+                    </h5>
+                    <p className="text-sm text-gray-300 mb-3">
+                      To use a custom domain, you'll need to configure your
+                      domain's DNS settings:
                     </p>
+                    <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto mb-3">
+                      <div className="mb-1 text-gray-400">
+                        Add a{" "}
+                        <span className="text-primary-light">CNAME record</span>{" "}
+                        with the following values:
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-gray-400">Name:</span>{" "}
+                        {dexData.customDomain &&
+                        dexData.customDomain.split(".").length > 2 ? (
+                          <div className="flex items-center">
+                            <span className="text-white">
+                              {dexData.customDomain.split(".")[0]}
+                            </span>
+                            <button
+                              className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                              onClick={() => {
+                                navigator.clipboard.writeText(
+                                  dexData.customDomain?.split(".")[0] || ""
+                                );
+                                toast.success("Copied to clipboard");
+                              }}
+                              aria-label="Copy subdomain name to clipboard"
+                            >
+                              <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="flex items-center">
+                            <span className="text-white">@</span>
+                            <button
+                              className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                              onClick={() => {
+                                navigator.clipboard.writeText("@");
+                                toast.success("Copied to clipboard");
+                              }}
+                              aria-label="Copy @ symbol to clipboard"
+                            >
+                              <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                            </button>{" "}
+                            or <span className="text-white">subdomain</span>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-gray-400">Value:</span>{" "}
+                        <div className="flex items-center">
+                          <span className="text-white">
+                            orderlynetworkdexcreator.github.io
+                          </span>
+                          <button
+                            className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                            onClick={() => {
+                              navigator.clipboard.writeText(
+                                "orderlynetworkdexcreator.github.io"
+                              );
+                              toast.success("Copied to clipboard");
+                            }}
+                            aria-label="Copy domain value to clipboard"
+                          >
+                            <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex items-center">
+                        <span className="text-gray-400">TTL:</span>{" "}
+                        <div className="flex items-center">
+                          <span className="text-white">3600</span>
+                          <button
+                            className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                            onClick={() => {
+                              navigator.clipboard.writeText("3600");
+                              toast.success("Copied to clipboard");
+                            }}
+                            aria-label="Copy TTL value to clipboard"
+                          >
+                            <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                          </button>{" "}
+                          (or automatic)
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Add deployment info card */}
+                    <div className="mb-3 p-3 bg-info/10 rounded-lg border border-info/20">
+                      <h6 className="text-xs font-medium mb-2 flex items-center">
+                        <div className="i-mdi:information-outline h-3.5 w-3.5 mr-1.5 text-info"></div>
+                        Important: About Domain Updates
+                      </h6>
+                      <p className="text-xs text-gray-300">
+                        After adding or removing a custom domain, a deployment
+                        process must complete for the changes to take effect.
+                        Your domain will not work correctly until this process
+                        finishes (usually 2-5 minutes).
+                      </p>
+                      <p className="text-xs text-gray-300 mt-1">
+                        You can monitor the deployment status in the "Updates &
+                        Deployment Status" section below.
+                      </p>
+                    </div>
+
+                    <div className="text-xs text-gray-400">
+                      {dexData.customDomain &&
+                      dexData.customDomain.split(".").length > 2 ? (
+                        <div className="flex items-start gap-1 mb-1">
+                          <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
+                          <span>
+                            You've configured a subdomain (
+                            {dexData.customDomain.split(".")[0]}.
+                            {dexData.customDomain.split(".").slice(1).join(".")}
+                            ). Use the exact subdomain name shown above in the
+                            Name field.
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="flex items-start gap-1 mb-1">
+                          <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
+                          <span>
+                            For subdomain setups (e.g., dex.yourdomain.com), set
+                            the Name field to your subdomain.
+                          </span>
+                        </div>
+                      )}
+                      <div className="flex items-start gap-1">
+                        <div className="i-mdi:clock-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
+                        <span>
+                          DNS changes can take up to 24 hours to propagate
+                          globally, though they often complete within a few
+                          hours.
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <Button
-                    variant="danger"
-                    onClick={handleShowDeleteConfirm}
-                    className="mt-4 md:mt-0 shrink-0"
-                    disabled={isDeleting || isLoading || isSaving}
-                  >
-                    Delete DEX
-                  </Button>
-                </div>
-              </Card>
-            </div>
+                </Card>
+              </div>
+
+              {/* Danger Zone card */}
+              <div className="mt-8 pt-6 border-t border-primary-light/10">
+                <Card variant="error">
+                  <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
+                    <div>
+                      <h3 className="text-lg font-semibold text-red-500">
+                        Danger Zone
+                      </h3>
+                      <p className="text-sm text-gray-400 mt-1">
+                        This action permanently deletes your DEX and its GitHub
+                        repository.
+                      </p>
+                    </div>
+                    <Button
+                      variant="danger"
+                      onClick={handleShowDeleteConfirm}
+                      className="mt-4 md:mt-0 shrink-0"
+                      disabled={isDeleting || isLoading || isSaving}
+                    >
+                      Delete DEX
+                    </Button>
+                  </div>
+                </Card>
+              </div>
+            </>
           )}
         </div>
       )}

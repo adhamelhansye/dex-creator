@@ -59,6 +59,7 @@ model Dex {
   discordLink   String?
   xLink         String?  // Twitter/X link
   repoUrl       String?  // GitHub repository URL after forking
+  customDomain  String?  // Custom domain for GitHub Pages
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
   

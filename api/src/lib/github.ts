@@ -1075,3 +1075,145 @@ export async function deleteRepository(
     return false;
   }
 }
+
+/**
+ * Set a custom domain for GitHub Pages
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @param domain The custom domain to set
+ * @returns The domain that was set
+ */
+export async function setCustomDomain(
+  owner: string,
+  repo: string,
+  domain: string
+): Promise<string> {
+  console.log(`Setting custom domain for ${owner}/${repo} to ${domain}...`);
+
+  // Validate the domain format
+  if (
+    !domain.match(
+      /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/
+    )
+  ) {
+    throw new Error(`Invalid domain format: ${domain}`);
+  }
+
+  try {
+    // Make sure GitHub Pages is enabled first
+    try {
+      await enableGitHubPages(owner, repo);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (_) {
+      // If Pages is already enabled, this might fail but we should continue
+      console.warn(
+        `Note: GitHub Pages might already be enabled for ${owner}/${repo}`
+      );
+    }
+
+    // Update the GitHub Pages site with the custom domain
+    const response = await octokit.rest.repos.updateInformationAboutPagesSite({
+      owner,
+      repo,
+      cname: domain,
+    });
+
+    const validStatusCodes = [200, 201, 204];
+    if (!validStatusCodes.includes(response.status)) {
+      throw new Error(
+        `Failed to set custom domain for ${owner}/${repo}: ${response.status}`
+      );
+    }
+
+    // Create a CNAME file in the repo for GitHub Pages
+    const cnameContent = domain;
+
+    const fileContents = new Map<string, string>();
+    fileContents.set("CNAME", cnameContent);
+
+    await createSingleCommit(
+      owner,
+      repo,
+      fileContents,
+      new Map(),
+      "Add CNAME file for custom domain"
+    );
+
+    console.log(
+      `Successfully set custom domain for ${owner}/${repo} to ${domain}`
+    );
+    return domain;
+  } catch (error) {
+    console.error(`Error setting custom domain for ${owner}/${repo}:`, error);
+    throw error;
+  }
+}
+
+/**
+ * Remove a custom domain from GitHub Pages
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @returns A boolean indicating success
+ */
+export async function removeCustomDomain(
+  owner: string,
+  repo: string
+): Promise<boolean> {
+  try {
+    console.log(`Removing custom domain for ${owner}/${repo}...`);
+
+    // Clear the CNAME by setting it to an empty string
+    await octokit.rest.repos.updateInformationAboutPagesSite({
+      owner,
+      repo,
+      cname: "",
+    });
+
+    // Delete the CNAME file from the repo if it exists
+    try {
+      // First check if the file exists
+      const { data: fileData } = await octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path: "CNAME",
+      });
+
+      // If we get here, the file exists and we need to delete it
+      if (fileData) {
+        // Get the SHA of the file, needed for deletion
+        const sha =
+          typeof fileData === "object" && "sha" in fileData
+            ? fileData.sha
+            : Array.isArray(fileData) &&
+                fileData.length > 0 &&
+                "sha" in fileData[0]
+              ? fileData[0].sha
+              : undefined;
+
+        if (sha) {
+          await octokit.rest.repos.deleteFile({
+            owner,
+            repo,
+            path: "CNAME",
+            message: "Remove CNAME file for custom domain",
+            sha,
+          });
+        }
+      }
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch (fileError) {
+      // If the file doesn't exist, that's fine, we can continue
+      console.log("CNAME file might not exist, continuing...");
+    }
+
+    console.log(`Successfully removed custom domain for ${owner}/${repo}`);
+    return true;
+  } catch (error) {
+    console.error(`Error removing custom domain for ${owner}/${repo}:`, error);
+    throw new Error(
+      `Failed to remove custom domain: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+}

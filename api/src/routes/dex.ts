@@ -7,6 +7,9 @@ import {
   getDexById,
   updateDex,
   deleteDex,
+  customDomainSchema,
+  updateDexCustomDomain,
+  removeDexCustomDomain,
 } from "../models/dex";
 import {
   getWorkflowRunStatus,
@@ -296,6 +299,97 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
         error: String(error),
       },
       500
+    );
+  }
+});
+
+// Set a custom domain for a DEX
+dexRoutes.post(
+  "/:id/custom-domain",
+  zValidator("json", customDomainSchema),
+  async c => {
+    const id = c.req.param("id");
+    const { domain } = c.req.valid("json");
+    const userId = c.get("userId");
+
+    try {
+      const updatedDex = await updateDexCustomDomain(id, domain, userId);
+      return c.json(
+        {
+          message: "Custom domain set successfully",
+          dex: updatedDex,
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error("Error setting custom domain:", error);
+
+      // Handle specific error cases
+      if (error instanceof Error) {
+        if (error.message.includes("DEX not found")) {
+          return c.json({ message: "DEX not found" }, { status: 404 });
+        }
+        if (error.message.includes("User is not authorized")) {
+          return c.json({ message: error.message }, { status: 403 });
+        }
+        if (error.message.includes("Invalid domain format")) {
+          return c.json({ message: error.message }, { status: 400 });
+        }
+        if (error.message.includes("doesn't have a repository URL")) {
+          return c.json({ message: error.message }, { status: 400 });
+        }
+      }
+
+      return c.json(
+        {
+          message: "Failed to set custom domain",
+          error: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 }
+      );
+    }
+  }
+);
+
+// Remove custom domain from a DEX
+dexRoutes.delete("/:id/custom-domain", async c => {
+  const id = c.req.param("id");
+  const userId = c.get("userId");
+
+  try {
+    const updatedDex = await removeDexCustomDomain(id, userId);
+    return c.json(
+      {
+        message: "Custom domain removed successfully",
+        dex: updatedDex,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error removing custom domain:", error);
+
+    // Handle specific error cases
+    if (error instanceof Error) {
+      if (error.message.includes("DEX not found")) {
+        return c.json({ message: "DEX not found" }, { status: 404 });
+      }
+      if (error.message.includes("User is not authorized")) {
+        return c.json({ message: error.message }, { status: 403 });
+      }
+      if (error.message.includes("doesn't have a custom domain configured")) {
+        return c.json({ message: error.message }, { status: 400 });
+      }
+      if (error.message.includes("doesn't have a repository URL")) {
+        return c.json({ message: error.message }, { status: 400 });
+      }
+    }
+
+    return c.json(
+      {
+        message: "Failed to remove custom domain",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
     );
   }
 });

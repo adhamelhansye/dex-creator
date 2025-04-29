@@ -5,6 +5,8 @@ import {
   forkTemplateRepository,
   setupRepositoryWithSingleCommit,
   deleteRepository,
+  setCustomDomain,
+  removeCustomDomain,
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
 
@@ -41,6 +43,16 @@ export const dexSchema = z.object({
   telegramLink: z.string().url().nullish(),
   discordLink: z.string().url().nullish(),
   xLink: z.string().url().nullish(),
+});
+
+// Schema for custom domain validation
+export const customDomainSchema = z.object({
+  domain: z
+    .string()
+    .regex(/^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/, {
+      message:
+        "Invalid domain format. Please enter a valid domain like 'example.com'",
+    }),
 });
 
 // Helper function to generate a simple ID
@@ -370,6 +382,126 @@ export async function getAllDexes() {
     },
     orderBy: {
       createdAt: "desc",
+    },
+  });
+}
+
+/**
+ * Update the custom domain for a DEX
+ * @param id The DEX ID
+ * @param domain The custom domain to set
+ * @param userId The user ID (for authorization)
+ * @returns The updated DEX
+ */
+export async function updateDexCustomDomain(
+  id: string,
+  domain: string,
+  userId: string
+): Promise<Dex> {
+  // First check if the DEX exists and belongs to the user
+  const dex = await prisma.dex.findUnique({
+    where: { id },
+  });
+
+  if (!dex) {
+    throw new Error("DEX not found");
+  }
+
+  if (dex.userId !== userId) {
+    throw new Error("User is not authorized to update this DEX");
+  }
+
+  // Check if the repository URL exists
+  if (!dex.repoUrl) {
+    throw new Error("This DEX doesn't have a repository URL");
+  }
+
+  // Extract repo info from URL
+  const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+  if (!repoInfo) {
+    throw new Error("Invalid repository URL");
+  }
+
+  // Set the custom domain in GitHub
+  try {
+    await setCustomDomain(repoInfo.owner, repoInfo.repo, domain);
+  } catch (error) {
+    throw new Error(
+      `Failed to set custom domain in GitHub: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+
+  // Update the DEX in the database
+  return prisma.dex.update({
+    where: { id },
+    data: {
+      customDomain: domain,
+      updatedAt: new Date(),
+    },
+  });
+}
+
+/**
+ * Remove custom domain from a DEX
+ * @param id The DEX ID
+ * @param userId The user ID (for authorization)
+ * @returns The updated DEX
+ */
+export async function removeDexCustomDomain(
+  id: string,
+  userId: string
+): Promise<Dex> {
+  // First check if the DEX exists and belongs to the user
+  const dex = await prisma.dex.findUnique({
+    where: { id },
+  });
+
+  if (!dex) {
+    throw new Error("DEX not found");
+  }
+
+  if (dex.userId !== userId) {
+    throw new Error("User is not authorized to update this DEX");
+  }
+
+  // Check if there is a custom domain to remove
+  if (!dex.customDomain) {
+    throw new Error("This DEX doesn't have a custom domain configured");
+  }
+
+  // Check if the repository URL exists
+  if (!dex.repoUrl) {
+    throw new Error("This DEX doesn't have a repository URL");
+  }
+
+  // Extract repo info from URL
+  const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+  if (!repoInfo) {
+    throw new Error("Invalid repository URL");
+  }
+
+  // Remove the custom domain in GitHub using the new function
+  try {
+    await removeCustomDomain(repoInfo.owner, repoInfo.repo);
+    console.log(
+      `Successfully removed custom domain for ${repoInfo.owner}/${repoInfo.repo}`
+    );
+  } catch (error) {
+    throw new Error(
+      `Failed to remove custom domain in GitHub: ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+  }
+
+  // Update the DEX in the database
+  return prisma.dex.update({
+    where: { id },
+    data: {
+      customDomain: null,
+      updatedAt: new Date(),
     },
   });
 }
