@@ -43,6 +43,7 @@ export const dexSchema = z.object({
   telegramLink: z.string().url().nullish(),
   discordLink: z.string().url().nullish(),
   xLink: z.string().url().nullish(),
+  walletConnectProjectId: z.string().nullish(),
 });
 
 // Schema for custom domain validation
@@ -125,6 +126,7 @@ export async function createDex(
         telegramLink: data.telegramLink || undefined,
         discordLink: data.discordLink || undefined,
         xLink: data.xLink || undefined,
+        walletConnectProjectId: data.walletConnectProjectId || undefined,
       },
       {
         primaryLogo: data.primaryLogo || undefined,
@@ -181,6 +183,7 @@ export async function createDex(
         telegramLink: data.telegramLink,
         discordLink: data.discordLink,
         xLink: data.xLink,
+        walletConnectProjectId: data.walletConnectProjectId,
         repoUrl: repoUrl, // Repository URL is now guaranteed to exist
         user: {
           connect: {
@@ -243,17 +246,21 @@ export async function updateDex(
   // Prepare update data with properly typed properties
   const updateData: Prisma.DexUpdateInput = {};
 
-  // Only update fields if they're provided
-  if (data.brokerName != null) updateData.brokerName = data.brokerName;
-  if (data.themeCSS != null) updateData.themeCSS = data.themeCSS;
-  if (data.telegramLink != null) updateData.telegramLink = data.telegramLink;
-  if (data.discordLink != null) updateData.discordLink = data.discordLink;
-  if (data.xLink != null) updateData.xLink = data.xLink;
+  // Update fields that are present in the data object, including null values
+  if ("brokerName" in data)
+    updateData.brokerName = data.brokerName ?? undefined;
+  if ("themeCSS" in data) updateData.themeCSS = data.themeCSS;
+  if ("telegramLink" in data) updateData.telegramLink = data.telegramLink;
+  if ("discordLink" in data) updateData.discordLink = data.discordLink;
+  if ("xLink" in data) updateData.xLink = data.xLink;
+  if ("walletConnectProjectId" in data) {
+    updateData.walletConnectProjectId = data.walletConnectProjectId;
+  }
 
-  // Handle image data with type assertions
-  if (data.primaryLogo != null) updateData.primaryLogo = data.primaryLogo;
-  if (data.secondaryLogo != null) updateData.secondaryLogo = data.secondaryLogo;
-  if (data.favicon != null) updateData.favicon = data.favicon;
+  // Handle image data
+  if ("primaryLogo" in data) updateData.primaryLogo = data.primaryLogo;
+  if ("secondaryLogo" in data) updateData.secondaryLogo = data.secondaryLogo;
+  if ("favicon" in data) updateData.favicon = data.favicon;
 
   return prisma.dex.update({
     where: {

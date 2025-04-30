@@ -478,6 +478,7 @@ function prepareDexConfigContent(
     telegramLink?: string;
     discordLink?: string;
     xLink?: string;
+    walletConnectProjectId?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -512,7 +513,15 @@ VITE_TWITTER_URL=${config.xLink || ""}
 
 # Logo flags - indicates if logos have been set
 VITE_HAS_PRIMARY_LOGO=${primaryLogoData ? "true" : "false"}
-VITE_HAS_SECONDARY_LOGO=${secondaryLogoData ? "true" : "false"}`;
+VITE_HAS_SECONDARY_LOGO=${secondaryLogoData ? "true" : "false"}
+
+# WalletConnect configuration
+VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}`;
+
+  console.log(
+    "Generated WalletConnect env value:",
+    `VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}`
+  );
 
   return {
     envContent,
@@ -639,6 +648,7 @@ export async function updateDexConfig(
     telegramLink?: string;
     discordLink?: string;
     xLink?: string;
+    walletConnectProjectId?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -728,6 +738,7 @@ export async function setupRepositoryWithSingleCommit(
     telegramLink?: string;
     discordLink?: string;
     xLink?: string;
+    walletConnectProjectId?: string;
   },
   files: {
     primaryLogo?: string;

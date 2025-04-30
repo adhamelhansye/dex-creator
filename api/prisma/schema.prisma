@@ -48,22 +48,23 @@ model Token {
 
 // Dex model for storing DEX configurations
 model Dex {
-  id            String   @id @default(uuid())
-  brokerId      String   @default("demo") // Set by admin later, defaults to "demo"
-  brokerName    String   @default("Orderly DEX") // Broker name with default value
-  primaryLogo   String?  // Base64-encoded primary logo data
-  secondaryLogo String?  // Base64-encoded secondary logo data
-  favicon       String?  // Base64-encoded favicon data
-  themeCSS      String?  // Theme CSS content
-  telegramLink  String?
-  discordLink   String?
-  xLink         String?  // Twitter/X link
-  repoUrl       String?  // GitHub repository URL after forking
-  customDomain  String?  // Custom domain for GitHub Pages
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id                   String   @id @default(uuid())
+  brokerId             String   @default("demo") // Set by admin later, defaults to "demo"
+  brokerName           String   @default("Orderly DEX") // Broker name with default value
+  primaryLogo          String?  // Base64-encoded primary logo data
+  secondaryLogo        String?  // Base64-encoded secondary logo data
+  favicon              String?  // Base64-encoded favicon data
+  themeCSS             String?  // Theme CSS content
+  telegramLink         String?
+  discordLink          String?
+  xLink                String?  // Twitter/X link
+  walletConnectProjectId String? // WalletConnect Project ID for the DEX
+  repoUrl              String?  // GitHub repository URL after forking
+  customDomain         String?  // Custom domain for GitHub Pages
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
   
   // Relation to User (owner) - one-to-one relationship
-  userId        String   @unique
-  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId               String   @unique
+  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

@@ -41,6 +41,7 @@ interface DexData {
   telegramLink?: string | null;
   discordLink?: string | null;
   xLink?: string | null;
+  walletConnectProjectId?: string | null;
   repoUrl?: string | null;
   customDomain?: string | null;
   createdAt: string;
@@ -178,6 +179,7 @@ export default function DexRoute() {
   const [telegramLink, setTelegramLink] = useState("");
   const [discordLink, setDiscordLink] = useState("");
   const [xLink, setXLink] = useState("");
+  const [walletConnectProjectId, setWalletConnectProjectId] = useState("");
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
@@ -189,12 +191,13 @@ export default function DexRoute() {
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [customDomain, setCustomDomain] = useState("");
 
-  // Keep track of original values for change detection
+  // Fix for the dexData possibly null error
   const [originalValues, setOriginalValues] = useState({
     brokerName: "",
     telegramLink: "",
     discordLink: "",
     xLink: "",
+    walletConnectProjectId: "",
     primaryLogo: null as string | null,
     secondaryLogo: null as string | null,
     favicon: null as string | null,
@@ -251,6 +254,9 @@ export default function DexRoute() {
             setCurrentTheme(defaultTheme);
             setThemeApplied(true);
           }
+          if (data.walletConnectProjectId) {
+            setWalletConnectProjectId(data.walletConnectProjectId);
+          }
 
           // Store original values for change detection
           setOriginalValues({
@@ -258,6 +264,7 @@ export default function DexRoute() {
             telegramLink: data.telegramLink || "",
             discordLink: data.discordLink || "",
             xLink: data.xLink || "",
+            walletConnectProjectId: data.walletConnectProjectId || "",
             primaryLogo: data.primaryLogo || null,
             secondaryLogo: data.secondaryLogo || null,
             favicon: data.favicon || null,
@@ -418,23 +425,19 @@ export default function DexRoute() {
     (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
 
-      // Update the state based on the field
-      switch (field) {
-        case "brokerName":
-          setBrokerName(value);
-          break;
-        case "telegramLink":
-          setTelegramLink(value);
-          break;
-        case "discordLink":
-          setDiscordLink(value);
-          break;
-        case "xLink":
-          setXLink(value);
-          break;
-        case "themePrompt":
-          setThemePrompt(value);
-          break;
+      // Use a mapping object instead of a switch statement
+      const setters: Record<string, (val: string) => void> = {
+        brokerName: setBrokerName,
+        telegramLink: setTelegramLink,
+        discordLink: setDiscordLink,
+        xLink: setXLink,
+        walletConnectProjectId: setWalletConnectProjectId,
+        themePrompt: setThemePrompt,
+      };
+
+      // Call the appropriate setter function if it exists
+      if (setters[field]) {
+        setters[field](value);
       }
     };
 
@@ -471,6 +474,7 @@ export default function DexRoute() {
     const trimmedTelegramLink = telegramLink.trim();
     const trimmedDiscordLink = discordLink.trim();
     const trimmedXLink = xLink.trim();
+    const trimmedWalletConnectProjectId = walletConnectProjectId.trim();
 
     // If this is an update (DEX already exists), check for changes
     if (dexData && dexData.id) {
@@ -479,6 +483,8 @@ export default function DexRoute() {
         trimmedTelegramLink !== originalValues.telegramLink ||
         trimmedDiscordLink !== originalValues.discordLink ||
         trimmedXLink !== originalValues.xLink ||
+        trimmedWalletConnectProjectId !==
+          originalValues.walletConnectProjectId ||
         primaryLogo !== originalValues.primaryLogo ||
         secondaryLogo !== originalValues.secondaryLogo ||
         favicon !== originalValues.favicon ||
@@ -506,6 +512,7 @@ export default function DexRoute() {
         telegramLink: trimmedTelegramLink || null,
         discordLink: trimmedDiscordLink || null,
         xLink: trimmedXLink || null,
+        walletConnectProjectId: trimmedWalletConnectProjectId || null,
         primaryLogo: primaryLogo,
         secondaryLogo: secondaryLogo,
         favicon: favicon,
@@ -526,6 +533,7 @@ export default function DexRoute() {
           telegramLink: trimmedTelegramLink,
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
+          walletConnectProjectId: trimmedWalletConnectProjectId,
           primaryLogo,
           secondaryLogo,
           favicon,
@@ -543,6 +551,7 @@ export default function DexRoute() {
           telegramLink: trimmedTelegramLink,
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
+          walletConnectProjectId: trimmedWalletConnectProjectId,
           primaryLogo,
           secondaryLogo,
           favicon,
@@ -1126,6 +1135,38 @@ export default function DexRoute() {
               type="url"
               placeholder="https://twitter.com/your-account"
               validator={urlValidator}
+            />
+
+            <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+              Reown Configuration (formerly WalletConnect)
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Add your Reown Project ID to enable enhanced wallet connectivity
+              functionality in your DEX.
+            </p>
+
+            <FormInput
+              id="walletConnectProjectId"
+              label="Reown Project ID"
+              value={walletConnectProjectId}
+              onChange={handleInputChange("walletConnectProjectId")}
+              placeholder="Enter your Reown Project ID"
+              helpText={
+                <>
+                  Get a free Project ID by creating a project at{" "}
+                  <a
+                    href="https://cloud.reown.com"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-light hover:underline"
+                  >
+                    Reown Cloud
+                  </a>
+                  . When creating a project, select <strong>WalletKit</strong>{" "}
+                  as the product, and then choose <strong>JavaScript</strong> as
+                  the platform in the next step.
+                </>
+              }
             />
           </Form>
 

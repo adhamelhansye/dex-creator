@@ -134,6 +134,8 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               telegramLink: updatedDex.telegramLink || undefined,
               discordLink: updatedDex.discordLink || undefined,
               xLink: updatedDex.xLink || undefined,
+              walletConnectProjectId:
+                updatedDex.walletConnectProjectId || undefined,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,
