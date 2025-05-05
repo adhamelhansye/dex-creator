@@ -1474,7 +1474,7 @@ export default function DexRoute() {
                         >
                           Domain Name
                         </label>
-                        <div className="flex gap-2">
+                        <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
                           <input
                             id="customDomain"
                             type="text"
@@ -1527,8 +1527,9 @@ export default function DexRoute() {
                             isLoading={isSaving}
                             loadingText="Saving..."
                             disabled={!customDomain || isSaving}
+                            className="w-full sm:w-auto"
                           >
-                            <span className="flex items-center gap-1">
+                            <span className="flex items-center gap-1 justify-center sm:justify-start">
                               <div className="i-mdi:link h-4 w-4"></div>
                               Set Domain
                             </span>
