@@ -49,7 +49,7 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "rounded-full py-2 px-6 font-medium transition-all duration-200 cursor-pointer border-none";
+    "rounded-full py-2 font-medium transition-all duration-200 cursor-pointer border-none";
 
   const sizeClasses = {
     xs: "text-xs py-1 px-3",

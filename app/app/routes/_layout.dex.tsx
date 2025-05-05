@@ -190,6 +190,7 @@ export default function DexRoute() {
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [customDomain, setCustomDomain] = useState("");
+  const [viewCssCode, setViewCssCode] = useState(false);
 
   // Fix for the dexData possibly null error
   const [originalValues, setOriginalValues] = useState({
@@ -365,6 +366,7 @@ export default function DexRoute() {
     setThemeApplied(!!originalValues.themeCSS);
     setThemePrompt("");
     setShowThemeEditor(false);
+    setViewCssCode(false);
     toast.success("Theme reset");
   };
 
@@ -374,6 +376,7 @@ export default function DexRoute() {
     setThemeApplied(true);
     setThemePrompt("");
     setShowThemeEditor(false);
+    setViewCssCode(false);
     toast.success("Theme reset to default");
   };
 
@@ -943,7 +946,7 @@ export default function DexRoute() {
                 </div>
 
                 {showThemeEditor && (
-                  <div className="mt-4">
+                  <div className="mt-4 slide-fade-in">
                     <Textarea
                       value={currentTheme || defaultTheme}
                       onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
@@ -957,16 +960,25 @@ export default function DexRoute() {
 
                 {!showThemeEditor && (
                   <div className="mt-2 text-xs mb-4">
-                    <details>
-                      <summary className="cursor-pointer text-gray-400 hover:text-gray-300 transition-colors">
-                        View CSS code
-                      </summary>
-                      <div className="bg-base-8/50 p-4 rounded-lg overflow-auto text-xs max-h-[300px]">
-                        <pre className="language-css">
-                          {currentTheme || defaultTheme}
-                        </pre>
-                      </div>
-                    </details>
+                    <div>
+                      <button
+                        onClick={() => setViewCssCode(!viewCssCode)}
+                        className="cursor-pointer text-gray-400 hover:text-gray-300 transition-colors flex items-center"
+                        type="button"
+                      >
+                        <span>{viewCssCode ? "Hide" : "View"} CSS code</span>
+                        <div
+                          className={`i-mdi:chevron-down h-4 w-4 ml-1 transition-transform ${viewCssCode ? "rotate-180" : ""}`}
+                        ></div>
+                      </button>
+                      {viewCssCode && (
+                        <div className="bg-base-8/50 p-4 rounded-lg overflow-auto text-xs max-h-[300px] mt-2 slide-fade-in">
+                          <pre className="language-css">
+                            {currentTheme || defaultTheme}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
@@ -982,7 +994,7 @@ export default function DexRoute() {
                 {/* Tab Content */}
                 <div className="pt-4">
                   {activeThemeTab === "colors" && (
-                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
                       <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
                         <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
                         <span>
@@ -999,7 +1011,7 @@ export default function DexRoute() {
                   )}
 
                   {activeThemeTab === "rounded" && (
-                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
                       <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
                         <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
                         <span>
@@ -1016,7 +1028,7 @@ export default function DexRoute() {
                   )}
 
                   {activeThemeTab === "spacing" && (
-                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
                       <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
                         <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
                         <span>
@@ -1046,7 +1058,7 @@ export default function DexRoute() {
                   </p>
 
                   {/* AI Info Card */}
-                  <Card className="mb-3 p-3" variant="default">
+                  <Card className="mb-3 p-3 slide-fade-in" variant="default">
                     <div className="flex items-start gap-2">
                       <div className="i-mdi:information-outline text-primary-light h-4 w-4 mt-0.5 flex-shrink-0"></div>
                       <div>

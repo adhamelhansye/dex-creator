@@ -788,7 +788,7 @@ export default function ImageCropModal({
       ></div>
 
       {/* Modal */}
-      <div className="relative z-[1002] max-w-3xl p-6 rounded-xl bg-background-light border border-primary-light/20 shadow-2xl slide-fade-in overflow-auto max-h-[90vh]">
+      <div className="relative z-[1002] w-full max-w-4xl p-6 rounded-xl bg-background-light border border-light/10 shadow-2xl slide-fade-in">
         <h3 className="text-xl font-bold mb-4">Crop Image</h3>
 
         <div className="flex flex-col md:flex-row gap-6">

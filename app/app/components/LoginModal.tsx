@@ -34,7 +34,7 @@ export default function LoginModal({
       ></div>
 
       {/* Modal */}
-      <div className="relative z-[1002] max-w-md p-6 rounded-xl bg-background-light border border-primary-light/20 shadow-2xl">
+      <div className="relative z-[1002] max-w-md p-6 rounded-xl bg-background-light border border-primary-light/20 shadow-2xl slide-fade-in">
         <h3 className="text-xl font-bold mb-4 gradient-text">
           Complete Your Login
         </h3>
