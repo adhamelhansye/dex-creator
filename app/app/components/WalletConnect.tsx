@@ -51,12 +51,12 @@ export default function WalletConnect() {
     }
   }, [connectError]);
 
-  // Reset the dismissed state when disconnecting or authenticating
+  // Reset the dismissed state ONLY when authenticating
   useEffect(() => {
-    if (!isConnected || isAuthenticated) {
+    if (isAuthenticated) {
       setHasUserDismissedModal(false);
     }
-  }, [isConnected, isAuthenticated]);
+  }, [isAuthenticated]);
 
   // Show login modal when wallet is connected but not authenticated
   useEffect(() => {
@@ -72,7 +72,10 @@ export default function WalletConnect() {
     ) {
       // Short delay to ensure the wallet modal is fully closed first
       const timer = setTimeout(() => {
-        openModal("login", { onLogin: handleLogin });
+        openModal("login", {
+          onLogin: handleLogin,
+          onClose: handleModalClose,
+        });
       }, 500);
 
       return () => clearTimeout(timer);
@@ -106,6 +109,12 @@ export default function WalletConnect() {
     appKit?.open();
   };
 
+  // Handle modal close (when "Later" is clicked)
+  const handleModalClose = () => {
+    setHasUserDismissedModal(true);
+    closeModal();
+  };
+
   // Handle login
   const handleLogin = async () => {
     try {
@@ -121,8 +130,10 @@ export default function WalletConnect() {
 
   // Handle showing the login modal
   const handleShowLoginModal = () => {
-    setHasUserDismissedModal(false);
-    openModal("login", { onLogin: handleLogin });
+    openModal("login", {
+      onLogin: handleLogin,
+      onClose: handleModalClose,
+    });
   };
 
   return (

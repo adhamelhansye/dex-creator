@@ -97,7 +97,7 @@ function ModalManager() {
       return (
         <LoginModal
           isOpen={isModalOpen}
-          onClose={closeModal}
+          onClose={currentModalProps.onClose || closeModal}
           onLogin={currentModalProps.onLogin}
         />
       );
