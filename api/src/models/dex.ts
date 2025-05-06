@@ -44,6 +44,7 @@ export const dexSchema = z.object({
   discordLink: z.string().url().nullish(),
   xLink: z.string().url().nullish(),
   walletConnectProjectId: z.string().nullish(),
+  enabledMenus: z.string().nullish(),
 });
 
 // Schema for custom domain validation
@@ -127,6 +128,7 @@ export async function createDex(
         discordLink: data.discordLink || undefined,
         xLink: data.xLink || undefined,
         walletConnectProjectId: data.walletConnectProjectId || undefined,
+        enabledMenus: data.enabledMenus || undefined,
       },
       {
         primaryLogo: data.primaryLogo || undefined,
@@ -184,7 +186,8 @@ export async function createDex(
         discordLink: data.discordLink,
         xLink: data.xLink,
         walletConnectProjectId: data.walletConnectProjectId,
-        repoUrl: repoUrl, // Repository URL is now guaranteed to exist
+        enabledMenus: data.enabledMenus,
+        repoUrl: repoUrl,
         user: {
           connect: {
             id: userId,
@@ -256,6 +259,7 @@ export async function updateDex(
   if ("walletConnectProjectId" in data) {
     updateData.walletConnectProjectId = data.walletConnectProjectId;
   }
+  if ("enabledMenus" in data) updateData.enabledMenus = data.enabledMenus;
 
   // Handle image data
   if ("primaryLogo" in data) updateData.primaryLogo = data.primaryLogo;

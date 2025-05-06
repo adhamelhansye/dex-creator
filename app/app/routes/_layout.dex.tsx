@@ -19,6 +19,7 @@ import PreviewButton from "../components/PreviewButton";
 import ThemeColorSwatches from "../components/ThemeColorSwatches";
 import ThemeRoundedControls from "../components/ThemeRoundedControls";
 import ThemeSpacingControls from "../components/ThemeSpacingControls";
+import NavigationMenuEditor from "../components/NavigationMenuEditor";
 import {
   validateUrl,
   required,
@@ -42,6 +43,7 @@ interface DexData {
   discordLink?: string | null;
   xLink?: string | null;
   walletConnectProjectId?: string | null;
+  enabledMenus?: string | null;
   repoUrl?: string | null;
   customDomain?: string | null;
   createdAt: string;
@@ -180,6 +182,7 @@ export default function DexRoute() {
   const [discordLink, setDiscordLink] = useState("");
   const [xLink, setXLink] = useState("");
   const [walletConnectProjectId, setWalletConnectProjectId] = useState("");
+  const [enabledMenus, setEnabledMenus] = useState(""); // Backend has fallback mechanism
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
@@ -192,13 +195,13 @@ export default function DexRoute() {
   const [customDomain, setCustomDomain] = useState("");
   const [viewCssCode, setViewCssCode] = useState(false);
 
-  // Fix for the dexData possibly null error
   const [originalValues, setOriginalValues] = useState({
     brokerName: "",
     telegramLink: "",
     discordLink: "",
     xLink: "",
     walletConnectProjectId: "",
+    enabledMenus: "",
     primaryLogo: null as string | null,
     secondaryLogo: null as string | null,
     favicon: null as string | null,
@@ -258,6 +261,9 @@ export default function DexRoute() {
           if (data.walletConnectProjectId) {
             setWalletConnectProjectId(data.walletConnectProjectId);
           }
+          if (data.enabledMenus) {
+            setEnabledMenus(data.enabledMenus);
+          }
 
           // Store original values for change detection
           setOriginalValues({
@@ -266,6 +272,7 @@ export default function DexRoute() {
             discordLink: data.discordLink || "",
             xLink: data.xLink || "",
             walletConnectProjectId: data.walletConnectProjectId || "",
+            enabledMenus: data.enabledMenus || "",
             primaryLogo: data.primaryLogo || null,
             secondaryLogo: data.secondaryLogo || null,
             favicon: data.favicon || null,
@@ -436,6 +443,7 @@ export default function DexRoute() {
         xLink: setXLink,
         walletConnectProjectId: setWalletConnectProjectId,
         themePrompt: setThemePrompt,
+        enabledMenus: setEnabledMenus,
       };
 
       // Call the appropriate setter function if it exists
@@ -491,7 +499,8 @@ export default function DexRoute() {
         primaryLogo !== originalValues.primaryLogo ||
         secondaryLogo !== originalValues.secondaryLogo ||
         favicon !== originalValues.favicon ||
-        (themeApplied && currentTheme !== originalValues.themeCSS);
+        (themeApplied && currentTheme !== originalValues.themeCSS) ||
+        enabledMenus !== originalValues.enabledMenus;
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -520,6 +529,7 @@ export default function DexRoute() {
         secondaryLogo: secondaryLogo,
         favicon: favicon,
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
+        enabledMenus: enabledMenus,
       };
 
       if (dexData && dexData.id) {
@@ -537,6 +547,7 @@ export default function DexRoute() {
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
           walletConnectProjectId: trimmedWalletConnectProjectId,
+          enabledMenus: enabledMenus,
           primaryLogo,
           secondaryLogo,
           favicon,
@@ -555,6 +566,7 @@ export default function DexRoute() {
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
           walletConnectProjectId: trimmedWalletConnectProjectId,
+          enabledMenus: enabledMenus,
           primaryLogo,
           secondaryLogo,
           favicon,
@@ -1180,6 +1192,17 @@ export default function DexRoute() {
                 </>
               }
             />
+
+            {/* Navigation Menus Field */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-1 md:mb-2">
+                Navigation Menus
+              </label>
+              <NavigationMenuEditor
+                value={enabledMenus}
+                onChange={value => setEnabledMenus(value)}
+              />
+            </div>
           </Form>
 
           {/* DEX Preview Button - Moved outside the form */}

@@ -479,6 +479,7 @@ function prepareDexConfigContent(
     discordLink?: string;
     xLink?: string;
     walletConnectProjectId?: string;
+    enabledMenus?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -514,6 +515,9 @@ VITE_TWITTER_URL=${config.xLink || ""}
 # Logo flags - indicates if logos have been set
 VITE_HAS_PRIMARY_LOGO=${primaryLogoData ? "true" : "false"}
 VITE_HAS_SECONDARY_LOGO=${secondaryLogoData ? "true" : "false"}
+
+# Navigation menu settings
+VITE_ENABLED_MENUS=${config.enabledMenus || ""}
 
 # WalletConnect configuration
 VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}`;
@@ -649,6 +653,7 @@ export async function updateDexConfig(
     discordLink?: string;
     xLink?: string;
     walletConnectProjectId?: string;
+    enabledMenus?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -739,6 +744,7 @@ export async function setupRepositoryWithSingleCommit(
     discordLink?: string;
     xLink?: string;
     walletConnectProjectId?: string;
+    enabledMenus?: string;
   },
   files: {
     primaryLogo?: string;

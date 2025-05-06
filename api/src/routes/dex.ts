@@ -136,6 +136,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               xLink: updatedDex.xLink || undefined,
               walletConnectProjectId:
                 updatedDex.walletConnectProjectId || undefined,
+              enabledMenus: updatedDex.enabledMenus || undefined,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,
