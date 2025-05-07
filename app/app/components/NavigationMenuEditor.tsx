@@ -37,18 +37,30 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
 
-  // Effect to update parent when enabledMenus changes
-  useEffect(() => {
-    onChange(enabledMenus.join(","));
-  }, [enabledMenus, onChange]);
+  // Need to track if this is an internal update to prevent loops
+  const [isInternalUpdate, setIsInternalUpdate] = useState(false);
 
-  // Effect to update local state when the parent value changes
+  // Effect to update parent when enabledMenus changes, but only for internal updates
   useEffect(() => {
-    setEnabledMenus(parseMenus(value));
-  }, [value, parseMenus]);
+    if (isInternalUpdate) {
+      onChange(enabledMenus.join(","));
+      setIsInternalUpdate(false);
+    }
+  }, [enabledMenus, onChange, isInternalUpdate]);
+
+  // Effect to update local state when the value prop changes significantly
+  useEffect(() => {
+    const parsedValue = parseMenus(value);
+    // Only update internal state if the parsed values are different
+    // This prevents unnecessary rerenders and potential loops
+    if (JSON.stringify(parsedValue) !== JSON.stringify(enabledMenus)) {
+      setEnabledMenus(parsedValue);
+    }
+  }, [value, parseMenus, enabledMenus]);
 
   // Toggle a menu item on/off
   const toggleMenu = (menuId: string) => {
+    setIsInternalUpdate(true);
     setEnabledMenus(current => {
       if (current.includes(menuId)) {
         // Remove it if already enabled
@@ -88,6 +100,7 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
 
     if (draggedIndex === -1 || targetIndex === -1) return;
 
+    setIsInternalUpdate(true);
     // Reorder the enabled menus array
     const newMenus = [...enabledMenus];
     newMenus.splice(draggedIndex, 1);
