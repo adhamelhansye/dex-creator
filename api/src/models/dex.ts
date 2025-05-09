@@ -44,6 +44,8 @@ export const dexSchema = z.object({
   discordLink: z.string().url().nullish(),
   xLink: z.string().url().nullish(),
   walletConnectProjectId: z.string().nullish(),
+  privyAppId: z.string().nullish(),
+  privyTermsOfUse: z.string().nullish(),
   enabledMenus: z.string().nullish(),
 });
 
@@ -128,6 +130,8 @@ export async function createDex(
         discordLink: data.discordLink || undefined,
         xLink: data.xLink || undefined,
         walletConnectProjectId: data.walletConnectProjectId || undefined,
+        privyAppId: data.privyAppId || undefined,
+        privyTermsOfUse: data.privyTermsOfUse || undefined,
         enabledMenus: data.enabledMenus || undefined,
       },
       {
@@ -186,6 +190,8 @@ export async function createDex(
         discordLink: data.discordLink,
         xLink: data.xLink,
         walletConnectProjectId: data.walletConnectProjectId,
+        privyAppId: data.privyAppId,
+        privyTermsOfUse: data.privyTermsOfUse,
         enabledMenus: data.enabledMenus,
         repoUrl: repoUrl,
         user: {
@@ -259,6 +265,9 @@ export async function updateDex(
   if ("walletConnectProjectId" in data) {
     updateData.walletConnectProjectId = data.walletConnectProjectId;
   }
+  if ("privyAppId" in data) updateData.privyAppId = data.privyAppId;
+  if ("privyTermsOfUse" in data)
+    updateData.privyTermsOfUse = data.privyTermsOfUse;
   if ("enabledMenus" in data) updateData.enabledMenus = data.enabledMenus;
 
   // Handle image data

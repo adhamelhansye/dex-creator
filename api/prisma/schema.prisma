@@ -59,6 +59,8 @@ model Dex {
   discordLink          String?
   xLink                String?  // Twitter/X link
   walletConnectProjectId String? // WalletConnect Project ID for the DEX
+  privyAppId           String?  // Privy App ID for wallet connection
+  privyTermsOfUse      String?  // Privy Terms of Use URL
   enabledMenus         String?  // Comma-separated list of enabled navigation menus
   repoUrl              String?  // GitHub repository URL after forking
   customDomain         String?  // Custom domain for GitHub Pages

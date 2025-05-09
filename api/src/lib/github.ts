@@ -479,6 +479,8 @@ function prepareDexConfigContent(
     discordLink?: string;
     xLink?: string;
     walletConnectProjectId?: string;
+    privyAppId?: string;
+    privyTermsOfUse?: string;
     enabledMenus?: string;
   },
   files?: {
@@ -520,12 +522,11 @@ VITE_HAS_SECONDARY_LOGO=${secondaryLogoData ? "true" : "false"}
 VITE_ENABLED_MENUS=${config.enabledMenus || ""}
 
 # WalletConnect configuration
-VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}`;
+VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}
 
-  console.log(
-    "Generated WalletConnect env value:",
-    `VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}`
-  );
+# Privy configuration
+VITE_PRIVY_APP_ID=${config.privyAppId || ""}
+VITE_PRIVY_TERMS_OF_USE=${config.privyTermsOfUse || ""}`;
 
   return {
     envContent,
@@ -653,6 +654,8 @@ export async function updateDexConfig(
     discordLink?: string;
     xLink?: string;
     walletConnectProjectId?: string;
+    privyAppId?: string;
+    privyTermsOfUse?: string;
     enabledMenus?: string;
   },
   files?: {
@@ -744,6 +747,8 @@ export async function setupRepositoryWithSingleCommit(
     discordLink?: string;
     xLink?: string;
     walletConnectProjectId?: string;
+    privyAppId?: string;
+    privyTermsOfUse?: string;
     enabledMenus?: string;
   },
   files: {

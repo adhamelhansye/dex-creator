@@ -11,7 +11,7 @@ export type ValidationFunction = (value: string) => string | null;
 
 export interface FormInputProps {
   id?: string;
-  label: string;
+  label: string | ReactNode;
   value: string;
   onChange: (e: ChangeEvent<HTMLInputElement>) => void;
   type?: string;
@@ -61,17 +61,17 @@ export default function FormInput({
   const validateInput = (value: string): string | null => {
     // Check required first
     if (required && value.trim() === "") {
-      return `${label} is required`;
+      return `${typeof label === "string" ? label : "Field"} is required`;
     }
 
     // Check min length
     if (minLength && value.trim().length < minLength) {
-      return `${label} must be at least ${minLength} characters`;
+      return `${typeof label === "string" ? label : "Field"} must be at least ${minLength} characters`;
     }
 
     // Check max length
     if (maxLength && value.trim().length > maxLength) {
-      return `${label} cannot exceed ${maxLength} characters`;
+      return `${typeof label === "string" ? label : "Field"} cannot exceed ${maxLength} characters`;
     }
 
     // Run custom validator if provided
@@ -80,7 +80,7 @@ export default function FormInput({
     }
 
     if (pattern && !new RegExp(pattern).test(value)) {
-      return `${label} format is invalid`;
+      return `${typeof label === "string" ? label : "Field"} format is invalid`;
     }
 
     return null;

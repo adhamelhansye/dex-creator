@@ -43,6 +43,8 @@ interface DexData {
   discordLink?: string | null;
   xLink?: string | null;
   walletConnectProjectId?: string | null;
+  privyAppId?: string | null;
+  privyTermsOfUse?: string | null;
   enabledMenus?: string | null;
   repoUrl?: string | null;
   customDomain?: string | null;
@@ -182,6 +184,8 @@ export default function DexRoute() {
   const [discordLink, setDiscordLink] = useState("");
   const [xLink, setXLink] = useState("");
   const [walletConnectProjectId, setWalletConnectProjectId] = useState("");
+  const [privyAppId, setPrivyAppId] = useState("");
+  const [privyTermsOfUse, setPrivyTermsOfUse] = useState("");
   const [enabledMenus, setEnabledMenus] = useState(""); // Backend has fallback mechanism
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
@@ -201,6 +205,8 @@ export default function DexRoute() {
     discordLink: "",
     xLink: "",
     walletConnectProjectId: "",
+    privyAppId: "",
+    privyTermsOfUse: "",
     enabledMenus: "",
     primaryLogo: null as string | null,
     secondaryLogo: null as string | null,
@@ -261,6 +267,12 @@ export default function DexRoute() {
           if (data.walletConnectProjectId) {
             setWalletConnectProjectId(data.walletConnectProjectId);
           }
+          if (data.privyAppId) {
+            setPrivyAppId(data.privyAppId);
+          }
+          if (data.privyTermsOfUse) {
+            setPrivyTermsOfUse(data.privyTermsOfUse);
+          }
           if (data.enabledMenus) {
             setEnabledMenus(data.enabledMenus);
           }
@@ -272,6 +284,8 @@ export default function DexRoute() {
             discordLink: data.discordLink || "",
             xLink: data.xLink || "",
             walletConnectProjectId: data.walletConnectProjectId || "",
+            privyAppId: data.privyAppId || "",
+            privyTermsOfUse: data.privyTermsOfUse || "",
             enabledMenus: data.enabledMenus || "",
             primaryLogo: data.primaryLogo || null,
             secondaryLogo: data.secondaryLogo || null,
@@ -442,6 +456,8 @@ export default function DexRoute() {
         discordLink: setDiscordLink,
         xLink: setXLink,
         walletConnectProjectId: setWalletConnectProjectId,
+        privyAppId: setPrivyAppId,
+        privyTermsOfUse: setPrivyTermsOfUse,
         themePrompt: setThemePrompt,
         enabledMenus: setEnabledMenus,
       };
@@ -486,6 +502,8 @@ export default function DexRoute() {
     const trimmedDiscordLink = discordLink.trim();
     const trimmedXLink = xLink.trim();
     const trimmedWalletConnectProjectId = walletConnectProjectId.trim();
+    const trimmedPrivyAppId = privyAppId.trim();
+    const trimmedPrivyTermsOfUse = privyTermsOfUse.trim();
 
     // If this is an update (DEX already exists), check for changes
     if (dexData && dexData.id) {
@@ -496,6 +514,8 @@ export default function DexRoute() {
         trimmedXLink !== originalValues.xLink ||
         trimmedWalletConnectProjectId !==
           originalValues.walletConnectProjectId ||
+        trimmedPrivyAppId !== originalValues.privyAppId ||
+        trimmedPrivyTermsOfUse !== originalValues.privyTermsOfUse ||
         primaryLogo !== originalValues.primaryLogo ||
         secondaryLogo !== originalValues.secondaryLogo ||
         favicon !== originalValues.favicon ||
@@ -525,6 +545,8 @@ export default function DexRoute() {
         discordLink: trimmedDiscordLink || null,
         xLink: trimmedXLink || null,
         walletConnectProjectId: trimmedWalletConnectProjectId || null,
+        privyAppId: trimmedPrivyAppId || null,
+        privyTermsOfUse: trimmedPrivyTermsOfUse || null,
         primaryLogo: primaryLogo,
         secondaryLogo: secondaryLogo,
         favicon: favicon,
@@ -547,6 +569,8 @@ export default function DexRoute() {
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
           walletConnectProjectId: trimmedWalletConnectProjectId,
+          privyAppId: trimmedPrivyAppId,
+          privyTermsOfUse: trimmedPrivyTermsOfUse,
           enabledMenus: enabledMenus,
           primaryLogo,
           secondaryLogo,
@@ -566,6 +590,8 @@ export default function DexRoute() {
           discordLink: trimmedDiscordLink,
           xLink: trimmedXLink,
           walletConnectProjectId: trimmedWalletConnectProjectId,
+          privyAppId: trimmedPrivyAppId,
+          privyTermsOfUse: trimmedPrivyTermsOfUse,
           enabledMenus: enabledMenus,
           primaryLogo,
           secondaryLogo,
@@ -1193,11 +1219,145 @@ export default function DexRoute() {
               }
             />
 
-            {/* Navigation Menus Field */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-1 md:mb-2">
+            <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+              Privy Configuration
+              {((privyAppId && !privyTermsOfUse) ||
+                (!privyAppId && privyTermsOfUse)) && (
+                <span className="ml-2 text-warning inline-flex items-center">
+                  <div className="i-mdi:alert-circle-outline mr-1 h-4 w-4"></div>
+                  <span className="text-xs">Both fields needed</span>
+                </span>
+              )}
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Add your Privy credentials to enable social login, email
+              authentication, and other wallet connection options in your DEX.
+              <span className="font-medium text-primary-light ml-1">
+                Optional, but requires both fields if used.
+              </span>
+            </p>
+
+            {/* Add info card with requirement notice */}
+            <Card
+              className="mb-3 p-3 slide-fade-in"
+              variant={
+                (privyAppId && !privyTermsOfUse) ||
+                (!privyAppId && privyTermsOfUse)
+                  ? "warning"
+                  : "default"
+              }
+            >
+              <div className="flex items-start gap-2">
+                <div
+                  className={`${(privyAppId && !privyTermsOfUse) || (!privyAppId && privyTermsOfUse) ? "i-mdi:alert-circle-outline text-warning" : "i-mdi:information-outline text-primary-light"} h-4 w-4 mt-0.5 flex-shrink-0`}
+                ></div>
+                <div>
+                  <p className="text-xs text-warning font-medium mb-1">
+                    If using Privy, both App ID and Terms of Use URL must be set
+                    for it to function!
+                  </p>
+                  {((privyAppId && !privyTermsOfUse) ||
+                    (!privyAppId && privyTermsOfUse)) && (
+                    <p className="text-xs text-gray-300 mb-2 border-l-2 border-warning pl-2">
+                      You've only set one of the required Privy fields. Either
+                      set both fields or leave both empty.
+                    </p>
+                  )}
+                  <p className="text-xs text-gray-300 mb-1">
+                    <span className="text-primary-light font-medium">
+                      Why use Privy?
+                    </span>{" "}
+                    Privy provides multiple wallet connection options:
+                  </p>
+                  <ul className="text-xs text-gray-300 list-disc pl-4 space-y-0.5">
+                    <li>Social logins (Google, Discord, Twitter)</li>
+                    <li>Email/phone authentication</li>
+                    <li>Multiple wallet types from a single interface</li>
+                    <li>Embedded wallets for non-crypto users</li>
+                  </ul>
+                </div>
+              </div>
+            </Card>
+
+            <FormInput
+              id="privyAppId"
+              label={
+                <div className="flex items-center">
+                  Privy App ID
+                  {privyTermsOfUse && !privyAppId && (
+                    <div className="ml-2 text-warning text-xs flex items-center">
+                      <div className="i-mdi:alert-circle-outline mr-1 h-3.5 w-3.5"></div>
+                      Required with Terms URL
+                    </div>
+                  )}
+                </div>
+              }
+              value={privyAppId}
+              onChange={handleInputChange("privyAppId")}
+              placeholder="Enter your Privy App ID"
+              helpText={
+                <>
+                  Get a Privy App ID by signing up at{" "}
+                  <a
+                    href="https://console.privy.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-light hover:underline"
+                  >
+                    Privy Console
+                  </a>
+                  . When creating an app, be sure to select{" "}
+                  <strong>client-side</strong> and <strong>web</strong> options.
+                  You'll find your App ID in the app settings.{" "}
+                  {privyTermsOfUse && !privyAppId && (
+                    <span className="text-warning">
+                      Required when Terms URL is set.
+                    </span>
+                  )}
+                </>
+              }
+            />
+
+            <FormInput
+              id="privyTermsOfUse"
+              label={
+                <div className="flex items-center">
+                  Privy Terms of Use URL
+                  {privyAppId && !privyTermsOfUse && (
+                    <div className="ml-2 text-warning text-xs flex items-center">
+                      <div className="i-mdi:alert-circle-outline mr-1 h-3.5 w-3.5"></div>
+                      Required with App ID
+                    </div>
+                  )}
+                </div>
+              }
+              value={privyTermsOfUse}
+              onChange={handleInputChange("privyTermsOfUse")}
+              type="url"
+              placeholder="https://example.com/terms"
+              validator={urlValidator}
+              helpText={
+                <>
+                  Enter the URL to your terms of service that will be displayed
+                  during Privy login.{" "}
+                  {privyAppId && !privyTermsOfUse && (
+                    <span className="text-warning">
+                      Required when App ID is set.
+                    </span>
+                  )}{" "}
+                  Must be a valid URL.
+                </>
+              }
+            />
+
+            {/* Navigation Menus Field - Add the missing border-t */}
+            <div className="mb-4 mt-6 border-t border-light/10 pt-4">
+              <label className="block text-md font-medium mb-3">
                 Navigation Menus
               </label>
+              <p className="text-xs text-gray-400 mb-4">
+                Customize which navigation links appear in your DEX.
+              </p>
               <NavigationMenuEditor
                 value={enabledMenus}
                 onChange={value => setEnabledMenus(value)}
