@@ -342,6 +342,7 @@ export async function updateBrokerId(
     },
     data: {
       brokerId,
+      preferredBrokerId: brokerId,
     },
   });
 }

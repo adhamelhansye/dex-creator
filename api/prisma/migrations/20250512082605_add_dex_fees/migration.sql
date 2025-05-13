@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Dex" ADD COLUMN     "makerFee" INTEGER DEFAULT 3,
+ADD COLUMN     "takerFee" INTEGER DEFAULT 6;

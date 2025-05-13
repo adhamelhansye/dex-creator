@@ -6,6 +6,12 @@ import { Button } from "../components/Button";
 import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 
+// Helper function to format fees
+const formatFee = (fee: number | null | undefined): string => {
+  if (fee === null || fee === undefined) return "-";
+  return `${fee} bps (${(fee * 0.01).toFixed(2)}%)`;
+};
+
 // Interface for the API response when deleting a DEX
 interface DeleteDexResponse {
   message: string;
@@ -55,8 +61,11 @@ interface Dex {
   id: string;
   brokerName: string;
   brokerId: string;
+  preferredBrokerId?: string | null;
   repoUrl: string | null;
   createdAt: string;
+  makerFee?: number | null;
+  takerFee?: number | null;
   user: {
     address: string;
   };
@@ -67,19 +76,26 @@ interface DexesResponse {
   dexes: Dex[];
 }
 
+// Interface for approving broker ID
+interface ApproveBrokerIdResponse {
+  success: boolean;
+  message: string;
+  dex: {
+    id: string;
+    brokerName: string;
+    brokerId: string;
+    preferredBrokerId: string | null;
+  };
+}
+
 export default function AdminRoute() {
-  // All DEXes data
   const [allDexes, setAllDexes] = useState<Dex[]>([]);
   const [loadingDexes, setLoadingDexes] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 
-  // Delete DEX state
-  const [walletAddress, setWalletAddress] = useState("");
+  const [dexToDeleteId, setDexToDeleteId] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
-  const [deleteResult, setDeleteResult] = useState<
-    DeleteDexResponse | { error: string } | null
-  >(null);
-  const [filteredWalletDexes, setFilteredWalletDexes] = useState<Dex[]>([]);
+  const [filteredDeleteDexes, setFilteredDeleteDexes] = useState<Dex[]>([]);
 
   // Admin users state
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
@@ -89,19 +105,20 @@ export default function AdminRoute() {
   const [dexId, setDexId] = useState("");
   const [brokerId, setBrokerId] = useState("");
   const [isUpdatingBrokerId, setIsUpdatingBrokerId] = useState(false);
-  const [brokerIdResult, setBrokerIdResult] = useState<
-    UpdateBrokerIdResponse | { error: string } | null
-  >(null);
   const [filteredBrokerDexes, setFilteredBrokerDexes] = useState<Dex[]>([]);
   const [brokerSearchQuery, setBrokerSearchQuery] = useState("");
+
+  const [isApprovingBrokerId, setIsApprovingBrokerId] = useState(false);
+  const [pendingBrokerIds, setPendingBrokerIds] = useState<Dex[]>([]);
+  const [customBrokerId, setCustomBrokerId] = useState("");
+  const [selectedDexForApproval, setSelectedDexForApproval] = useState<
+    string | null
+  >(null);
 
   // Repository rename state
   const [repoDexId, setRepoDexId] = useState("");
   const [newRepoName, setNewRepoName] = useState("");
   const [isRenamingRepo, setIsRenamingRepo] = useState(false);
-  const [renameRepoResult, setRenameRepoResult] = useState<
-    RenameRepoResponse | { error: string } | null
-  >(null);
   const [filteredRepoDexes, setFilteredRepoDexes] = useState<Dex[]>([]);
   const [repoSearchQuery, setRepoSearchQuery] = useState("");
 
@@ -147,6 +164,11 @@ export default function AdminRoute() {
     try {
       const response = await get<DexesResponse>("api/admin/dexes", token);
       setAllDexes(response.dexes);
+
+      const pending = response.dexes.filter(
+        dex => dex.preferredBrokerId && dex.preferredBrokerId !== dex.brokerId
+      );
+      setPendingBrokerIds(pending);
     } catch (error) {
       console.error("Error loading DEXes:", error);
       toast.error("Failed to load DEXes");
@@ -169,11 +191,10 @@ export default function AdminRoute() {
     }
   };
 
-  // Handle wallet address search
-  const handleWalletSearch = (query: string) => {
+  const handleDeleteDexSearch = (query: string) => {
     setSearchQuery(query);
     if (!query) {
-      setFilteredWalletDexes([]);
+      setFilteredDeleteDexes([]);
       return;
     }
 
@@ -181,9 +202,10 @@ export default function AdminRoute() {
     const filtered = allDexes.filter(
       dex =>
         dex.user.address.toLowerCase().includes(queryLower) ||
-        dex.brokerName.toLowerCase().includes(queryLower)
+        dex.brokerName.toLowerCase().includes(queryLower) ||
+        dex.id.toLowerCase().includes(queryLower)
     );
-    setFilteredWalletDexes(filtered);
+    setFilteredDeleteDexes(filtered);
   };
 
   // Handle broker ID search
@@ -224,10 +246,9 @@ export default function AdminRoute() {
     setFilteredRepoDexes(filtered);
   };
 
-  // Handle selecting a DEX for wallet address deletion
-  const handleSelectWalletDex = (dex: Dex) => {
-    setWalletAddress(dex.user.address);
-    setFilteredWalletDexes([]);
+  const handleSelectDexToDelete = (dex: Dex) => {
+    setDexToDeleteId(dex.id);
+    setFilteredDeleteDexes([]);
     setSearchQuery("");
   };
 
@@ -253,40 +274,35 @@ export default function AdminRoute() {
     setRepoSearchQuery("");
   };
 
-  // Handle deleting a DEX by wallet address
   const handleDeleteDex = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!walletAddress.trim()) {
-      toast.error("Please enter a wallet address");
+    if (!dexToDeleteId.trim()) {
+      toast.error("Please select a DEX to delete");
       return;
     }
 
     setIsDeleting(true);
-    setDeleteResult(null);
 
     try {
-      const responseData = await del<DeleteDexResponse>(
-        "api/dex/admin/delete",
-        {
-          walletAddress: walletAddress.trim(),
-        },
+      await del<DeleteDexResponse>(
+        `api/admin/dex/${dexToDeleteId.trim()}`,
+        null,
         token,
         { showToastOnError: false }
       );
 
-      setDeleteResult(responseData);
       toast.success("DEX deleted successfully");
 
-      // Refresh DEX list after successful deletion
       loadAllDexes();
+      setDexToDeleteId("");
     } catch (error) {
       console.error("Error in admin component:", error);
 
       if (error instanceof Error) {
-        setDeleteResult({ error: error.message });
+        toast.error(error.message);
       } else {
-        setDeleteResult({ error: "An unknown error occurred" });
+        toast.error("An unknown error occurred");
       }
     } finally {
       setIsDeleting(false);
@@ -308,17 +324,15 @@ export default function AdminRoute() {
     }
 
     setIsUpdatingBrokerId(true);
-    setBrokerIdResult(null);
 
     try {
-      const responseData = await post<UpdateBrokerIdResponse>(
+      await post<UpdateBrokerIdResponse>(
         `api/admin/dex/${dexId}/broker-id`,
         { brokerId: brokerId.trim() },
         token,
         { showToastOnError: false }
       );
 
-      setBrokerIdResult(responseData);
       toast.success("Broker ID updated successfully");
 
       // Refresh DEX list after successful update
@@ -327,9 +341,9 @@ export default function AdminRoute() {
       console.error("Error updating broker ID:", error);
 
       if (error instanceof Error) {
-        setBrokerIdResult({ error: error.message });
+        toast.error(error.message);
       } else {
-        setBrokerIdResult({ error: "An unknown error occurred" });
+        toast.error("An unknown error occurred");
       }
     } finally {
       setIsUpdatingBrokerId(false);
@@ -351,17 +365,15 @@ export default function AdminRoute() {
     }
 
     setIsRenamingRepo(true);
-    setRenameRepoResult(null);
 
     try {
-      const responseData = await post<RenameRepoResponse>(
+      await post<RenameRepoResponse>(
         `api/admin/dex/${repoDexId}/rename-repo`,
         { newName: newRepoName.trim() },
         token,
         { showToastOnError: false }
       );
 
-      setRenameRepoResult(responseData);
       toast.success("Repository renamed successfully");
 
       // Refresh DEX list after successful rename
@@ -370,12 +382,45 @@ export default function AdminRoute() {
       console.error("Error renaming repository:", error);
 
       if (error instanceof Error) {
-        setRenameRepoResult({ error: error.message });
+        toast.error(error.message);
       } else {
-        setRenameRepoResult({ error: "An unknown error occurred" });
+        toast.error("An unknown error occurred");
       }
     } finally {
       setIsRenamingRepo(false);
+    }
+  };
+
+  const handleBrokerIdApproval = async (dexId: string, customId?: string) => {
+    setIsApprovingBrokerId(true);
+
+    try {
+      const response = await post<ApproveBrokerIdResponse>(
+        "api/admin/graduation/approve",
+        {
+          dexId,
+          customBrokerId: customId,
+        },
+        token,
+        { showToastOnError: false }
+      );
+
+      toast.success(response.message);
+
+      loadAllDexes();
+
+      setCustomBrokerId("");
+      setSelectedDexForApproval(null);
+    } catch (error) {
+      console.error("Error approving broker ID:", error);
+
+      if (error instanceof Error) {
+        toast.error(`Error: ${error.message}`);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    } finally {
+      setIsApprovingBrokerId(false);
     }
   };
 
@@ -475,46 +520,312 @@ export default function AdminRoute() {
           )}
         </div>
 
+        {/* Broker ID Management - New Section */}
+        <div className="bg-primary/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-primary/10">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-medium">Broker ID Management</h2>
+            <button
+              onClick={loadAllDexes}
+              disabled={loadingDexes}
+              className="p-1 rounded hover:bg-dark/50"
+              title="Refresh DEX list"
+            >
+              <div
+                className={`i-mdi:refresh h-5 w-5 ${loadingDexes ? "animate-spin" : ""}`}
+              ></div>
+            </button>
+          </div>
+          <p className="text-gray-400 text-sm mb-4">
+            Approve or reject broker ID requests and manage fee configurations
+            for DEXes.
+          </p>
+
+          {loadingDexes ? (
+            <div className="text-center py-4">
+              <div className="i-svg-spinners:pulse-rings h-8 w-8 mx-auto text-primary-light mb-2"></div>
+              <p className="text-sm text-gray-400">Loading DEXes...</p>
+            </div>
+          ) : (
+            <>
+              {/* Quick Stats */}
+              <div className="mb-6">
+                <h3 className="text-sm font-medium mb-2 flex items-center">
+                  <div className="i-mdi:chart-box text-primary-light mr-1.5 h-4 w-4"></div>
+                  Quick Stats
+                </h3>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-warning/10 rounded-lg p-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400">
+                        Pending Broker IDs
+                      </span>
+                      <span className="text-2xl font-medium text-warning">
+                        {pendingBrokerIds.length}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="bg-success/10 rounded-lg p-3">
+                    <div className="flex flex-col">
+                      <span className="text-xs text-gray-400">
+                        Active Broker IDs
+                      </span>
+                      <span className="text-2xl font-medium text-success">
+                        {allDexes.filter(
+                          dex =>
+                            dex.brokerId !== "demo" &&
+                            dex.brokerId === dex.preferredBrokerId
+                        ).length || 0}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Show quick stats for pending broker IDs */}
+              {pendingBrokerIds.length > 0 && (
+                <div className="mb-4">
+                  <h3 className="text-sm font-medium mb-2 flex items-center">
+                    <div className="i-mdi:account-key text-warning mr-1.5 h-4 w-4"></div>
+                    Pending Broker ID Requests
+                  </h3>
+                  <div className="bg-warning/10 rounded-lg p-3">
+                    <ul className="text-xs space-y-1">
+                      {pendingBrokerIds.slice(0, 3).map(dex => (
+                        <li key={dex.id} className="flex flex-col space-y-2">
+                          <div className="flex justify-between">
+                            <span>
+                              <span className="font-medium">
+                                {dex.brokerName}
+                              </span>
+                              :{" "}
+                              <span className="text-primary-light">
+                                {dex.preferredBrokerId}
+                              </span>
+                              {/* Show fee information */}
+                              <span className="text-gray-400 ml-2">
+                                Fees:{" "}
+                                <span className="text-success">
+                                  {formatFee(dex.makerFee)}
+                                </span>{" "}
+                                /{" "}
+                                <span className="text-error">
+                                  {formatFee(dex.takerFee)}
+                                </span>
+                              </span>
+                            </span>
+                            <div className="flex gap-1">
+                              <button
+                                onClick={() => {
+                                  setSelectedDexForApproval(dex.id);
+                                  setCustomBrokerId(
+                                    dex.preferredBrokerId || ""
+                                  );
+                                }}
+                                className="text-primary-light hover:text-primary"
+                                title="Modify broker ID"
+                              >
+                                <div className="i-mdi:pencil h-4 w-4"></div>
+                              </button>
+                            </div>
+                          </div>
+
+                          {selectedDexForApproval === dex.id && (
+                            <div className="flex flex-col bg-dark/30 p-2 rounded">
+                              <p className="text-xs text-gray-400 mb-2">
+                                You can modify the broker ID if needed before
+                                finalizing it.
+                              </p>
+                              <div className="flex gap-2 items-center">
+                                <input
+                                  type="text"
+                                  value={customBrokerId}
+                                  onChange={e =>
+                                    setCustomBrokerId(e.target.value)
+                                  }
+                                  placeholder="Enter custom broker ID"
+                                  className="flex-1 bg-dark rounded px-2 py-1 text-xs border border-light/10 focus:border-primary-light"
+                                />
+                              </div>
+                              <div className="flex gap-1">
+                                <button
+                                  onClick={() =>
+                                    handleBrokerIdApproval(
+                                      dex.id,
+                                      customBrokerId
+                                    )
+                                  }
+                                  className="text-success hover:text-success/80 flex-1 bg-success/10 rounded-sm py-1 text-xs"
+                                >
+                                  Done
+                                </button>
+                                <button
+                                  onClick={() => {
+                                    setSelectedDexForApproval(null);
+                                    setCustomBrokerId("");
+                                  }}
+                                  className="text-gray-400 hover:text-gray-300 bg-dark/50 rounded-sm px-2"
+                                  title="Cancel"
+                                >
+                                  <div className="i-mdi:close h-3 w-3"></div>
+                                </button>
+                              </div>
+                            </div>
+                          )}
+                        </li>
+                      ))}
+                    </ul>
+                    {pendingBrokerIds.length > 3 && (
+                      <div className="text-center mt-2 text-xs text-gray-400">
+                        +{pendingBrokerIds.length - 3} more pending requests
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Link to full pending request list */}
+              <div className="text-right mb-4">
+                <a
+                  href="#pending-broker-ids"
+                  className="text-xs text-primary-light hover:underline flex items-center justify-end gap-1"
+                >
+                  View all pending requests
+                  <div className="i-mdi:arrow-right h-3 w-3"></div>
+                </a>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="grid grid-cols-1 gap-2 mt-4">
+                <button
+                  onClick={() => {
+                    // Scroll to update broker section
+                    document
+                      .getElementById("update-broker-id")
+                      ?.scrollIntoView({
+                        behavior: "smooth",
+                      });
+                  }}
+                  className="bg-primary/20 hover:bg-primary/30 rounded-lg p-3 text-left flex items-center"
+                >
+                  <div className="i-mdi:account-key text-primary-light h-5 w-5 mr-2"></div>
+                  <div>
+                    <div className="text-sm font-medium">Update Broker ID</div>
+                    <div className="text-xs text-gray-400">
+                      Change broker ID for a DEX
+                    </div>
+                  </div>
+                </button>
+              </div>
+
+              {/* Fee Configurations */}
+              {allDexes.filter(
+                dex =>
+                  dex.brokerId !== "demo" &&
+                  dex.brokerId === dex.preferredBrokerId
+              ).length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium mb-2 flex items-center">
+                    <div className="i-mdi:percent-outline text-primary-light mr-1.5 h-4 w-4"></div>
+                    Recent Fee Configurations
+                  </h3>
+                  <div className="bg-light/10 rounded-lg p-3">
+                    <div className="text-xs mb-2 text-gray-400">
+                      Approved brokers with fee configurations:
+                    </div>
+                    <ul className="text-xs space-y-2">
+                      {allDexes
+                        .filter(
+                          dex =>
+                            dex.brokerId !== "demo" &&
+                            dex.brokerId === dex.preferredBrokerId
+                        )
+                        .slice(0, 3)
+                        .map(dex => (
+                          <li
+                            key={dex.id}
+                            className="flex justify-between items-center border-b border-light/5 pb-1"
+                          >
+                            <div>
+                              <div className="font-medium">
+                                {dex.brokerName}
+                              </div>
+                              <div className="text-primary-light text-xs">
+                                {dex.brokerId}
+                              </div>
+                            </div>
+                            <div className="text-right">
+                              <div className="flex flex-col items-end">
+                                <div className="flex items-center text-xs">
+                                  <span className="text-gray-400 mr-1">
+                                    Maker:
+                                  </span>
+                                  <span className="text-success">
+                                    {formatFee(dex.makerFee)}
+                                  </span>
+                                </div>
+                                <div className="flex items-center text-xs">
+                                  <span className="text-gray-400 mr-1">
+                                    Taker:
+                                  </span>
+                                  <span className="text-error">
+                                    {formatFee(dex.takerFee)}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          </li>
+                        ))}
+                    </ul>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+
         {/* Delete DEX Section */}
         <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10">
-          <h2 className="text-xl font-medium mb-4">
-            Delete DEX by Wallet Address
-          </h2>
+          <h2 className="text-xl font-medium mb-4">Delete DEX</h2>
           <p className="text-gray-400 text-sm mb-4">
-            This tool allows you to delete a DEX associated with a specific
-            wallet address. This action cannot be undone.
+            This tool allows you to delete a DEX. This action cannot be undone
+            and will remove all associated data.
           </p>
 
           <form onSubmit={handleDeleteDex}>
             <div className="mb-4">
               <label
-                htmlFor="walletSearch"
+                htmlFor="dexSearch"
                 className="block text-sm font-medium mb-1"
               >
                 Search DEX
               </label>
               <FuzzySearchInput
-                placeholder="Search by wallet or broker name..."
-                onSearch={handleWalletSearch}
+                placeholder="Search by wallet address, broker name or DEX ID..."
+                onSearch={handleDeleteDexSearch}
                 initialValue={searchQuery}
                 className="mb-2"
               />
 
-              {filteredWalletDexes.length > 0 && (
+              {filteredDeleteDexes.length > 0 && (
                 <div className="mt-2 border border-light/10 rounded-lg overflow-hidden">
                   <div className="max-h-48 overflow-y-auto">
-                    {filteredWalletDexes.map(dex => (
+                    {filteredDeleteDexes.map(dex => (
                       <div
                         key={dex.id}
                         className="p-2 hover:bg-primary-light/10 cursor-pointer flex justify-between items-center border-b border-light/5 last:border-b-0"
-                        onClick={() => handleSelectWalletDex(dex)}
+                        onClick={() => handleSelectDexToDelete(dex)}
                       >
                         <div>
                           <div className="font-medium">
                             {dex.brokerName || "Unnamed DEX"}
                           </div>
                           <div className="text-xs font-mono text-gray-400">
-                            {dex.user.address.substring(0, 8)}...
+                            ID: {dex.id.substring(0, 8)}...
+                          </div>
+                          <div className="text-xs font-mono text-gray-400">
+                            Wallet: {dex.user.address.substring(0, 8)}...
                             {dex.user.address.substring(
                               dex.user.address.length - 6
                             )}
@@ -530,7 +841,7 @@ export default function AdminRoute() {
               )}
 
               {searchQuery &&
-                filteredWalletDexes.length === 0 &&
+                filteredDeleteDexes.length === 0 &&
                 !loadingDexes && (
                   <div className="text-sm text-gray-400 p-2">
                     No DEXes found matching your search.
@@ -545,12 +856,12 @@ export default function AdminRoute() {
             </div>
 
             <FormInput
-              id="walletAddress"
-              label="Wallet Address"
-              value={walletAddress}
-              onChange={e => setWalletAddress(e.target.value)}
-              placeholder="0x..."
-              helpText="Enter the full wallet address"
+              id="dexToDeleteId"
+              label="DEX ID"
+              value={dexToDeleteId}
+              onChange={e => setDexToDeleteId(e.target.value)}
+              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+              helpText="Enter the DEX ID or use the search above to find a DEX"
               required
             />
 
@@ -564,20 +875,13 @@ export default function AdminRoute() {
               Delete DEX
             </Button>
           </form>
-
-          {deleteResult && (
-            <div className="mt-6 p-4 bg-dark/70 rounded-lg border border-light/10 overflow-x-auto">
-              <h3 className="text-sm font-medium mb-2">Result:</h3>
-              <pre className="text-xs text-gray-300">
-                {JSON.stringify(deleteResult, null, 2)}
-              </pre>
-            </div>
-          )}
         </div>
 
         {/* Update Broker ID Section */}
         <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10">
-          <h2 className="text-xl font-medium mb-4">Update Broker ID</h2>
+          <h2 className="text-xl font-medium mb-4" id="update-broker-id">
+            Update Broker ID
+          </h2>
           <p className="text-gray-400 text-sm mb-4">
             Update the broker ID for a specific DEX. This affects the DEX's
             integration with the Orderly Network.
@@ -674,15 +978,6 @@ export default function AdminRoute() {
               Update Broker ID
             </Button>
           </form>
-
-          {brokerIdResult && (
-            <div className="mt-6 p-4 bg-dark/70 rounded-lg border border-light/10 overflow-x-auto">
-              <h3 className="text-sm font-medium mb-2">Result:</h3>
-              <pre className="text-xs text-gray-300">
-                {JSON.stringify(brokerIdResult, null, 2)}
-              </pre>
-            </div>
-          )}
         </div>
 
         {/* Rename Repository Section */}
@@ -788,13 +1083,134 @@ export default function AdminRoute() {
               Rename Repository
             </Button>
           </form>
+        </div>
 
-          {renameRepoResult && (
-            <div className="mt-6 p-4 bg-dark/70 rounded-lg border border-light/10 overflow-x-auto">
-              <h3 className="text-sm font-medium mb-2">Result:</h3>
-              <pre className="text-xs text-gray-300">
-                {JSON.stringify(renameRepoResult, null, 2)}
-              </pre>
+        {/* Pending Broker ID Requests Section */}
+        <div
+          className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10"
+          id="pending-broker-ids"
+        >
+          <h2 className="text-xl font-medium mb-4" id="pending-broker-ids">
+            Pending Broker ID Requests
+          </h2>
+          <p className="text-gray-400 text-sm mb-4">
+            The following DEXes have requested specific broker IDs. Review the
+            requests and click "Done" to set their broker ID.
+          </p>
+
+          {isApprovingBrokerId && (
+            <div className="mb-4 p-3 bg-primary/10 rounded-lg">
+              <div className="flex items-center">
+                <div className="i-svg-spinners:pulse-rings-multiple text-primary-light mr-2 h-4 w-4"></div>
+                <span className="text-sm">Processing broker ID...</span>
+              </div>
+            </div>
+          )}
+
+          {loadingDexes ? (
+            <p>Loading DEXes...</p>
+          ) : pendingBrokerIds.length === 0 ? (
+            <p className="text-gray-400">No pending broker ID requests</p>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full border-collapse">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left py-2 px-4">Broker Name</th>
+                    <th className="text-left py-2 px-4">Wallet Address</th>
+                    <th className="text-left py-2 px-4">Current ID</th>
+                    <th className="text-left py-2 px-4">Requested ID</th>
+                    <th className="text-left py-2 px-4">Fees (Maker/Taker)</th>
+                    <th className="text-left py-2 px-4">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pendingBrokerIds.map(dex => (
+                    <tr
+                      key={dex.id}
+                      className="border-b border-gray-700 hover:bg-gray-700/30"
+                    >
+                      <td className="py-2 px-4">{dex.brokerName}</td>
+                      <td className="py-2 px-4">
+                        <span className="font-mono text-xs">
+                          {dex.user.address}
+                        </span>
+                      </td>
+                      <td className="py-2 px-4">{dex.brokerId}</td>
+                      <td className="py-2 px-4 relative">
+                        {selectedDexForApproval === dex.id ? (
+                          <div className="flex flex-col gap-2">
+                            <p className="text-xs text-gray-400 mb-1">
+                              You can modify the broker ID if needed before
+                              finalizing it.
+                            </p>
+                            <div className="flex gap-2">
+                              <input
+                                type="text"
+                                value={customBrokerId}
+                                onChange={e =>
+                                  setCustomBrokerId(e.target.value)
+                                }
+                                className="flex-1 bg-dark rounded px-2 py-1 text-xs border border-light/10 focus:border-primary-light"
+                                placeholder="Enter custom broker ID"
+                              />
+                              <button
+                                onClick={() => {
+                                  setSelectedDexForApproval(null);
+                                  setCustomBrokerId("");
+                                }}
+                                className="bg-gray-700 text-gray-300 hover:bg-gray-600 p-1 rounded"
+                                title="Cancel"
+                              >
+                                <div className="i-mdi:close h-4 w-4"></div>
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="flex items-center justify-between">
+                            {dex.preferredBrokerId}
+                            <button
+                              onClick={() => {
+                                setSelectedDexForApproval(dex.id);
+                                setCustomBrokerId(dex.preferredBrokerId || "");
+                              }}
+                              className="text-primary-light hover:text-primary ml-2"
+                              title="Edit broker ID"
+                            >
+                              <div className="i-mdi:pencil h-4 w-4"></div>
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                      <td className="py-2 px-4">
+                        <div className="flex items-center">
+                          <span className="text-success">
+                            {formatFee(dex.makerFee)}
+                          </span>
+                          <span className="mx-1">/</span>
+                          <span className="text-error">
+                            {formatFee(dex.takerFee)}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="py-2 px-4">
+                        <div className="flex space-x-2">
+                          <Button
+                            variant="primary"
+                            size="sm"
+                            onClick={() =>
+                              handleBrokerIdApproval(dex.id, customBrokerId)
+                            }
+                            disabled={isApprovingBrokerId}
+                          >
+                            Done
+                          </Button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
             </div>
           )}
         </div>

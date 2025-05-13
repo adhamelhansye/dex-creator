@@ -317,12 +317,19 @@ The project uses GitHub Actions for continuous integration:
 
 5. **Comment Philosophy**:
 
-   - **IMPORTANT**: Avoid redundant comments that simply restate what the code does
-   - Do not add comments like "// Get the user's address" or "// Create the DEX in the database"
-   - Only add comments for complex logic that isn't immediately obvious 
+   - **CRITICAL**: Write self-documenting code and eliminate unnecessary comments
+   - Code should be its own documentation through clear naming and logical structure
+   - **Never add comments that merely restate what the code does**
+   - **Never add comments like:** "// Get the user's address" or "// Create the DEX in the database"
+   - **Delete existing comments that don't add value**
+   - Only add comments for:
+     - Complex algorithms that aren't immediately obvious 
+     - Business rules that can't be expressed clearly in code
+     - External constraints or workarounds
    - Use function/variable names that make the code self-documenting
-   - Remove redundant comments during refactoring
-   - JSDoc comments should be reserved for public APIs or complex functions
+   - Aggressively remove redundant comments during refactoring
+   - JSDoc comments should be reserved exclusively for public APIs or truly complex functions
+   - When in doubt, choose fewer comments and clearer code
 
 6. **UI Components**:
 

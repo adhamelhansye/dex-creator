@@ -64,3 +64,5 @@ next-env.d.ts
 # Misc
 .vercel
 .turbo 
+# SpecStory explanation file
+.specstory/.what-is-this.md

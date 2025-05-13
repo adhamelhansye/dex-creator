@@ -11,6 +11,7 @@ import { PrismaClient } from "@prisma/client";
 import {
   setupRepositoryWithSingleCommit,
   renameRepository,
+  deleteRepository,
 } from "../lib/github";
 
 const prisma = new PrismaClient();
@@ -157,46 +158,35 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
   }
 });
 
-// Admin endpoint to delete a DEX by wallet address (protected by adminMiddleware)
-adminRoutes.delete("/dex/delete", async (c: AdminContext) => {
-  // Validate request body
-  const schema = z.object({
-    walletAddress: z.string(),
-  });
-
-  const result = schema.safeParse(await c.req.json());
-
-  if (!result.success) {
-    return c.json(
-      { error: "Invalid request body", details: result.error },
-      400
-    );
-  }
-
-  const { walletAddress } = result.data;
+adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
+  const id = c.req.param("id");
 
   try {
-    // Get the user whose DEX should be deleted
-    const targetUser = await prisma.user.findFirst({
-      where: {
-        address: walletAddress,
-      },
-    });
-
-    if (!targetUser) {
-      return c.json({ error: "User not found" }, 404);
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ error: "DEX not found" }, 404);
     }
 
-    // Delete the DEX using Prisma's type-safe query
-    await prisma.dex.deleteMany({
+    if (dex.repoUrl) {
+      try {
+        const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+        if (repoInfo) {
+          await deleteRepository(repoInfo.owner, repoInfo.repo);
+        }
+      } catch (error) {
+        console.error("Error deleting GitHub repository:", error);
+      }
+    }
+
+    await prisma.dex.delete({
       where: {
-        userId: targetUser.id,
+        id,
       },
     });
 
     return c.json({ success: true, message: "DEX deleted successfully" });
   } catch (error) {
-    console.error("Error deleting DEX:", error);
+    console.error("Error deleting DEX by ID:", error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });
@@ -290,6 +280,77 @@ adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
     return c.json(
       { message: "Error renaming repository", error: String(error) },
       500
+    );
+  }
+});
+
+// Admin endpoint to approve a broker ID
+adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
+  try {
+    const approveBrokerIdSchema = z.object({
+      dexId: z.string().uuid(),
+      customBrokerId: z.string().optional(),
+    });
+
+    const result = approveBrokerIdSchema.safeParse(await c.req.json());
+    if (!result.success) {
+      return c.json(
+        { error: "Invalid request", details: result.error },
+        { status: 400 }
+      );
+    }
+
+    const { dexId, customBrokerId } = result.data;
+
+    const dex = await prisma.dex.findUnique({
+      where: { id: dexId },
+    });
+
+    if (!dex) {
+      return c.json(
+        { success: false, message: "DEX not found" },
+        { status: 404 }
+      );
+    }
+
+    if (!dex.preferredBrokerId) {
+      return c.json(
+        {
+          success: false,
+          message: "This DEX has not requested a broker ID yet",
+        },
+        { status: 400 }
+      );
+    }
+
+    const brokerId = customBrokerId || dex.preferredBrokerId;
+
+    const updatedDex = await prisma.dex.update({
+      where: { id: dexId },
+      data: {
+        brokerId,
+        preferredBrokerId: brokerId,
+      },
+    });
+
+    return c.json({
+      success: true,
+      message: "Broker ID approved successfully",
+      dex: {
+        id: updatedDex.id,
+        brokerName: updatedDex.brokerName,
+        brokerId: updatedDex.brokerId,
+        preferredBrokerId: updatedDex.preferredBrokerId,
+      },
+    });
+  } catch (error) {
+    console.error("Error approving broker ID:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error approving broker ID: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
     );
   }
 });

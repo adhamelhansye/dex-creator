@@ -29,15 +29,17 @@ This is a monorepo managed with Yarn Workspaces:
 - Create and customize a DEX with your own branding
 - Configure social media links and appearance
 - Deploy your DEX through an automated process
+- Upgrade your DEX through a graduation process to earn fee splits and enable rewards
 
 ### Admin Features
 
 - Role-based access control for platform administrators
 - Manage DEX instances across the platform
 - Delete DEXes by wallet address
+- Approve broker ID requests for graduated DEXes
 - View admin-only information
 
-For detailed documentation on the admin implementation, see [composer.md](./composer.md).
+For detailed documentation on the admin implementation, see [COMPOSER.md](./COMPOSER.md).
 
 ## Getting Started
 
@@ -46,6 +48,7 @@ For detailed documentation on the admin implementation, see [composer.md](./comp
 - Node.js (v22 or later)
 - Yarn (v1.22 or later)
 - Docker and Docker Compose (for PostgreSQL database)
+- GitHub account with Personal Access Token (for repository operations)
 
 ### Installation
 
@@ -56,6 +59,24 @@ git clone git@github.com:OrderlyNetworkDexCreator/dex-creator.git
 cd dex-creator
 yarn install
 ```
+
+### Environment Setup
+
+The application requires several environment variables to be set for both frontend and backend.
+
+1. **Create environment files from templates**:
+
+```bash
+# For API
+cp api/.env.example api/.env
+
+# For frontend
+cp app/.env.example app/.env
+```
+
+2. **Configure environment variables**:
+
+Edit both `.env` files with your specific configuration. See the [Environment Variables](#environment-variables) section for details.
 
 ### Database Setup
 
@@ -153,6 +174,94 @@ yarn db:generate
 yarn db:push
 ```
 
+## Environment Variables
+
+The application requires several environment variables for proper operation. Below are the required variables for different components and features:
+
+### API Server Environment (.env in api/ directory)
+
+#### Core Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `PORT` | API server port | 3001 | No |
+| `NODE_ENV` | Environment (development/production) | development | No |
+| `DATABASE_URL` | PostgreSQL connection string | - | Yes |
+
+#### GitHub Integration
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `GITHUB_TOKEN` | GitHub token for repo forking (needs 'admin:org' and 'repo' scopes) | Yes |
+| `GITHUB_TEMPLATE_REPO` | Template repository to fork | Yes |
+| `TEMPLATE_PAT` | Token for GitHub Pages deployments (needs 'repo' and 'workflow' permissions) | Yes |
+
+#### Theme Generation
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `CEREBRAS_API_KEY` | API key for Cerebras AI theme generation | Yes |
+| `CEREBRAS_API_URL` | Cerebras API endpoint | Yes |
+
+#### DEX Graduation System
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `ETH_ORDER_ADDRESS` | Ethereum ORDER token address | Yes |
+| `ARB_ORDER_ADDRESS` | Arbitrum ORDER token address | Yes |
+| `ETH_RECEIVER_ADDRESS` | Ethereum wallet address to receive ORDER tokens | Yes |
+| `ARB_RECEIVER_ADDRESS` | Arbitrum wallet address to receive ORDER tokens | Yes |
+| `REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
+| `ETH_RPC_URL` | Ethereum RPC URL for transaction verification | Yes |
+| `ARBITRUM_RPC_URL` | Arbitrum RPC URL for transaction verification | Yes |
+
+### Frontend Environment (.env in app/ directory)
+
+#### Core Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `PORT` | Frontend server port | 3000 | No |
+| `NODE_ENV` | Environment (development/production) | development | No |
+
+#### DEX Graduation System
+
+| Variable | Description | Required |
+|----------|-------------|----------|
+| `VITE_ETH_ORDER_ADDRESS` | Ethereum ORDER token address | Yes |
+| `VITE_ARB_ORDER_ADDRESS` | Arbitrum ORDER token address | Yes |
+| `VITE_ETH_RECEIVER_ADDRESS` | Ethereum wallet address to receive ORDER tokens | Yes |
+| `VITE_ARB_RECEIVER_ADDRESS` | Arbitrum wallet address to receive ORDER tokens | Yes |
+| `VITE_REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
+
+**Important**: The ORDER token addresses and required amounts must match between frontend and backend environments.
+
+## DEX Graduation System
+
+The DEX Creator includes a graduation system that allows DEX owners to upgrade their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
+
+1. Users sending a specified amount of ORDER tokens (set by `REQUIRED_ORDER_AMOUNT`)
+2. Choosing a unique broker ID for their DEX
+3. Configuring custom maker and taker fees
+4. Admin approval of the broker ID
+
+### Setting Up the Graduation System
+
+For the graduation system to work properly, you need to:
+
+1. Set valid addresses for `ETH_RECEIVER_ADDRESS` and `ARB_RECEIVER_ADDRESS` in the API environment
+2. Set the same addresses in `VITE_ETH_RECEIVER_ADDRESS` and `VITE_ARB_RECEIVER_ADDRESS` in the frontend environment
+3. Configure working RPC URLs for Ethereum and Arbitrum in `ETH_RPC_URL` and `ARBITRUM_RPC_URL`
+4. Set the same `REQUIRED_ORDER_AMOUNT` in both environments
+
+### Testing the Graduation Process
+
+For testing purposes, you may want to:
+
+1. Use a testnet instead of mainnet by configuring appropriate RPC URLs
+2. Set a smaller `REQUIRED_ORDER_AMOUNT` value (e.g., 10 instead of 1000)
+3. Use test tokens instead of real ORDER tokens
+
 ## Deployment
 
 ### Frontend Deployment
@@ -184,23 +293,16 @@ docker run -d \
   -e TEMPLATE_PAT=your-template-personal-access-token \
   -e CEREBRAS_API_KEY=your-cerebras-api-key \
   -e CEREBRAS_API_URL=https://api.cerebras.ai/v1 \
+  -e ETH_ORDER_ADDRESS=0xABD4C63d2616A5201454168269031355f4764337 \
+  -e ARB_ORDER_ADDRESS=0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8 \
+  -e ETH_RECEIVER_ADDRESS=0xyourEthereumReceiverAddress \
+  -e ARB_RECEIVER_ADDRESS=0xyourArbitrumReceiverAddress \
+  -e REQUIRED_ORDER_AMOUNT=1000 \
+  -e ETH_RPC_URL=https://ethereum-rpc.publicnode.com \
+  -e ARBITRUM_RPC_URL=https://arbitrum-one.public.blastapi.io \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```
-
-#### Environment Variables
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `DATABASE_URL` | PostgreSQL connection string | Yes |
-| `GITHUB_TOKEN` | GitHub token for repo forking (needs 'admin:org' and 'repo' scopes) | Yes |
-| `GITHUB_TEMPLATE_REPO` | Template repository to fork (default: "OrderlyNetworkDexCreator/dex-creator-template") | Yes |
-| `TEMPLATE_PAT` | Token for GitHub Pages deployments (needs 'repo' and 'workflow' permissions) | Yes |
-| `CEREBRAS_API_KEY` | API key for Cerebras AI theme generation | Yes |
-| `CEREBRAS_API_URL` | Cerebras API endpoint (default: "https://api.cerebras.ai/v1") | Yes |
-| `MIGRATE_DB` | Whether to run database migrations on startup (true/false) | No |
-| `PORT` | API server port (default: 3001) | No |
-| `NODE_ENV` | Environment (development/production) | No |
 
 #### Automatic Database Migrations
 

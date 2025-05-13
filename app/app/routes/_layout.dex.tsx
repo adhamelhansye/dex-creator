@@ -28,13 +28,14 @@ import {
   composeValidators,
 } from "../utils/validation";
 import WorkflowStatus from "../components/WorkflowStatus";
-import { useNavigate } from "@remix-run/react";
+import { useNavigate, Link } from "@remix-run/react";
 
 // Define type for DEX data
 interface DexData {
   id: string;
   brokerName: string;
   brokerId: string;
+  preferredBrokerId?: string | null;
   themeCSS?: string | null;
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
@@ -198,6 +199,8 @@ export default function DexRoute() {
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [customDomain, setCustomDomain] = useState("");
   const [viewCssCode, setViewCssCode] = useState(false);
+  const [isGraduationEligible, setIsGraduationEligible] = useState(false);
+  const [isGraduated, setIsGraduated] = useState(false);
 
   const [originalValues, setOriginalValues] = useState({
     brokerName: "",
@@ -228,91 +231,75 @@ export default function DexRoute() {
 
     async function fetchDexData() {
       try {
-        const data = await get<DexData | { exists: false }>("api/dex", token);
+        const response = await get<DexData | { exists: false }>(
+          "api/dex",
+          token
+        );
 
-        // Check if data exists and set it
-        if (data && "id" in data) {
-          setDexData(data);
+        if (response && "exists" in response && response.exists === false) {
+          setDexData(null);
+        } else if (response && "id" in response) {
+          setDexData(response);
+          setBrokerName(response.brokerName);
+          setTelegramLink(response.telegramLink || "");
+          setDiscordLink(response.discordLink || "");
+          setXLink(response.xLink || "");
+          setWalletConnectProjectId(response.walletConnectProjectId || "");
+          setPrivyAppId(response.privyAppId || "");
+          setPrivyTermsOfUse(response.privyTermsOfUse || "");
+          setEnabledMenus(response.enabledMenus || "");
+          setPrimaryLogo(response.primaryLogo || null);
+          setSecondaryLogo(response.secondaryLogo || null);
+          setFavicon(response.favicon || null);
+          setViewCssCode(false);
 
-          // If DEX exists, populate the form fields
-          if (data.brokerName) {
-            setBrokerName(data.brokerName);
-          }
-          if (data.telegramLink) {
-            setTelegramLink(data.telegramLink);
-          }
-          if (data.discordLink) {
-            setDiscordLink(data.discordLink);
-          }
-          if (data.xLink) {
-            setXLink(data.xLink);
-          }
-          if (data.primaryLogo) {
-            setPrimaryLogo(data.primaryLogo);
-          }
-          if (data.secondaryLogo) {
-            setSecondaryLogo(data.secondaryLogo);
-          }
-          if (data.favicon) {
-            setFavicon(data.favicon);
-          }
-          if (data.themeCSS) {
-            setCurrentTheme(data.themeCSS);
+          setIsGraduationEligible(response.brokerId === "demo");
+
+          const isGraduated =
+            response.brokerId !== "demo" &&
+            (response.preferredBrokerId
+              ? response.brokerId === response.preferredBrokerId
+              : false);
+          setIsGraduated(isGraduated);
+
+          if (response.themeCSS) {
+            setCurrentTheme(response.themeCSS);
             setThemeApplied(true);
           } else {
             // Set default theme if none exists
             setCurrentTheme(defaultTheme);
             setThemeApplied(true);
           }
-          if (data.walletConnectProjectId) {
-            setWalletConnectProjectId(data.walletConnectProjectId);
-          }
-          if (data.privyAppId) {
-            setPrivyAppId(data.privyAppId);
-          }
-          if (data.privyTermsOfUse) {
-            setPrivyTermsOfUse(data.privyTermsOfUse);
-          }
-          if (data.enabledMenus) {
-            setEnabledMenus(data.enabledMenus);
-          }
 
           // Store original values for change detection
           setOriginalValues({
-            brokerName: data.brokerName || "",
-            telegramLink: data.telegramLink || "",
-            discordLink: data.discordLink || "",
-            xLink: data.xLink || "",
-            walletConnectProjectId: data.walletConnectProjectId || "",
-            privyAppId: data.privyAppId || "",
-            privyTermsOfUse: data.privyTermsOfUse || "",
-            enabledMenus: data.enabledMenus || "",
-            primaryLogo: data.primaryLogo || null,
-            secondaryLogo: data.secondaryLogo || null,
-            favicon: data.favicon || null,
-            themeCSS: data.themeCSS || null,
+            brokerName: response.brokerName || "",
+            telegramLink: response.telegramLink || "",
+            discordLink: response.discordLink || "",
+            xLink: response.xLink || "",
+            walletConnectProjectId: response.walletConnectProjectId || "",
+            privyAppId: response.privyAppId || "",
+            privyTermsOfUse: response.privyTermsOfUse || "",
+            enabledMenus: response.enabledMenus || "",
+            primaryLogo: response.primaryLogo || null,
+            secondaryLogo: response.secondaryLogo || null,
+            favicon: response.favicon || null,
+            themeCSS: response.themeCSS || null,
           });
 
-          // Try to construct the deployment URL if a repo exists
-          if (data.repoUrl) {
-            try {
-              const match = data.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
-              if (match && match[1]) {
-                const repoName = match[1];
-                const deploymentUrl = `https://dex.orderly.network/${repoName}/`;
-                setDeploymentUrl(deploymentUrl);
-
-                // We set this as a potential URL, but the WorkflowStatus component
-                // will verify if a successful deployment actually exists
-              }
-            } catch (error) {
-              console.error("Error constructing deployment URL:", error);
-            }
-          }
+          setActiveThemeTab("colors");
+          setDeploymentUrl(
+            response.repoUrl
+              ? `https://${response.repoUrl.split("/").pop()}.github.io/`
+              : null
+          );
+          setCustomDomain(response.customDomain || "");
+        } else {
+          setDexData(null);
         }
       } catch (error) {
-        // Error handling is done in the apiClient, no need to duplicate here
-        console.error("Error in component:", error);
+        console.error("Failed to fetch DEX data", error);
+        setDexData(null);
       }
     }
 
@@ -423,9 +410,23 @@ export default function DexRoute() {
         token
       );
 
-      // Refresh DEX data
-      setDexData(result.dex);
-      toast.success("Repository forked successfully!");
+      if (result && result.dex) {
+        setDexData(result.dex);
+
+        if (result.dex.repoUrl) {
+          toast.success("Repository forked successfully!");
+
+          setDeploymentUrl(
+            `https://${result.dex.repoUrl.split("/").pop()}.github.io/`
+          );
+        } else {
+          toast.error("Repository creation failed. Please try again later.");
+        }
+      } else {
+        toast.error(
+          "Failed to get response from server. Please try again later."
+        );
+      }
     } catch (error) {
       console.error("Error forking repository:", error);
       toast.error("Failed to fork repository. Please try again later.");
@@ -609,6 +610,7 @@ export default function DexRoute() {
       }
 
       setDexData(savedData);
+      setIsGraduationEligible(savedData.brokerId === "demo");
     } catch (error) {
       // Error handling is done in the apiClient, this is just for any additional component-specific handling
       console.error("Error in component:", error);
@@ -1365,6 +1367,77 @@ export default function DexRoute() {
             </div>
           </Form>
 
+          {/* Graduation Banner - show when broker ID is "demo" */}
+          {isGraduationEligible && !isGraduated && dexData && (
+            <Card className="my-6 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 bg-primary/20 p-2 rounded-full">
+                    <div className="i-mdi:rocket-launch text-primary w-6 h-6"></div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      Ready to Upgrade?
+                    </h3>
+                    <p className="text-gray-300">
+                      Graduate your DEX to earn fee splits and provide rewards
+                      for your traders.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/graduation"
+                  className="btn-connect whitespace-nowrap flex-shrink-0"
+                >
+                  Upgrade Now
+                </Link>
+              </div>
+            </Card>
+          )}
+
+          {/* Graduated DEX Banner - show when DEX is graduated */}
+          {isGraduated && dexData && (
+            <Card className="my-6 bg-gradient-to-r from-success/20 to-primary/20 border border-success/30">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 bg-success/20 p-2 rounded-full">
+                    <div className="i-mdi:check-badge text-success w-6 h-6"></div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      Graduated DEX
+                    </h3>
+                    <p className="text-gray-300">
+                      Your DEX is earning fee share revenue!{" "}
+                      <a
+                        href={
+                          dexData.customDomain
+                            ? `https://${dexData.customDomain}`
+                            : deploymentUrl || "#"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-light hover:underline inline-flex items-center"
+                      >
+                        Log in to your DEX
+                        <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
+                      </a>{" "}
+                      with your admin wallet to access and withdraw your
+                      earnings.
+                    </p>
+                  </div>
+                </div>
+                <Link
+                  to="/graduation"
+                  className="px-4 py-2 bg-success/20 hover:bg-success/30 text-success font-medium rounded-full transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-2"
+                >
+                  <div className="i-mdi:cash-multiple h-4 w-4"></div>
+                  View Benefits
+                </Link>
+              </div>
+            </Card>
+          )}
+
           {/* DEX Preview Button - Moved outside the form */}
           <div className="mt-6 pt-4 border-t border-light/10">
             <h3 className="text-md font-medium mb-3">Visual Preview</h3>
@@ -1549,7 +1622,7 @@ export default function DexRoute() {
                 />
               </div>
             </Card>
-          ) : dexData && !dexData.repoUrl ? (
+          ) : dexData && dexData.id && !dexData.repoUrl ? (
             // Repository creation failed but DEX was created
             // Show retry button
             <Card variant="error" className="mb-6">
