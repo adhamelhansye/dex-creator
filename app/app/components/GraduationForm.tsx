@@ -433,16 +433,12 @@ export function GraduationForm() {
 
       const amount = parseEther(REQUIRED_ORDER_AMOUNT.toString());
 
-      // Check if writeContract is available
-      if (!writeContract) {
-        console.log("Wallet connection issue: writeContract unavailable");
-        toast.error(
-          "Wallet connection issue. Please try reconnecting your wallet."
-        );
-        return;
-      }
-
-      // Execute the transaction
+      console.log({
+        address: currentTokenAddress as `0x${string}`,
+        functionName: "transfer",
+        args: [currentReceiverAddress, amount],
+        chainId: currentChainId,
+      });
       writeContract({
         abi: ERC20_ABI,
         address: currentTokenAddress as `0x${string}`,
