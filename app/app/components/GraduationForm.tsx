@@ -54,16 +54,30 @@ const ORDER_TOKEN_ADDRESSES: Record<string, string> = {
   arbitrum: import.meta.env.VITE_ARB_ORDER_ADDRESS || DEFAULT_ARB_ORDER_ADDRESS,
 };
 
+// Remove default receiver addresses - require environment variables
+const ORDER_RECEIVER_ADDRESSES: Record<string, string> = {
+  ethereum: import.meta.env.VITE_ETH_RECEIVER_ADDRESS || "",
+  arbitrum: import.meta.env.VITE_ARB_RECEIVER_ADDRESS || "",
+};
+
+// Validate receiver addresses
+const validateAddress = (address: string): boolean => {
+  // Basic Ethereum address validation - checks if it's a 0x followed by 40 hex characters
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
+};
+
+// Check validity of receiver addresses
+Object.entries(ORDER_RECEIVER_ADDRESSES).forEach(([chain, address]) => {
+  if (!address) {
+    console.log(`Missing receiver address for ${chain}`);
+  } else if (!validateAddress(address)) {
+    console.log(`Invalid receiver address format for ${chain}`);
+  }
+});
+
 const getSwapUrl = (chainId: string) => {
   const tokenAddress = ORDER_TOKEN_ADDRESSES[chainId];
   return `https://swap.defillama.com/?chain=${chainId}&from=0x0000000000000000000000000000000000000000&tab=swap&to=${tokenAddress}`;
-};
-
-const ORDER_RECEIVER_ADDRESSES: Record<string, string> = {
-  ethereum:
-    import.meta.env.VITE_ETH_RECEIVER_ADDRESS || "0xOrderlyReceiverAddress",
-  arbitrum:
-    import.meta.env.VITE_ARB_RECEIVER_ADDRESS || "0xOrderlyReceiverAddress",
 };
 
 interface VerifyTxResponse {
@@ -395,8 +409,40 @@ export function GraduationForm() {
     }
 
     try {
+      // Log token transfer attempt
+      console.log(`Initiating ORDER token transfer on ${chain}`);
+
+      // Check if addresses are valid
+      if (!currentTokenAddress) {
+        console.log(`Missing ORDER token address for ${chain}`);
+        toast.error("Missing token address configuration");
+        return;
+      }
+
+      if (!currentReceiverAddress) {
+        console.log(`Missing receiver address for ${chain}`);
+        toast.error("Missing receiver address configuration");
+        return;
+      }
+
+      if (!validateAddress(currentReceiverAddress)) {
+        console.log(`Invalid receiver address format for ${chain}`);
+        toast.error("Invalid receiver address configuration");
+        return;
+      }
+
       const amount = parseEther(REQUIRED_ORDER_AMOUNT.toString());
 
+      // Check if writeContract is available
+      if (!writeContract) {
+        console.log("Wallet connection issue: writeContract unavailable");
+        toast.error(
+          "Wallet connection issue. Please try reconnecting your wallet."
+        );
+        return;
+      }
+
+      // Execute the transaction
       writeContract({
         abi: ERC20_ABI,
         address: currentTokenAddress as `0x${string}`,
@@ -405,8 +451,15 @@ export function GraduationForm() {
         chainId: currentChainId,
       });
     } catch (error) {
-      console.error("Error transferring ORDER tokens:", error);
-      toast.error("Failed to initiate transfer");
+      console.log("ORDER token transfer error:", error);
+
+      // More detailed error message
+      let errorMessage = "Failed to initiate transfer";
+      if (error instanceof Error) {
+        errorMessage = `Failed to initiate transfer: ${error.message}`;
+      }
+
+      toast.error(errorMessage);
     }
   };
 
@@ -436,7 +489,7 @@ export function GraduationForm() {
         toast.error(response.message || "Verification failed");
       }
     } catch (error) {
-      console.error("Error verifying transaction:", error);
+      console.log("Transaction verification error:", error);
 
       let errorMessage = "Verification failed";
 
@@ -902,6 +955,42 @@ export function GraduationForm() {
     <Card className="w-full max-w-lg mx-auto slide-fade-in">
       <h2 className="text-xl font-bold mb-4">Upgrade Your DEX</h2>
 
+      <div className="bg-light/5 rounded-lg p-4 mb-6">
+        <h3 className="text-md font-medium mb-3">What is DEX Graduation?</h3>
+        <p className="text-gray-300 text-sm mb-3">
+          Graduating your DEX enables revenue sharing and additional features:
+        </p>
+        <ul className="text-sm space-y-2 mb-3">
+          <li className="flex items-start gap-2">
+            <div className="i-mdi:cash-multiple text-success w-4 h-4 mt-0.5 flex-shrink-0"></div>
+            <span>
+              You'll earn a percentage of all trading fees generated through
+              your DEX
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <div className="i-mdi:gift text-primary-light w-4 h-4 mt-0.5 flex-shrink-0"></div>
+            <span>
+              Your traders will receive ORDER token rewards based on trading
+              volume
+            </span>
+          </li>
+          <li className="flex items-start gap-2">
+            <div className="i-mdi:cog text-warning w-4 h-4 mt-0.5 flex-shrink-0"></div>
+            <span>
+              You can customize trading fees to optimize for your community
+            </span>
+          </li>
+        </ul>
+        <p className="text-gray-300 text-sm">
+          <span className="font-medium">
+            Why {REQUIRED_ORDER_AMOUNT} ORDER tokens?
+          </span>{" "}
+          This requirement ensures DEX creators are committed to the Orderly
+          ecosystem and helps maintain quality standards.
+        </p>
+      </div>
+
       <p className="text-gray-300 mb-4">
         To graduate your DEX to the next tier, please send at least{" "}
         {REQUIRED_ORDER_AMOUNT.toLocaleString()} ORDER tokens to the address
@@ -918,17 +1007,23 @@ export function GraduationForm() {
       </p>
 
       <div className="mb-6">
-        <div className="flex gap-2 mb-4">
+        <div className="mb-4">
           <label htmlFor="chain" className="block text-sm font-medium mb-1">
             Blockchain
           </label>
+          <div className="text-xs text-gray-400 mb-2">
+            Select which blockchain you'll use to send ORDER tokens. This
+            doesn't affect where your DEX will operate, as Orderly is an
+            omnichain infrastructure. The ORDER token requirement is simply a
+            commitment fee.
+          </div>
           <select
             id="chain"
             value={chain}
             onChange={(e: ChangeEvent<HTMLSelectElement>) =>
               setChain(e.target.value)
             }
-            className="flex-1 px-3 py-2 bg-background-card border border-light/10 rounded-lg"
+            className="w-full px-3 py-2 bg-background-card border border-light/10 rounded-lg"
             required
           >
             {SUPPORTED_CHAINS.map(c => (
@@ -949,10 +1044,20 @@ export function GraduationForm() {
           }
           placeholder="my-broker-id"
           required
-          pattern="^[a-z0-9_-]+$"
-          helpText="Your preferred unique broker ID (lowercase letters, numbers, hyphens, and underscores only)"
+          helpText={
+            <>
+              <div className="text-gray-400 mb-1">
+                Your preferred unique broker ID (lowercase letters, numbers,
+                hyphens, and underscores only)
+              </div>
+              <div className="text-gray-400 mt-1">
+                This ID uniquely identifies your DEX in the Orderly ecosystem
+                and will be used for revenue tracking and user rewards.
+              </div>
+            </>
+          }
           validator={value => {
-            if (!/^[a-z0-9_-]+$/.test(value)) {
+            if (!new RegExp("^[a-z0-9_-]+$").test(value)) {
               return "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores";
             }
             if (existingBrokerIds.includes(value)) {
