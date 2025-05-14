@@ -21,6 +21,8 @@ import {
 } from "wagmi";
 import { parseEther } from "viem";
 import clsx from "clsx";
+import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
+import { BaseFeeExplanation } from "./BaseFeeExplanation";
 
 const ERC20_ABI = [
   {
@@ -43,10 +45,6 @@ const SUPPORTED_CHAINS = [
 const REQUIRED_ORDER_AMOUNT = parseInt(
   import.meta.env.VITE_REQUIRED_ORDER_AMOUNT || "1000"
 );
-
-const MIN_MAKER_FEE = 0;
-const MIN_TAKER_FEE = 3;
-const MAX_FEE = 15;
 
 const DEFAULT_ETH_ORDER_ADDRESS = "0xABD4C63d2616A5201454168269031355f4764337";
 const DEFAULT_ARB_ORDER_ADDRESS = "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8";
@@ -137,7 +135,11 @@ interface DexData {
   updatedAt: string;
 }
 
-export function GraduationForm() {
+interface GraduationFormProps {
+  onNoDexSetup?: () => void;
+}
+
+export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
   const { token } = useAuth();
   const { address } = useAccount();
   const [txHash, setTxHash] = useState("");
@@ -154,13 +156,9 @@ export function GraduationForm() {
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
 
-  const [showFeeConfig, setShowFeeConfig] = useState(false);
   const [makerFee, setMakerFee] = useState<number>(3);
   const [takerFee, setTakerFee] = useState<number>(6);
   const [isSavingFees, setIsSavingFees] = useState(false);
-  const [feeError, setFeeError] = useState<string | null>(null);
-  const [makerFeeError, setMakerFeeError] = useState<string | null>(null);
-  const [takerFeeError, setTakerFeeError] = useState<string | null>(null);
 
   const currentReceiverAddress = ORDER_RECEIVER_ADDRESSES[chain];
   const currentTokenAddress = ORDER_TOKEN_ADDRESSES[chain];
@@ -214,58 +212,6 @@ export function GraduationForm() {
 
     fetchDexData();
   }, [token]);
-
-  const validateFees = (type: "maker" | "taker", value: number) => {
-    if (isNaN(value)) {
-      if (type === "maker") {
-        setMakerFeeError("Please enter a valid number");
-      } else {
-        setTakerFeeError("Please enter a valid number");
-      }
-      return false;
-    }
-
-    if (type === "maker") {
-      if (value < MIN_MAKER_FEE) {
-        setMakerFeeError(`Maker fee must be at least ${MIN_MAKER_FEE} bps`);
-        return false;
-      } else if (value > MAX_FEE) {
-        setMakerFeeError(`Maker fee cannot exceed ${MAX_FEE} bps`);
-        return false;
-      } else {
-        setMakerFeeError(null);
-        return true;
-      }
-    } else {
-      // taker
-      if (value < MIN_TAKER_FEE) {
-        setTakerFeeError(`Taker fee must be at least ${MIN_TAKER_FEE} bps`);
-        return false;
-      } else if (value > MAX_FEE) {
-        setTakerFeeError(`Taker fee cannot exceed ${MAX_FEE} bps`);
-        return false;
-      } else {
-        setTakerFeeError(null);
-        return true;
-      }
-    }
-  };
-
-  const handleMakerFeeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-
-    setMakerFee(value);
-
-    validateFees("maker", value);
-  };
-
-  const handleTakerFeeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-
-    setTakerFee(value);
-
-    validateFees("taker", value);
-  };
 
   const { data: tokenBalance } = useBalance({
     address,
@@ -358,7 +304,8 @@ export function GraduationForm() {
       try {
         const response = await get<GraduationStatusResponse>(
           "api/graduation/status",
-          token
+          token,
+          { showToastOnError: false }
         );
 
         setStatus(response);
@@ -368,39 +315,43 @@ export function GraduationForm() {
         }
       } catch (error) {
         console.error("Error loading graduation status:", error);
+
+        // Make sure status is null, not undefined
+        setStatus(null);
+
+        // Check if this is a 400 error (no DEX setup)
+        if (
+          error instanceof Error &&
+          error.message.includes("You must create a DEX first") &&
+          onNoDexSetup
+        ) {
+          onNoDexSetup();
+        }
       }
     }
 
     loadStatus();
-  }, [token, hasSubmitted, loadFeeConfiguration]);
+  }, [token, hasSubmitted, loadFeeConfiguration, onNoDexSetup]);
 
-  const handleSaveFees = async (e: FormEvent) => {
+  const handleSaveFees = async (
+    e: FormEvent,
+    newMakerFee: number,
+    newTakerFee: number
+  ) => {
     e.preventDefault();
-    setFeeError(null);
-
-    if (makerFeeError || takerFeeError) {
-      setFeeError("Please correct the errors before saving");
-      return;
-    }
-
-    const isMakerValid = validateFees("maker", makerFee);
-    const isTakerValid = validateFees("taker", takerFee);
-
-    if (!isMakerValid || !isTakerValid) {
-      setFeeError("Fee values are outside of allowed range");
-      return;
-    }
 
     setIsSavingFees(true);
 
     try {
       const response = await post<FeeConfigResponse>(
         "api/graduation/fees",
-        { makerFee, takerFee },
+        { makerFee: newMakerFee, takerFee: newTakerFee },
         token
       );
 
       if (response.success) {
+        setMakerFee(newMakerFee);
+        setTakerFee(newTakerFee);
         toast.success("Fee configuration updated successfully");
       } else {
         toast.error(response.message || "Failed to update fees");
@@ -611,119 +562,16 @@ export function GraduationForm() {
             </ul>
           </div>
 
-          {/* New section for accessing fee share */}
-          <div className="bg-primary/10 rounded-lg p-5 mb-6 text-left border border-primary/20">
-            <h3 className="text-lg font-semibold mb-3 flex items-center">
-              <div className="i-mdi:wallet text-primary-light mr-2 h-5 w-5"></div>
-              Accessing Your Fee Share
-            </h3>
-
-            <div className="space-y-3">
-              <p className="text-sm text-gray-300">
-                <span className="font-medium text-white">
-                  How to access your trading fee revenue:
-                </span>
-              </p>
-
-              <ol className="list-decimal pl-5 space-y-2 text-sm text-gray-300">
-                <li>
-                  <span className="text-primary-light font-medium">
-                    <a
-                      href={
-                        dexData?.customDomain
-                          ? `https://${dexData.customDomain}`
-                          : deploymentUrl || "#"
-                      }
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="hover:underline flex items-center inline-flex"
-                    >
-                      Log in to your DEX
-                      <div className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></div>
-                    </a>
-                  </span>{" "}
-                  using your admin wallet (the same wallet you used to set up
-                  this DEX)
-                </li>
-                <li>
-                  Navigate to the <span className="font-medium">Account</span>{" "}
-                  section of your DEX
-                </li>
-                <li>
-                  Your accumulated fee share will be displayed in your balance
-                </li>
-                <li>
-                  You can withdraw your fee share to any supported chain through
-                  the withdrawal interface
-                </li>
-              </ol>
-
-              <div className="mt-3 pt-3 border-t border-primary/20">
-                <div className="flex items-start gap-2">
-                  <div className="i-mdi:information-outline text-primary-light h-4 w-4 mt-0.5 flex-shrink-0"></div>
-                  <p className="text-xs text-gray-400">
-                    <span className="text-primary-light font-medium">
-                      Important:
-                    </span>{" "}
-                    Your fee share accrues automatically as users trade on your
-                    DEX. Only your admin wallet can access and withdraw these
-                    fees.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          {/* Base Fee Explanation */}
+          <BaseFeeExplanation />
 
           {/* Current Fee Settings - Read Only */}
-          <div className="mt-6 pt-6 border-t border-light/10">
-            <h3 className="text-lg font-semibold mb-3 flex items-center">
-              <div className="i-mdi:currency-usd text-warning mr-2 h-5 w-5"></div>
-              Current Fee Settings
-            </h3>
-
-            <div className="bg-light/5 rounded-lg p-4">
-              <p className="text-sm text-gray-300 mb-4">
-                Your DEX has the following fee configuration. To request a
-                change to these fees, please contact Orderly support.
-              </p>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="bg-background-dark/50 p-3 rounded">
-                  <div className="text-sm text-gray-400">Maker Fee</div>
-                  <div className="text-xl font-semibold">
-                    {makerFee}{" "}
-                    <span className="text-sm font-normal text-gray-400">
-                      bps
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ({(makerFee * 0.01).toFixed(2)}%)
-                  </div>
-                </div>
-                <div className="bg-background-dark/50 p-3 rounded">
-                  <div className="text-sm text-gray-400">Taker Fee</div>
-                  <div className="text-xl font-semibold">
-                    {takerFee}{" "}
-                    <span className="text-sm font-normal text-gray-400">
-                      bps
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ({(takerFee * 0.01).toFixed(2)}%)
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-4 bg-info/10 rounded-lg p-3 flex items-start gap-2 text-sm">
-                <div className="i-mdi:information-outline text-info w-5 h-5 flex-shrink-0 mt-0.5"></div>
-                <p className="text-gray-300">
-                  Fee changes require administrative approval and cannot be
-                  modified directly at this time. If you need to change your
-                  fees, please contact Orderly support.
-                </p>
-              </div>
-            </div>
-          </div>
+          <FeeConfigWithCalculator
+            makerFee={makerFee}
+            takerFee={takerFee}
+            readOnly={true}
+            defaultOpenCalculator={true}
+          />
         </div>
       </Card>
     );
@@ -824,156 +672,18 @@ export function GraduationForm() {
           </div>
         </div>
 
+        {/* Base Fee Explanation */}
+        <BaseFeeExplanation />
+
         {/* Fee Configuration Section */}
-        <div className="mt-4 pt-4 border-t border-light/10">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Fee Configuration</h3>
-            <button
-              type="button"
-              onClick={() => setShowFeeConfig(!showFeeConfig)}
-              className="text-primary-light hover:text-primary flex items-center gap-1 text-sm"
-            >
-              {showFeeConfig ? "Hide" : "Configure"}
-              <div
-                className={`i-mdi:chevron-right w-4 h-4 transition-transform ${showFeeConfig ? "rotate-90" : ""}`}
-              ></div>
-            </button>
-          </div>
-
-          {showFeeConfig ? (
-            <form onSubmit={handleSaveFees} className="slide-fade-in">
-              <div className="bg-light/5 rounded-lg p-4 mb-4">
-                <p className="text-sm text-gray-300 mb-4">
-                  Configure the trading fees for your DEX. Maker fees apply to
-                  limit orders that provide liquidity, while taker fees apply to
-                  market orders that take liquidity.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label
-                      htmlFor="makerFee"
-                      className="block text-sm font-medium mb-1"
-                    >
-                      Maker Fee (bps)
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        type="number"
-                        id="makerFee"
-                        min={MIN_MAKER_FEE}
-                        max={MAX_FEE}
-                        step="1"
-                        value={makerFee}
-                        onChange={handleMakerFeeChange}
-                        className={`w-full px-3 py-2 bg-background-dark border ${makerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
-                      />
-                      <span className="ml-2 text-gray-400 text-sm">
-                        bps (0.01%)
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Minimum: {MIN_MAKER_FEE} bps (0.00%), Maximum: {MAX_FEE}{" "}
-                      bps ({(MAX_FEE * 0.01).toFixed(2)}%)
-                    </p>
-                    {makerFeeError && (
-                      <p className="text-xs text-error mt-1">{makerFeeError}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="takerFee"
-                      className="block text-sm font-medium mb-1"
-                    >
-                      Taker Fee (bps)
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        type="number"
-                        id="takerFee"
-                        min={MIN_TAKER_FEE}
-                        max={MAX_FEE}
-                        step="1"
-                        value={takerFee}
-                        onChange={handleTakerFeeChange}
-                        className={`w-full px-3 py-2 bg-background-dark border ${takerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
-                      />
-                      <span className="ml-2 text-gray-400 text-sm">
-                        bps (0.01%)
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Minimum: {MIN_TAKER_FEE} bps (0.03%), Maximum: {MAX_FEE}{" "}
-                      bps ({(MAX_FEE * 0.01).toFixed(2)}%)
-                    </p>
-                    {takerFeeError && (
-                      <p className="text-xs text-error mt-1">{takerFeeError}</p>
-                    )}
-                  </div>
-                </div>
-
-                {feeError && (
-                  <div className="bg-error/10 p-2 rounded-lg mb-4 text-sm text-error">
-                    {feeError}
-                  </div>
-                )}
-
-                <div className="flex items-center gap-2 text-sm bg-info/10 rounded p-3 mb-4">
-                  <div className="i-mdi:information-outline text-info w-5 h-5 flex-shrink-0"></div>
-                  <p>
-                    Setting competitive fees can attract more traders to your
-                    DEX. The fee split you receive will be based on the fees
-                    your traders pay.
-                  </p>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isLoading={isSavingFees}
-                  loadingText="Saving..."
-                  className="w-full"
-                  disabled={!!makerFeeError || !!takerFeeError}
-                >
-                  Save Fee Configuration
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="bg-light/5 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-300">Current Fee Structure:</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-background-dark/50 p-3 rounded">
-                  <div className="text-sm text-gray-400">Maker Fee</div>
-                  <div className="text-xl font-semibold">
-                    {makerFee}{" "}
-                    <span className="text-sm font-normal text-gray-400">
-                      bps
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ({(makerFee * 0.01).toFixed(2)}%)
-                  </div>
-                </div>
-                <div className="bg-background-dark/50 p-3 rounded">
-                  <div className="text-sm text-gray-400">Taker Fee</div>
-                  <div className="text-xl font-semibold">
-                    {takerFee}{" "}
-                    <span className="text-sm font-normal text-gray-400">
-                      bps
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ({(takerFee * 0.01).toFixed(2)}%)
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
+        <FeeConfigWithCalculator
+          makerFee={makerFee}
+          takerFee={takerFee}
+          readOnly={false}
+          isSavingFees={isSavingFees}
+          onSaveFees={handleSaveFees}
+          defaultOpenCalculator={true}
+        />
       </Card>
     );
   }
@@ -1033,6 +743,9 @@ export function GraduationForm() {
           <div className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></div>
         </a>
       </p>
+
+      {/* Base Fee Explanation - Add here */}
+      <BaseFeeExplanation />
 
       <div className="mb-6">
         <div className="mb-4">
@@ -1315,165 +1028,15 @@ export function GraduationForm() {
         </div>
       )}
 
-      {/* Fee Configuration after successful verification */}
-      {result && result.success && (
-        <div className="mt-8 pt-6 border-t border-light/10 slide-fade-in">
-          <div className="bg-info/10 rounded-lg p-4 mb-4">
-            <div className="flex items-center gap-2">
-              <div className="i-mdi:information-outline text-info w-5 h-5 flex-shrink-0"></div>
-              <p className="text-sm">
-                <span className="font-medium">Important:</span> Configure your
-                DEX fees now. These settings will determine your revenue share.
-              </p>
-            </div>
-          </div>
-
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-lg font-semibold">Fee Configuration</h3>
-            <button
-              type="button"
-              onClick={() => setShowFeeConfig(!showFeeConfig)}
-              className="text-primary-light hover:text-primary flex items-center gap-1 text-sm"
-            >
-              {showFeeConfig ? "Hide" : "Configure"}
-              <div
-                className={`i-mdi:chevron-right w-4 h-4 transition-transform ${showFeeConfig ? "rotate-90" : ""}`}
-              ></div>
-            </button>
-          </div>
-
-          {showFeeConfig ? (
-            <form onSubmit={handleSaveFees} className="slide-fade-in">
-              <div className="bg-light/5 rounded-lg p-4 mb-4">
-                <p className="text-sm text-gray-300 mb-4">
-                  Configure the trading fees for your DEX. Maker fees apply to
-                  limit orders that provide liquidity, while taker fees apply to
-                  market orders that take liquidity.
-                </p>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div>
-                    <label
-                      htmlFor="makerFee"
-                      className="block text-sm font-medium mb-1"
-                    >
-                      Maker Fee (bps)
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        type="number"
-                        id="makerFee"
-                        min={MIN_MAKER_FEE}
-                        max={MAX_FEE}
-                        step="1"
-                        value={makerFee}
-                        onChange={handleMakerFeeChange}
-                        className={`w-full px-3 py-2 bg-background-dark border ${makerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
-                      />
-                      <span className="ml-2 text-gray-400 text-sm">
-                        bps (0.01%)
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Minimum: {MIN_MAKER_FEE} bps (0.00%), Maximum: {MAX_FEE}{" "}
-                      bps ({(MAX_FEE * 0.01).toFixed(2)}%)
-                    </p>
-                    {makerFeeError && (
-                      <p className="text-xs text-error mt-1">{makerFeeError}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <label
-                      htmlFor="takerFee"
-                      className="block text-sm font-medium mb-1"
-                    >
-                      Taker Fee (bps)
-                    </label>
-                    <div className="flex items-center">
-                      <input
-                        type="number"
-                        id="takerFee"
-                        min={MIN_TAKER_FEE}
-                        max={MAX_FEE}
-                        step="1"
-                        value={takerFee}
-                        onChange={handleTakerFeeChange}
-                        className={`w-full px-3 py-2 bg-background-dark border ${takerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
-                      />
-                      <span className="ml-2 text-gray-400 text-sm">
-                        bps (0.01%)
-                      </span>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Minimum: {MIN_TAKER_FEE} bps (0.03%), Maximum: {MAX_FEE}{" "}
-                      bps ({(MAX_FEE * 0.01).toFixed(2)}%)
-                    </p>
-                    {takerFeeError && (
-                      <p className="text-xs text-error mt-1">{takerFeeError}</p>
-                    )}
-                  </div>
-                </div>
-
-                {feeError && (
-                  <div className="mb-4 text-error text-sm">{feeError}</div>
-                )}
-
-                <div className="flex items-center gap-2 text-sm bg-info/10 rounded p-3 mb-4">
-                  <div className="i-mdi:information-outline text-info w-5 h-5 flex-shrink-0"></div>
-                  <p>
-                    Setting competitive fees can attract more traders to your
-                    DEX. The fee split you receive will be based on the fees
-                    your traders pay.
-                  </p>
-                </div>
-
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isLoading={isSavingFees}
-                  loadingText="Saving..."
-                  className="w-full"
-                >
-                  Save Fee Configuration
-                </Button>
-              </div>
-            </form>
-          ) : (
-            <div className="bg-light/5 rounded-lg p-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-gray-300">Current Fee Structure:</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-background-dark/50 p-3 rounded">
-                  <div className="text-sm text-gray-400">Maker Fee</div>
-                  <div className="text-xl font-semibold">
-                    {makerFee}{" "}
-                    <span className="text-sm font-normal text-gray-400">
-                      bps
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ({(makerFee * 0.01).toFixed(2)}%)
-                  </div>
-                </div>
-                <div className="bg-background-dark/50 p-3 rounded">
-                  <div className="text-sm text-gray-400">Taker Fee</div>
-                  <div className="text-xl font-semibold">
-                    {takerFee}{" "}
-                    <span className="text-sm font-normal text-gray-400">
-                      bps
-                    </span>
-                  </div>
-                  <div className="text-xs text-gray-400">
-                    ({(takerFee * 0.01).toFixed(2)}%)
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+      {/* Show the calculator regardless of verification status */}
+      <FeeConfigWithCalculator
+        makerFee={makerFee}
+        takerFee={takerFee}
+        readOnly={!result?.success}
+        isSavingFees={isSavingFees}
+        onSaveFees={handleSaveFees}
+        defaultOpenCalculator={true}
+      />
     </Card>
   );
 }
