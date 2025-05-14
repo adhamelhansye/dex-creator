@@ -16,6 +16,8 @@ import {
   useAccount,
   useWriteContract,
   useWaitForTransactionReceipt,
+  useSwitchChain,
+  useChainId,
 } from "wagmi";
 import { parseEther } from "viem";
 import clsx from "clsx";
@@ -164,6 +166,30 @@ export function GraduationForm() {
   const currentTokenAddress = ORDER_TOKEN_ADDRESSES[chain];
   const currentChainId =
     SUPPORTED_CHAINS.find(c => c.id === chain)?.chainId || 1;
+
+  const connectedChainId = useChainId();
+  const isCorrectChain = connectedChainId === currentChainId;
+
+  // Use the regular wagmi useSwitchChain hook
+  const { switchChain } = useSwitchChain();
+
+  // Handle chain selection change
+  const handleChainChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const newChain = e.target.value;
+    setChain(newChain);
+
+    // Get the chain ID for the selected chain
+    const chainId = SUPPORTED_CHAINS.find(c => c.id === newChain)?.chainId;
+
+    // If we have a chain ID, prompt the user to switch
+    if (chainId) {
+      try {
+        switchChain({ chainId });
+      } catch (error) {
+        console.error("Chain switch error:", error);
+      }
+    }
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -321,11 +347,6 @@ export function GraduationForm() {
       if (feeResponse.success) {
         setMakerFee(feeResponse.makerFee);
         setTakerFee(feeResponse.takerFee);
-        console.log(
-          "Loaded fees from server:",
-          feeResponse.makerFee,
-          feeResponse.takerFee
-        );
       }
     } catch (error) {
       console.error("Error loading fee configuration:", error);
@@ -428,6 +449,17 @@ export function GraduationForm() {
       if (!validateAddress(currentReceiverAddress)) {
         console.log(`Invalid receiver address format for ${chain}`);
         toast.error("Invalid receiver address configuration");
+        return;
+      }
+
+      try {
+        // This will prompt the user to switch chains if needed
+        await switchChain({ chainId: currentChainId });
+      } catch (error) {
+        console.error("Failed to switch chain:", error);
+        toast.error(
+          "Please make sure your wallet is on the correct network before continuing"
+        );
         return;
       }
 
@@ -1016,9 +1048,7 @@ export function GraduationForm() {
           <select
             id="chain"
             value={chain}
-            onChange={(e: ChangeEvent<HTMLSelectElement>) =>
-              setChain(e.target.value)
-            }
+            onChange={handleChainChange}
             className="w-full px-3 py-2 bg-background-card border border-light/10 rounded-lg"
             required
           >
@@ -1145,7 +1175,9 @@ export function GraduationForm() {
                 ? isPending
                   ? "Confirm in wallet..."
                   : "Confirming..."
-                : "Transfer ORDER Tokens"}
+                : isCorrectChain
+                  ? "Transfer ORDER Tokens"
+                  : "Switch Chain"}
             </Button>
 
             {isConfirmed && hash && (
