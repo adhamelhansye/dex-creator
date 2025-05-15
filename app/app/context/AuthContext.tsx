@@ -41,20 +41,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
 
-  // Validate token function
   const validateToken = useCallback(async (): Promise<boolean> => {
-    // If no token or user in memory, check localStorage before determining validity
     if (!token || !user?.address) {
-      // Check if we have values in localStorage
       const savedToken = localStorage.getItem("auth_token");
       const savedUser = localStorage.getItem("auth_user");
 
       if (savedToken && savedUser) {
-        // Data exists in localStorage, but hasn't been loaded into state yet
-        // We'll consider it valid and let the useEffect's validation handle it properly
         return true;
       }
-      return false; // No auth data exists anywhere
+      return false;
     }
 
     try {
@@ -70,7 +65,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
 
       if (!response.ok) {
-        // Token is invalid, clear auth state
         logout();
         return false;
       }
@@ -84,7 +78,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [token, user]);
 
-  // Load saved auth state on component mount and validate token
   useEffect(() => {
     const validateSavedAuth = async () => {
       setIsValidating(true);
@@ -94,16 +87,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const savedUser = localStorage.getItem("auth_user");
 
         if (savedToken && savedUser) {
-          // Set the saved values first
           const parsedUser = JSON.parse(savedUser);
           setToken(savedToken);
           setUser(parsedUser);
 
-          // Then validate with the server
           const isValid = await validateToken();
 
           if (!isValid) {
-            // If not valid, clear the auth state
             console.log("Saved token is invalid, logging out");
             logout();
             toast.warning("Your session has expired. Please log in again.");
@@ -120,10 +110,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     validateSavedAuth();
   }, []);
 
-  // Handle wallet connection/disconnection
   useEffect(() => {
     if (!isConnected && user) {
-      // Wallet was disconnected, log out the user
       logout();
     }
   }, [isConnected]);
@@ -139,7 +127,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(true);
       setError(null);
 
-      // Step 1: Request a nonce from the server
       const nonceResponse = await fetch(`${API_BASE_URL}/api/auth/nonce`, {
         method: "POST",
         headers: {
@@ -155,10 +142,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { message } = await nonceResponse.json();
 
-      // Step 2: Sign the message with the wallet
       const signature = await signMessageAsync({ message });
 
-      // Step 3: Verify the signature on the server
       const verifyResponse = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: "POST",
         headers: {
@@ -174,7 +159,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
       const { user: userData, token: authToken } = await verifyResponse.json();
 
-      // Step 4: Save the authentication data
       setUser(userData);
       setToken(authToken);
       localStorage.setItem("auth_token", authToken);
@@ -183,7 +167,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const errorMsg =
         err instanceof Error ? err.message : "Authentication failed";
       setError(errorMsg);
-      throw err; // Re-throw the error so it can be caught by the component
+      throw err;
     } finally {
       setIsLoading(false);
     }

@@ -201,6 +201,7 @@ export default function DexRoute() {
   const [viewCssCode, setViewCssCode] = useState(false);
   const [isGraduationEligible, setIsGraduationEligible] = useState(false);
   const [isGraduated, setIsGraduated] = useState(false);
+  const [deploymentConfirmed, setDeploymentConfirmed] = useState(false);
 
   const [originalValues, setOriginalValues] = useState({
     brokerName: "",
@@ -290,7 +291,7 @@ export default function DexRoute() {
           setActiveThemeTab("colors");
           setDeploymentUrl(
             response.repoUrl
-              ? `https://${response.repoUrl.split("/").pop()}.github.io/`
+              ? `https://dex.orderly.network/${response.repoUrl.split("/").pop()}/`
               : null
           );
           setCustomDomain(response.customDomain || "");
@@ -417,7 +418,7 @@ export default function DexRoute() {
           toast.success("Repository forked successfully!");
 
           setDeploymentUrl(
-            `https://${result.dex.repoUrl.split("/").pop()}.github.io/`
+            `https://dex.orderly.network/${result.dex.repoUrl.split("/").pop()}/`
           );
         } else {
           toast.error("Repository creation failed. Please try again later.");
@@ -581,10 +582,8 @@ export default function DexRoute() {
 
         toast.success("DEX information updated successfully!");
       } else {
-        // Create new DEX
         savedData = await post<DexData>("api/dex", dexFormData, token);
 
-        // Update originalValues after successful save
         setOriginalValues({
           brokerName: trimmedBrokerName,
           telegramLink: trimmedTelegramLink,
@@ -600,7 +599,6 @@ export default function DexRoute() {
           themeCSS: themeApplied ? currentTheme : null,
         });
 
-        // Check if we got a repo URL back
         if (savedData.repoUrl) {
           toast.success("DEX created and repository forked successfully!");
         } else {
@@ -612,7 +610,6 @@ export default function DexRoute() {
       setDexData(savedData);
       setIsGraduationEligible(savedData.brokerId === "demo");
     } catch (error) {
-      // Error handling is done in the apiClient, this is just for any additional component-specific handling
       console.error("Error in component:", error);
     } finally {
       setIsSaving(false);
@@ -620,12 +617,12 @@ export default function DexRoute() {
     }
   };
 
-  // Handler for when a successful deployment is detected
   const handleSuccessfulDeployment = (
     url: string,
     isNewDeployment: boolean
   ) => {
     setDeploymentUrl(url);
+    setDeploymentConfirmed(true);
 
     // Only show the toast notification if this is a new deployment
     if (isNewDeployment) {
@@ -1495,7 +1492,7 @@ export default function DexRoute() {
               </div>
 
               {/* Show the deployment URL if available */}
-              {deploymentUrl ? (
+              {deploymentUrl && deploymentConfirmed ? (
                 <div className="mb-4 p-3 bg-success/10 rounded-lg border border-success/20 slide-fade-in">
                   <h4 className="text-md font-medium mb-2 flex items-center">
                     <div className="i-mdi:check-circle text-success mr-2 h-5 w-5"></div>
