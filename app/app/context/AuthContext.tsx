@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     validateSavedAuth();
-  }, [isConnected, logout, validateToken]);
+  }, [isConnected, logout]);
 
   useEffect(() => {
     if (!isConnected && user) {

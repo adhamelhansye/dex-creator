@@ -60,17 +60,7 @@ export default function WalletConnect() {
 
   // Show login modal when wallet is connected but not authenticated
   useEffect(() => {
-    // Check if we're on the DEX page
-    const isDexPage = location.pathname === "/dex";
-
-    // Only show login modal automatically if NOT on the DEX page
-    if (
-      isConnected &&
-      !isAuthenticated &&
-      !hasUserDismissedModal &&
-      !isDexPage // Don't show on DEX page
-    ) {
-      // Short delay to ensure the wallet modal is fully closed first
+    if (isConnected && !isAuthenticated && !hasUserDismissedModal) {
       const timer = setTimeout(() => {
         openModal("login", {
           onLogin: handleLogin,
