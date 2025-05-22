@@ -39,7 +39,7 @@ jobs:
       - name: Add upstream remote
         if: steps.check_fork.outputs.result == 'true'
         run: |
-          git remote add upstream https://github.com/OrderlyNetwork/dex-creator-template.git
+          git remote add upstream https://github.com/OrderlyNetworkDexCreator/dex-creator-template.git
           git fetch upstream
 
       - name: Sync branches
@@ -51,12 +51,4 @@ jobs:
             git push origin main
           else
             echo "Merge failed for main branch, skipping push"
-          fi
-
-          # Sync develop branch
-          git checkout develop
-          if git merge upstream/develop --no-edit; then
-            git push origin develop
-          else
-            echo "Merge failed for develop branch, skipping push"
           fi
