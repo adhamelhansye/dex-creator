@@ -4,6 +4,7 @@ import React, {
   useState,
   useCallback,
   useMemo,
+  KeyboardEvent,
 } from "react";
 import { Button } from "./Button";
 import FormInput from "./FormInput";
@@ -69,6 +70,12 @@ export default function Form({
     [onSubmit, errors]
   );
 
+  const handleKeyDown = (e: KeyboardEvent) => {
+    if (e.key === "Enter" && e.target instanceof HTMLInputElement) {
+      e.preventDefault();
+    }
+  };
+
   // Add the error registration function to each child FormInput
   const childrenWithProps = useMemo(() => {
     return React.Children.map(children, child => {
@@ -93,7 +100,11 @@ export default function Form({
   }, [children, registerError]);
 
   return (
-    <form onSubmit={handleSubmit} className={className}>
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={handleKeyDown}
+      className={className}
+    >
       {childrenWithProps}
 
       <Button
