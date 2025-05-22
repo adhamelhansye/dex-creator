@@ -41,6 +41,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
 
+  const logout = useCallback(() => {
+    setUser(null);
+    setToken(null);
+    localStorage.removeItem("auth_token");
+    localStorage.removeItem("auth_user");
+    disconnect();
+  }, [disconnect]);
+
   const validateToken = useCallback(async (): Promise<boolean> => {
     if (!token || !user?.address) {
       const savedToken = localStorage.getItem("auth_token");
@@ -76,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout();
       return false;
     }
-  }, [token, user]);
+  }, [token, user, logout]);
 
   useEffect(() => {
     const validateSavedAuth = async () => {
@@ -85,6 +93,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const savedToken = localStorage.getItem("auth_token");
         const savedUser = localStorage.getItem("auth_user");
+
+        if (!isConnected && (savedToken || savedUser)) {
+          console.log(
+            "Wallet not connected, but auth data exists. Clearing auth data."
+          );
+          logout();
+          setIsValidating(false);
+          return;
+        }
 
         if (savedToken && savedUser) {
           const parsedUser = JSON.parse(savedUser);
@@ -108,13 +125,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     validateSavedAuth();
-  }, []);
+  }, [isConnected, logout, validateToken]);
 
   useEffect(() => {
     if (!isConnected && user) {
       logout();
     }
-  }, [isConnected]);
+  }, [isConnected, user, logout]);
 
   const login = useCallback(async () => {
     if (!address) {
@@ -172,14 +189,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [address, signMessageAsync]);
-
-  const logout = useCallback(() => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem("auth_token");
-    localStorage.removeItem("auth_user");
-    disconnect();
-  }, [disconnect]);
 
   return (
     <AuthContext.Provider
