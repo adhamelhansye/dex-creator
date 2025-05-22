@@ -58,6 +58,8 @@ createAppKit({
   metadata,
   features: {
     analytics: true,
+    email: false,
+    socials: false,
   },
   themeVariables: {
     "--w3m-border-radius-master": "12px",
