@@ -1146,6 +1146,25 @@ export default function DexRoute() {
                   </div>
                 </div>
               </div>
+
+              <div className="mt-6 pt-4 border-light/10">
+                <h4 className="text-sm font-medium mb-2">Theme Preview</h4>
+                <p className="text-xs text-gray-400 mb-4">
+                  See a visual preview of how your DEX will look with the
+                  current theme configuration.
+                </p>
+
+                <div className="flex justify-start">
+                  <PreviewButton
+                    brokerName={brokerName || "My DEX"}
+                    initialSymbol="PERP_BTC_USDC"
+                    primaryLogo={primaryLogo}
+                    secondaryLogo={secondaryLogo}
+                    themeCSS={themeApplied ? currentTheme : undefined}
+                    buttonText="Preview DEX Design"
+                  />
+                </div>
+              </div>
             </div>
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
@@ -1434,27 +1453,6 @@ export default function DexRoute() {
               </div>
             </Card>
           )}
-
-          {/* DEX Preview Button - Moved outside the form */}
-          <div className="mt-6 pt-4 border-t border-light/10">
-            <h3 className="text-md font-medium mb-3">Visual Preview</h3>
-            <p className="text-xs text-gray-400 mb-4">
-              See a visual preview of how your DEX will look with the current
-              configuration. This is just a visual preview and does not create
-              or deploy your DEX.
-            </p>
-
-            <div className="flex justify-start">
-              <PreviewButton
-                brokerName={brokerName || "My DEX"}
-                initialSymbol="PERP_BTC_USDC"
-                primaryLogo={primaryLogo}
-                secondaryLogo={secondaryLogo}
-                themeCSS={themeApplied ? currentTheme : undefined}
-                buttonText="Preview DEX Design"
-              />
-            </div>
-          </div>
 
           {dexData?.repoUrl ? (
             <Card variant="success" className="mb-6">
