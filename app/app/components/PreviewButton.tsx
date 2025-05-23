@@ -68,7 +68,7 @@ const PreviewButton: FC<PreviewButtonProps> = ({
   const iframeUrl = "/preview";
 
   return (
-    <div className="mt-4 w-full">
+    <div className="mt-4 w-full overflow-visible">
       <Button variant="secondary" onClick={togglePreview} className={className}>
         {isPreviewVisible ? (
           <span className="flex items-center gap-1">

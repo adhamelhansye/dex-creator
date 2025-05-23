@@ -107,16 +107,18 @@ export default function Form({
     >
       {childrenWithProps}
 
-      <Button
-        type="submit"
-        variant="primary"
-        size="md"
-        disabled={disabled || isLoading}
-        isLoading={isLoading}
-        loadingText={loadingText}
-      >
-        {submitText}
-      </Button>
+      {submitText && (
+        <Button
+          type="submit"
+          variant="primary"
+          size="md"
+          disabled={disabled || isLoading}
+          isLoading={isLoading}
+          loadingText={loadingText}
+        >
+          {submitText}
+        </Button>
+      )}
     </form>
   );
 }

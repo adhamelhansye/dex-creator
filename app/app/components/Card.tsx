@@ -8,7 +8,7 @@ interface CardProps {
 }
 
 export function Card({ children, className, variant = "default" }: CardProps) {
-  const baseClasses = "rounded-xl backdrop-blur-sm p-4 md:p-6";
+  const baseClasses = "rounded-xl backdrop-blur-sm p-2 md:p-6";
 
   const variantClasses = {
     default: "bg-background-light/30 border border-primary-light/10 shadow-lg",

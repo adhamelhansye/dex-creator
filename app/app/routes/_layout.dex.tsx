@@ -1,10 +1,4 @@
-import {
-  useState,
-  useEffect,
-  FormEvent,
-  ChangeEvent,
-  useCallback,
-} from "react";
+import { useState, useEffect, FormEvent, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
@@ -12,14 +6,7 @@ import { get, post, put, del } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
-import FormInput from "../components/FormInput";
 import Form, { FormErrors } from "../components/Form";
-import ImagePaste from "../components/ImagePaste";
-import PreviewButton from "../components/PreviewButton";
-import ThemeColorSwatches from "../components/ThemeColorSwatches";
-import ThemeRoundedControls from "../components/ThemeRoundedControls";
-import ThemeSpacingControls from "../components/ThemeSpacingControls";
-import NavigationMenuEditor from "../components/NavigationMenuEditor";
 import {
   validateUrl,
   required,
@@ -29,6 +16,14 @@ import {
 } from "../utils/validation";
 import WorkflowStatus from "../components/WorkflowStatus";
 import { useNavigate, Link } from "@remix-run/react";
+import BrokerDetailsSection from "../components/BrokerDetailsSection";
+import BrandingSection from "../components/BrandingSection";
+import ThemeCustomizationSection from "../components/ThemeCustomizationSection";
+import SocialLinksSection from "../components/SocialLinksSection";
+import ReownConfigSection from "../components/ReownConfigSection";
+import PrivyConfigSection from "../components/PrivyConfigSection";
+import NavigationMenuSection from "../components/NavigationMenuSection";
+import AccordionItem from "../components/AccordionItem";
 
 // Define type for DEX data
 interface DexData {
@@ -60,25 +55,17 @@ interface ThemeResponse {
 // Define type for active tab
 type ThemeTabType = "colors" | "rounded" | "spacing";
 
-// Instead of using an external component, define Textarea inline
-const Textarea = ({
-  value,
-  onChange,
-  className,
-  placeholder,
-}: {
-  value: string | null;
-  onChange: (e: ChangeEvent<HTMLTextAreaElement>) => void;
-  className?: string;
-  placeholder?: string;
-}) => (
-  <textarea
-    value={value || ""}
-    onChange={onChange}
-    className={className}
-    placeholder={placeholder}
-  />
-);
+// Define steps configuration for the accordion
+const STEPS_CONFIG = [
+  { id: 1, title: "Broker Details", isOptional: false },
+  { id: 2, title: "Branding", isOptional: true },
+  { id: 3, title: "Theme Customization", isOptional: true },
+  { id: 4, title: "Social Media Links", isOptional: true },
+  { id: 5, title: "Reown Configuration", isOptional: true },
+  { id: 6, title: "Privy Configuration", isOptional: true },
+  { id: 7, title: "Navigation Menus", isOptional: true },
+];
+const TOTAL_STEPS = STEPS_CONFIG.length;
 
 // Default theme content if needed
 const defaultTheme = `:root {
@@ -202,6 +189,11 @@ export default function DexRoute() {
   const [isGraduationEligible, setIsGraduationEligible] = useState(false);
   const [isGraduated, setIsGraduated] = useState(false);
   const [deploymentConfirmed, setDeploymentConfirmed] = useState(false);
+
+  const [currentStep, setCurrentStep] = useState(1);
+  const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>(
+    {}
+  );
 
   const [originalValues, setOriginalValues] = useState({
     brokerName: "",
@@ -785,6 +777,77 @@ export default function DexRoute() {
     </button>
   );
 
+  const allRequiredPreviousStepsCompleted = (stepNumber: number) => {
+    if (stepNumber === 1) return true;
+    for (let i = 1; i < stepNumber; i++) {
+      const stepConfig = STEPS_CONFIG.find(s => s.id === i);
+      if (stepConfig && !stepConfig.isOptional && !completedSteps[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const areAllPreviousStepsCompleted = (stepNumber: number) => {
+    if (stepNumber === 1) return true;
+    for (let i = 1; i < stepNumber; i++) {
+      if (!completedSteps[i]) {
+        return false;
+      }
+    }
+    return true;
+  };
+
+  const handleNextStep = (step: number) => {
+    const currentStepConfig = STEPS_CONFIG.find(s => s.id === step);
+    if (currentStepConfig && !currentStepConfig.isOptional) {
+      if (step === 1) {
+        const validationError = brokerNameValidator(brokerName.trim());
+        if (validationError !== null) {
+          toast.error(
+            typeof validationError === "string"
+              ? validationError
+              : "Broker name is invalid. It must be between 3 and 50 characters."
+          );
+          return;
+        }
+      }
+    }
+
+    if (
+      step === STEPS_CONFIG.find(s => s.title === "Privy Configuration")?.id
+    ) {
+      const privyAppIdFilled = privyAppId && privyAppId.trim() !== "";
+      const privyTermsOfUseFilled =
+        privyTermsOfUse && privyTermsOfUse.trim() !== "";
+      if (
+        (privyAppIdFilled && !privyTermsOfUseFilled) ||
+        (!privyAppIdFilled && privyTermsOfUseFilled)
+      ) {
+        toast.error(
+          "For Privy integration, please provide both App ID and Terms of Use URL, or leave both empty."
+        );
+        return;
+      }
+      if (
+        privyTermsOfUseFilled &&
+        urlValidator(privyTermsOfUse.trim()) !== null
+      ) {
+        toast.error("Privy Terms of Use URL is not a valid URL.");
+        return;
+      }
+    }
+
+    setCompletedSteps(prev => ({ ...prev, [step]: true }));
+    if (step < TOTAL_STEPS) {
+      setCurrentStep(step + 1);
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    } else {
+      setCurrentStep(TOTAL_STEPS + 1); // Indicate all steps passed
+      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
@@ -799,7 +862,6 @@ export default function DexRoute() {
     );
   }
 
-  // Display authentication UI for non-authenticated users
   if (!isAuthenticated) {
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10">
@@ -824,8 +886,7 @@ export default function DexRoute() {
     );
   }
 
-  // If we are forking, show a more detailed loading state
-  if ((isSaving || isForking) && forkingStatus) {
+  if ((isSaving || isForking) && forkingStatus && !dexData) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center">
@@ -838,6 +899,316 @@ export default function DexRoute() {
             configuring it with your information.
           </div>
         </div>
+      </div>
+    );
+  }
+
+  if (!dexData && isAuthenticated) {
+    return (
+      <div className="container mx-auto p-4 max-w-3xl">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
+          <h1 className="text-2xl md:text-3xl font-bold gradient-text">
+            Create Your DEX - Step-by-Step
+          </h1>
+        </div>
+        <Form
+          onSubmit={handleSubmit}
+          className="flex flex-col gap-4"
+          submitText={
+            currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS]
+              ? "Create Your DEX"
+              : ""
+          }
+          isLoading={isSaving}
+          loadingText="Creating DEX..."
+          disabled={
+            isForking ||
+            isDeleting ||
+            isSaving ||
+            !(currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS])
+          }
+        >
+          {/* Step 1: Broker Name - Always visible as it's the first step */}
+          <AccordionItem
+            title="Step 1: Broker Details"
+            stepNumber={1}
+            isOptional={false}
+            onNextInternal={() => handleNextStep(1)}
+            isStepContentValidTest={
+              brokerNameValidator(brokerName.trim()) === null
+            }
+            isActive={currentStep === 1}
+            isCompleted={!!completedSteps[1]}
+            canOpen={
+              allRequiredPreviousStepsCompleted(1) || !!completedSteps[1]
+            }
+            setCurrentStep={setCurrentStep}
+            allRequiredPreviousStepsCompleted={
+              allRequiredPreviousStepsCompleted
+            }
+          >
+            <BrokerDetailsSection
+              brokerName={brokerName}
+              handleInputChange={handleInputChange}
+              brokerNameValidator={brokerNameValidator}
+            />
+          </AccordionItem>
+
+          {/* Step 2: Branding */}
+          {areAllPreviousStepsCompleted(2) && (
+            <AccordionItem
+              title={STEPS_CONFIG.find(s => s.id === 2)?.title || "Branding"}
+              stepNumber={2}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 2)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(2)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 2}
+              isCompleted={!!completedSteps[2]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(2) || !!completedSteps[2]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Customize your DEX with your own branding by pasting your logos
+                below. Copy an image to your clipboard (from any image editor or
+                browser), then click in the paste area and press Ctrl+V or ⌘+V.{" "}
+                <span className="text-primary-light">
+                  All branding fields are optional.
+                </span>
+              </p>
+              <BrandingSection
+                primaryLogo={primaryLogo}
+                secondaryLogo={secondaryLogo}
+                favicon={favicon}
+                handleImageChange={handleImageChange}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 3: Theme Customization */}
+          {areAllPreviousStepsCompleted(3) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 3)?.title ||
+                "Theme Customization"
+              }
+              stepNumber={3}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 3)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(3)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 3}
+              isCompleted={!!completedSteps[3]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(3) || !!completedSteps[3]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Customize your DEX's colors and theme by editing the CSS
+                directly or describing how you want it to look for AI-assisted
+                generation.{" "}
+                <span className="text-primary-light">
+                  Theme customization is completely optional - your DEX will
+                  work great with the default theme.
+                </span>
+              </p>
+              <ThemeCustomizationSection
+                currentTheme={currentTheme}
+                defaultTheme={defaultTheme}
+                showThemeEditor={showThemeEditor}
+                viewCssCode={viewCssCode}
+                activeThemeTab={activeThemeTab}
+                themePrompt={themePrompt}
+                isGeneratingTheme={isGeneratingTheme}
+                brokerName={brokerName}
+                primaryLogo={primaryLogo}
+                secondaryLogo={secondaryLogo}
+                themeApplied={themeApplied}
+                toggleThemeEditor={toggleThemeEditor}
+                handleResetTheme={handleResetTheme}
+                handleResetToDefault={handleResetToDefault}
+                handleThemeEditorChange={handleThemeEditorChange}
+                setViewCssCode={setViewCssCode}
+                ThemeTabButton={ThemeTabButton}
+                updateCssColor={updateCssColor}
+                updateCssValue={updateCssValue}
+                handleInputChange={handleInputChange}
+                handleGenerateTheme={handleGenerateTheme}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 4: Social Media Links */}
+          {areAllPreviousStepsCompleted(4) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 4)?.title ||
+                "Social Media Links"
+              }
+              stepNumber={4}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 4)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(4)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 4}
+              isCompleted={!!completedSteps[4]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(4) || !!completedSteps[4]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Add social media links that will appear in your DEX footer.{" "}
+                <span className="text-primary-light">
+                  All social media links are optional.
+                </span>{" "}
+                Leave empty if not applicable.
+              </p>
+              <SocialLinksSection
+                telegramLink={telegramLink}
+                discordLink={discordLink}
+                xLink={xLink}
+                handleInputChange={handleInputChange}
+                urlValidator={urlValidator}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 5: Reown Configuration */}
+          {areAllPreviousStepsCompleted(5) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 5)?.title ||
+                "Reown Configuration"
+              }
+              stepNumber={5}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 5)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(5)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 5}
+              isCompleted={!!completedSteps[5]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(5) || !!completedSteps[5]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Add your Reown Project ID to enable enhanced wallet connectivity
+                functionality in your DEX.{" "}
+                <span className="text-primary-light">
+                  This is completely optional - your DEX will work without it.
+                </span>
+              </p>
+              <ReownConfigSection
+                walletConnectProjectId={walletConnectProjectId}
+                handleInputChange={handleInputChange}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 6: Privy Configuration */}
+          {areAllPreviousStepsCompleted(6) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 6)?.title ||
+                "Privy Configuration"
+              }
+              stepNumber={6}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 6)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(6)}
+              isStepContentValidTest={
+                !(
+                  (privyAppId.trim() && !privyTermsOfUse.trim()) ||
+                  (!privyAppId.trim() && privyTermsOfUse.trim())
+                ) &&
+                (privyTermsOfUse.trim()
+                  ? urlValidator(privyTermsOfUse.trim()) === null
+                  : true)
+              }
+              isActive={currentStep === 6}
+              isCompleted={!!completedSteps[6]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(6) || !!completedSteps[6]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <PrivyConfigSection
+                privyAppId={privyAppId}
+                privyTermsOfUse={privyTermsOfUse}
+                handleInputChange={handleInputChange}
+                urlValidator={urlValidator}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 7: Navigation Menus */}
+          {areAllPreviousStepsCompleted(7) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 7)?.title || "Navigation Menus"
+              }
+              stepNumber={7}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 7)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(7)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 7}
+              isCompleted={!!completedSteps[7]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(7) || !!completedSteps[7]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <NavigationMenuSection
+                enabledMenus={enabledMenus}
+                setEnabledMenus={setEnabledMenus}
+              />
+            </AccordionItem>
+          )}
+        </Form>
+
+        {currentStep > TOTAL_STEPS &&
+          completedSteps[TOTAL_STEPS] &&
+          !isSaving && (
+            <div className="mt-8 p-6 bg-success/10 border border-success/20 rounded-lg text-center slide-fade-in">
+              <h3 className="text-lg font-semibold text-success mb-2">
+                All steps completed!
+              </h3>
+              <p className="text-gray-300 mb-4">
+                You're ready to create your DEX. Click the "Create Your DEX"
+                button above to proceed.
+              </p>
+            </div>
+          )}
       </div>
     );
   }
@@ -875,19 +1246,13 @@ export default function DexRoute() {
             loadingText="Saving"
             disabled={isForking || isDeleting}
           >
-            <FormInput
-              id="brokerName"
-              label="Broker Name"
-              value={brokerName}
-              onChange={handleInputChange("brokerName")}
-              placeholder="Enter your broker name"
-              helpText="This name will be used in the HTML metadata, environment configuration, and other places throughout your DEX"
-              required={true}
-              minLength={3}
-              maxLength={50}
-              validator={brokerNameValidator}
+            <BrokerDetailsSection
+              brokerName={brokerName}
+              handleInputChange={handleInputChange}
+              brokerNameValidator={brokerNameValidator}
             />
 
+            {/* Branding Section: Add back H3 and P for Manage view */}
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
               Branding{" "}
               <span className="text-gray-400 text-sm font-normal">
@@ -902,62 +1267,14 @@ export default function DexRoute() {
                 All branding fields are optional.
               </span>
             </p>
+            <BrandingSection
+              primaryLogo={primaryLogo}
+              secondaryLogo={secondaryLogo}
+              favicon={favicon}
+              handleImageChange={handleImageChange}
+            />
 
-            {/* Primary Logo - Full width */}
-            <div className="mb-6">
-              <ImagePaste
-                id="primaryLogo"
-                label={
-                  <>
-                    Primary Logo{" "}
-                    <span className="text-gray-400 text-sm font-normal">
-                      (optional)
-                    </span>
-                  </>
-                }
-                value={primaryLogo || undefined}
-                onChange={handleImageChange("primaryLogo")}
-                imageType="primaryLogo"
-                helpText="This will be used as the main logo in your DEX, typically displayed prominently on desktop views."
-              />
-            </div>
-
-            {/* Secondary Logo and Favicon in a grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <ImagePaste
-                id="secondaryLogo"
-                label={
-                  <>
-                    Secondary Logo{" "}
-                    <span className="text-gray-400 text-sm font-normal">
-                      (optional)
-                    </span>
-                  </>
-                }
-                value={secondaryLogo || undefined}
-                onChange={handleImageChange("secondaryLogo")}
-                imageType="secondaryLogo"
-                helpText="This will be used in other areas like the footer, on mobile views, and in some dialogs."
-              />
-
-              <ImagePaste
-                id="favicon"
-                label={
-                  <>
-                    Favicon{" "}
-                    <span className="text-gray-400 text-sm font-normal">
-                      (optional)
-                    </span>
-                  </>
-                }
-                value={favicon || undefined}
-                onChange={handleImageChange("favicon")}
-                imageType="favicon"
-                helpText="This is the small icon that appears next to your website's name in a browser tab or in a list of bookmarks, helping users easily identify your DEX."
-              />
-            </div>
-
-            {/* Theme Customization Section */}
+            {/* Theme Customization Section: Add back wrapper div, H3, and P for Manage view */}
             <div className="mt-6 pt-4 border-t border-light/10">
               <h3 className="text-md font-medium mb-3">
                 Theme Customization{" "}
@@ -974,235 +1291,32 @@ export default function DexRoute() {
                   work great with the default theme.
                 </span>
               </p>
-
-              {/* Current Theme Section - Always show */}
-              <div className="mt-4 rounded-lg overflow-hidden border border-light/10 p-4 bg-base-7/50">
-                <div className="flex justify-between mb-2 flex-col sm:flex-row gap-2 sm:gap-0">
-                  <span className="text-sm font-medium mb-2 text-gray-300">
-                    Current Theme
-                  </span>
-                  <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
-                    <Button
-                      onClick={toggleThemeEditor}
-                      variant="secondary"
-                      size="xs"
-                      className="w-full sm:w-auto"
-                    >
-                      <span className="flex items-center gap-1 justify-center sm:justify-start">
-                        <div
-                          className={
-                            showThemeEditor
-                              ? "i-mdi:eye h-3.5 w-3.5"
-                              : "i-mdi:pencil h-3.5 w-3.5"
-                          }
-                        ></div>
-                        {showThemeEditor ? "Hide Editor" : "Edit CSS"}
-                      </span>
-                    </Button>
-                    <Button
-                      onClick={handleResetTheme}
-                      variant="danger"
-                      size="xs"
-                      className="w-full sm:w-auto"
-                    >
-                      Reset
-                    </Button>
-                    <Button
-                      onClick={handleResetToDefault}
-                      variant="danger"
-                      size="xs"
-                      className="w-full sm:w-auto"
-                    >
-                      Reset to Default
-                    </Button>
-                  </div>
-                </div>
-
-                {showThemeEditor && (
-                  <div className="mt-4 slide-fade-in">
-                    <Textarea
-                      value={currentTheme || defaultTheme}
-                      onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-                        handleThemeEditorChange(e.target.value)
-                      }
-                      className="w-full h-80 bg-black/80 text-xs text-gray-300 font-mono p-3 rounded border border-light/10"
-                      placeholder="Edit your CSS theme here..."
-                    />
-                  </div>
-                )}
-
-                {!showThemeEditor && (
-                  <div className="mt-2 text-xs mb-4">
-                    <div>
-                      <button
-                        onClick={() => setViewCssCode(!viewCssCode)}
-                        className="cursor-pointer text-gray-400 hover:text-gray-300 transition-colors flex items-center"
-                        type="button"
-                      >
-                        <span>{viewCssCode ? "Hide" : "View"} CSS code</span>
-                        <div
-                          className={`i-mdi:chevron-down h-4 w-4 ml-1 transition-transform ${viewCssCode ? "rotate-180" : ""}`}
-                        ></div>
-                      </button>
-                      {viewCssCode && (
-                        <div className="bg-base-8/50 p-4 rounded-lg overflow-auto text-xs max-h-[300px] mt-2 slide-fade-in">
-                          <pre className="language-css">
-                            {currentTheme || defaultTheme}
-                          </pre>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-
-                {/* Tabs for color swatches and border radius */}
-                <div className="border-b border-light/10 mt-4">
-                  <div className="flex">
-                    <ThemeTabButton tab="colors" label="Color Palette" />
-                    <ThemeTabButton tab="rounded" label="Border Radius" />
-                    <ThemeTabButton tab="spacing" label="Spacing" />
-                  </div>
-                </div>
-
-                {/* Tab Content */}
-                <div className="pt-4">
-                  {activeThemeTab === "colors" && (
-                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
-                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
-                        <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-                        <span>
-                          Click on any color swatch below to edit with a color
-                          picker
-                        </span>
-                      </div>
-
-                      <ThemeColorSwatches
-                        css={currentTheme || defaultTheme}
-                        onColorChange={updateCssColor}
-                      />
-                    </div>
-                  )}
-
-                  {activeThemeTab === "rounded" && (
-                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
-                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
-                        <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-                        <span>
-                          Adjust the rounded corners of your UI elements with
-                          the sliders
-                        </span>
-                      </div>
-
-                      <ThemeRoundedControls
-                        css={currentTheme || defaultTheme}
-                        onValueChange={updateCssValue}
-                      />
-                    </div>
-                  )}
-
-                  {activeThemeTab === "spacing" && (
-                    <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
-                      <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
-                        <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-                        <span>
-                          Adjust the spacing values used throughout your DEX
-                          interface
-                        </span>
-                      </div>
-
-                      <ThemeSpacingControls
-                        css={currentTheme || defaultTheme}
-                        onValueChange={updateCssValue}
-                      />
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* AI Theme Generator */}
-              <div className="flex flex-col space-y-4 mt-6">
-                <div className="flex flex-col gap-2">
-                  <h4 className="text-sm font-medium mb-1">
-                    AI Theme Generator
-                  </h4>
-                  <p className="text-xs text-gray-400 mb-2">
-                    Describe how you want your DEX theme to look and our AI will
-                    generate it for you.
-                  </p>
-
-                  {/* AI Info Card */}
-                  <Card className="mb-3 p-3 slide-fade-in" variant="default">
-                    <div className="flex items-start gap-2">
-                      <div className="i-mdi:information-outline text-primary-light h-4 w-4 mt-0.5 flex-shrink-0"></div>
-                      <div>
-                        <p className="text-xs text-gray-300 mb-1">
-                          <span className="text-primary-light font-medium">
-                            Note:
-                          </span>{" "}
-                          AI-generated themes are a starting point and may not
-                          be perfect. After generating:
-                        </p>
-                        <ul className="text-xs text-gray-300 list-disc pl-4 space-y-0.5">
-                          <li>Review the theme in the preview modal</li>
-                          <li>Make adjustments to colors as needed</li>
-                          <li>
-                            Use the DEX preview button to see your theme in
-                            context
-                          </li>
-                        </ul>
-                      </div>
-                    </div>
-                  </Card>
-
-                  <div className="w-full">
-                    <FormInput
-                      id="themePrompt"
-                      label="Theme Description"
-                      value={themePrompt}
-                      onChange={handleInputChange("themePrompt")}
-                      placeholder="e.g., A dark blue theme with neon green accents"
-                      helpText="Describe your desired color scheme and style"
-                      disabled={isGeneratingTheme}
-                    />
-                  </div>
-                  <div className="mt-1">
-                    <Button
-                      onClick={handleGenerateTheme}
-                      isLoading={isGeneratingTheme}
-                      loadingText="Generating..."
-                      disabled={!themePrompt.trim() || isGeneratingTheme}
-                      variant="secondary"
-                      size="sm"
-                    >
-                      <span className="flex items-center gap-1">
-                        <div className="i-mdi:magic-wand h-4 w-4"></div>
-                        Generate Theme
-                      </span>
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-light/10">
-                <h4 className="text-sm font-medium mb-2">Theme Preview</h4>
-                <p className="text-xs text-gray-400 mb-4">
-                  See a visual preview of how your DEX will look with the
-                  current theme configuration.
-                </p>
-
-                <div className="flex justify-start">
-                  <PreviewButton
-                    brokerName={brokerName || "My DEX"}
-                    initialSymbol="PERP_BTC_USDC"
-                    primaryLogo={primaryLogo}
-                    secondaryLogo={secondaryLogo}
-                    themeCSS={themeApplied ? currentTheme : undefined}
-                    buttonText="Preview DEX Design"
-                  />
-                </div>
-              </div>
+              <ThemeCustomizationSection
+                currentTheme={currentTheme}
+                defaultTheme={defaultTheme}
+                showThemeEditor={showThemeEditor}
+                viewCssCode={viewCssCode}
+                activeThemeTab={activeThemeTab}
+                themePrompt={themePrompt}
+                isGeneratingTheme={isGeneratingTheme}
+                brokerName={brokerName}
+                primaryLogo={primaryLogo}
+                secondaryLogo={secondaryLogo}
+                themeApplied={themeApplied}
+                toggleThemeEditor={toggleThemeEditor}
+                handleResetTheme={handleResetTheme}
+                handleResetToDefault={handleResetToDefault}
+                handleThemeEditorChange={handleThemeEditorChange}
+                setViewCssCode={setViewCssCode}
+                ThemeTabButton={ThemeTabButton}
+                updateCssColor={updateCssColor}
+                updateCssValue={updateCssValue}
+                handleInputChange={handleInputChange}
+                handleGenerateTheme={handleGenerateTheme}
+              />
             </div>
 
+            {/* Social Media Links Section: Add back H3 and P for Manage view */}
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
               Social Media Links{" "}
               <span className="text-gray-400 text-sm font-normal">
@@ -1216,56 +1330,12 @@ export default function DexRoute() {
               </span>{" "}
               Leave empty if not applicable.
             </p>
-
-            <FormInput
-              id="telegramLink"
-              label={
-                <>
-                  Telegram URL{" "}
-                  <span className="text-gray-400 text-sm font-normal">
-                    (optional)
-                  </span>
-                </>
-              }
-              value={telegramLink}
-              onChange={handleInputChange("telegramLink")}
-              type="url"
-              placeholder="https://t.me/your-group"
-              validator={urlValidator}
-            />
-
-            <FormInput
-              id="discordLink"
-              label={
-                <>
-                  Discord URL{" "}
-                  <span className="text-gray-400 text-sm font-normal">
-                    (optional)
-                  </span>
-                </>
-              }
-              value={discordLink}
-              onChange={handleInputChange("discordLink")}
-              type="url"
-              placeholder="https://discord.gg/your-server"
-              validator={urlValidator}
-            />
-
-            <FormInput
-              id="xLink"
-              label={
-                <>
-                  Twitter/X URL{" "}
-                  <span className="text-gray-400 text-sm font-normal">
-                    (optional)
-                  </span>
-                </>
-              }
-              value={xLink}
-              onChange={handleInputChange("xLink")}
-              type="url"
-              placeholder="https://twitter.com/your-account"
-              validator={urlValidator}
+            <SocialLinksSection
+              telegramLink={telegramLink}
+              discordLink={discordLink}
+              xLink={xLink}
+              handleInputChange={handleInputChange}
+              urlValidator={urlValidator}
             />
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
@@ -1281,41 +1351,9 @@ export default function DexRoute() {
                 This is completely optional - your DEX will work without it.
               </span>
             </p>
-
-            <FormInput
-              id="walletConnectProjectId"
-              label={
-                <>
-                  Reown Project ID{" "}
-                  <span className="text-gray-400 text-sm font-normal">
-                    (optional)
-                  </span>
-                </>
-              }
-              value={walletConnectProjectId}
-              onChange={handleInputChange("walletConnectProjectId")}
-              placeholder="Enter your Reown Project ID"
-              helpText={
-                <>
-                  Get a free Project ID by creating a project at{" "}
-                  <a
-                    href="https://cloud.reown.com"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-light hover:underline"
-                  >
-                    Reown Cloud
-                  </a>
-                  . When creating a project, select <strong>WalletKit</strong>{" "}
-                  as the product, and then choose <strong>JavaScript</strong> as
-                  the platform in the next step.
-                  <span className="block mt-1">
-                    If you enable Privy integration, Privy will use this Project
-                    ID for its WalletConnect functionality. You do not need to
-                    configure WalletConnect separately in the Privy dashboard.
-                  </span>
-                </>
-              }
+            <ReownConfigSection
+              walletConnectProjectId={walletConnectProjectId}
+              handleInputChange={handleInputChange}
             />
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
@@ -1345,133 +1383,16 @@ export default function DexRoute() {
                 in the Privy dashboard is not needed for this integration.
               </span>
             </p>
-
-            {/* Add info card with requirement notice */}
-            <Card
-              className="mb-3 p-3 slide-fade-in"
-              variant={
-                (privyAppId && !privyTermsOfUse) ||
-                (!privyAppId && privyTermsOfUse)
-                  ? "warning"
-                  : "default"
-              }
-            >
-              <div className="flex items-start gap-2">
-                <div
-                  className={`${(privyAppId && !privyTermsOfUse) || (!privyAppId && privyTermsOfUse) ? "i-mdi:alert-circle-outline text-warning" : "i-mdi:information-outline text-primary-light"} h-4 w-4 mt-0.5 flex-shrink-0`}
-                ></div>
-                <div>
-                  <p className="text-xs text-warning font-medium mb-1">
-                    If using Privy, both App ID and Terms of Use URL must be set
-                    for it to function!
-                  </p>
-                  {((privyAppId && !privyTermsOfUse) ||
-                    (!privyAppId && privyTermsOfUse)) && (
-                    <p className="text-xs text-gray-300 mb-2 border-l-2 border-warning pl-2">
-                      You've only set one of the required Privy fields. Either
-                      set both fields or leave both empty.
-                    </p>
-                  )}
-                  <p className="text-xs text-gray-300 mb-1">
-                    <span className="text-primary-light font-medium">
-                      Why use Privy?
-                    </span>{" "}
-                    Privy provides multiple wallet connection options:
-                  </p>
-                  <ul className="text-xs text-gray-300 list-disc pl-4 space-y-0.5">
-                    <li>Social logins (Google, Discord, Twitter)</li>
-                    <li>Email/phone authentication</li>
-                    <li>Multiple wallet types from a single interface</li>
-                    <li>Embedded wallets for non-crypto users</li>
-                  </ul>
-                </div>
-              </div>
-            </Card>
-
-            <FormInput
-              id="privyAppId"
-              label={
-                <div className="flex items-center gap-1">
-                  <>
-                    Privy App ID
-                    <span className="text-gray-400 text-sm font-normal">
-                      (optional)
-                    </span>
-                  </>
-                  {privyTermsOfUse && !privyAppId && (
-                    <div className="ml-2 text-warning text-xs flex items-center">
-                      <div className="i-mdi:alert-circle-outline mr-1 h-3.5 w-3.5"></div>
-                      Required with Terms URL
-                    </div>
-                  )}
-                </div>
-              }
-              value={privyAppId}
-              onChange={handleInputChange("privyAppId")}
-              placeholder="Enter your Privy App ID"
-              helpText={
-                <>
-                  Get a Privy App ID by signing up at{" "}
-                  <a
-                    href="https://console.privy.io"
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-light hover:underline"
-                  >
-                    Privy Console
-                  </a>
-                  . When creating an app, be sure to select{" "}
-                  <strong>client-side</strong> and <strong>web</strong> options.
-                  You'll find your App ID in the app settings.{" "}
-                  {privyTermsOfUse && !privyAppId && (
-                    <span className="text-warning">
-                      Required when Terms URL is set.
-                    </span>
-                  )}
-                </>
-              }
+            <PrivyConfigSection
+              privyAppId={privyAppId}
+              privyTermsOfUse={privyTermsOfUse}
+              handleInputChange={handleInputChange}
+              urlValidator={urlValidator}
             />
 
-            <FormInput
-              id="privyTermsOfUse"
-              label={
-                <div className="flex items-center gap-1">
-                  <>
-                    Privy Terms of Use URL
-                    <span className="text-gray-400 text-sm font-normal">
-                      (optional)
-                    </span>
-                  </>
-                  {privyAppId && !privyTermsOfUse && (
-                    <div className="ml-2 text-warning text-xs flex items-center">
-                      <div className="i-mdi:alert-circle-outline mr-1 h-3.5 w-3.5"></div>
-                      Required with App ID
-                    </div>
-                  )}
-                </div>
-              }
-              value={privyTermsOfUse}
-              onChange={handleInputChange("privyTermsOfUse")}
-              type="url"
-              placeholder="https://example.com/terms"
-              validator={urlValidator}
-              helpText={
-                <>
-                  Enter the URL to your terms of service that will be displayed
-                  during Privy login.{" "}
-                  {privyAppId && !privyTermsOfUse && (
-                    <span className="text-warning">
-                      Required when App ID is set.
-                    </span>
-                  )}{" "}
-                  Must be a valid URL.
-                </>
-              }
-            />
-
-            {/* Navigation Menus Field - Add the missing border-t */}
             <div className="mb-4 mt-6 border-t border-light/10 pt-4">
               <label className="block text-md font-medium mb-3">
+                {" "}
                 Navigation Menus{" "}
                 <span className="text-gray-400 text-sm font-normal">
                   (optional)
@@ -1484,14 +1405,13 @@ export default function DexRoute() {
                   by default.
                 </span>
               </p>
-              <NavigationMenuEditor
-                value={enabledMenus}
-                onChange={value => setEnabledMenus(value)}
+              <NavigationMenuSection
+                enabledMenus={enabledMenus}
+                setEnabledMenus={setEnabledMenus}
               />
             </div>
           </Form>
 
-          {/* Graduation Banner - show when broker ID is "demo" */}
           {isGraduationEligible && !isGraduated && dexData && (
             <Card className="my-6 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
@@ -1519,7 +1439,6 @@ export default function DexRoute() {
             </Card>
           )}
 
-          {/* Graduated DEX Banner - show when DEX is graduated */}
           {isGraduated && dexData && (
             <Card className="my-6 bg-gradient-to-r from-success/20 to-primary/20 border border-success/30">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
