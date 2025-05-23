@@ -4,14 +4,12 @@ import decodeWebp from "@jsquash/webp/decode";
 import encodeWebp from "@jsquash/webp/encode";
 import resize from "@jsquash/resize";
 
-// Default dimensions for different logo types
 export const DEFAULT_DIMENSIONS = {
   primaryLogo: { width: 200, height: 42 },
   secondaryLogo: { width: 40, height: 40 },
   favicon: { width: 96, height: 96 },
 };
 
-// Interface for crop parameters
 export interface CropParams {
   x: number;
   y: number;
@@ -36,12 +34,10 @@ export async function convertImage(
   cropParams?: CropParams
 ): Promise<string> {
   try {
-    // Remove data URL prefix to get raw base64
     const base64Data = base64Icon.replace(/^data:[^,]+,/, "");
 
     const imageBuffer = Uint8Array.from(atob(base64Data), v => v.charCodeAt(0));
 
-    // Determine source type from data URI
     let sourceType: "jpeg" | "png" | "webp";
     if (base64Icon.includes("image/png")) {
       sourceType = "png";
@@ -55,15 +51,12 @@ export async function convertImage(
       );
     }
 
-    // Decode the image
     let decodedImage = await decode(sourceType, imageBuffer);
 
-    // Apply cropping if crop parameters are provided
     if (cropParams && cropParams.width > 0 && cropParams.height > 0) {
       decodedImage = cropImage(decodedImage, cropParams);
     }
 
-    // Resize the image if dimensions are provided
     const resizedImage =
       width && height
         ? await resize(decodedImage, {
@@ -73,11 +66,17 @@ export async function convertImage(
           })
         : decodedImage;
 
-    // Encode to WebP format
     const encodedImage = await encode(resizedImage);
-    const base64String = btoa(
-      String.fromCharCode(...new Uint8Array(encodedImage))
-    );
+
+    let binaryString = "";
+    const bytes = new Uint8Array(encodedImage);
+    const len = bytes.byteLength;
+    const chunkSize = 8192;
+    for (let i = 0; i < len; i += chunkSize) {
+      const chunk = bytes.subarray(i, Math.min(i + chunkSize, len));
+      binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+    }
+    const base64String = btoa(binaryString);
 
     return `data:image/webp;base64,${base64String}`;
   } catch (error) {
@@ -95,7 +94,6 @@ export async function convertImage(
  * @returns Cropped ImageData
  */
 function cropImage(imageData: ImageData, cropParams: CropParams): ImageData {
-  // Create a temporary canvas to perform the crop
   const canvas = new OffscreenCanvas(cropParams.width, cropParams.height);
   const ctx = canvas.getContext("2d");
 
@@ -103,7 +101,6 @@ function cropImage(imageData: ImageData, cropParams: CropParams): ImageData {
     throw new Error("Could not create canvas context for cropping");
   }
 
-  // Create a temporary canvas to hold the original image
   const sourceCanvas = new OffscreenCanvas(imageData.width, imageData.height);
   const sourceCtx = sourceCanvas.getContext("2d");
 
@@ -111,23 +108,20 @@ function cropImage(imageData: ImageData, cropParams: CropParams): ImageData {
     throw new Error("Could not create source canvas context");
   }
 
-  // Put the original image data onto the source canvas
   sourceCtx.putImageData(imageData, 0, 0);
 
-  // Draw the cropped region onto the destination canvas
   ctx.drawImage(
     sourceCanvas,
     cropParams.x,
     cropParams.y,
     cropParams.width,
-    cropParams.height, // Source rectangle
+    cropParams.height,
     0,
     0,
     cropParams.width,
-    cropParams.height // Destination rectangle
+    cropParams.height
   );
 
-  // Get the cropped image data
   return ctx.getImageData(0, 0, cropParams.width, cropParams.height);
 }
 

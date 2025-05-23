@@ -9,6 +9,7 @@ import {
 import { Card } from "./Card";
 import { useModal } from "../context/ModalContext";
 import { toast } from "react-toastify";
+import { Button } from "./Button";
 
 type ImageType = "primaryLogo" | "secondaryLogo" | "favicon";
 
@@ -41,6 +42,7 @@ export default function ImagePaste({
     height: number;
   } | null>(null);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for file input
 
   // Get dimensions for the specific image type
   const dimensions = DEFAULT_DIMENSIONS[imageType];
@@ -92,20 +94,117 @@ export default function ImagePaste({
     [dimensions, onChange]
   );
 
+  // Reusable function to process an image (from paste or file selection)
+  const processImageAndOpenCropModal = useCallback(
+    async (imageDataUrl: string) => {
+      if (!imageDataUrl) {
+        console.error("No image data provided");
+        toast.error("No image data provided. Please try again.");
+        setIsProcessing(false);
+        return;
+      }
+
+      // Store the original image in the ref
+      originalImageRef.current = imageDataUrl;
+
+      // Get the original dimensions
+      try {
+        const imageDims = await getImageDimensions(imageDataUrl);
+        // Store dimensions in the ref
+        originalDimensionsRef.current = imageDims;
+
+        // Set initial crop parameters based on image type
+        let initialCrop: CropParams;
+
+        if (imageType === "primaryLogo") {
+          // Primary logo: use full image dimensions starting at (0,0)
+          initialCrop = {
+            x: 0,
+            y: 0,
+            width: imageDims.width,
+            height: imageDims.height,
+          };
+        } else {
+          // Secondary logo and favicon: square aspect ratio (1:1), largest possible from top-left
+          const maxSquareSize = Math.min(imageDims.width, imageDims.height);
+          initialCrop = {
+            x: 0,
+            y: 0,
+            width: maxSquareSize,
+            height: maxSquareSize,
+          };
+        }
+
+        // Prepare the handleApplyCrop function for this specific image operation
+        const handleApplyCropForThisImage = async (
+          cropParams: CropParams,
+          finalDimensions: { width: number; height: number }
+        ) => {
+          // Access the image and dimensions from refs
+          const imageSource = originalImageRef.current;
+
+          if (!imageSource) {
+            console.error("Missing original image source");
+            return;
+          }
+
+          if (cropParams.width <= 0 || cropParams.height <= 0) {
+            console.error("Invalid crop dimensions");
+            return;
+          }
+
+          // Process the image with the crop parameters
+          await processAndSaveImage(imageSource, cropParams, finalDimensions);
+        };
+
+        // Open crop modal
+        openModal("imageCrop", {
+          imageSource: imageDataUrl,
+          originalDimensions: imageDims,
+          initialCrop,
+          enforceSquare,
+          onApply: handleApplyCropForThisImage,
+        });
+
+        setIsProcessing(false);
+      } catch (error) {
+        console.error(
+          "Error getting image dimensions or processing image:",
+          error
+        );
+        toast.error(
+          "Could not process image. Please ensure it\\'s a valid image file."
+        );
+        setIsProcessing(false);
+        // Fallback to direct processing without crop if dimensions fail (optional)
+        // await processAndSaveImage(imageDataUrl);
+      }
+    },
+    [openModal, processAndSaveImage, imageType, enforceSquare]
+  );
+
   // Handle paste events (from keyboard or programmatically)
   const handlePaste = useCallback(
-    async (event?: ClipboardEvent) => {
+    async (event?: ClipboardEvent | React.ClipboardEvent<HTMLDivElement>) => {
       if (isProcessing) return;
 
       setIsProcessing(true);
       try {
-        // If called from button, read clipboard via navigator API
         let imageDataUrl: string | null = null;
 
         if (event) {
-          // From keyboard paste event
-          event.preventDefault();
-          imageDataUrl = await extractImageFromClipboard(event);
+          let nativeEventToUse: ClipboardEvent;
+          if ("nativeEvent" in event) {
+            // It's a React.ClipboardEvent<HTMLDivElement>
+            (event as React.ClipboardEvent<HTMLDivElement>).preventDefault();
+            nativeEventToUse = (event as React.ClipboardEvent<HTMLDivElement>)
+              .nativeEvent;
+          } else {
+            // It's a native ClipboardEvent
+            (event as ClipboardEvent).preventDefault();
+            nativeEventToUse = event as ClipboardEvent;
+          }
+          imageDataUrl = await extractImageFromClipboard(nativeEventToUse);
         } else {
           // From button click - use Clipboard API
           try {
@@ -146,82 +245,50 @@ export default function ImagePaste({
           return;
         }
 
-        // Store the original image in the ref
-        originalImageRef.current = imageDataUrl;
-
-        // Get the original dimensions
-        try {
-          const dimensions = await getImageDimensions(imageDataUrl);
-          // Store dimensions in the ref
-          originalDimensionsRef.current = dimensions;
-
-          // Set initial crop parameters based on image type
-          let initialCrop: CropParams;
-
-          if (imageType === "primaryLogo") {
-            // Primary logo: use full image dimensions starting at (0,0)
-            initialCrop = {
-              x: 0,
-              y: 0,
-              width: dimensions.width,
-              height: dimensions.height,
-            };
-          } else {
-            // Secondary logo and favicon: square aspect ratio (1:1), largest possible from top-left
-            const maxSquareSize = Math.min(dimensions.width, dimensions.height);
-            initialCrop = {
-              x: 0,
-              y: 0,
-              width: maxSquareSize,
-              height: maxSquareSize,
-            };
-          }
-
-          // Prepare the handleApplyCrop function for this specific paste operation
-          const handleApplyCropForThisImage = async (
-            cropParams: CropParams,
-            finalDimensions: { width: number; height: number }
-          ) => {
-            // Access the image and dimensions from refs
-            const imageSource = originalImageRef.current;
-
-            if (!imageSource) {
-              console.error("Missing original image source");
-              return;
-            }
-
-            if (cropParams.width <= 0 || cropParams.height <= 0) {
-              console.error("Invalid crop dimensions");
-              return;
-            }
-
-            // Process the image with the crop parameters
-            await processAndSaveImage(imageSource, cropParams, finalDimensions);
-          };
-
-          // Open crop modal instead of entering crop mode inline
-          openModal("imageCrop", {
-            imageSource: imageDataUrl,
-            originalDimensions: dimensions,
-            initialCrop,
-            enforceSquare,
-            onApply: handleApplyCropForThisImage,
-          });
-
-          // Reset isProcessing when modal is opened
-          setIsProcessing(false);
-        } catch (error) {
-          console.error("Error getting image dimensions:", error);
-          // Fallback to direct processing without crop
-          await processAndSaveImage(imageDataUrl);
-        }
+        // Process the image using the reusable function
+        await processImageAndOpenCropModal(imageDataUrl);
       } catch (error) {
         console.error("Image paste error:", error);
-        setIsProcessing(false);
+        setIsProcessing(false); // Ensure isProcessing is reset on error
       }
     },
-    [isProcessing, openModal, processAndSaveImage, imageType, enforceSquare]
+    [isProcessing, processImageAndOpenCropModal] // Removed other dependencies as they are now in processImageAndOpenCropModal
   );
+
+  // Handle file selection
+  const handleFileSelected = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    if (isProcessing) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setIsProcessing(true);
+    try {
+      const imageDataUrl = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = e => resolve(e.target?.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      if (imageDataUrl) {
+        await processImageAndOpenCropModal(imageDataUrl);
+      } else {
+        toast.error("Could not read the selected image file.");
+        setIsProcessing(false);
+      }
+    } catch (error) {
+      console.error("File selection error:", error);
+      toast.error("Failed to load the selected image. Please try again.");
+      setIsProcessing(false);
+    }
+
+    // Reset file input to allow selecting the same file again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
 
   // Clear the image
   const handleClear = () => {
@@ -240,119 +307,140 @@ export default function ImagePaste({
     await handlePaste();
   };
 
-  // Attach event listener when component mounts
-  useEffect(() => {
-    const pasteArea = pasteAreaRef.current;
-
-    // Define the event handler function (outside the anonymous function)
-    const handlePasteEvent = (e: Event) => {
-      if (e instanceof ClipboardEvent) {
-        handlePaste(e);
-      }
-    };
-
-    if (pasteArea) {
-      // Add the event listener
-      pasteArea.addEventListener("paste", handlePasteEvent);
-
-      // Return cleanup function
-      return () => {
-        pasteArea.removeEventListener("paste", handlePasteEvent);
-      };
+  // Trigger file input click
+  const handleSelectFileButtonClick = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
     }
-  }, [handlePaste]); // Add handlePaste to the dependency array
+  };
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <label htmlFor={id} className="block text-sm font-medium">
+        <label htmlFor={id} className="block text-sm font-medium text-gray-200">
           {label}
         </label>
         {previewSrc && (
           <button
             type="button"
             onClick={handleClear}
-            className="text-xs text-error hover:text-error/80"
+            className="text-xs text-error hover:text-error/70 transition-colors"
+            disabled={isProcessing}
           >
             Clear
           </button>
         )}
       </div>
 
-      {/* Main paste area */}
-      <div
-        ref={pasteAreaRef}
-        className={`flex flex-col items-center justify-center border-2 border-dashed rounded-lg p-4 min-h-[150px] transition-colors focus:outline-none ${
-          isProcessing
-            ? "bg-background-light/10 border-gray-500"
-            : isFocused
-              ? "bg-background-light/10 border-primary-light/50"
-              : "bg-background-light/5 border-gray-600 hover:border-gray-500"
-        }`}
-        onClick={() => pasteAreaRef.current?.focus()}
-        onFocus={handleFocus}
-        onBlur={handleBlur}
-        tabIndex={0}
-      >
-        {isProcessing ? (
-          <div className="flex flex-col items-center">
-            <div className="i-svg-spinners:pulse-rings-multiple h-8 w-8 text-primary-light mb-2"></div>
-            <p className="text-sm text-gray-300">Processing image...</p>
-          </div>
-        ) : previewSrc ? (
-          <div className="flex flex-col items-center">
-            <div
-              className="relative mb-3 flex items-center justify-center"
-              style={{
-                width: Math.min(dimensions.width, 200),
-                height: Math.min(dimensions.height, 200),
-                maxWidth: "100%",
-              }}
-            >
-              <img
-                src={previewSrc}
-                alt={typeof label === "string" ? label : "Logo"}
-                className="max-w-full max-h-full object-contain"
-              />
-            </div>
+      <div className="mt-1">
+        {previewSrc ? (
+          <div className="relative group border border-light/15 rounded-lg p-2 flex justify-center items-center bg-base-8/30 min-h-[150px]">
+            <img
+              src={previewSrc}
+              alt={`${imageType} preview`}
+              className="max-h-40 max-w-full object-contain rounded"
+            />
             <button
+              onClick={handleClear}
+              className="absolute top-1.5 right-1.5 bg-black/50 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 hover:bg-black/70 transition-all focus:opacity-100"
+              aria-label="Remove image"
               type="button"
-              onClick={handlePasteButtonClick}
-              className="px-3 py-1.5 bg-primary/20 hover:bg-primary/30 rounded-md text-sm text-primary-light transition-colors mt-2"
+              disabled={isProcessing}
             >
-              Replace Image
+              <div className="i-mdi:close h-3 w-3"></div>
             </button>
           </div>
         ) : (
-          <div className="text-center">
-            <div className="i-mdi:image-outline h-10 w-10 text-gray-500 mb-2 mx-auto"></div>
-            <p className="text-sm text-gray-300 mb-3">
-              Add your {typeof label === "string" ? label : "image"}
-            </p>
-
-            <button
-              type="button"
-              onClick={handlePasteButtonClick}
-              className="px-3 py-1.5 bg-primary/20 hover:bg-primary/30 rounded-md text-sm text-primary-light transition-colors mb-2"
+          <div
+            ref={pasteAreaRef}
+            tabIndex={0}
+            className={`border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-colors min-h-[150px] flex flex-col justify-center items-center
+              ${isFocused ? "border-primary-light bg-primary-light/5" : "border-light/20 hover:border-light/30 bg-base-8/20"}
+              ${isProcessing ? "opacity-60 cursor-default pointer-events-none" : ""}`}
+            onPaste={
+              handlePaste as (
+                event: React.ClipboardEvent<HTMLDivElement>
+              ) => void
+            }
+            onFocus={handleFocus}
+            onBlur={handleBlur}
+            onKeyDown={e => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                pasteAreaRef.current?.focus();
+              }
+            }}
+            role="button"
+            aria-label={label ? String(label) : "Paste image area"}
+          >
+            <div
+              className={`mx-auto mb-2 ${isFocused ? "text-primary-light" : "text-gray-400"}`}
             >
-              <span className="flex items-center">
-                <span className="i-mdi:content-paste h-4 w-4 mr-1.5"></span>
-                Paste Image
-              </span>
-            </button>
-
-            <p className="text-xs text-gray-500 mt-2">
-              Or click here and use Ctrl+V / ⌘+V
+              <div className="i-mdi:image-outline h-10 w-10 mx-auto"></div>
+            </div>
+            <p
+              className={`text-sm ${isFocused ? "text-gray-200" : "text-gray-400"} mb-1`}
+            >
+              {isProcessing ? "Processing..." : "Drag & drop, paste, or"}
             </p>
-            {helpText && (
-              <p className="mt-2 text-xs text-gray-400">{helpText}</p>
+            {!isProcessing && (
+              <button
+                type="button"
+                onClick={handleSelectFileButtonClick}
+                className="text-sm text-primary-light hover:underline focus:outline-none focus:ring-1 focus:ring-primary-light rounded px-1"
+              >
+                select a file
+              </button>
             )}
           </div>
         )}
       </div>
 
-      {/* Size info card */}
-      <Card variant="default" className="p-2 text-xs text-gray-400">
+      <div className="flex flex-col sm:flex-row gap-3 mt-3">
+        <Button
+          type="button"
+          onClick={handlePasteButtonClick}
+          variant="secondary"
+          size="sm"
+          className="w-full sm:w-auto"
+          disabled={isProcessing}
+          isLoading={isProcessing && originalImageRef.current === null}
+          loadingText="Pasting..."
+        >
+          <span className="flex items-center justify-center gap-1.5">
+            <div className="i-mdi:content-paste h-4 w-4"></div>
+            Paste Image
+          </span>
+        </Button>
+        <Button
+          type="button"
+          onClick={handleSelectFileButtonClick}
+          variant="secondary"
+          size="sm"
+          className="w-full sm:w-auto"
+          disabled={isProcessing}
+          isLoading={isProcessing && originalImageRef.current === null}
+          loadingText="Selecting..."
+        >
+          <span className="flex items-center justify-center gap-1.5">
+            <div className="i-mdi:file-image-plus-outline h-4 w-4"></div>
+            Select File
+          </span>
+        </Button>
+      </div>
+
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileSelected}
+        accept="image/*,image/webp,image/jpeg,image/png,image/gif"
+        style={{ display: "none" }}
+        disabled={isProcessing}
+      />
+
+      {helpText && <p className="mt-2 text-xs text-gray-500">{helpText}</p>}
+
+      <Card variant="default" className="p-3 text-xs text-gray-400 mt-3">
         <p>
           <span className="font-medium text-primary-light">
             Recommended size:
@@ -360,7 +448,8 @@ export default function ImagePaste({
           {dimensions.width}x{dimensions.height}px
         </p>
         <p className="mt-1">
-          Images will be converted to WebP format and resized automatically.
+          Images will be converted to WebP format and resized automatically if
+          larger.
         </p>
       </Card>
     </div>

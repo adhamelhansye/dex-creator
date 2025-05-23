@@ -918,7 +918,7 @@ export default function DexRoute() {
                 value={primaryLogo || undefined}
                 onChange={handleImageChange("primaryLogo")}
                 imageType="primaryLogo"
-                helpText="This will be used as the main logo in your DEX"
+                helpText="This will be used as the main logo in your DEX, typically displayed prominently on desktop views."
               />
             </div>
 
@@ -937,7 +937,7 @@ export default function DexRoute() {
                 value={secondaryLogo || undefined}
                 onChange={handleImageChange("secondaryLogo")}
                 imageType="secondaryLogo"
-                helpText="This will be used in the footer and other areas"
+                helpText="This will be used in other areas like the footer, on mobile views, and in some dialogs."
               />
 
               <ImagePaste
@@ -953,7 +953,7 @@ export default function DexRoute() {
                 value={favicon || undefined}
                 onChange={handleImageChange("favicon")}
                 imageType="favicon"
-                helpText="This will be shown in browser tabs"
+                helpText="This is the small icon that appears next to your website's name in a browser tab or in a list of bookmarks, helping users easily identify your DEX."
               />
             </div>
 
