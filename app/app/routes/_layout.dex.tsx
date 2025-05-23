@@ -889,19 +889,32 @@ export default function DexRoute() {
             />
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
-              Branding
+              Branding{" "}
+              <span className="text-gray-400 text-sm font-normal">
+                (optional)
+              </span>
             </h3>
             <p className="text-xs text-gray-400 mb-4">
               Customize your DEX with your own branding by pasting your logos
               below. Copy an image to your clipboard (from any image editor or
-              browser), then click in the paste area and press Ctrl+V or ⌘+V.
+              browser), then click in the paste area and press Ctrl+V or ⌘+V.{" "}
+              <span className="text-primary-light">
+                All branding fields are optional.
+              </span>
             </p>
 
             {/* Primary Logo - Full width */}
             <div className="mb-6">
               <ImagePaste
                 id="primaryLogo"
-                label="Primary Logo"
+                label={
+                  <>
+                    Primary Logo{" "}
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </>
+                }
                 value={primaryLogo || undefined}
                 onChange={handleImageChange("primaryLogo")}
                 imageType="primaryLogo"
@@ -913,7 +926,14 @@ export default function DexRoute() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <ImagePaste
                 id="secondaryLogo"
-                label="Secondary Logo"
+                label={
+                  <>
+                    Secondary Logo{" "}
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </>
+                }
                 value={secondaryLogo || undefined}
                 onChange={handleImageChange("secondaryLogo")}
                 imageType="secondaryLogo"
@@ -922,7 +942,14 @@ export default function DexRoute() {
 
               <ImagePaste
                 id="favicon"
-                label="Favicon"
+                label={
+                  <>
+                    Favicon{" "}
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </>
+                }
                 value={favicon || undefined}
                 onChange={handleImageChange("favicon")}
                 imageType="favicon"
@@ -932,11 +959,20 @@ export default function DexRoute() {
 
             {/* Theme Customization Section */}
             <div className="mt-6 pt-4 border-t border-light/10">
-              <h3 className="text-md font-medium mb-3">Theme Customization</h3>
+              <h3 className="text-md font-medium mb-3">
+                Theme Customization{" "}
+                <span className="text-gray-400 text-sm font-normal">
+                  (optional)
+                </span>
+              </h3>
               <p className="text-xs text-gray-400 mb-4">
                 Customize your DEX's colors and theme by editing the CSS
                 directly or describing how you want it to look for AI-assisted
-                generation.
+                generation.{" "}
+                <span className="text-primary-light">
+                  Theme customization is completely optional - your DEX will
+                  work great with the default theme.
+                </span>
               </p>
 
               {/* Current Theme Section - Always show */}
@@ -1168,16 +1204,29 @@ export default function DexRoute() {
             </div>
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
-              Social Media Links
+              Social Media Links{" "}
+              <span className="text-gray-400 text-sm font-normal">
+                (optional)
+              </span>
             </h3>
             <p className="text-xs text-gray-400 mb-4">
-              Add social media links that will appear in your DEX footer. Leave
-              empty if not applicable.
+              Add social media links that will appear in your DEX footer.{" "}
+              <span className="text-primary-light">
+                All social media links are optional.
+              </span>{" "}
+              Leave empty if not applicable.
             </p>
 
             <FormInput
               id="telegramLink"
-              label="Telegram URL"
+              label={
+                <>
+                  Telegram URL{" "}
+                  <span className="text-gray-400 text-sm font-normal">
+                    (optional)
+                  </span>
+                </>
+              }
               value={telegramLink}
               onChange={handleInputChange("telegramLink")}
               type="url"
@@ -1187,7 +1236,14 @@ export default function DexRoute() {
 
             <FormInput
               id="discordLink"
-              label="Discord URL"
+              label={
+                <>
+                  Discord URL{" "}
+                  <span className="text-gray-400 text-sm font-normal">
+                    (optional)
+                  </span>
+                </>
+              }
               value={discordLink}
               onChange={handleInputChange("discordLink")}
               type="url"
@@ -1197,7 +1253,14 @@ export default function DexRoute() {
 
             <FormInput
               id="xLink"
-              label="Twitter/X URL"
+              label={
+                <>
+                  Twitter/X URL{" "}
+                  <span className="text-gray-400 text-sm font-normal">
+                    (optional)
+                  </span>
+                </>
+              }
               value={xLink}
               onChange={handleInputChange("xLink")}
               type="url"
@@ -1206,16 +1269,29 @@ export default function DexRoute() {
             />
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
-              Reown Configuration (formerly WalletConnect)
+              Reown Configuration (formerly WalletConnect){" "}
+              <span className="text-gray-400 text-sm font-normal">
+                (optional)
+              </span>
             </h3>
             <p className="text-xs text-gray-400 mb-4">
               Add your Reown Project ID to enable enhanced wallet connectivity
-              functionality in your DEX.
+              functionality in your DEX.{" "}
+              <span className="text-primary-light">
+                This is completely optional - your DEX will work without it.
+              </span>
             </p>
 
             <FormInput
               id="walletConnectProjectId"
-              label="Reown Project ID"
+              label={
+                <>
+                  Reown Project ID{" "}
+                  <span className="text-gray-400 text-sm font-normal">
+                    (optional)
+                  </span>
+                </>
+              }
               value={walletConnectProjectId}
               onChange={handleInputChange("walletConnectProjectId")}
               placeholder="Enter your Reown Project ID"
@@ -1238,7 +1314,10 @@ export default function DexRoute() {
             />
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
-              Privy Configuration
+              Privy Configuration{" "}
+              <span className="text-gray-400 text-sm font-normal">
+                (optional)
+              </span>
               {((privyAppId && !privyTermsOfUse) ||
                 (!privyAppId && privyTermsOfUse)) && (
                 <span className="ml-2 text-warning inline-flex items-center">
@@ -1251,7 +1330,7 @@ export default function DexRoute() {
               Add your Privy credentials to enable social login, email
               authentication, and other wallet connection options in your DEX.
               <span className="font-medium text-primary-light ml-1">
-                Optional, but requires both fields if used.
+                This is completely optional, but requires both fields if used.
               </span>
             </p>
 
@@ -1300,8 +1379,13 @@ export default function DexRoute() {
             <FormInput
               id="privyAppId"
               label={
-                <div className="flex items-center">
-                  Privy App ID
+                <div className="flex items-center gap-1">
+                  <>
+                    Privy App ID
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </>
                   {privyTermsOfUse && !privyAppId && (
                     <div className="ml-2 text-warning text-xs flex items-center">
                       <div className="i-mdi:alert-circle-outline mr-1 h-3.5 w-3.5"></div>
@@ -1339,8 +1423,13 @@ export default function DexRoute() {
             <FormInput
               id="privyTermsOfUse"
               label={
-                <div className="flex items-center">
-                  Privy Terms of Use URL
+                <div className="flex items-center gap-1">
+                  <>
+                    Privy Terms of Use URL
+                    <span className="text-gray-400 text-sm font-normal">
+                      (optional)
+                    </span>
+                  </>
                   {privyAppId && !privyTermsOfUse && (
                     <div className="ml-2 text-warning text-xs flex items-center">
                       <div className="i-mdi:alert-circle-outline mr-1 h-3.5 w-3.5"></div>
@@ -1371,10 +1460,17 @@ export default function DexRoute() {
             {/* Navigation Menus Field - Add the missing border-t */}
             <div className="mb-4 mt-6 border-t border-light/10 pt-4">
               <label className="block text-md font-medium mb-3">
-                Navigation Menus
+                Navigation Menus{" "}
+                <span className="text-gray-400 text-sm font-normal">
+                  (optional)
+                </span>
               </label>
               <p className="text-xs text-gray-400 mb-4">
-                Customize which navigation links appear in your DEX.
+                Customize which navigation links appear in your DEX.{" "}
+                <span className="text-primary-light">
+                  This is optional - your DEX will include all navigation menus
+                  by default.
+                </span>
               </p>
               <NavigationMenuEditor
                 value={enabledMenus}

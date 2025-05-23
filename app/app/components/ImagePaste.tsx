@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
 import {
   convertImage,
   extractImageFromClipboard,
@@ -14,7 +14,7 @@ type ImageType = "primaryLogo" | "secondaryLogo" | "favicon";
 
 interface ImagePasteProps {
   id: string;
-  label: string;
+  label: string | ReactNode;
   value?: string;
   onChange: (value: string | null) => void;
   imageType: ImageType;
@@ -311,7 +311,7 @@ export default function ImagePaste({
             >
               <img
                 src={previewSrc}
-                alt={label}
+                alt={typeof label === "string" ? label : "Logo"}
                 className="max-w-full max-h-full object-contain"
               />
             </div>
@@ -326,7 +326,9 @@ export default function ImagePaste({
         ) : (
           <div className="text-center">
             <div className="i-mdi:image-outline h-10 w-10 text-gray-500 mb-2 mx-auto"></div>
-            <p className="text-sm text-gray-300 mb-3">Add your {label}</p>
+            <p className="text-sm text-gray-300 mb-3">
+              Add your {typeof label === "string" ? label : "image"}
+            </p>
 
             <button
               type="button"

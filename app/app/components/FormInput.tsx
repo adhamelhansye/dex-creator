@@ -113,7 +113,6 @@ export default function FormInput({
     <div className={`mb-4 ${className}`}>
       <label htmlFor={id} className="block text-sm font-medium mb-1 md:mb-2">
         {label}
-        {required && <span className="text-error ml-1">*</span>}
       </label>
 
       <input
