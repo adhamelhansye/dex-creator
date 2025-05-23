@@ -1309,6 +1309,11 @@ export default function DexRoute() {
                   . When creating a project, select <strong>WalletKit</strong>{" "}
                   as the product, and then choose <strong>JavaScript</strong> as
                   the platform in the next step.
+                  <span className="block mt-1">
+                    If you enable Privy integration, Privy will use this Project
+                    ID for its WalletConnect functionality. You do not need to
+                    configure WalletConnect separately in the Privy dashboard.
+                  </span>
                 </>
               }
             />
@@ -1331,6 +1336,13 @@ export default function DexRoute() {
               authentication, and other wallet connection options in your DEX.
               <span className="font-medium text-primary-light ml-1">
                 This is completely optional, but requires both fields if used.
+              </span>
+              <br />
+              <span className="block mt-1">
+                To use WalletConnect through Privy, ensure your{" "}
+                <strong>Reown Project ID</strong> (configured above) is
+                provided. Privy utilizes this ID; separate WalletConnect setup
+                in the Privy dashboard is not needed for this integration.
               </span>
             </p>
 
