@@ -42,6 +42,7 @@ interface DexData {
   privyAppId?: string | null;
   privyTermsOfUse?: string | null;
   enabledMenus?: string | null;
+  enableAbstractWallet?: boolean; // Added field
   repoUrl?: string | null;
   customDomain?: string | null;
   createdAt: string;
@@ -175,6 +176,7 @@ export default function DexRoute() {
   const [privyAppId, setPrivyAppId] = useState("");
   const [privyTermsOfUse, setPrivyTermsOfUse] = useState("");
   const [enabledMenus, setEnabledMenus] = useState(""); // Backend has fallback mechanism
+  const [enableAbstractWallet, setEnableAbstractWallet] = useState(false); // Added state
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
@@ -204,6 +206,7 @@ export default function DexRoute() {
     privyAppId: "",
     privyTermsOfUse: "",
     enabledMenus: "",
+    enableAbstractWallet: false, // Added to originalValues
     primaryLogo: null as string | null,
     secondaryLogo: null as string | null,
     favicon: null as string | null,
@@ -241,6 +244,7 @@ export default function DexRoute() {
           setPrivyAppId(response.privyAppId || "");
           setPrivyTermsOfUse(response.privyTermsOfUse || "");
           setEnabledMenus(response.enabledMenus || "");
+          setEnableAbstractWallet(response.enableAbstractWallet || false); // Initialize state
           setPrimaryLogo(response.primaryLogo || null);
           setSecondaryLogo(response.secondaryLogo || null);
           setFavicon(response.favicon || null);
@@ -274,6 +278,7 @@ export default function DexRoute() {
             privyAppId: response.privyAppId || "",
             privyTermsOfUse: response.privyTermsOfUse || "",
             enabledMenus: response.enabledMenus || "",
+            enableAbstractWallet: response.enableAbstractWallet || false, // Set in originalValues
             primaryLogo: response.primaryLogo || null,
             secondaryLogo: response.secondaryLogo || null,
             favicon: response.favicon || null,
@@ -514,7 +519,8 @@ export default function DexRoute() {
         secondaryLogo !== originalValues.secondaryLogo ||
         favicon !== originalValues.favicon ||
         (themeApplied && currentTheme !== originalValues.themeCSS) ||
-        enabledMenus !== originalValues.enabledMenus;
+        enabledMenus !== originalValues.enabledMenus ||
+        enableAbstractWallet !== originalValues.enableAbstractWallet;
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -546,6 +552,7 @@ export default function DexRoute() {
         favicon: favicon,
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
+        enableAbstractWallet: enableAbstractWallet, // Add to form data
       };
 
       if (dexData && dexData.id) {
@@ -570,6 +577,7 @@ export default function DexRoute() {
           secondaryLogo,
           favicon,
           themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
+          enableAbstractWallet: enableAbstractWallet, // Update originalValues
         });
 
         toast.success("DEX information updated successfully!");
@@ -589,6 +597,7 @@ export default function DexRoute() {
           secondaryLogo,
           favicon,
           themeCSS: themeApplied ? currentTheme : null,
+          enableAbstractWallet: enableAbstractWallet, // Ensure only one entry for this
         });
 
         if (savedData.repoUrl) {
@@ -820,15 +829,7 @@ export default function DexRoute() {
       const privyAppIdFilled = privyAppId && privyAppId.trim() !== "";
       const privyTermsOfUseFilled =
         privyTermsOfUse && privyTermsOfUse.trim() !== "";
-      if (
-        (privyAppIdFilled && !privyTermsOfUseFilled) ||
-        (!privyAppIdFilled && privyTermsOfUseFilled)
-      ) {
-        toast.error(
-          "For Privy integration, please provide both App ID and Terms of Use URL, or leave both empty."
-        );
-        return;
-      }
+
       if (
         privyTermsOfUseFilled &&
         urlValidator(privyTermsOfUse.trim()) !== null
@@ -1139,13 +1140,9 @@ export default function DexRoute() {
               }
               onNextInternal={() => handleNextStep(6)}
               isStepContentValidTest={
-                !(
-                  (privyAppId.trim() && !privyTermsOfUse.trim()) ||
-                  (!privyAppId.trim() && privyTermsOfUse.trim())
-                ) &&
-                (privyTermsOfUse.trim()
+                privyTermsOfUse.trim()
                   ? urlValidator(privyTermsOfUse.trim()) === null
-                  : true)
+                  : true
               }
               isActive={currentStep === 6}
               isCompleted={!!completedSteps[6]}
@@ -1162,6 +1159,8 @@ export default function DexRoute() {
                 privyTermsOfUse={privyTermsOfUse}
                 handleInputChange={handleInputChange}
                 urlValidator={urlValidator}
+                enableAbstractWallet={enableAbstractWallet}
+                onEnableAbstractWalletChange={setEnableAbstractWallet}
               />
             </AccordionItem>
           )}
@@ -1361,19 +1360,13 @@ export default function DexRoute() {
               <span className="text-gray-400 text-sm font-normal">
                 (optional)
               </span>
-              {((privyAppId && !privyTermsOfUse) ||
-                (!privyAppId && privyTermsOfUse)) && (
-                <span className="ml-2 text-warning inline-flex items-center">
-                  <div className="i-mdi:alert-circle-outline mr-1 h-4 w-4"></div>
-                  <span className="text-xs">Both fields needed</span>
-                </span>
-              )}
             </h3>
             <p className="text-xs text-gray-400 mb-4">
               Add your Privy credentials to enable social login, email
               authentication, and other wallet connection options in your DEX.
               <span className="font-medium text-primary-light ml-1">
-                This is completely optional, but requires both fields if used.
+                This is completely optional. Only the App ID is required if you
+                want to use Privy.
               </span>
               <br />
               <span className="block mt-1">
@@ -1388,6 +1381,8 @@ export default function DexRoute() {
               privyTermsOfUse={privyTermsOfUse}
               handleInputChange={handleInputChange}
               urlValidator={urlValidator}
+              enableAbstractWallet={enableAbstractWallet}
+              onEnableAbstractWalletChange={setEnableAbstractWallet}
             />
 
             <div className="mb-4 mt-6 border-t border-light/10 pt-4">

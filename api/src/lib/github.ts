@@ -482,6 +482,7 @@ function prepareDexConfigContent(
     privyAppId?: string;
     privyTermsOfUse?: string;
     enabledMenus?: string;
+    enableAbstractWallet?: boolean;
   },
   files?: {
     primaryLogo?: string;
@@ -501,32 +502,22 @@ function prepareDexConfigContent(
   const secondaryLogoData = extractImageDataFromUri(files?.secondaryLogo);
 
   // Create ENV file content
-  let envContent = `# Broker settings
-VITE_ORDERLY_BROKER_ID=demo
-VITE_ORDERLY_BROKER_NAME=${config.brokerName}
+  const envVars = {
+    VITE_BROKER_ID: config.brokerId,
+    VITE_BROKER_NAME: config.brokerName,
+    VITE_TELEGRAM_LINK: config.telegramLink || "",
+    VITE_DISCORD_LINK: config.discordLink || "",
+    VITE_X_LINK: config.xLink || "",
+    VITE_WALLETCONNECT_PROJECT_ID: config.walletConnectProjectId || "",
+    VITE_PRIVY_APP_ID: config.privyAppId || "",
+    VITE_PRIVY_TERMS_OF_USE_URL: config.privyTermsOfUse || "",
+    VITE_ENABLED_MENUS: config.enabledMenus || "",
+    VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
+  };
 
-# Meta tags
-VITE_APP_NAME=${config.brokerName}
-VITE_APP_DESCRIPTION=${config.brokerName} - A DEX powered by Orderly Network
-
-# Social Media Links
-VITE_TELEGRAM_URL=${config.telegramLink || ""}
-VITE_DISCORD_URL=${config.discordLink || ""}
-VITE_TWITTER_URL=${config.xLink || ""}
-
-# Logo flags - indicates if logos have been set
-VITE_HAS_PRIMARY_LOGO=${primaryLogoData ? "true" : "false"}
-VITE_HAS_SECONDARY_LOGO=${secondaryLogoData ? "true" : "false"}
-
-# Navigation menu settings
-VITE_ENABLED_MENUS=${config.enabledMenus || ""}
-
-# WalletConnect configuration
-VITE_WALLET_CONNECT_PROJECT_ID=${config.walletConnectProjectId || ""}
-
-# Privy configuration
-VITE_PRIVY_APP_ID=${config.privyAppId || ""}
-VITE_PRIVY_TERMS_OF_USE=${config.privyTermsOfUse || ""}`;
+  const envContent = Object.entries(envVars)
+    .map(([key, value]) => `${key}=${value}`)
+    .join("\n");
 
   return {
     envContent,
@@ -657,6 +648,7 @@ export async function updateDexConfig(
     privyAppId?: string;
     privyTermsOfUse?: string;
     enabledMenus?: string;
+    enableAbstractWallet?: boolean;
   },
   files?: {
     primaryLogo?: string;
@@ -750,6 +742,7 @@ export async function setupRepositoryWithSingleCommit(
     privyAppId?: string;
     privyTermsOfUse?: string;
     enabledMenus?: string;
+    enableAbstractWallet?: boolean;
   },
   files: {
     primaryLogo?: string;

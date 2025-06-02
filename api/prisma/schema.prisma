@@ -69,6 +69,7 @@ model Dex {
   takerFee             Int?     // Taker fee in basis points (0.01%)
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
+  enableAbstractWallet Boolean  @default(false) // New flag for Abstract Wallet
   
   // Relation to User (owner) - one-to-one relationship
   userId               String   @unique

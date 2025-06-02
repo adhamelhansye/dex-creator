@@ -253,6 +253,7 @@ The application uses PostgreSQL as the database with Prisma ORM for database ope
 2. **Models**:
    - `User`: Stores user information and authentication details
    - `Token`: Manages authentication tokens with expiration
+   - `Dex`: Stores DEX-specific configurations and settings.
 3. **Database Connection**: Managed through the Prisma client in `api/src/lib/prisma.ts`
 4. **Migrations**: Automatically generated in `api/prisma/migrations/` folder
 

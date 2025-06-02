@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Dex" ADD COLUMN     "enableAbstractWallet" BOOLEAN NOT NULL DEFAULT false,
+ALTER COLUMN "makerFee" DROP DEFAULT,
+ALTER COLUMN "takerFee" DROP DEFAULT;

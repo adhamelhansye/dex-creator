@@ -47,6 +47,7 @@ export const dexSchema = z.object({
   privyAppId: z.string().nullish(),
   privyTermsOfUse: z.string().nullish(),
   enabledMenus: z.string().nullish(),
+  enableAbstractWallet: z.boolean().optional(),
 });
 
 // Schema for custom domain validation
@@ -133,6 +134,7 @@ export async function createDex(
         privyAppId: data.privyAppId || undefined,
         privyTermsOfUse: data.privyTermsOfUse || undefined,
         enabledMenus: data.enabledMenus || undefined,
+        enableAbstractWallet: data.enableAbstractWallet,
       },
       {
         primaryLogo: data.primaryLogo || undefined,
@@ -193,6 +195,7 @@ export async function createDex(
         privyAppId: data.privyAppId,
         privyTermsOfUse: data.privyTermsOfUse,
         enabledMenus: data.enabledMenus,
+        enableAbstractWallet: data.enableAbstractWallet,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -274,6 +277,8 @@ export async function updateDex(
   if ("primaryLogo" in data) updateData.primaryLogo = data.primaryLogo;
   if ("secondaryLogo" in data) updateData.secondaryLogo = data.secondaryLogo;
   if ("favicon" in data) updateData.favicon = data.favicon;
+  if ("enableAbstractWallet" in data)
+    updateData.enableAbstractWallet = data.enableAbstractWallet;
 
   return prisma.dex.update({
     where: {
