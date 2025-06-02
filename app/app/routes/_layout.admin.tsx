@@ -12,6 +12,17 @@ const formatFee = (fee: number | null | undefined): string => {
   return `${fee} bps (${(fee * 0.01).toFixed(2)}%)`;
 };
 
+// Helper function to copy text to clipboard
+const copyToClipboard = async (text: string, label: string) => {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast.success(`${label} copied to clipboard`);
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+    toast.error(`Failed to copy ${label}`);
+  }
+};
+
 // Interface for the API response when deleting a DEX
 interface DeleteDexResponse {
   message: string;
@@ -66,6 +77,7 @@ interface Dex {
   createdAt: string;
   makerFee?: number | null;
   takerFee?: number | null;
+  themeCSS?: string | null;
   user: {
     address: string;
   };
@@ -125,6 +137,21 @@ export default function AdminRoute() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated, token } = useAuth();
+
+  // Theme visibility state
+  const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
+
+  const toggleThemeVisibility = (dexId: string) => {
+    setExpandedThemes(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(dexId)) {
+        newSet.delete(dexId);
+      } else {
+        newSet.add(dexId);
+      }
+      return newSet;
+    });
+  };
 
   // Check if the current user is an admin
   useEffect(() => {
@@ -1085,87 +1112,6 @@ export default function AdminRoute() {
           </form>
         </div>
 
-        {/* Browse All DEXes Section */}
-        <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10 md:col-span-2">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-xl font-medium">Browse All DEXes</h2>
-            <button
-              onClick={loadAllDexes}
-              disabled={loadingDexes}
-              className="p-1 rounded hover:bg-dark/50"
-              title="Refresh DEX list"
-            >
-              <div
-                className={`i-mdi:refresh h-5 w-5 ${loadingDexes ? "animate-spin" : ""} `}
-              ></div>
-            </button>
-          </div>
-          <p className="text-gray-400 text-sm mb-4">
-            A comprehensive list of all DEXes and their database values.
-          </p>
-
-          {loadingDexes ? (
-            <div className="text-center py-4">
-              <div className="i-svg-spinners:pulse-rings h-8 w-8 mx-auto text-primary-light mb-2"></div>
-              <p className="text-sm text-gray-400">Loading DEXes...</p>
-            </div>
-          ) : allDexes.length === 0 ? (
-            <p className="text-gray-400 text-sm italic">No DEXes found.</p>
-          ) : (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto">
-              {allDexes.map(dex => (
-                <div
-                  key={dex.id}
-                  className="bg-dark/30 p-3 rounded-lg border border-light/10"
-                >
-                  <h3 className="font-medium text-primary-light mb-2">
-                    {dex.brokerName || "Unnamed DEX"} (ID:{" "}
-                    {dex.id.substring(0, 8)}...)
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs">
-                    <div>
-                      <strong>Broker ID:</strong> {dex.brokerId}
-                    </div>
-                    {dex.preferredBrokerId && (
-                      <div>
-                        <strong>Preferred Broker ID:</strong>{" "}
-                        {dex.preferredBrokerId}
-                      </div>
-                    )}
-                    <div>
-                      <strong>Wallet Address:</strong>{" "}
-                      <span className="font-mono">{dex.user.address}</span>
-                    </div>
-                    <div>
-                      <strong>Created At:</strong>{" "}
-                      {new Date(dex.createdAt).toLocaleString()}
-                    </div>
-                    {dex.repoUrl && (
-                      <div className="md:col-span-2">
-                        <strong>Repo URL:</strong>{" "}
-                        <a
-                          href={dex.repoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-light hover:underline break-all"
-                        >
-                          {dex.repoUrl}
-                        </a>
-                      </div>
-                    )}
-                    <div>
-                      <strong>Maker Fee:</strong> {formatFee(dex.makerFee)}
-                    </div>
-                    <div>
-                      <strong>Taker Fee:</strong> {formatFee(dex.takerFee)}
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          )}
-        </div>
-
         {/* Pending Broker ID Requests Section */}
         <div
           className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10"
@@ -1292,6 +1238,194 @@ export default function AdminRoute() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        {/* Browse All DEXes Section */}
+        <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10 md:col-span-2">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-medium">Browse All DEXes</h2>
+            <button
+              onClick={loadAllDexes}
+              disabled={loadingDexes}
+              className="p-1 rounded hover:bg-dark/50"
+              title="Refresh DEX list"
+            >
+              <div
+                className={`i-mdi:refresh h-5 w-5 ${loadingDexes ? "animate-spin" : ""} `}
+              ></div>
+            </button>
+          </div>
+          <p className="text-gray-400 text-sm mb-4">
+            A comprehensive list of all DEXes and their database values.
+          </p>
+
+          {loadingDexes ? (
+            <div className="text-center py-4">
+              <div className="i-svg-spinners:pulse-rings h-8 w-8 mx-auto text-primary-light mb-2"></div>
+              <p className="text-sm text-gray-400">Loading DEXes...</p>
+            </div>
+          ) : allDexes.length === 0 ? (
+            <p className="text-gray-400 text-sm italic">No DEXes found.</p>
+          ) : (
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              {allDexes.map(dex => (
+                <div
+                  key={dex.id}
+                  className="bg-dark/30 p-3 rounded-lg border border-light/10"
+                >
+                  <div className="flex justify-between items-start mb-2">
+                    <h3 className="font-medium text-primary-light">
+                      {dex.brokerName || "Unnamed DEX"} (ID:{" "}
+                      {dex.id.substring(0, 8)}...)
+                    </h3>
+                    <button
+                      onClick={() => copyToClipboard(dex.id, "DEX ID")}
+                      className="text-gray-400 hover:text-primary-light p-1 rounded"
+                      title="Copy full DEX ID"
+                    >
+                      <div className="i-mdi:content-copy h-4 w-4"></div>
+                    </button>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-2 text-xs">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <strong>Broker ID:</strong> {dex.brokerId}
+                      </div>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(dex.brokerId, "Broker ID")
+                        }
+                        className="text-gray-400 hover:text-primary-light p-1 rounded ml-2"
+                        title="Copy Broker ID"
+                      >
+                        <div className="i-mdi:content-copy h-3 w-3"></div>
+                      </button>
+                    </div>
+
+                    {dex.preferredBrokerId && (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <strong>Preferred Broker ID:</strong>{" "}
+                          {dex.preferredBrokerId}
+                        </div>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              dex.preferredBrokerId!,
+                              "Preferred Broker ID"
+                            )
+                          }
+                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2"
+                          title="Copy Preferred Broker ID"
+                        >
+                          <div className="i-mdi:content-copy h-3 w-3"></div>
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <strong>Wallet Address:</strong>{" "}
+                        <span className="font-mono">{dex.user.address}</span>
+                      </div>
+                      <button
+                        onClick={() =>
+                          copyToClipboard(dex.user.address, "Wallet Address")
+                        }
+                        className="text-gray-400 hover:text-primary-light p-1 rounded ml-2"
+                        title="Copy Wallet Address"
+                      >
+                        <div className="i-mdi:content-copy h-3 w-3"></div>
+                      </button>
+                    </div>
+
+                    <div>
+                      <strong>Created At:</strong>{" "}
+                      {new Date(dex.createdAt).toLocaleString()}
+                    </div>
+
+                    {dex.repoUrl && (
+                      <div className="md:col-span-2 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <strong>Repo URL:</strong>{" "}
+                          <a
+                            href={dex.repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-light hover:underline break-all"
+                          >
+                            {dex.repoUrl}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(dex.repoUrl!, "Repository URL")
+                          }
+                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                          title="Copy Repository URL"
+                        >
+                          <div className="i-mdi:content-copy h-3 w-3"></div>
+                        </button>
+                      </div>
+                    )}
+
+                    <div>
+                      <strong>Maker Fee:</strong> {formatFee(dex.makerFee)}
+                    </div>
+                    <div>
+                      <strong>Taker Fee:</strong> {formatFee(dex.takerFee)}
+                    </div>
+                  </div>
+
+                  {/* Theme Section */}
+                  {dex.themeCSS && (
+                    <div className="mt-3 pt-3 border-t border-light/10">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <strong className="text-xs">CSS Theme:</strong>
+                          <button
+                            onClick={() => toggleThemeVisibility(dex.id)}
+                            className="text-gray-400 hover:text-primary-light p-1 rounded"
+                            title={
+                              expandedThemes.has(dex.id)
+                                ? "Hide theme"
+                                : "Show theme"
+                            }
+                          >
+                            <div
+                              className={`h-3 w-3 transition-transform ${
+                                expandedThemes.has(dex.id)
+                                  ? "i-mdi:chevron-up"
+                                  : "i-mdi:chevron-down"
+                              }`}
+                            ></div>
+                          </button>
+                        </div>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(dex.themeCSS!, "CSS Theme")
+                          }
+                          className="text-gray-400 hover:text-primary-light p-1 rounded"
+                          title="Copy CSS Theme"
+                        >
+                          <div className="i-mdi:content-copy h-3 w-3"></div>
+                        </button>
+                      </div>
+
+                      {expandedThemes.has(dex.id) && (
+                        <div className="bg-dark/50 rounded p-2 max-h-40 overflow-y-auto">
+                          <pre className="text-xs text-gray-300 whitespace-pre-wrap break-all">
+                            {dex.themeCSS}
+                          </pre>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
           )}
         </div>
