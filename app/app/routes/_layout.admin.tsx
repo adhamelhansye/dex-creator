@@ -1085,6 +1085,87 @@ export default function AdminRoute() {
           </form>
         </div>
 
+        {/* Browse All DEXes Section */}
+        <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10 md:col-span-2">
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-medium">Browse All DEXes</h2>
+            <button
+              onClick={loadAllDexes}
+              disabled={loadingDexes}
+              className="p-1 rounded hover:bg-dark/50"
+              title="Refresh DEX list"
+            >
+              <div
+                className={`i-mdi:refresh h-5 w-5 ${loadingDexes ? "animate-spin" : ""} `}
+              ></div>
+            </button>
+          </div>
+          <p className="text-gray-400 text-sm mb-4">
+            A comprehensive list of all DEXes and their database values.
+          </p>
+
+          {loadingDexes ? (
+            <div className="text-center py-4">
+              <div className="i-svg-spinners:pulse-rings h-8 w-8 mx-auto text-primary-light mb-2"></div>
+              <p className="text-sm text-gray-400">Loading DEXes...</p>
+            </div>
+          ) : allDexes.length === 0 ? (
+            <p className="text-gray-400 text-sm italic">No DEXes found.</p>
+          ) : (
+            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+              {allDexes.map(dex => (
+                <div
+                  key={dex.id}
+                  className="bg-dark/30 p-3 rounded-lg border border-light/10"
+                >
+                  <h3 className="font-medium text-primary-light mb-2">
+                    {dex.brokerName || "Unnamed DEX"} (ID:{" "}
+                    {dex.id.substring(0, 8)}...)
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-xs">
+                    <div>
+                      <strong>Broker ID:</strong> {dex.brokerId}
+                    </div>
+                    {dex.preferredBrokerId && (
+                      <div>
+                        <strong>Preferred Broker ID:</strong>{" "}
+                        {dex.preferredBrokerId}
+                      </div>
+                    )}
+                    <div>
+                      <strong>Wallet Address:</strong>{" "}
+                      <span className="font-mono">{dex.user.address}</span>
+                    </div>
+                    <div>
+                      <strong>Created At:</strong>{" "}
+                      {new Date(dex.createdAt).toLocaleString()}
+                    </div>
+                    {dex.repoUrl && (
+                      <div className="md:col-span-2">
+                        <strong>Repo URL:</strong>{" "}
+                        <a
+                          href={dex.repoUrl}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-light hover:underline break-all"
+                        >
+                          {dex.repoUrl}
+                        </a>
+                      </div>
+                    )}
+                    <div>
+                      <strong>Maker Fee:</strong> {formatFee(dex.makerFee)}
+                    </div>
+                    <div>
+                      <strong>Taker Fee:</strong> {formatFee(dex.takerFee)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         {/* Pending Broker ID Requests Section */}
         <div
           className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10"
