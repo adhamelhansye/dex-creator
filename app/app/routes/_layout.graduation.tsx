@@ -220,10 +220,10 @@ export default function GraduationRoute() {
                   <span className="text-white font-medium">
                     DEX Fee Structure:
                   </span>{" "}
-                  Orderly's base fee (which varies by tier) is always collected
-                  in addition to your custom fees. You earn revenue from your
-                  custom fees, while the base fee supports the Orderly ecosystem
-                  infrastructure and liquidity.
+                  Your custom fees represent the total fees that traders pay.
+                  Orderly's base fee (which varies by tier) is deducted from
+                  your custom fees to calculate your revenue. The base fee
+                  supports the Orderly ecosystem infrastructure and liquidity.
                 </p>
               </div>
             </div>

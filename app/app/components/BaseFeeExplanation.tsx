@@ -80,16 +80,17 @@ export const BaseFeeExplanation: FC = () => {
         </div>
 
         <p className="mb-3">
-          The base fee is separate from your custom fee settings. Your DEX fee
-          structure will be the combination of:
+          Your custom fee settings represent the total fees that traders pay.
+          Your revenue is calculated by subtracting the base fee from your
+          custom fees:
         </p>
 
         <ul className="pl-5 list-disc space-y-1 mb-3">
           <li>
             Base Fee (retained by Orderly): Currently 3.00 bps taker for Public
-            tier
+            tier - this is deducted from your custom fees
           </li>
-          <li>Your Custom Fees: Set by you and generate revenue sharing</li>
+          <li>Your Revenue: Your Custom Fee - Base Fee</li>
         </ul>
 
         <p className="flex items-center gap-2">

@@ -122,15 +122,23 @@ export const FeeConfigWithCalculator: React.FC<
     makerFee: number,
     takerFee: number
   ) => {
+    // Orderly base fees (retained by Orderly)
+    const BASE_MAKER_FEE = 0; // 0 bps maker fee
+    const BASE_TAKER_FEE = 3; // 3 bps taker fee for Public tier
+
+    // Calculate actual revenue fees (custom fee - base fee)
+    const actualMakerFee = Math.max(0, makerFee - BASE_MAKER_FEE);
+    const actualTakerFee = Math.max(0, takerFee - BASE_TAKER_FEE);
+
     // Assuming 50/50 split between maker and taker volume
     const makerVolume = volume * 0.5;
     const takerVolume = volume * 0.5;
 
     // Convert bps to percentage (100 bps = 1%)
-    const makerFeePercent = makerFee / 10000;
-    const takerFeePercent = takerFee / 10000;
+    const makerFeePercent = actualMakerFee / 10000;
+    const takerFeePercent = actualTakerFee / 10000;
 
-    // Calculate revenue
+    // Calculate revenue (after base fee deduction)
     const makerRevenue = makerVolume * makerFeePercent;
     const takerRevenue = takerVolume * takerFeePercent;
 
@@ -200,14 +208,14 @@ export const FeeConfigWithCalculator: React.FC<
                     <span className="font-medium text-warning">
                       Important Fee Note:
                     </span>{" "}
-                    The fees you configure here are{" "}
-                    <span className="underline">in addition to</span> the
-                    Orderly base fee (currently 3.00 bps taker, 0 bps maker for
-                    Public tier).
+                    The fees you configure here are the{" "}
+                    <span className="underline">total fees</span> that traders
+                    will pay. This includes the Orderly base fee (currently 3.00
+                    bps taker, 0 bps maker for Public tier).
                     <br />
-                    The total fee charged to traders will be:{" "}
+                    Your revenue will be:{" "}
                     <span className="font-medium">
-                      Base Fee + Your Custom Fee
+                      Your Custom Fee - Orderly Base Fee
                     </span>
                     .
                   </span>
@@ -338,11 +346,11 @@ export const FeeConfigWithCalculator: React.FC<
             <div className="mt-4 bg-info/10 rounded-lg p-3 flex items-start gap-2 text-xs">
               <div className="i-mdi:information-outline text-info w-4 h-4 flex-shrink-0 mt-0.5"></div>
               <p className="text-gray-300">
-                <span className="font-medium">Note:</span> These are your custom
-                fees. Traders will pay these fees{" "}
-                <span className="italic">plus</span> the Orderly base fee (3.00
-                bps taker for Public tier). You earn revenue from your custom
-                fees only. Upgrade your tier through the{" "}
+                <span className="font-medium">Note:</span> These are the total
+                fees that traders will pay on your DEX. The Orderly base fee
+                (3.00 bps taker for Public tier) is included in these amounts.
+                Your revenue = Your Custom Fee - Base Fee. Upgrade your tier
+                through the{" "}
                 <a
                   href="https://app.orderly.network/"
                   target="_blank"
@@ -351,7 +359,7 @@ export const FeeConfigWithCalculator: React.FC<
                 >
                   Builder Staking Programme
                 </a>{" "}
-                to reduce the base fee.
+                to reduce the base fee and increase your revenue.
               </p>
             </div>
           </div>
@@ -413,7 +421,7 @@ export const FeeConfigWithCalculator: React.FC<
 
             <div className="bg-success/5 rounded-lg p-4 mb-4">
               <h4 className="text-sm font-semibold mb-3 text-gray-200">
-                Estimated Monthly Revenue
+                Estimated Monthly Revenue (After Base Fee Deduction)
               </h4>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -423,7 +431,7 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(makerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({makerFee} bps fee)
+                    ({Math.max(0, makerFee - 0)} bps after base fee)
                   </div>
                 </div>
 
@@ -433,7 +441,7 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(takerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({takerFee} bps fee)
+                    ({Math.max(0, takerFee - 3)} bps after base fee)
                   </div>
                 </div>
 
@@ -451,8 +459,9 @@ export const FeeConfigWithCalculator: React.FC<
                 <p className="text-gray-300">
                   This calculation assumes an equal split between maker and
                   taker volume. Actual revenue may vary based on market
-                  conditions, trading patterns, and fee changes. You only earn
-                  revenue from your custom fees, not from the Orderly base fees.
+                  conditions, trading patterns, and fee changes. Revenue shown
+                  represents your earnings after the Orderly base fee (0 bps
+                  maker, 3 bps taker) is deducted from your custom fees.
                 </p>
               </div>
             </div>
