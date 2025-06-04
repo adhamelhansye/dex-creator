@@ -63,6 +63,7 @@ model Dex {
   privyAppId           String?  // Privy App ID for wallet connection
   privyTermsOfUse      String?  // Privy Terms of Use URL
   enabledMenus         String?  // Comma-separated list of enabled navigation menus
+  customMenus          String?  // Semicolon-separated list of custom menu items (format: "Name,URL;Name2,URL2")
   repoUrl              String?  // GitHub repository URL after forking
   customDomain         String?  // Custom domain for GitHub Pages
   preferredBrokerId    String?  // User's preferred broker ID after verification

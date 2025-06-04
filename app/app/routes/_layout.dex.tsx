@@ -43,6 +43,7 @@ interface DexData {
   privyAppId?: string | null;
   privyTermsOfUse?: string | null;
   enabledMenus?: string | null;
+  customMenus?: string | null;
   enableAbstractWallet?: boolean;
   chainIds?: number[] | null;
   repoUrl?: string | null;
@@ -178,6 +179,7 @@ export default function DexRoute() {
   const [privyAppId, setPrivyAppId] = useState("");
   const [privyTermsOfUse, setPrivyTermsOfUse] = useState("");
   const [enabledMenus, setEnabledMenus] = useState("");
+  const [customMenus, setCustomMenus] = useState("");
   const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
@@ -208,6 +210,7 @@ export default function DexRoute() {
     privyAppId: "",
     privyTermsOfUse: "",
     enabledMenus: "",
+    customMenus: "",
     enableAbstractWallet: false,
     chainIds: [] as number[],
     primaryLogo: null as string | null,
@@ -251,6 +254,7 @@ export default function DexRoute() {
           setPrivyAppId(response.privyAppId || "");
           setPrivyTermsOfUse(response.privyTermsOfUse || "");
           setEnabledMenus(response.enabledMenus || "");
+          setCustomMenus(response.customMenus || "");
           setEnableAbstractWallet(response.enableAbstractWallet || false);
           setDisableMainnet(response.disableMainnet || false);
           setDisableTestnet(response.disableTestnet || false);
@@ -287,6 +291,7 @@ export default function DexRoute() {
             privyAppId: response.privyAppId || "",
             privyTermsOfUse: response.privyTermsOfUse || "",
             enabledMenus: response.enabledMenus || "",
+            customMenus: response.customMenus || "",
             enableAbstractWallet: response.enableAbstractWallet || false,
             chainIds: response.chainIds || [],
             primaryLogo: response.primaryLogo || null,
@@ -472,6 +477,7 @@ export default function DexRoute() {
         privyTermsOfUse: setPrivyTermsOfUse,
         themePrompt: setThemePrompt,
         enabledMenus: setEnabledMenus,
+        customMenus: setCustomMenus,
       };
 
       // Call the appropriate setter function if it exists
@@ -533,6 +539,7 @@ export default function DexRoute() {
         favicon !== originalValues.favicon ||
         (themeApplied && currentTheme !== originalValues.themeCSS) ||
         enabledMenus !== originalValues.enabledMenus ||
+        customMenus !== originalValues.customMenus ||
         enableAbstractWallet !== originalValues.enableAbstractWallet ||
         disableMainnet !== originalValues.disableMainnet ||
         disableTestnet !== originalValues.disableTestnet ||
@@ -569,7 +576,8 @@ export default function DexRoute() {
         favicon: favicon,
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
-        enableAbstractWallet: enableAbstractWallet,
+        customMenus,
+        enableAbstractWallet,
         chainIds,
         disableMainnet,
         disableTestnet,
@@ -593,6 +601,7 @@ export default function DexRoute() {
           privyAppId: trimmedPrivyAppId,
           privyTermsOfUse: trimmedPrivyTermsOfUse,
           enabledMenus: enabledMenus,
+          customMenus,
           primaryLogo,
           secondaryLogo,
           favicon,
@@ -616,6 +625,7 @@ export default function DexRoute() {
           privyAppId: trimmedPrivyAppId,
           privyTermsOfUse: trimmedPrivyTermsOfUse,
           enabledMenus: enabledMenus,
+          customMenus,
           primaryLogo,
           secondaryLogo,
           favicon,
@@ -1249,6 +1259,8 @@ export default function DexRoute() {
               <NavigationMenuSection
                 enabledMenus={enabledMenus}
                 setEnabledMenus={setEnabledMenus}
+                customMenus={customMenus}
+                setCustomMenus={setCustomMenus}
               />
             </AccordionItem>
           )}
@@ -1486,6 +1498,8 @@ export default function DexRoute() {
               <NavigationMenuSection
                 enabledMenus={enabledMenus}
                 setEnabledMenus={setEnabledMenus}
+                customMenus={customMenus}
+                setCustomMenus={setCustomMenus}
               />
             </div>
           </Form>

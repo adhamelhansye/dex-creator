@@ -48,6 +48,34 @@ export const dexSchema = z.object({
   privyAppId: z.string().nullish(),
   privyTermsOfUse: z.string().nullish(),
   enabledMenus: z.string().nullish(),
+  customMenus: z
+    .string()
+    .refine(
+      value => {
+        if (!value || value.trim() === "") return true;
+
+        const menuItems = value.split(";");
+        return menuItems.every(item => {
+          if (!item.trim()) return false;
+          const parts = item.split(",");
+          if (parts.length !== 2) return false;
+          const [name, url] = parts.map(p => p.trim());
+          if (!name || !url) return false;
+
+          try {
+            new URL(url);
+            return true;
+          } catch {
+            return false;
+          }
+        });
+      },
+      {
+        message:
+          "Custom menus must be in format 'Name,URL;Name2,URL2' with valid URLs",
+      }
+    )
+    .nullish(),
   enableAbstractWallet: z.boolean().optional(),
   disableMainnet: z.boolean().optional(),
   disableTestnet: z.boolean().optional(),
@@ -135,6 +163,7 @@ export async function createDex(
         privyAppId: data.privyAppId || undefined,
         privyTermsOfUse: data.privyTermsOfUse || undefined,
         enabledMenus: data.enabledMenus || undefined,
+        customMenus: data.customMenus || undefined,
         enableAbstractWallet: data.enableAbstractWallet,
         disableMainnet: data.disableMainnet,
         disableTestnet: data.disableTestnet,
@@ -199,6 +228,7 @@ export async function createDex(
         privyAppId: data.privyAppId,
         privyTermsOfUse: data.privyTermsOfUse,
         enabledMenus: data.enabledMenus,
+        customMenus: data.customMenus,
         enableAbstractWallet: data.enableAbstractWallet,
         disableMainnet: data.disableMainnet,
         disableTestnet: data.disableTestnet,
@@ -279,6 +309,7 @@ export async function updateDex(
   if ("privyTermsOfUse" in data)
     updateData.privyTermsOfUse = data.privyTermsOfUse;
   if ("enabledMenus" in data) updateData.enabledMenus = data.enabledMenus;
+  if ("customMenus" in data) updateData.customMenus = data.customMenus;
 
   // Handle image data
   if ("primaryLogo" in data) updateData.primaryLogo = data.primaryLogo;

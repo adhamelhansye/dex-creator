@@ -483,6 +483,7 @@ function prepareDexConfigContent(
     privyAppId?: string;
     privyTermsOfUse?: string;
     enabledMenus?: string;
+    customMenus?: string;
     enableAbstractWallet?: boolean;
     disableMainnet?: boolean;
     disableTestnet?: boolean;
@@ -549,6 +550,7 @@ function prepareDexConfigContent(
     VITE_PRIVY_APP_ID: config.privyAppId || "",
     VITE_PRIVY_TERMS_OF_USE_URL: config.privyTermsOfUse || "",
     VITE_ENABLED_MENUS: config.enabledMenus || "",
+    VITE_CUSTOM_MENUS: config.customMenus || "",
     VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
     VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
@@ -688,6 +690,7 @@ export async function updateDexConfig(
     privyAppId?: string;
     privyTermsOfUse?: string;
     enabledMenus?: string;
+    customMenus?: string;
     enableAbstractWallet?: boolean;
     disableMainnet?: boolean;
     disableTestnet?: boolean;
@@ -785,6 +788,7 @@ export async function setupRepositoryWithSingleCommit(
     privyAppId?: string;
     privyTermsOfUse?: string;
     enabledMenus?: string;
+    customMenus?: string;
     enableAbstractWallet?: boolean;
     disableMainnet?: boolean;
     disableTestnet?: boolean;

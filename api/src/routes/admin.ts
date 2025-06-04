@@ -129,6 +129,7 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
               privyAppId: updatedDex.privyAppId || undefined,
               privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
               enabledMenus: updatedDex.enabledMenus || undefined,
+              customMenus: updatedDex.customMenus || undefined,
               enableAbstractWallet: updatedDex.enableAbstractWallet || false,
               disableMainnet: updatedDex.disableMainnet || false,
               disableTestnet: updatedDex.disableTestnet || false,

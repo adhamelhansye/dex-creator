@@ -140,6 +140,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               privyAppId: updatedDex.privyAppId || undefined,
               privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
               enabledMenus: updatedDex.enabledMenus || undefined,
+              customMenus: updatedDex.customMenus || undefined,
               enableAbstractWallet: updatedDex.enableAbstractWallet,
               disableMainnet: updatedDex.disableMainnet,
               disableTestnet: updatedDex.disableTestnet,

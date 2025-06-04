@@ -28,6 +28,7 @@ This is a monorepo managed with Yarn Workspaces:
 
 - Create and customize a DEX with your own branding
 - Configure social media links and appearance
+- Create custom navigation menus with structured name and URL inputs
 - Deploy your DEX through an automated process
 - Upgrade your DEX through a graduation process to earn fee splits and enable rewards
 
