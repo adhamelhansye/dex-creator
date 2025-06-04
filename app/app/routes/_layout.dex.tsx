@@ -225,7 +225,7 @@ export default function DexRoute() {
   const [themeApplied, setThemeApplied] = useState(false);
   const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
 
-  const [chainIds, setChainIds] = useState<number[]>([1]);
+  const [chainIds, setChainIds] = useState<number[]>([]);
   const [disableMainnet, setDisableMainnet] = useState(false);
   const [disableTestnet, setDisableTestnet] = useState(false);
 

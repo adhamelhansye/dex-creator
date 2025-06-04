@@ -317,7 +317,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
         </h4>
 
         {!disableMainnet ? (
-          <div className="slide-fade-in">
+          <div className="slide-fade-in space-y-6">
             {/* Mainnet Layer 1 Chains */}
             <div>
               <h5 className="text-sm font-medium mb-3 text-blue-300 flex items-center">
@@ -366,7 +366,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
         </h4>
 
         {!disableTestnet ? (
-          <div className="slide-fade-in">
+          <div className="slide-fade-in space-y-6">
             {/* Testnet Layer 1 Chains */}
             {testnetL1.length > 0 && (
               <div>
