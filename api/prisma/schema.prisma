@@ -51,6 +51,7 @@ model Dex {
   id                   String   @id @default(uuid())
   brokerId             String   @default("demo") // Set by admin later, defaults to "demo"
   brokerName           String   @default("Orderly DEX") // Broker name with default value
+  chainIds             Int[]    @default([]) // Array of chain IDs that the DEX should support
   primaryLogo          String?  // Base64-encoded primary logo data
   secondaryLogo        String?  // Base64-encoded secondary logo data
   favicon              String?  // Base64-encoded favicon data
@@ -70,6 +71,8 @@ model Dex {
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   enableAbstractWallet Boolean  @default(false) // New flag for Abstract Wallet
+  disableMainnet       Boolean  @default(false) // Flag to disable mainnet chains
+  disableTestnet       Boolean  @default(false) // Flag to disable testnet chains
   
   // Relation to User (owner) - one-to-one relationship
   userId               String   @unique

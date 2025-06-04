@@ -130,6 +130,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
             {
               brokerId: updatedDex.brokerId, // Use the existing broker ID from the database to preserve admin changes
               brokerName: updatedDex.brokerName,
+              chainIds: updatedDex.chainIds,
               themeCSS: updatedDex.themeCSS?.toString(),
               telegramLink: updatedDex.telegramLink || undefined,
               discordLink: updatedDex.discordLink || undefined,
@@ -140,6 +141,8 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
               enabledMenus: updatedDex.enabledMenus || undefined,
               enableAbstractWallet: updatedDex.enableAbstractWallet,
+              disableMainnet: updatedDex.disableMainnet,
+              disableTestnet: updatedDex.disableTestnet,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,

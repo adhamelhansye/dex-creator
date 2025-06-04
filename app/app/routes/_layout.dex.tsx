@@ -24,6 +24,7 @@ import ReownConfigSection from "../components/ReownConfigSection";
 import PrivyConfigSection from "../components/PrivyConfigSection";
 import NavigationMenuSection from "../components/NavigationMenuSection";
 import AccordionItem from "../components/AccordionItem";
+import BlockchainConfigSection from "../components/BlockchainConfigSection";
 
 // Define type for DEX data
 interface DexData {
@@ -42,9 +43,12 @@ interface DexData {
   privyAppId?: string | null;
   privyTermsOfUse?: string | null;
   enabledMenus?: string | null;
-  enableAbstractWallet?: boolean; // Added field
+  enableAbstractWallet?: boolean;
+  chainIds?: number[] | null;
   repoUrl?: string | null;
   customDomain?: string | null;
+  disableMainnet?: boolean;
+  disableTestnet?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -53,10 +57,8 @@ interface ThemeResponse {
   theme: string;
 }
 
-// Define type for active tab
 type ThemeTabType = "colors" | "rounded" | "spacing";
 
-// Define steps configuration for the accordion
 const STEPS_CONFIG = [
   { id: 1, title: "Broker Details", isOptional: false },
   { id: 2, title: "Branding", isOptional: true },
@@ -64,11 +66,11 @@ const STEPS_CONFIG = [
   { id: 4, title: "Social Media Links", isOptional: true },
   { id: 5, title: "Reown Configuration", isOptional: true },
   { id: 6, title: "Privy Configuration", isOptional: true },
-  { id: 7, title: "Navigation Menus", isOptional: true },
+  { id: 7, title: "Blockchain Configuration", isOptional: true },
+  { id: 8, title: "Navigation Menus", isOptional: true },
 ];
 const TOTAL_STEPS = STEPS_CONFIG.length;
 
-// Default theme content if needed
 const defaultTheme = `:root {
   --oui-font-family: 'Manrope', sans-serif;
 
@@ -175,8 +177,8 @@ export default function DexRoute() {
   const [walletConnectProjectId, setWalletConnectProjectId] = useState("");
   const [privyAppId, setPrivyAppId] = useState("");
   const [privyTermsOfUse, setPrivyTermsOfUse] = useState("");
-  const [enabledMenus, setEnabledMenus] = useState(""); // Backend has fallback mechanism
-  const [enableAbstractWallet, setEnableAbstractWallet] = useState(false); // Added state
+  const [enabledMenus, setEnabledMenus] = useState("");
+  const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
@@ -206,14 +208,16 @@ export default function DexRoute() {
     privyAppId: "",
     privyTermsOfUse: "",
     enabledMenus: "",
-    enableAbstractWallet: false, // Added to originalValues
+    enableAbstractWallet: false,
+    chainIds: [] as number[],
     primaryLogo: null as string | null,
     secondaryLogo: null as string | null,
     favicon: null as string | null,
     themeCSS: null as string | null,
+    disableMainnet: false,
+    disableTestnet: false,
   });
 
-  // Theme customization states
   const [themePrompt, setThemePrompt] = useState("");
   const [currentTheme, setCurrentTheme] = useState<string | null>(null);
   const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
@@ -221,7 +225,10 @@ export default function DexRoute() {
   const [themeApplied, setThemeApplied] = useState(false);
   const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
 
-  // Fetch existing DEX data if available
+  const [chainIds, setChainIds] = useState<number[]>([1]);
+  const [disableMainnet, setDisableMainnet] = useState(false);
+  const [disableTestnet, setDisableTestnet] = useState(false);
+
   useEffect(() => {
     if (!isAuthenticated || !token) return;
 
@@ -244,7 +251,9 @@ export default function DexRoute() {
           setPrivyAppId(response.privyAppId || "");
           setPrivyTermsOfUse(response.privyTermsOfUse || "");
           setEnabledMenus(response.enabledMenus || "");
-          setEnableAbstractWallet(response.enableAbstractWallet || false); // Initialize state
+          setEnableAbstractWallet(response.enableAbstractWallet || false);
+          setDisableMainnet(response.disableMainnet || false);
+          setDisableTestnet(response.disableTestnet || false);
           setPrimaryLogo(response.primaryLogo || null);
           setSecondaryLogo(response.secondaryLogo || null);
           setFavicon(response.favicon || null);
@@ -278,11 +287,14 @@ export default function DexRoute() {
             privyAppId: response.privyAppId || "",
             privyTermsOfUse: response.privyTermsOfUse || "",
             enabledMenus: response.enabledMenus || "",
-            enableAbstractWallet: response.enableAbstractWallet || false, // Set in originalValues
+            enableAbstractWallet: response.enableAbstractWallet || false,
+            chainIds: response.chainIds || [],
             primaryLogo: response.primaryLogo || null,
             secondaryLogo: response.secondaryLogo || null,
             favicon: response.favicon || null,
             themeCSS: response.themeCSS || null,
+            disableMainnet: response.disableMainnet || false,
+            disableTestnet: response.disableTestnet || false,
           });
 
           setActiveThemeTab("colors");
@@ -292,6 +304,7 @@ export default function DexRoute() {
               : null
           );
           setCustomDomain(response.customDomain || "");
+          setChainIds(response.chainIds || []);
         } else {
           setDexData(null);
         }
@@ -520,7 +533,11 @@ export default function DexRoute() {
         favicon !== originalValues.favicon ||
         (themeApplied && currentTheme !== originalValues.themeCSS) ||
         enabledMenus !== originalValues.enabledMenus ||
-        enableAbstractWallet !== originalValues.enableAbstractWallet;
+        enableAbstractWallet !== originalValues.enableAbstractWallet ||
+        disableMainnet !== originalValues.disableMainnet ||
+        disableTestnet !== originalValues.disableTestnet ||
+        JSON.stringify([...chainIds].sort()) !==
+          JSON.stringify([...originalValues.chainIds].sort());
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -552,7 +569,10 @@ export default function DexRoute() {
         favicon: favicon,
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
-        enableAbstractWallet: enableAbstractWallet, // Add to form data
+        enableAbstractWallet: enableAbstractWallet,
+        chainIds,
+        disableMainnet,
+        disableTestnet,
       };
 
       if (dexData && dexData.id) {
@@ -577,7 +597,10 @@ export default function DexRoute() {
           secondaryLogo,
           favicon,
           themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
-          enableAbstractWallet: enableAbstractWallet, // Update originalValues
+          enableAbstractWallet,
+          chainIds,
+          disableMainnet,
+          disableTestnet,
         });
 
         toast.success("DEX information updated successfully!");
@@ -597,7 +620,10 @@ export default function DexRoute() {
           secondaryLogo,
           favicon,
           themeCSS: themeApplied ? currentTheme : null,
-          enableAbstractWallet: enableAbstractWallet, // Ensure only one entry for this
+          enableAbstractWallet,
+          chainIds,
+          disableMainnet,
+          disableTestnet,
         });
 
         if (savedData.repoUrl) {
@@ -826,7 +852,6 @@ export default function DexRoute() {
     if (
       step === STEPS_CONFIG.find(s => s.title === "Privy Configuration")?.id
     ) {
-      const privyAppIdFilled = privyAppId && privyAppId.trim() !== "";
       const privyTermsOfUseFilled =
         privyTermsOfUse && privyTermsOfUse.trim() !== "";
 
@@ -844,7 +869,7 @@ export default function DexRoute() {
       setCurrentStep(step + 1);
       window.scrollTo({ top: 0, behavior: "smooth" });
     } else {
-      setCurrentStep(TOTAL_STEPS + 1); // Indicate all steps passed
+      setCurrentStep(TOTAL_STEPS + 1);
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     }
   };
@@ -1165,11 +1190,12 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* Step 7: Navigation Menus */}
+          {/* Step 7: Blockchain Configuration */}
           {areAllPreviousStepsCompleted(7) && (
             <AccordionItem
               title={
-                STEPS_CONFIG.find(s => s.id === 7)?.title || "Navigation Menus"
+                STEPS_CONFIG.find(s => s.id === 7)?.title ||
+                "Blockchain Configuration"
               }
               stepNumber={7}
               isOptional={
@@ -1181,6 +1207,39 @@ export default function DexRoute() {
               isCompleted={!!completedSteps[7]}
               canOpen={
                 allRequiredPreviousStepsCompleted(7) || !!completedSteps[7]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <BlockchainConfigSection
+                chainIds={chainIds}
+                onChainIdsChange={setChainIds}
+                disableMainnet={disableMainnet}
+                disableTestnet={disableTestnet}
+                onDisableMainnetChange={setDisableMainnet}
+                onDisableTestnetChange={setDisableTestnet}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 8: Navigation Menus */}
+          {areAllPreviousStepsCompleted(8) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 8)?.title || "Navigation Menus"
+              }
+              stepNumber={8}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 8)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(8)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 8}
+              isCompleted={!!completedSteps[8]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(8) || !!completedSteps[8]
               }
               setCurrentStep={setCurrentStep}
               allRequiredPreviousStepsCompleted={
@@ -1384,6 +1443,30 @@ export default function DexRoute() {
               enableAbstractWallet={enableAbstractWallet}
               onEnableAbstractWalletChange={setEnableAbstractWallet}
             />
+
+            <div className="mb-4 mt-6 border-t border-light/10 pt-4">
+              <label className="block text-md font-medium mb-3">
+                Blockchain Configuration{" "}
+                <span className="text-gray-400 text-sm font-normal">
+                  (optional)
+                </span>
+              </label>
+              <p className="text-xs text-gray-400 mb-4">
+                Choose which blockchains your DEX will support for trading.{" "}
+                <span className="text-primary-light">
+                  This is optional - your DEX will support all available
+                  blockchains by default.
+                </span>
+              </p>
+              <BlockchainConfigSection
+                chainIds={chainIds}
+                onChainIdsChange={setChainIds}
+                disableMainnet={disableMainnet}
+                disableTestnet={disableTestnet}
+                onDisableMainnetChange={setDisableMainnet}
+                onDisableTestnetChange={setDisableTestnet}
+              />
+            </div>
 
             <div className="mb-4 mt-6 border-t border-light/10 pt-4">
               <label className="block text-md font-medium mb-3">

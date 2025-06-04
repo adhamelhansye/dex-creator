@@ -474,6 +474,7 @@ function prepareDexConfigContent(
   config: {
     brokerId: string;
     brokerName: string;
+    chainIds?: number[];
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -483,6 +484,8 @@ function prepareDexConfigContent(
     privyTermsOfUse?: string;
     enabledMenus?: string;
     enableAbstractWallet?: boolean;
+    disableMainnet?: boolean;
+    disableTestnet?: boolean;
   },
   files?: {
     primaryLogo?: string;
@@ -501,10 +504,44 @@ function prepareDexConfigContent(
   const primaryLogoData = extractImageDataFromUri(files?.primaryLogo);
   const secondaryLogoData = extractImageDataFromUri(files?.secondaryLogo);
 
-  // Create ENV file content
+  const mainnetChainIds = [
+    42161, // Arbitrum One
+    10, // Optimism
+    8453, // Base
+    5000, // Mantle
+    1, // Ethereum
+    1329, // Sei
+    43114, // Avalanche
+    900900900, // Solana
+    2818, // Morph
+    146, // Sonic
+    80094, // Berachain
+    1514, // Story
+    34443, // Mode
+    98866, // Plume
+    2741, // Abstract
+  ];
+
+  const testnetChainIds = [
+    421614, // Arbitrum Sepolia
+    84532, // Base Sepolia
+    901901901, // Solana Devnet
+    11124, // Abstract Sepolia
+  ];
+
+  const selectedChainIds = config.chainIds || [];
+  const selectedMainnetChains = selectedChainIds.filter(id =>
+    mainnetChainIds.includes(id)
+  );
+  const selectedTestnetChains = selectedChainIds.filter(id =>
+    testnetChainIds.includes(id)
+  );
+
   const envVars = {
     VITE_BROKER_ID: config.brokerId,
     VITE_BROKER_NAME: config.brokerName,
+    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains.join(","),
+    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains.join(","),
     VITE_TELEGRAM_LINK: config.telegramLink || "",
     VITE_DISCORD_LINK: config.discordLink || "",
     VITE_X_LINK: config.xLink || "",
@@ -513,6 +550,8 @@ function prepareDexConfigContent(
     VITE_PRIVY_TERMS_OF_USE_URL: config.privyTermsOfUse || "",
     VITE_ENABLED_MENUS: config.enabledMenus || "",
     VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
+    VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
+    VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
   };
 
   const envContent = Object.entries(envVars)
@@ -640,6 +679,7 @@ export async function updateDexConfig(
   config: {
     brokerId: string;
     brokerName: string;
+    chainIds?: number[];
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -649,6 +689,8 @@ export async function updateDexConfig(
     privyTermsOfUse?: string;
     enabledMenus?: string;
     enableAbstractWallet?: boolean;
+    disableMainnet?: boolean;
+    disableTestnet?: boolean;
   },
   files?: {
     primaryLogo?: string;
@@ -734,6 +776,7 @@ export async function setupRepositoryWithSingleCommit(
   config: {
     brokerId: string;
     brokerName: string;
+    chainIds?: number[];
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -743,6 +786,8 @@ export async function setupRepositoryWithSingleCommit(
     privyTermsOfUse?: string;
     enabledMenus?: string;
     enableAbstractWallet?: boolean;
+    disableMainnet?: boolean;
+    disableTestnet?: boolean;
   },
   files: {
     primaryLogo?: string;

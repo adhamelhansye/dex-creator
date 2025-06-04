@@ -88,12 +88,10 @@ function extractRepoInfoFromUrl(
 adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
   const id = c.req.param("id");
 
-  // Validate the request body
   const brokerIdSchema = z.object({
     brokerId: z.string().min(1).max(50),
   });
 
-  // Validate body
   let body;
   try {
     body = await c.req.json();
@@ -103,32 +101,37 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
   }
 
   try {
-    // Get the DEX with current data before updating
     const dex = await getDexById(id);
     if (!dex) {
       return c.json({ message: "DEX not found" }, 404);
     }
 
-    // Update the broker ID in the database
     const updatedDex = await updateBrokerId(id, body.brokerId);
 
-    // If the DEX has a repository, update the config files
     if (updatedDex.repoUrl) {
       const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
 
       if (repoInfo) {
         try {
-          // Use our new function to update everything in one commit
           await setupRepositoryWithSingleCommit(
             repoInfo.owner,
             repoInfo.repo,
             {
               brokerId: body.brokerId,
               brokerName: updatedDex.brokerName,
+              chainIds: updatedDex.chainIds,
               themeCSS: updatedDex.themeCSS?.toString(),
               telegramLink: updatedDex.telegramLink || undefined,
               discordLink: updatedDex.discordLink || undefined,
               xLink: updatedDex.xLink || undefined,
+              walletConnectProjectId:
+                updatedDex.walletConnectProjectId || undefined,
+              privyAppId: updatedDex.privyAppId || undefined,
+              privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
+              enabledMenus: updatedDex.enabledMenus || undefined,
+              enableAbstractWallet: updatedDex.enableAbstractWallet || false,
+              disableMainnet: updatedDex.disableMainnet || false,
+              disableTestnet: updatedDex.disableTestnet || false,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,

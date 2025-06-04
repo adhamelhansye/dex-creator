@@ -35,6 +35,7 @@ function extractRepoInfoFromUrl(
 // Create schema for validation with base64-encoded image data
 export const dexSchema = z.object({
   brokerName: z.string().min(3).max(50).nullish(),
+  chainIds: z.array(z.number().positive().int()).optional(),
   themeCSS: z.string().nullish(),
   // For image data, expect base64-encoded strings
   primaryLogo: z.string().nullish(),
@@ -48,6 +49,8 @@ export const dexSchema = z.object({
   privyTermsOfUse: z.string().nullish(),
   enabledMenus: z.string().nullish(),
   enableAbstractWallet: z.boolean().optional(),
+  disableMainnet: z.boolean().optional(),
+  disableTestnet: z.boolean().optional(),
 });
 
 // Schema for custom domain validation
@@ -108,7 +111,6 @@ export async function createDex(
     repoUrl = await forkTemplateRepository(repoName);
     console.log(`Successfully forked repository: ${repoUrl}`);
 
-    // Extract repo info from URL
     const repoInfo = extractRepoInfoFromUrl(repoUrl);
     if (!repoInfo) {
       throw new Error(
@@ -116,16 +118,15 @@ export async function createDex(
       );
     }
 
-    // Always use 'demo' as the brokerId - only admins can change this
     const brokerId = "demo";
 
-    // Set up the repository with a single commit
     await setupRepositoryWithSingleCommit(
       repoInfo.owner,
       repoInfo.repo,
       {
         brokerId,
         brokerName,
+        chainIds: data.chainIds,
         themeCSS: data.themeCSS?.toString(),
         telegramLink: data.telegramLink || undefined,
         discordLink: data.discordLink || undefined,
@@ -135,6 +136,8 @@ export async function createDex(
         privyTermsOfUse: data.privyTermsOfUse || undefined,
         enabledMenus: data.enabledMenus || undefined,
         enableAbstractWallet: data.enableAbstractWallet,
+        disableMainnet: data.disableMainnet,
+        disableTestnet: data.disableTestnet,
       },
       {
         primaryLogo: data.primaryLogo || undefined,
@@ -184,6 +187,7 @@ export async function createDex(
       data: {
         brokerName: data.brokerName ?? undefined,
         brokerId: brokerId,
+        chainIds: data.chainIds ?? [],
         themeCSS: data.themeCSS,
         primaryLogo: data.primaryLogo,
         secondaryLogo: data.secondaryLogo,
@@ -196,6 +200,8 @@ export async function createDex(
         privyTermsOfUse: data.privyTermsOfUse,
         enabledMenus: data.enabledMenus,
         enableAbstractWallet: data.enableAbstractWallet,
+        disableMainnet: data.disableMainnet,
+        disableTestnet: data.disableTestnet,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -261,6 +267,7 @@ export async function updateDex(
   // Update fields that are present in the data object, including null values
   if ("brokerName" in data)
     updateData.brokerName = data.brokerName ?? undefined;
+  if ("chainIds" in data) updateData.chainIds = data.chainIds ?? [];
   if ("themeCSS" in data) updateData.themeCSS = data.themeCSS;
   if ("telegramLink" in data) updateData.telegramLink = data.telegramLink;
   if ("discordLink" in data) updateData.discordLink = data.discordLink;
@@ -279,6 +286,8 @@ export async function updateDex(
   if ("favicon" in data) updateData.favicon = data.favicon;
   if ("enableAbstractWallet" in data)
     updateData.enableAbstractWallet = data.enableAbstractWallet;
+  if ("disableMainnet" in data) updateData.disableMainnet = data.disableMainnet;
+  if ("disableTestnet" in data) updateData.disableTestnet = data.disableTestnet;
 
   return prisma.dex.update({
     where: {

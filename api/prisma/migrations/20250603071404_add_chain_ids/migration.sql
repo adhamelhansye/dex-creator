@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Dex" ADD COLUMN     "chainIds" INTEGER[] DEFAULT ARRAY[]::INTEGER[];
