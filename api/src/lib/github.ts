@@ -548,7 +548,7 @@ function prepareDexConfigContent(
     VITE_X_LINK: config.xLink || "",
     VITE_WALLETCONNECT_PROJECT_ID: config.walletConnectProjectId || "",
     VITE_PRIVY_APP_ID: config.privyAppId || "",
-    VITE_PRIVY_TERMS_OF_USE_URL: config.privyTermsOfUse || "",
+    VITE_PRIVY_TERMS_OF_USE: config.privyTermsOfUse || "",
     VITE_ENABLED_MENUS: config.enabledMenus || "",
     VITE_CUSTOM_MENUS: config.customMenus || "",
     VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
