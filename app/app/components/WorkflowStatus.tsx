@@ -3,6 +3,7 @@ import { get } from "../utils/apiClient";
 import { useAuth } from "../context/AuthContext";
 import { toast } from "react-toastify";
 import { Card } from "./Card";
+import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
 // Types for workflow run data
 type WorkflowRun = {
@@ -169,23 +170,6 @@ export default function WorkflowStatus({
     };
   }, [fetchWorkflowStatus, autoRefresh]);
 
-  // Function to construct deployment URL from repo URL
-  const getGitHubPagesUrl = useCallback((repoUrl: string): string => {
-    try {
-      // Extract repo name from GitHub URL
-      // Example: https://github.com/OrderlyNetworkDexCreator/my-dex
-      const match = repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
-      if (match && match[1]) {
-        const repoName = match[1];
-        // Use custom domain with repo name as path
-        return `https://dex.orderly.network/${repoName}/`;
-      }
-    } catch (error) {
-      console.error("Error constructing deployment URL:", error);
-    }
-    return "";
-  }, []);
-
   // Function to check for successful deployments
   const checkForSuccessfulDeployment = useCallback(() => {
     if (
@@ -225,7 +209,7 @@ export default function WorkflowStatus({
         if (successfulDeployment.htmlUrl) {
           const repoUrl =
             successfulDeployment.htmlUrl.split("/actions/runs/")[0];
-          const deploymentUrl = getGitHubPagesUrl(repoUrl);
+          const deploymentUrl = generateDeploymentUrl(repoUrl);
           if (deploymentUrl) {
             // Check if we've already notified for this workflow
             const isNewDeployment = !notifiedDeployments.includes(
@@ -262,7 +246,6 @@ export default function WorkflowStatus({
   }, [
     workflowStatus,
     onSuccessfulDeployment,
-    getGitHubPagesUrl,
     selectedRun,
     fetchRunDetails,
     dexId,

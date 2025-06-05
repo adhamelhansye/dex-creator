@@ -5,6 +5,7 @@ import { useAuth } from "../context/useAuth";
 import { Button } from "../components/Button";
 import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
+import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
 // Helper function to format fees
 const formatFee = (fee: number | null | undefined): string => {
@@ -74,6 +75,7 @@ interface Dex {
   brokerId: string;
   preferredBrokerId?: string | null;
   repoUrl: string | null;
+  customDomain?: string | null;
   createdAt: string;
   makerFee?: number | null;
   takerFee?: number | null;
@@ -1348,28 +1350,87 @@ export default function AdminRoute() {
                     </div>
 
                     {dex.repoUrl && (
-                      <div className="md:col-span-2 flex items-center justify-between">
-                        <div className="flex-1 min-w-0">
-                          <strong>Repo URL:</strong>{" "}
-                          <a
-                            href={dex.repoUrl}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-light hover:underline break-all"
+                      <>
+                        <div className="md:col-span-2 flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <strong>Repo URL:</strong>{" "}
+                            <a
+                              href={dex.repoUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary-light hover:underline break-all"
+                            >
+                              {dex.repoUrl}
+                            </a>
+                          </div>
+                          <button
+                            onClick={() =>
+                              copyToClipboard(dex.repoUrl!, "Repository URL")
+                            }
+                            className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                            title="Copy Repository URL"
                           >
-                            {dex.repoUrl}
-                          </a>
+                            <div className="i-mdi:content-copy h-3 w-3"></div>
+                          </button>
                         </div>
-                        <button
-                          onClick={() =>
-                            copyToClipboard(dex.repoUrl!, "Repository URL")
-                          }
-                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
-                          title="Copy Repository URL"
-                        >
-                          <div className="i-mdi:content-copy h-3 w-3"></div>
-                        </button>
-                      </div>
+
+                        {dex.customDomain ? (
+                          <div className="md:col-span-2 flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <strong>Custom Domain:</strong>{" "}
+                              <a
+                                href={`https://${dex.customDomain}`}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-warning hover:underline break-all"
+                              >
+                                {dex.customDomain}
+                              </a>
+                            </div>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  `https://${dex.customDomain}`,
+                                  "Custom Domain URL"
+                                )
+                              }
+                              className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                              title="Copy Custom Domain URL"
+                            >
+                              <div className="i-mdi:content-copy h-3 w-3"></div>
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="md:col-span-2 flex items-center justify-between">
+                            <div className="flex-1 min-w-0">
+                              <strong>Deployment URL:</strong>{" "}
+                              <a
+                                href={generateDeploymentUrl(dex.repoUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-success hover:underline break-all"
+                              >
+                                {generateDeploymentUrl(dex.repoUrl).replace(
+                                  "https://",
+                                  ""
+                                )}
+                              </a>
+                            </div>
+                            <button
+                              onClick={() =>
+                                copyToClipboard(
+                                  generateDeploymentUrl(dex.repoUrl!),
+                                  "Deployment URL"
+                                )
+                              }
+                              className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                              title="Copy Deployment URL"
+                            >
+                              <div className="i-mdi:content-copy h-3 w-3"></div>
+                            </button>
+                          </div>
+                        )}
+                      </>
                     )}
 
                     <div>

@@ -23,6 +23,7 @@ import { parseEther } from "viem";
 import clsx from "clsx";
 import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "./BaseFeeExplanation";
+import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
 const ERC20_ABI = [
   {
@@ -199,8 +200,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
           setDexData(response);
 
           if (response.repoUrl) {
-            const repoName = response.repoUrl.split("/").pop();
-            setDeploymentUrl(`https://dex.orderly.network/${repoName}/`);
+            setDeploymentUrl(generateDeploymentUrl(response.repoUrl));
           } else {
             setDeploymentUrl(null);
           }
