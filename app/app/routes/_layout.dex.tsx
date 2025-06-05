@@ -191,6 +191,7 @@ export default function DexRoute() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [forkingStatus, setForkingStatus] = useState("");
   const [dexData, setDexData] = useState<DexData | null>(null);
+  const [isLoadingDexData, setIsLoadingDexData] = useState(false);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [customDomain, setCustomDomain] = useState("");
   const [viewCssCode, setViewCssCode] = useState(false);
@@ -249,6 +250,7 @@ export default function DexRoute() {
     if (!isAuthenticated || !token) return;
 
     async function fetchDexData() {
+      setIsLoadingDexData(true);
       try {
         const response = await get<DexData | { exists: false }>(
           "api/dex",
@@ -291,12 +293,10 @@ export default function DexRoute() {
             setCurrentTheme(response.themeCSS);
             setThemeApplied(true);
           } else {
-            // Set default theme if none exists
             setCurrentTheme(defaultTheme);
             setThemeApplied(true);
           }
 
-          // Store original values for change detection
           setOriginalValues({
             ...response,
             chainIds: response.chainIds || [],
@@ -321,6 +321,8 @@ export default function DexRoute() {
       } catch (error) {
         console.error("Failed to fetch DEX data", error);
         setDexData(null);
+      } finally {
+        setIsLoadingDexData(false);
       }
     }
 
@@ -905,7 +907,7 @@ export default function DexRoute() {
     }
   };
 
-  if (isLoading) {
+  if (isLoading || isLoadingDexData) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center">
