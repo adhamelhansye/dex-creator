@@ -2,13 +2,15 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    tags:
+      - '*'
   workflow_dispatch:
 
 jobs:
   deploy:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' && (github.event_name == 'workflow_dispatch' || contains(github.event.base_ref, 'refs/heads/main'))
     
     steps:
       - name: Checkout code
