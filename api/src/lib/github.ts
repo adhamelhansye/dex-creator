@@ -558,6 +558,8 @@ function prepareDexConfigContent(
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
     VITE_DISABLE_EVM_WALLETS: String(config.disableEvmWallets ?? false),
     VITE_DISABLE_SOLANA_WALLETS: String(config.disableSolanaWallets ?? false),
+    VITE_HAS_PRIMARY_LOGO: primaryLogoData ? "true" : "false",
+    VITE_HAS_SECONDARY_LOGO: secondaryLogoData ? "true" : "false",
   };
 
   const envContent = Object.entries(envVars)
