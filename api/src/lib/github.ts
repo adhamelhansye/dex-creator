@@ -541,8 +541,8 @@ function prepareDexConfigContent(
   );
 
   const envVars = {
-    VITE_BROKER_ID: config.brokerId,
-    VITE_BROKER_NAME: config.brokerName,
+    VITE_ORDERLY_BROKER_ID: config.brokerId,
+    VITE_ORDERLY_BROKER_NAME: config.brokerName,
     VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains.join(","),
     VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains.join(","),
     VITE_TELEGRAM_URL: config.telegramLink || "",
