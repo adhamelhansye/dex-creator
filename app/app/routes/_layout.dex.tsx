@@ -492,6 +492,9 @@ export default function DexRoute() {
         case "privyTermsOfUse":
           setPrivyTermsOfUse(value);
           break;
+        case "themePrompt":
+          setThemePrompt(value);
+          break;
       }
     };
 
