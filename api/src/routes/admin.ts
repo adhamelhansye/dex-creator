@@ -12,6 +12,7 @@ import {
   setupRepositoryWithSingleCommit,
   renameRepository,
   deleteRepository,
+  triggerRedeployment,
 } from "../lib/github";
 
 const prisma = new PrismaClient();
@@ -355,6 +356,73 @@ adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
         message: `Error approving broker ID: ${error instanceof Error ? error.message : String(error)}`,
       },
       { status: 500 }
+    );
+  }
+});
+
+adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
+  const id = c.req.param("id");
+
+  try {
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    if (!dex.repoUrl) {
+      return c.json({ message: "This DEX does not have a repository" }, 400);
+    }
+
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, 400);
+    }
+
+    const success = await triggerRedeployment(
+      repoInfo.owner,
+      repoInfo.repo,
+      {
+        brokerId: dex.brokerId,
+        brokerName: dex.brokerName,
+        chainIds: dex.chainIds,
+        themeCSS: dex.themeCSS?.toString(),
+        telegramLink: dex.telegramLink || undefined,
+        discordLink: dex.discordLink || undefined,
+        xLink: dex.xLink || undefined,
+        walletConnectProjectId: dex.walletConnectProjectId || undefined,
+        privyAppId: dex.privyAppId || undefined,
+        privyTermsOfUse: dex.privyTermsOfUse || undefined,
+        enabledMenus: dex.enabledMenus || undefined,
+        customMenus: dex.customMenus || undefined,
+        enableAbstractWallet: dex.enableAbstractWallet || false,
+        disableMainnet: dex.disableMainnet || false,
+        disableTestnet: dex.disableTestnet || false,
+        disableEvmWallets: dex.disableEvmWallets || false,
+        disableSolanaWallets: dex.disableSolanaWallets || false,
+      },
+      {
+        primaryLogo: dex.primaryLogo || undefined,
+        secondaryLogo: dex.secondaryLogo || undefined,
+        favicon: dex.favicon || undefined,
+      }
+    );
+
+    if (success) {
+      return c.json({
+        message: `Redeployment triggered successfully for ${dex.brokerName}`,
+        success: true,
+      });
+    } else {
+      return c.json(
+        { message: "Failed to trigger redeployment", success: false },
+        500
+      );
+    }
+  } catch (error) {
+    console.error("Error triggering redeployment:", error);
+    return c.json(
+      { message: "Error triggering redeployment", error: String(error) },
+      500
     );
   }
 });

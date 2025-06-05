@@ -1291,3 +1291,59 @@ export async function removeCustomDomain(
     );
   }
 }
+
+/**
+ * Trigger a workflow dispatch to redeploy a DEX
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @param dexConfig The DEX configuration
+ * @param files The files associated with the DEX configuration
+ * @returns A boolean indicating success
+ */
+export async function triggerRedeployment(
+  owner: string,
+  repo: string,
+  dexConfig: {
+    brokerId: string;
+    brokerName: string;
+    chainIds?: number[];
+    themeCSS?: string;
+    telegramLink?: string;
+    discordLink?: string;
+    xLink?: string;
+    walletConnectProjectId?: string;
+    privyAppId?: string;
+    privyTermsOfUse?: string;
+    enabledMenus?: string;
+    customMenus?: string;
+    enableAbstractWallet?: boolean;
+    disableMainnet?: boolean;
+    disableTestnet?: boolean;
+    disableEvmWallets?: boolean;
+    disableSolanaWallets?: boolean;
+  },
+  files?: {
+    primaryLogo?: string;
+    secondaryLogo?: string;
+    favicon?: string;
+  }
+): Promise<boolean> {
+  try {
+    console.log(`Creating redeployment commit for ${owner}/${repo}...`);
+
+    await updateDexConfig(owner, repo, dexConfig, files);
+
+    console.log(
+      `Successfully created redeployment commit for ${owner}/${repo}`
+    );
+    return true;
+  } catch (error) {
+    console.error(
+      `Error creating redeployment commit for ${owner}/${repo}:`,
+      error
+    );
+    throw new Error(
+      `Failed to create redeployment commit: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}

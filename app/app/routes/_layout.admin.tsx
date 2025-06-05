@@ -7,13 +7,11 @@ import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
-// Helper function to format fees
 const formatFee = (fee: number | null | undefined): string => {
   if (fee === null || fee === undefined) return "-";
   return `${fee} bps (${(fee * 0.01).toFixed(2)}%)`;
 };
 
-// Helper function to copy text to clipboard
 const copyToClipboard = async (text: string, label: string) => {
   try {
     await navigator.clipboard.writeText(text);
@@ -24,21 +22,17 @@ const copyToClipboard = async (text: string, label: string) => {
   }
 };
 
-// Interface for the API response when deleting a DEX
 interface DeleteDexResponse {
   message: string;
   success: boolean;
 }
 
-// Interface for updating broker ID
 interface UpdateBrokerIdResponse {
   id: string;
   brokerId: string;
   brokerName: string;
-  // Other properties might be returned but we're focusing on these
 }
 
-// Interface for renaming repository
 interface RenameRepoResponse {
   message: string;
   dex: {
@@ -49,12 +43,10 @@ interface RenameRepoResponse {
   newName: string;
 }
 
-// Interface for the admin check response
 interface AdminCheckResponse {
   isAdmin: boolean;
 }
 
-// Interface for admin user
 interface AdminUser {
   id: string;
   address: string;
@@ -63,12 +55,10 @@ interface AdminUser {
   updatedAt: string;
 }
 
-// Interface for admin users response
 interface AdminUsersResponse {
   admins: AdminUser[];
 }
 
-// Interface for DEX
 interface Dex {
   id: string;
   brokerName: string;
@@ -85,12 +75,10 @@ interface Dex {
   };
 }
 
-// Interface for DEXes response
 interface DexesResponse {
   dexes: Dex[];
 }
 
-// Interface for approving broker ID
 interface ApproveBrokerIdResponse {
   success: boolean;
   message: string;
@@ -111,11 +99,9 @@ export default function AdminRoute() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [filteredDeleteDexes, setFilteredDeleteDexes] = useState<Dex[]>([]);
 
-  // Admin users state
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
 
-  // Broker ID update state
   const [dexId, setDexId] = useState("");
   const [brokerId, setBrokerId] = useState("");
   const [isUpdatingBrokerId, setIsUpdatingBrokerId] = useState(false);
@@ -129,7 +115,6 @@ export default function AdminRoute() {
     string | null
   >(null);
 
-  // Repository rename state
   const [repoDexId, setRepoDexId] = useState("");
   const [newRepoName, setNewRepoName] = useState("");
   const [isRenamingRepo, setIsRenamingRepo] = useState(false);
@@ -140,8 +125,11 @@ export default function AdminRoute() {
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated, token } = useAuth();
 
-  // Theme visibility state
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
+
+  const [redeployingDexes, setRedeployingDexes] = useState<Set<string>>(
+    new Set()
+  );
 
   const toggleThemeVisibility = (dexId: string) => {
     setExpandedThemes(prev => {
@@ -153,6 +141,28 @@ export default function AdminRoute() {
       }
       return newSet;
     });
+  };
+
+  const handleRedeployment = async (dexId: string, brokerName: string) => {
+    setRedeployingDexes(prev => new Set(prev).add(dexId));
+
+    try {
+      await post(`api/admin/dex/${dexId}/redeploy`, {}, token);
+      toast.success(`Redeployment triggered for ${brokerName}`);
+    } catch (error) {
+      console.error("Error triggering redeployment:", error);
+      if (error instanceof Error) {
+        toast.error(`Failed to trigger redeployment: ${error.message}`);
+      } else {
+        toast.error("Failed to trigger redeployment");
+      }
+    } finally {
+      setRedeployingDexes(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(dexId);
+        return newSet;
+      });
+    }
   };
 
   // Check if the current user is an admin
@@ -1440,6 +1450,38 @@ export default function AdminRoute() {
                       <strong>Taker Fee:</strong> {formatFee(dex.takerFee)}
                     </div>
                   </div>
+
+                  {/* Redeployment Button - only show if DEX has a repository */}
+                  {dex.repoUrl && (
+                    <div className="mt-3 pt-3 border-t border-light/10">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <strong className="text-xs">Actions:</strong>
+                        </div>
+                        <Button
+                          onClick={() =>
+                            handleRedeployment(dex.id, dex.brokerName)
+                          }
+                          disabled={redeployingDexes.has(dex.id)}
+                          variant="primary"
+                          size="sm"
+                          className="text-xs px-3 py-1 flex items-center gap-2"
+                        >
+                          {redeployingDexes.has(dex.id) ? (
+                            <>
+                              <div className="i-svg-spinners:pulse-rings h-3 w-3"></div>
+                              Deploying...
+                            </>
+                          ) : (
+                            <>
+                              <div className="i-mdi:rocket-launch h-3 w-3"></div>
+                              Redeploy
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Theme Section */}
                   {dex.themeCSS && (
