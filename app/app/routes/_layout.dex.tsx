@@ -50,6 +50,8 @@ interface DexData {
   customDomain?: string | null;
   disableMainnet?: boolean;
   disableTestnet?: boolean;
+  disableEvmWallets?: boolean;
+  disableSolanaWallets?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -201,8 +203,15 @@ export default function DexRoute() {
     {}
   );
 
-  const [originalValues, setOriginalValues] = useState({
+  const [originalValues, setOriginalValues] = useState<DexData>({
+    id: "",
     brokerName: "",
+    brokerId: "",
+    preferredBrokerId: null,
+    themeCSS: null,
+    primaryLogo: null,
+    secondaryLogo: null,
+    favicon: null,
     telegramLink: "",
     discordLink: "",
     xLink: "",
@@ -212,13 +221,15 @@ export default function DexRoute() {
     enabledMenus: "",
     customMenus: "",
     enableAbstractWallet: false,
-    chainIds: [] as number[],
-    primaryLogo: null as string | null,
-    secondaryLogo: null as string | null,
-    favicon: null as string | null,
-    themeCSS: null as string | null,
+    chainIds: [],
+    repoUrl: null,
+    customDomain: null,
     disableMainnet: false,
     disableTestnet: false,
+    disableEvmWallets: false,
+    disableSolanaWallets: false,
+    createdAt: "",
+    updatedAt: "",
   });
 
   const [themePrompt, setThemePrompt] = useState("");
@@ -231,6 +242,8 @@ export default function DexRoute() {
   const [chainIds, setChainIds] = useState<number[]>([]);
   const [disableMainnet, setDisableMainnet] = useState(false);
   const [disableTestnet, setDisableTestnet] = useState(false);
+  const [disableEvmWallets, setDisableEvmWallets] = useState(false);
+  const [disableSolanaWallets, setDisableSolanaWallets] = useState(false);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -258,6 +271,8 @@ export default function DexRoute() {
           setEnableAbstractWallet(response.enableAbstractWallet || false);
           setDisableMainnet(response.disableMainnet || false);
           setDisableTestnet(response.disableTestnet || false);
+          setDisableEvmWallets(response.disableEvmWallets || false);
+          setDisableSolanaWallets(response.disableSolanaWallets || false);
           setPrimaryLogo(response.primaryLogo || null);
           setSecondaryLogo(response.secondaryLogo || null);
           setFavicon(response.favicon || null);
@@ -283,23 +298,13 @@ export default function DexRoute() {
 
           // Store original values for change detection
           setOriginalValues({
-            brokerName: response.brokerName || "",
-            telegramLink: response.telegramLink || "",
-            discordLink: response.discordLink || "",
-            xLink: response.xLink || "",
-            walletConnectProjectId: response.walletConnectProjectId || "",
-            privyAppId: response.privyAppId || "",
-            privyTermsOfUse: response.privyTermsOfUse || "",
-            enabledMenus: response.enabledMenus || "",
-            customMenus: response.customMenus || "",
-            enableAbstractWallet: response.enableAbstractWallet || false,
+            ...response,
             chainIds: response.chainIds || [],
-            primaryLogo: response.primaryLogo || null,
-            secondaryLogo: response.secondaryLogo || null,
-            favicon: response.favicon || null,
-            themeCSS: response.themeCSS || null,
+            enableAbstractWallet: response.enableAbstractWallet || false,
             disableMainnet: response.disableMainnet || false,
             disableTestnet: response.disableTestnet || false,
+            disableEvmWallets: response.disableEvmWallets || false,
+            disableSolanaWallets: response.disableSolanaWallets || false,
           });
 
           setActiveThemeTab("colors");
@@ -386,7 +391,7 @@ export default function DexRoute() {
 
   // Reset theme to original
   const handleResetTheme = () => {
-    setCurrentTheme(originalValues.themeCSS);
+    setCurrentTheme(originalValues.themeCSS || null);
     setThemeApplied(!!originalValues.themeCSS);
     setThemePrompt("");
     setShowThemeEditor(false);
@@ -461,32 +466,35 @@ export default function DexRoute() {
 
   const urlValidator = validateUrl();
 
-  // Handle form field changes
   const handleInputChange =
     (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
 
-      // Use a mapping object instead of a switch statement
-      const setters: Record<string, (val: string) => void> = {
-        brokerName: setBrokerName,
-        telegramLink: setTelegramLink,
-        discordLink: setDiscordLink,
-        xLink: setXLink,
-        walletConnectProjectId: setWalletConnectProjectId,
-        privyAppId: setPrivyAppId,
-        privyTermsOfUse: setPrivyTermsOfUse,
-        themePrompt: setThemePrompt,
-        enabledMenus: setEnabledMenus,
-        customMenus: setCustomMenus,
-      };
-
-      // Call the appropriate setter function if it exists
-      if (setters[field]) {
-        setters[field](value);
+      switch (field) {
+        case "brokerName":
+          setBrokerName(value);
+          break;
+        case "telegramLink":
+          setTelegramLink(value);
+          break;
+        case "discordLink":
+          setDiscordLink(value);
+          break;
+        case "xLink":
+          setXLink(value);
+          break;
+        case "walletConnectProjectId":
+          setWalletConnectProjectId(value);
+          break;
+        case "privyAppId":
+          setPrivyAppId(value);
+          break;
+        case "privyTermsOfUse":
+          setPrivyTermsOfUse(value);
+          break;
       }
     };
 
-  // Handle image field changes
   const handleImageChange = (field: string) => (value: string | null) => {
     switch (field) {
       case "primaryLogo":
@@ -543,8 +551,10 @@ export default function DexRoute() {
         enableAbstractWallet !== originalValues.enableAbstractWallet ||
         disableMainnet !== originalValues.disableMainnet ||
         disableTestnet !== originalValues.disableTestnet ||
+        disableEvmWallets !== originalValues.disableEvmWallets ||
+        disableSolanaWallets !== originalValues.disableSolanaWallets ||
         JSON.stringify([...chainIds].sort()) !==
-          JSON.stringify([...originalValues.chainIds].sort());
+          JSON.stringify([...(originalValues.chainIds || [])].sort());
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -581,6 +591,8 @@ export default function DexRoute() {
         chainIds,
         disableMainnet,
         disableTestnet,
+        disableEvmWallets,
+        disableSolanaWallets,
       };
 
       if (dexData && dexData.id) {
@@ -593,30 +605,7 @@ export default function DexRoute() {
 
         // Update originalValues after successful save
         setOriginalValues({
-          brokerName: trimmedBrokerName,
-          telegramLink: trimmedTelegramLink,
-          discordLink: trimmedDiscordLink,
-          xLink: trimmedXLink,
-          walletConnectProjectId: trimmedWalletConnectProjectId,
-          privyAppId: trimmedPrivyAppId,
-          privyTermsOfUse: trimmedPrivyTermsOfUse,
-          enabledMenus: enabledMenus,
-          customMenus,
-          primaryLogo,
-          secondaryLogo,
-          favicon,
-          themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
-          enableAbstractWallet,
-          chainIds,
-          disableMainnet,
-          disableTestnet,
-        });
-
-        toast.success("DEX information updated successfully!");
-      } else {
-        savedData = await post<DexData>("api/dex", dexFormData, token);
-
-        setOriginalValues({
+          ...savedData,
           brokerName: trimmedBrokerName,
           telegramLink: trimmedTelegramLink,
           discordLink: trimmedDiscordLink,
@@ -634,6 +623,35 @@ export default function DexRoute() {
           chainIds,
           disableMainnet,
           disableTestnet,
+          disableEvmWallets,
+          disableSolanaWallets,
+        });
+
+        toast.success("DEX information updated successfully!");
+      } else {
+        savedData = await post<DexData>("api/dex", dexFormData, token);
+
+        setOriginalValues({
+          ...originalValues,
+          brokerName: trimmedBrokerName,
+          telegramLink: trimmedTelegramLink,
+          discordLink: trimmedDiscordLink,
+          xLink: trimmedXLink,
+          walletConnectProjectId: trimmedWalletConnectProjectId,
+          privyAppId: trimmedPrivyAppId,
+          privyTermsOfUse: trimmedPrivyTermsOfUse,
+          enabledMenus: enabledMenus,
+          customMenus,
+          primaryLogo,
+          secondaryLogo,
+          favicon,
+          themeCSS: themeApplied ? currentTheme : null,
+          enableAbstractWallet,
+          chainIds,
+          disableMainnet,
+          disableTestnet,
+          disableEvmWallets,
+          disableSolanaWallets,
         });
 
         if (savedData.repoUrl) {
@@ -1196,6 +1214,10 @@ export default function DexRoute() {
                 urlValidator={urlValidator}
                 enableAbstractWallet={enableAbstractWallet}
                 onEnableAbstractWalletChange={setEnableAbstractWallet}
+                disableEvmWallets={disableEvmWallets}
+                disableSolanaWallets={disableSolanaWallets}
+                onDisableEvmWalletsChange={setDisableEvmWallets}
+                onDisableSolanaWalletsChange={setDisableSolanaWallets}
               />
             </AccordionItem>
           )}
@@ -1454,6 +1476,10 @@ export default function DexRoute() {
               urlValidator={urlValidator}
               enableAbstractWallet={enableAbstractWallet}
               onEnableAbstractWalletChange={setEnableAbstractWallet}
+              disableEvmWallets={disableEvmWallets}
+              disableSolanaWallets={disableSolanaWallets}
+              onDisableEvmWalletsChange={setDisableEvmWallets}
+              onDisableSolanaWalletsChange={setDisableSolanaWallets}
             />
 
             <div className="mb-4 mt-6 border-t border-light/10 pt-4">

@@ -144,6 +144,8 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               enableAbstractWallet: updatedDex.enableAbstractWallet,
               disableMainnet: updatedDex.disableMainnet,
               disableTestnet: updatedDex.disableTestnet,
+              disableEvmWallets: updatedDex.disableEvmWallets,
+              disableSolanaWallets: updatedDex.disableSolanaWallets,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,

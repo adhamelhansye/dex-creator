@@ -74,6 +74,8 @@ model Dex {
   enableAbstractWallet Boolean  @default(false) // New flag for Abstract Wallet
   disableMainnet       Boolean  @default(false) // Flag to disable mainnet chains
   disableTestnet       Boolean  @default(false) // Flag to disable testnet chains
+  disableEvmWallets    Boolean  @default(false) // Flag to disable EVM wallets
+  disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
   
   // Relation to User (owner) - one-to-one relationship
   userId               String   @unique

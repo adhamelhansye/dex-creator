@@ -79,6 +79,8 @@ export const dexSchema = z.object({
   enableAbstractWallet: z.boolean().optional(),
   disableMainnet: z.boolean().optional(),
   disableTestnet: z.boolean().optional(),
+  disableEvmWallets: z.boolean().optional(),
+  disableSolanaWallets: z.boolean().optional(),
 });
 
 // Schema for custom domain validation
@@ -167,6 +169,8 @@ export async function createDex(
         enableAbstractWallet: data.enableAbstractWallet,
         disableMainnet: data.disableMainnet,
         disableTestnet: data.disableTestnet,
+        disableEvmWallets: data.disableEvmWallets,
+        disableSolanaWallets: data.disableSolanaWallets,
       },
       {
         primaryLogo: data.primaryLogo || undefined,
@@ -232,6 +236,8 @@ export async function createDex(
         enableAbstractWallet: data.enableAbstractWallet,
         disableMainnet: data.disableMainnet,
         disableTestnet: data.disableTestnet,
+        disableEvmWallets: data.disableEvmWallets,
+        disableSolanaWallets: data.disableSolanaWallets,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -319,6 +325,10 @@ export async function updateDex(
     updateData.enableAbstractWallet = data.enableAbstractWallet;
   if ("disableMainnet" in data) updateData.disableMainnet = data.disableMainnet;
   if ("disableTestnet" in data) updateData.disableTestnet = data.disableTestnet;
+  if ("disableEvmWallets" in data)
+    updateData.disableEvmWallets = data.disableEvmWallets;
+  if ("disableSolanaWallets" in data)
+    updateData.disableSolanaWallets = data.disableSolanaWallets;
 
   return prisma.dex.update({
     where: {

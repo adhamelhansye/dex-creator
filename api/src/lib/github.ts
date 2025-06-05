@@ -487,6 +487,8 @@ function prepareDexConfigContent(
     enableAbstractWallet?: boolean;
     disableMainnet?: boolean;
     disableTestnet?: boolean;
+    disableEvmWallets?: boolean;
+    disableSolanaWallets?: boolean;
   },
   files?: {
     primaryLogo?: string;
@@ -554,6 +556,8 @@ function prepareDexConfigContent(
     VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
     VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
+    VITE_DISABLE_EVM_WALLETS: String(config.disableEvmWallets ?? false),
+    VITE_DISABLE_SOLANA_WALLETS: String(config.disableSolanaWallets ?? false),
   };
 
   const envContent = Object.entries(envVars)
@@ -694,6 +698,8 @@ export async function updateDexConfig(
     enableAbstractWallet?: boolean;
     disableMainnet?: boolean;
     disableTestnet?: boolean;
+    disableEvmWallets?: boolean;
+    disableSolanaWallets?: boolean;
   },
   files?: {
     primaryLogo?: string;
@@ -792,6 +798,8 @@ export async function setupRepositoryWithSingleCommit(
     enableAbstractWallet?: boolean;
     disableMainnet?: boolean;
     disableTestnet?: boolean;
+    disableEvmWallets?: boolean;
+    disableSolanaWallets?: boolean;
   },
   files: {
     primaryLogo?: string;

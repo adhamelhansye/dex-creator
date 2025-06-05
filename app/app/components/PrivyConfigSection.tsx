@@ -11,6 +11,10 @@ export interface PrivyConfigProps {
   urlValidator: (value: string) => string | null;
   enableAbstractWallet: boolean;
   onEnableAbstractWalletChange: (checked: boolean) => void;
+  disableEvmWallets?: boolean;
+  disableSolanaWallets?: boolean;
+  onDisableEvmWalletsChange?: (disabled: boolean) => void;
+  onDisableSolanaWalletsChange?: (disabled: boolean) => void;
   idPrefix?: string;
 }
 
@@ -21,6 +25,10 @@ const PrivyConfigSection: React.FC<PrivyConfigProps> = ({
   urlValidator,
   enableAbstractWallet,
   onEnableAbstractWalletChange,
+  disableEvmWallets = false,
+  disableSolanaWallets = false,
+  onDisableEvmWalletsChange,
+  onDisableSolanaWalletsChange,
   idPrefix = "",
 }) => {
   const isPrivyConfigured = privyAppId.trim() !== "";
@@ -103,32 +111,88 @@ const PrivyConfigSection: React.FC<PrivyConfigProps> = ({
         }
       />
       <div className="mt-4">
-        <label className="flex items-start gap-3 cursor-pointer">
-          <input
-            type="checkbox"
-            id={`${idPrefix}enableAbstractWallet`}
-            checked={enableAbstractWallet}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-              onEnableAbstractWalletChange(e.target.checked)
-            }
-            disabled={!isPrivyConfigured}
-            className="form-checkbox mt-1 rounded bg-dark border-gray-500 text-primary focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
-          />
-          <div className="flex-1">
-            <div
-              className={`text-sm font-medium ${!isPrivyConfigured ? "text-gray-500" : "text-gray-200"}`}
-            >
-              Enable Abstract Wallet (via Privy)
+        <h4 className="text-sm font-medium mb-3">Wallet Configuration</h4>
+        <div className="space-y-4">
+          {/* Wallet Type Controls - Only shown when Privy is configured */}
+          {isPrivyConfigured && (
+            <>
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-light/10 bg-light/5 hover:bg-light/10 cursor-pointer transition-all duration-200 ease-in-out">
+                <input
+                  type="checkbox"
+                  checked={!disableEvmWallets}
+                  onChange={e => onDisableEvmWalletsChange?.(!e.target.checked)}
+                  disabled={!isPrivyConfigured}
+                  className="form-checkbox mt-1 rounded bg-dark border-gray-500 text-primary focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <div className="flex-1">
+                  <div
+                    className={`text-sm font-medium ${!isPrivyConfigured ? "text-gray-500" : "text-gray-200"}`}
+                  >
+                    Enable EVM Wallets
+                  </div>
+                  <div
+                    className={`text-xs mt-1 ${!isPrivyConfigured ? "text-gray-600" : "text-gray-400"}`}
+                  >
+                    Allows users to connect Ethereum-compatible wallets
+                    (MetaMask, Coinbase, etc.)
+                  </div>
+                </div>
+              </label>
+
+              <label className="flex items-start gap-3 p-3 rounded-lg border border-light/10 bg-light/5 hover:bg-light/10 cursor-pointer transition-all duration-200 ease-in-out">
+                <input
+                  type="checkbox"
+                  checked={!disableSolanaWallets}
+                  onChange={e =>
+                    onDisableSolanaWalletsChange?.(!e.target.checked)
+                  }
+                  disabled={!isPrivyConfigured}
+                  className="form-checkbox mt-1 rounded bg-dark border-gray-500 text-primary focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+                />
+                <div className="flex-1">
+                  <div
+                    className={`text-sm font-medium ${!isPrivyConfigured ? "text-gray-500" : "text-gray-200"}`}
+                  >
+                    Enable Solana Wallets
+                  </div>
+                  <div
+                    className={`text-xs mt-1 ${!isPrivyConfigured ? "text-gray-600" : "text-gray-400"}`}
+                  >
+                    Allows users to connect Solana wallets (Phantom, Solflare,
+                    etc.)
+                  </div>
+                </div>
+              </label>
+            </>
+          )}
+
+          <label className="flex items-start gap-3 p-3 rounded-lg border border-light/10 bg-light/5 hover:bg-light/10 cursor-pointer transition-all duration-200 ease-in-out">
+            <input
+              type="checkbox"
+              id={`${idPrefix}enableAbstractWallet`}
+              checked={enableAbstractWallet}
+              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                onEnableAbstractWalletChange(e.target.checked)
+              }
+              disabled={!isPrivyConfigured}
+              className="form-checkbox mt-1 rounded bg-dark border-gray-500 text-primary focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            />
+            <div className="flex-1">
+              <div
+                className={`text-sm font-medium ${!isPrivyConfigured ? "text-gray-500" : "text-gray-200"}`}
+              >
+                Enable Abstract Wallet (via Privy)
+              </div>
+              <div
+                className={`text-xs mt-1 ${!isPrivyConfigured ? "text-gray-600" : "text-gray-400"}`}
+              >
+                {isPrivyConfigured
+                  ? "Enables Abstract's wallet solution powered by Privy. This allows users to connect using Abstract's wallet on the Abstract blockchain."
+                  : "Requires a Privy App ID to be set above before this can be enabled."}
+              </div>
             </div>
-            <div
-              className={`text-xs mt-1 ${!isPrivyConfigured ? "text-gray-600" : "text-gray-400"}`}
-            >
-              {isPrivyConfigured
-                ? "Allows users to sign transactions using abstract wallets (e.g., social logins) when Privy is configured. This requires a Privy App ID to be set above."
-                : "Requires a Privy App ID to be set above before this can be enabled."}
-            </div>
-          </div>
-        </label>
+          </label>
+        </div>
       </div>
     </>
   );
