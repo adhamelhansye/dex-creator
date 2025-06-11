@@ -73,6 +73,7 @@ const STEPS_CONFIG = [
   { id: 6, title: "Privy Configuration", isOptional: true },
   { id: 7, title: "Blockchain Configuration", isOptional: true },
   { id: 8, title: "Navigation Menus", isOptional: true },
+  { id: 9, title: "PnL Posters", isOptional: true },
 ];
 const TOTAL_STEPS = STEPS_CONFIG.length;
 
@@ -1118,23 +1119,6 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* PnL Posters Section */}
-          <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
-            PnL Share Posters{" "}
-            <span className="text-gray-400 text-sm font-normal">
-              (optional)
-            </span>
-          </h3>
-          <p className="text-xs text-gray-400 mb-4">
-            Upload custom background images for PnL sharing posters. Users can
-            share their trading performance with these backgrounds.{" "}
-            <span className="text-primary-light">
-              You can upload up to 8 custom poster backgrounds.
-            </span>{" "}
-            Leave empty to use default poster designs.
-          </p>
-          <PnLPostersSection pnlPosters={pnlPosters} onChange={setPnlPosters} />
-
           {/* Step 4: Social Media Links */}
           {areAllPreviousStepsCompleted(4) && (
             <AccordionItem
@@ -1315,6 +1299,41 @@ export default function DexRoute() {
                 setEnabledMenus={setEnabledMenus}
                 customMenus={customMenus}
                 setCustomMenus={setCustomMenus}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 9: PnL Posters */}
+          {areAllPreviousStepsCompleted(9) && (
+            <AccordionItem
+              title={STEPS_CONFIG.find(s => s.id === 9)?.title || "PnL Posters"}
+              stepNumber={9}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 9)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(9)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 9}
+              isCompleted={!!completedSteps[9]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(9) || !!completedSteps[9]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Upload custom background images for PnL sharing posters. Users
+                can share their trading performance with these backgrounds.{" "}
+                <span className="text-primary-light">
+                  You can upload up to 8 custom poster backgrounds.
+                </span>{" "}
+                Leave empty to use default poster designs.
+              </p>
+              <PnLPostersSection
+                pnlPosters={pnlPosters}
+                onChange={setPnlPosters}
               />
             </AccordionItem>
           )}
