@@ -494,6 +494,7 @@ function prepareDexConfigContent(
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
+    pnlPosters?: string[];
   }
 ): {
   envContent: string;
@@ -501,11 +502,17 @@ function prepareDexConfigContent(
   faviconData?: Buffer;
   primaryLogoData?: Buffer;
   secondaryLogoData?: Buffer;
+  pnlPostersData?: Buffer[];
 } {
   // Extract image data
   const faviconData = extractImageDataFromUri(files?.favicon);
   const primaryLogoData = extractImageDataFromUri(files?.primaryLogo);
   const secondaryLogoData = extractImageDataFromUri(files?.secondaryLogo);
+
+  const pnlPostersData =
+    (files?.pnlPosters
+      ?.map(poster => extractImageDataFromUri(poster))
+      .filter(Boolean) as Buffer[]) || [];
 
   const mainnetChainIds = [
     42161, // Arbitrum One
@@ -560,6 +567,8 @@ function prepareDexConfigContent(
     VITE_DISABLE_SOLANA_WALLETS: String(config.disableSolanaWallets ?? false),
     VITE_HAS_PRIMARY_LOGO: primaryLogoData ? "true" : "false",
     VITE_HAS_SECONDARY_LOGO: secondaryLogoData ? "true" : "false",
+    VITE_USE_CUSTOM_PNL_POSTERS: pnlPostersData.length > 0 ? "true" : "false",
+    VITE_CUSTOM_PNL_POSTER_COUNT: String(pnlPostersData.length),
   };
 
   const envContent = Object.entries(envVars)
@@ -572,6 +581,7 @@ function prepareDexConfigContent(
     faviconData: faviconData || undefined,
     primaryLogoData: primaryLogoData || undefined,
     secondaryLogoData: secondaryLogoData || undefined,
+    pnlPostersData: pnlPostersData.length > 0 ? pnlPostersData : undefined,
   };
 }
 
@@ -707,6 +717,7 @@ export async function updateDexConfig(
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
+    pnlPosters?: string[];
   }
 ): Promise<void> {
   try {
@@ -717,6 +728,7 @@ export async function updateDexConfig(
       faviconData,
       primaryLogoData,
       secondaryLogoData,
+      pnlPostersData,
     } = prepareDexConfigContent(config, files);
 
     // Prepare file contents map for text files
@@ -742,6 +754,12 @@ export async function updateDexConfig(
 
     if (secondaryLogoData) {
       binaryFiles.set("public/logo-secondary.webp", secondaryLogoData);
+    }
+
+    if (pnlPostersData) {
+      pnlPostersData.forEach((posterData, index) => {
+        binaryFiles.set(`public/pnl/poster_bg_${index + 1}.webp`, posterData);
+      });
     }
 
     // Create a single commit with all changes
@@ -807,6 +825,7 @@ export async function setupRepositoryWithSingleCommit(
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
+    pnlPosters?: string[];
   }
 ): Promise<void> {
   console.log(`Setting up repository ${owner}/${repo} with a single commit...`);
@@ -837,6 +856,7 @@ export async function setupRepositoryWithSingleCommit(
       faviconData,
       primaryLogoData,
       secondaryLogoData,
+      pnlPostersData,
     } = prepareDexConfigContent(config, files);
 
     // Prepare file contents map for text files
@@ -864,6 +884,12 @@ export async function setupRepositoryWithSingleCommit(
 
     if (secondaryLogoData) {
       binaryFiles.set("public/logo-secondary.webp", secondaryLogoData);
+    }
+
+    if (pnlPostersData) {
+      pnlPostersData.forEach((posterData, index) => {
+        binaryFiles.set(`public/pnl/poster_bg_${index + 1}.webp`, posterData);
+      });
     }
 
     // Create a single commit with all changes
@@ -1326,6 +1352,7 @@ export async function triggerRedeployment(
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
+    pnlPosters?: string[];
   }
 ): Promise<boolean> {
   try {

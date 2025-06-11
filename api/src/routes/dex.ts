@@ -114,21 +114,18 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   const userId = c.get("userId");
 
   try {
-    // Update the DEX in the database
     const updatedDex = await updateDex(id, data, userId);
 
-    // Check if the DEX has a repository URL and update the config files if needed
     if (updatedDex.repoUrl) {
       const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
 
       if (repoInfo) {
         try {
-          // Use our new function to update everything in one commit
           await updateDexConfig(
             repoInfo.owner,
             repoInfo.repo,
             {
-              brokerId: updatedDex.brokerId, // Use the existing broker ID from the database to preserve admin changes
+              brokerId: updatedDex.brokerId,
               brokerName: updatedDex.brokerName,
               chainIds: updatedDex.chainIds,
               themeCSS: updatedDex.themeCSS?.toString(),
@@ -151,6 +148,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               primaryLogo: updatedDex.primaryLogo || undefined,
               secondaryLogo: updatedDex.secondaryLogo || undefined,
               favicon: updatedDex.favicon || undefined,
+              pnlPosters: updatedDex.pnlPosters || undefined,
             }
           );
 
@@ -158,9 +156,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
             `Successfully updated repository files for ${updatedDex.brokerName} with a single commit`
           );
         } catch (configError) {
-          // Log the error but don't fail the update
           console.error("Error updating repository files:", configError);
-          // We continue and return the updated DEX even if the repo update failed
         }
       }
     }
@@ -169,7 +165,6 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   } catch (error) {
     console.error("Error updating DEX:", error);
 
-    // Handle unauthorized access
     if (
       error instanceof Error &&
       error.message.includes("user is not authorized")
@@ -177,7 +172,6 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
       return c.json({ message: error.message }, 403);
     }
 
-    // Handle DEX not found
     if (error instanceof Error && error.message.includes("DEX not found")) {
       return c.json({ message: "DEX not found" }, 404);
     }
@@ -197,7 +191,6 @@ dexRoutes.delete("/:id", async c => {
   } catch (error) {
     console.error("Error deleting DEX:", error);
 
-    // Handle unauthorized access
     if (
       error instanceof Error &&
       error.message.includes("user is not authorized")
@@ -205,7 +198,6 @@ dexRoutes.delete("/:id", async c => {
       return c.json({ message: error.message }, 403);
     }
 
-    // Handle DEX not found
     if (error instanceof Error && error.message.includes("DEX not found")) {
       return c.json({ message: "DEX not found" }, 404);
     }
@@ -221,30 +213,25 @@ dexRoutes.get("/:id/workflow-status", async c => {
   const userId = c.get("userId");
 
   try {
-    // Get the DEX details
     const dex = await getDexById(id);
 
     if (!dex) {
       return c.json({ message: "DEX not found" }, 404);
     }
 
-    // Check if the DEX belongs to the user
     if (dex.userId !== userId) {
       return c.json({ message: "Unauthorized to access this DEX" }, 403);
     }
 
-    // Check if this DEX has a repository
     if (!dex.repoUrl) {
       return c.json({ message: "This DEX does not have a repository" }, 400);
     }
 
-    // Extract owner and repo from GitHub URL
     const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
     if (!repoInfo) {
       return c.json({ message: "Invalid repository URL" }, 400);
     }
 
-    // Get workflow runs
     const workflowRuns = await getWorkflowRunStatus(
       repoInfo.owner,
       repoInfo.repo,
@@ -272,30 +259,25 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
   }
 
   try {
-    // Get the DEX details
     const dex = await getDexById(id);
 
     if (!dex) {
       return c.json({ message: "DEX not found" }, 404);
     }
 
-    // Check if the DEX belongs to the user
     if (dex.userId !== userId) {
       return c.json({ message: "Unauthorized to access this DEX" }, 403);
     }
 
-    // Check if this DEX has a repository
     if (!dex.repoUrl) {
       return c.json({ message: "This DEX does not have a repository" }, 400);
     }
 
-    // Extract owner and repo from GitHub URL
     const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
     if (!repoInfo) {
       return c.json({ message: "Invalid repository URL" }, 400);
     }
 
-    // Get workflow run details
     const runDetails = await getWorkflowRunDetails(
       repoInfo.owner,
       repoInfo.repo,
@@ -336,7 +318,6 @@ dexRoutes.post(
     } catch (error) {
       console.error("Error setting custom domain:", error);
 
-      // Handle specific error cases
       if (error instanceof Error) {
         if (error.message.includes("DEX not found")) {
           return c.json({ message: "DEX not found" }, { status: 404 });
@@ -380,7 +361,6 @@ dexRoutes.delete("/:id/custom-domain", async c => {
   } catch (error) {
     console.error("Error removing custom domain:", error);
 
-    // Handle specific error cases
     if (error instanceof Error) {
       if (error.message.includes("DEX not found")) {
         return c.json({ message: "DEX not found" }, { status: 404 });

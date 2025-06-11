@@ -19,6 +19,7 @@ import { useNavigate, Link } from "@remix-run/react";
 import BrokerDetailsSection from "../components/BrokerDetailsSection";
 import BrandingSection from "../components/BrandingSection";
 import ThemeCustomizationSection from "../components/ThemeCustomizationSection";
+import PnLPostersSection from "../components/PnLPostersSection";
 import SocialLinksSection from "../components/SocialLinksSection";
 import ReownConfigSection from "../components/ReownConfigSection";
 import PrivyConfigSection from "../components/PrivyConfigSection";
@@ -36,6 +37,7 @@ interface DexData {
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
   favicon?: string | null;
+  pnlPosters?: string[] | null;
   telegramLink?: string | null;
   discordLink?: string | null;
   xLink?: string | null;
@@ -186,6 +188,7 @@ export default function DexRoute() {
   const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
+  const [pnlPosters, setPnlPosters] = useState<(string | null)[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isForking, setIsForking] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -213,6 +216,7 @@ export default function DexRoute() {
     primaryLogo: null,
     secondaryLogo: null,
     favicon: null,
+    pnlPosters: null,
     telegramLink: "",
     discordLink: "",
     xLink: "",
@@ -278,6 +282,7 @@ export default function DexRoute() {
           setPrimaryLogo(response.primaryLogo || null);
           setSecondaryLogo(response.secondaryLogo || null);
           setFavicon(response.favicon || null);
+          setPnlPosters(response.pnlPosters || []);
           setViewCssCode(false);
 
           setIsGraduationEligible(response.brokerId === "demo");
@@ -550,6 +555,8 @@ export default function DexRoute() {
         primaryLogo !== originalValues.primaryLogo ||
         secondaryLogo !== originalValues.secondaryLogo ||
         favicon !== originalValues.favicon ||
+        JSON.stringify(pnlPosters) !==
+          JSON.stringify(originalValues.pnlPosters || []) ||
         (themeApplied && currentTheme !== originalValues.themeCSS) ||
         enabledMenus !== originalValues.enabledMenus ||
         customMenus !== originalValues.customMenus ||
@@ -589,6 +596,7 @@ export default function DexRoute() {
         primaryLogo: primaryLogo,
         secondaryLogo: secondaryLogo,
         favicon: favicon,
+        pnlPosters: pnlPosters.filter(Boolean) as string[],
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
         customMenus,
@@ -623,6 +631,7 @@ export default function DexRoute() {
           primaryLogo,
           secondaryLogo,
           favicon,
+          pnlPosters: pnlPosters.filter(Boolean) as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
           chainIds,
@@ -650,6 +659,7 @@ export default function DexRoute() {
           primaryLogo,
           secondaryLogo,
           favicon,
+          pnlPosters: pnlPosters.filter(Boolean) as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
           chainIds,
@@ -1108,6 +1118,23 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
+          {/* PnL Posters Section */}
+          <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+            PnL Share Posters{" "}
+            <span className="text-gray-400 text-sm font-normal">
+              (optional)
+            </span>
+          </h3>
+          <p className="text-xs text-gray-400 mb-4">
+            Upload custom background images for PnL sharing posters. Users can
+            share their trading performance with these backgrounds.{" "}
+            <span className="text-primary-light">
+              You can upload up to 8 custom poster backgrounds.
+            </span>{" "}
+            Leave empty to use default poster designs.
+          </p>
+          <PnLPostersSection pnlPosters={pnlPosters} onChange={setPnlPosters} />
+
           {/* Step 4: Social Media Links */}
           {areAllPreviousStepsCompleted(4) && (
             <AccordionItem
@@ -1412,6 +1439,26 @@ export default function DexRoute() {
                 handleGenerateTheme={handleGenerateTheme}
               />
             </div>
+
+            {/* PnL Posters Section */}
+            <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
+              PnL Share Posters{" "}
+              <span className="text-gray-400 text-sm font-normal">
+                (optional)
+              </span>
+            </h3>
+            <p className="text-xs text-gray-400 mb-4">
+              Upload custom background images for PnL sharing posters. Users can
+              share their trading performance with these backgrounds.{" "}
+              <span className="text-primary-light">
+                You can upload up to 8 custom poster backgrounds.
+              </span>{" "}
+              Leave empty to use default poster designs.
+            </p>
+            <PnLPostersSection
+              pnlPosters={pnlPosters}
+              onChange={setPnlPosters}
+            />
 
             {/* Social Media Links Section: Add back H3 and P for Manage view */}
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">

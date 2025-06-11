@@ -37,10 +37,19 @@ export const dexSchema = z.object({
   brokerName: z.string().min(3).max(50).nullish(),
   chainIds: z.array(z.number().positive().int()).optional(),
   themeCSS: z.string().nullish(),
-  // For image data, expect base64-encoded strings
-  primaryLogo: z.string().nullish(),
-  secondaryLogo: z.string().nullish(),
-  favicon: z.string().nullish(),
+  primaryLogo: z
+    .string()
+    .max(250000, "Primary logo must be smaller than 250KB")
+    .nullish(),
+  secondaryLogo: z
+    .string()
+    .max(100000, "Secondary logo must be smaller than 100KB")
+    .nullish(),
+  favicon: z.string().max(50000, "Favicon must be smaller than 50KB").nullish(),
+  pnlPosters: z
+    .array(z.string().max(250000, "Each PnL poster must be smaller than 250KB"))
+    .optional()
+    .default([]),
   telegramLink: z.string().url().nullish(),
   discordLink: z.string().url().nullish(),
   xLink: z.string().url().nullish(),
@@ -176,6 +185,7 @@ export async function createDex(
         primaryLogo: data.primaryLogo || undefined,
         secondaryLogo: data.secondaryLogo || undefined,
         favicon: data.favicon || undefined,
+        pnlPosters: data.pnlPosters || undefined,
       }
     );
     console.log(`Successfully set up repository for ${brokerName}`);
@@ -225,6 +235,7 @@ export async function createDex(
         primaryLogo: data.primaryLogo,
         secondaryLogo: data.secondaryLogo,
         favicon: data.favicon,
+        pnlPosters: data.pnlPosters ?? [],
         telegramLink: data.telegramLink,
         discordLink: data.discordLink,
         xLink: data.xLink,
@@ -321,6 +332,7 @@ export async function updateDex(
   if ("primaryLogo" in data) updateData.primaryLogo = data.primaryLogo;
   if ("secondaryLogo" in data) updateData.secondaryLogo = data.secondaryLogo;
   if ("favicon" in data) updateData.favicon = data.favicon;
+  if ("pnlPosters" in data) updateData.pnlPosters = data.pnlPosters ?? [];
   if ("enableAbstractWallet" in data)
     updateData.enableAbstractWallet = data.enableAbstractWallet;
   if ("disableMainnet" in data) updateData.disableMainnet = data.disableMainnet;

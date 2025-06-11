@@ -55,6 +55,7 @@ model Dex {
   primaryLogo          String?  // Base64-encoded primary logo data
   secondaryLogo        String?  // Base64-encoded secondary logo data
   favicon              String?  // Base64-encoded favicon data
+  pnlPosters           String[] @default([]) // Array of base64-encoded PnL poster images
   themeCSS             String?  // Theme CSS content
   telegramLink         String?
   discordLink          String?

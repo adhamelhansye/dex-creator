@@ -41,7 +41,8 @@ export function usePreviewConfig(
   initialSymbol: string = "PERP_BTC_USDC",
   primaryLogo?: string | null,
   secondaryLogo?: string | null,
-  themeCSS?: string | null
+  themeCSS?: string | null,
+  pnlPosters?: (string | null)[]
 ) {
   // Local state to track if the config has been updated
   const [configUpdated, setConfigUpdated] = useState(false);
@@ -61,6 +62,15 @@ export function usePreviewConfig(
     };
   }
 
+  // Create custom sharePnLConfig with custom posters if available
+  const sharePnLConfig = { ...config.tradingPage.sharePnLConfig };
+  if (pnlPosters && pnlPosters.length > 0) {
+    const customBackgrounds = pnlPosters.filter(Boolean) as string[];
+    if (customBackgrounds.length > 0) {
+      sharePnLConfig.backgroundImages = customBackgrounds;
+    }
+  }
+
   // Generate the current configuration
   const currentConfig: DexPreviewConfig = {
     brokerId: DEMO_BROKER_ID,
@@ -70,7 +80,7 @@ export function usePreviewConfig(
     mainNavProps: config.scaffold.mainNavProps,
     footerProps: config.scaffold.footerProps,
     tradingViewConfig: config.tradingPage.tradingViewConfig,
-    sharePnLConfig: config.tradingPage.sharePnLConfig,
+    sharePnLConfig,
     appIcons,
     primaryLogo,
     secondaryLogo,
@@ -96,6 +106,7 @@ export function usePreviewConfig(
     primaryLogo,
     secondaryLogo,
     themeCSS,
+    pnlPosters,
   ]);
 
   // Read the config from localStorage

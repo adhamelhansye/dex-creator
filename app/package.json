@@ -23,6 +23,7 @@
     "@orderly.network/types": "2.1.1",
     "@orderly.network/ui": "2.1.1",
     "@orderly.network/ui-scaffold": "2.1.1",
+    "@orderly.network/ui-share": "2.1.1",
     "@orderly.network/wallet-connector": "2.1.1",
     "@remix-run/node": "^2.16.4",
     "@remix-run/react": "^2.16.4",

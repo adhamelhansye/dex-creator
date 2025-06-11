@@ -13,6 +13,7 @@ interface ImageCropModalProps {
   originalDimensions: { width: number; height: number };
   initialCrop: CropParams;
   enforceSquare?: boolean;
+  enforce16by9?: boolean;
 }
 
 // Define drag handle positions
@@ -35,6 +36,7 @@ export default function ImageCropModal({
   originalDimensions,
   initialCrop,
   enforceSquare = false,
+  enforce16by9 = false,
 }: ImageCropModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [cropDimensions, setCropDimensions] = useState<CropParams>(initialCrop);
@@ -186,6 +188,21 @@ export default function ImageCropModal({
               dragStartCropRef.current.width -
               newCrop.x;
             newCrop.height = newCrop.width;
+          } else if (enforce16by9) {
+            // Keep 16:9 aspect ratio
+            newCrop.x = Math.max(
+              0,
+              Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
+            );
+            newCrop.y = Math.max(
+              0,
+              Math.min(newCrop.y + newCrop.height - 10, newCrop.y + deltaY)
+            );
+            newCrop.width =
+              dragStartCropRef.current.x +
+              dragStartCropRef.current.width -
+              newCrop.x;
+            newCrop.height = newCrop.width / (16 / 9);
           } else {
             // Resize from top-left corner
             newCrop.x = Math.max(
@@ -223,6 +240,20 @@ export default function ImageCropModal({
               )
             );
             newCrop.height = newCrop.width;
+          } else if (enforce16by9) {
+            // Keep 16:9 aspect ratio
+            newCrop.y = Math.max(
+              0,
+              Math.min(newCrop.y + newCrop.height - 10, newCrop.y + deltaY)
+            );
+            newCrop.width = Math.max(
+              10,
+              Math.min(
+                originalDimensions.width - newCrop.x,
+                dragStartCropRef.current.width + deltaX
+              )
+            );
+            newCrop.height = newCrop.width / (16 / 9);
           } else {
             // Resize from top-right corner
             newCrop.y = Math.max(
@@ -255,6 +286,17 @@ export default function ImageCropModal({
               dragStartCropRef.current.width -
               newCrop.x;
             newCrop.height = newCrop.width;
+          } else if (enforce16by9) {
+            // Keep 16:9 aspect ratio
+            newCrop.x = Math.max(
+              0,
+              Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
+            );
+            newCrop.width =
+              dragStartCropRef.current.x +
+              dragStartCropRef.current.width -
+              newCrop.x;
+            newCrop.height = newCrop.width / (16 / 9);
           } else {
             // Resize from bottom-left corner
             newCrop.x = Math.max(
@@ -287,6 +329,16 @@ export default function ImageCropModal({
               )
             );
             newCrop.height = newCrop.width;
+          } else if (enforce16by9) {
+            // Keep 16:9 aspect ratio
+            newCrop.width = Math.max(
+              10,
+              Math.min(
+                originalDimensions.width - newCrop.x,
+                dragStartCropRef.current.width + deltaX
+              )
+            );
+            newCrop.height = newCrop.width / (16 / 9);
           } else {
             // Resize from bottom-right corner
             newCrop.width = Math.max(
@@ -318,6 +370,8 @@ export default function ImageCropModal({
             newCrop.y;
           if (enforceSquare) {
             newCrop.width = newCrop.height;
+          } else if (enforce16by9) {
+            newCrop.width = newCrop.height * (16 / 9);
           }
           break;
 
@@ -332,6 +386,8 @@ export default function ImageCropModal({
           );
           if (enforceSquare) {
             newCrop.width = newCrop.height;
+          } else if (enforce16by9) {
+            newCrop.width = newCrop.height * (16 / 9);
           }
           break;
 
@@ -347,6 +403,8 @@ export default function ImageCropModal({
             newCrop.x;
           if (enforceSquare) {
             newCrop.height = newCrop.width;
+          } else if (enforce16by9) {
+            newCrop.height = newCrop.width / (16 / 9);
           }
           break;
 
@@ -361,6 +419,8 @@ export default function ImageCropModal({
           );
           if (enforceSquare) {
             newCrop.height = newCrop.width;
+          } else if (enforce16by9) {
+            newCrop.height = newCrop.width / (16 / 9);
           }
           break;
       }
@@ -401,7 +461,7 @@ export default function ImageCropModal({
     }
 
     return undefined;
-  }, [isDragging, enforceSquare, originalDimensions]);
+  }, [isDragging, enforceSquare, enforce16by9, originalDimensions]);
 
   if (!isOpen) return null;
 
@@ -581,6 +641,21 @@ export default function ImageCropModal({
         }));
         return;
       }
+
+      // For 16:9 images, update height to maintain aspect ratio
+      if (enforce16by9) {
+        const newHeight = newValue / (16 / 9);
+        setCropDimensions(prev => ({
+          ...prev,
+          width: newValue,
+          height: newHeight,
+        }));
+        setFinalDimensions({
+          width: newValue,
+          height: newHeight,
+        });
+        return;
+      }
     } else if (key === "height") {
       newValue = Math.min(
         newValue,
@@ -594,6 +669,21 @@ export default function ImageCropModal({
           width: newValue,
           height: newValue,
         }));
+        return;
+      }
+
+      // For 16:9 images, update width to maintain aspect ratio
+      if (enforce16by9) {
+        const newWidth = newValue * (16 / 9);
+        setCropDimensions(prev => ({
+          ...prev,
+          height: newValue,
+          width: newWidth,
+        }));
+        setFinalDimensions({
+          width: newWidth,
+          height: newValue,
+        });
         return;
       }
     }

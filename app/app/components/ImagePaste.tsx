@@ -11,7 +11,7 @@ import { useModal } from "../context/ModalContext";
 import { toast } from "react-toastify";
 import { Button } from "./Button";
 
-type ImageType = "primaryLogo" | "secondaryLogo" | "favicon";
+type ImageType = "primaryLogo" | "secondaryLogo" | "favicon" | "pnlPoster";
 
 interface ImagePasteProps {
   id: string;
@@ -50,6 +50,9 @@ export default function ImagePaste({
   // Determine if we should enforce square aspect ratio
   const enforceSquare =
     imageType === "secondaryLogo" || imageType === "favicon";
+
+  // Determine if we should enforce 16:9 aspect ratio
+  const enforce16by9 = imageType === "pnlPoster";
 
   useEffect(() => {
     // Update preview if value changes externally
@@ -124,6 +127,28 @@ export default function ImagePaste({
             width: imageDims.width,
             height: imageDims.height,
           };
+        } else if (imageType === "pnlPoster") {
+          // PnL Poster: 16:9 aspect ratio, largest possible from center
+          const aspectRatio = 16 / 9;
+          let cropWidth = imageDims.width;
+          let cropHeight = imageDims.width / aspectRatio;
+
+          // If calculated height is larger than image height, use height as constraint
+          if (cropHeight > imageDims.height) {
+            cropHeight = imageDims.height;
+            cropWidth = imageDims.height * aspectRatio;
+          }
+
+          // Center the crop area
+          const x = Math.max(0, (imageDims.width - cropWidth) / 2);
+          const y = Math.max(0, (imageDims.height - cropHeight) / 2);
+
+          initialCrop = {
+            x: Math.round(x),
+            y: Math.round(y),
+            width: Math.round(cropWidth),
+            height: Math.round(cropHeight),
+          };
         } else {
           // Secondary logo and favicon: square aspect ratio (1:1), largest possible from top-left
           const maxSquareSize = Math.min(imageDims.width, imageDims.height);
@@ -163,6 +188,7 @@ export default function ImagePaste({
           originalDimensions: imageDims,
           initialCrop,
           enforceSquare,
+          enforce16by9,
           onApply: handleApplyCropForThisImage,
         });
 
@@ -180,7 +206,7 @@ export default function ImagePaste({
         // await processAndSaveImage(imageDataUrl);
       }
     },
-    [openModal, processAndSaveImage, imageType, enforceSquare]
+    [openModal, processAndSaveImage, imageType, enforceSquare, enforce16by9]
   );
 
   // Handle paste events (from keyboard or programmatically)

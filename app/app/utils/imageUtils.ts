@@ -8,6 +8,7 @@ export const DEFAULT_DIMENSIONS = {
   primaryLogo: { width: 200, height: 42 },
   secondaryLogo: { width: 40, height: 40 },
   favicon: { width: 96, height: 96 },
+  pnlPoster: { width: 960, height: 540 },
 };
 
 export interface CropParams {

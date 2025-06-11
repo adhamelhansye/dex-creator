@@ -1,4 +1,5 @@
 @import "@unocss/reset/tailwind.css";
+@import "@orderly.network/ui/dist/styles.css";
 @import "../styles/theme.css";
 
 /* 
