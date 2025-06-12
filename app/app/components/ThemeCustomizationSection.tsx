@@ -6,6 +6,7 @@ import PreviewButton from "./PreviewButton";
 import ThemeColorSwatches from "./ThemeColorSwatches";
 import ThemeRoundedControls from "./ThemeRoundedControls";
 import ThemeSpacingControls from "./ThemeSpacingControls";
+import TradingViewColorConfig from "./TradingViewColorConfig";
 
 const Textarea = ({
   value,
@@ -26,7 +27,7 @@ const Textarea = ({
   />
 );
 
-export type ThemeTabType = "colors" | "rounded" | "spacing";
+export type ThemeTabType = "colors" | "rounded" | "spacing" | "tradingview";
 
 export interface ThemeCustomizationProps {
   currentTheme: string | null;
@@ -40,6 +41,7 @@ export interface ThemeCustomizationProps {
   primaryLogo: string | null;
   secondaryLogo: string | null;
   themeApplied: boolean;
+  tradingViewColorConfig: string | null;
   toggleThemeEditor: () => void;
   handleResetTheme: () => void;
   handleResetToDefault: () => void;
@@ -52,6 +54,7 @@ export interface ThemeCustomizationProps {
     field: string
   ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
   handleGenerateTheme: () => void;
+  setTradingViewColorConfig: (config: string | null) => void;
   idPrefix?: string;
 }
 
@@ -67,6 +70,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   primaryLogo,
   secondaryLogo,
   themeApplied,
+  tradingViewColorConfig,
   toggleThemeEditor,
   handleResetTheme,
   handleResetToDefault,
@@ -77,6 +81,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   updateCssValue,
   handleInputChange,
   handleGenerateTheme,
+  setTradingViewColorConfig,
   idPrefix = "",
 }) => (
   <>
@@ -164,6 +169,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
           <ThemeTabButton tab="colors" label="Color Palette" />
           <ThemeTabButton tab="rounded" label="Border Radius" />
           <ThemeTabButton tab="spacing" label="Spacing" />
+          <ThemeTabButton tab="tradingview" label="TradingView" />
         </div>
       </div>
       <div className="pt-4">
@@ -206,6 +212,18 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
             <ThemeSpacingControls
               css={currentTheme || defaultTheme}
               onValueChange={updateCssValue}
+            />
+          </div>
+        )}
+        {activeThemeTab === "tradingview" && (
+          <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
+            <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
+              <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
+              <span>Configure TradingView color settings</span>
+            </div>
+            <TradingViewColorConfig
+              value={tradingViewColorConfig}
+              onChange={setTradingViewColorConfig}
             />
           </div>
         )}

@@ -54,6 +54,7 @@ interface DexData {
   disableTestnet?: boolean;
   disableEvmWallets?: boolean;
   disableSolanaWallets?: boolean;
+  tradingViewColorConfig?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -62,7 +63,7 @@ interface ThemeResponse {
   theme: string;
 }
 
-type ThemeTabType = "colors" | "rounded" | "spacing";
+type ThemeTabType = "colors" | "rounded" | "spacing" | "tradingview";
 
 const STEPS_CONFIG = [
   { id: 1, title: "Broker Details", isOptional: false },
@@ -234,6 +235,7 @@ export default function DexRoute() {
     disableTestnet: false,
     disableEvmWallets: false,
     disableSolanaWallets: false,
+    tradingViewColorConfig: null,
     createdAt: "",
     updatedAt: "",
   });
@@ -250,6 +252,9 @@ export default function DexRoute() {
   const [disableTestnet, setDisableTestnet] = useState(false);
   const [disableEvmWallets, setDisableEvmWallets] = useState(false);
   const [disableSolanaWallets, setDisableSolanaWallets] = useState(false);
+  const [tradingViewColorConfig, setTradingViewColorConfig] = useState<
+    string | null
+  >(null);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -280,6 +285,7 @@ export default function DexRoute() {
           setDisableTestnet(response.disableTestnet || false);
           setDisableEvmWallets(response.disableEvmWallets || false);
           setDisableSolanaWallets(response.disableSolanaWallets || false);
+          setTradingViewColorConfig(response.tradingViewColorConfig || null);
           setPrimaryLogo(response.primaryLogo || null);
           setSecondaryLogo(response.secondaryLogo || null);
           setFavicon(response.favicon || null);
@@ -335,16 +341,13 @@ export default function DexRoute() {
     fetchDexData();
   }, [isAuthenticated, token]);
 
-  // Now, let's also set a default theme for new DEXes
   useEffect(() => {
-    // If no theme is set at all (new DEX being created), show the default theme
     if (!currentTheme && !originalValues.themeCSS) {
       setCurrentTheme(defaultTheme);
       setThemeApplied(true);
     }
   }, [currentTheme, originalValues.themeCSS]);
 
-  // Handle generating theme from prompt
   const handleGenerateTheme = async () => {
     if (!themePrompt.trim()) {
       toast.error("Please enter a theme description");
@@ -364,7 +367,6 @@ export default function DexRoute() {
       );
 
       if (response && response.theme) {
-        // Open the theme preview modal using the existing modal system
         openModal("themePreview", {
           theme: response.theme,
           onApply: handleApplyGeneratedTheme,
@@ -382,47 +384,42 @@ export default function DexRoute() {
     }
   };
 
-  // Apply the generated theme
   const handleApplyGeneratedTheme = (modifiedCss: string) => {
     setCurrentTheme(modifiedCss);
     setThemeApplied(true);
   };
 
-  // Empty handler required by modal interface
   const handleCancelGeneratedTheme = () => {};
 
-  // Handle theme editor changes
   const handleThemeEditorChange = (value: string) => {
     setCurrentTheme(value);
     setThemeApplied(true);
   };
 
-  // Reset theme to original
   const handleResetTheme = () => {
     setCurrentTheme(originalValues.themeCSS || null);
     setThemeApplied(!!originalValues.themeCSS);
+    setTradingViewColorConfig(originalValues.tradingViewColorConfig || null);
     setThemePrompt("");
     setShowThemeEditor(false);
     setViewCssCode(false);
     toast.success("Theme reset");
   };
 
-  // Reset theme to default
   const handleResetToDefault = () => {
     setCurrentTheme(defaultTheme);
     setThemeApplied(true);
+    setTradingViewColorConfig(null);
     setThemePrompt("");
     setShowThemeEditor(false);
     setViewCssCode(false);
     toast.success("Theme reset to default");
   };
 
-  // Toggle theme editor visibility
   const toggleThemeEditor = () => {
     setShowThemeEditor(!showThemeEditor);
   };
 
-  // Handle retrying the forking process
   const handleRetryForking = async () => {
     if (!dexData || !dexData.id || !token) {
       toast.error("DEX information is not available");
@@ -566,6 +563,7 @@ export default function DexRoute() {
         disableTestnet !== originalValues.disableTestnet ||
         disableEvmWallets !== originalValues.disableEvmWallets ||
         disableSolanaWallets !== originalValues.disableSolanaWallets ||
+        tradingViewColorConfig !== originalValues.tradingViewColorConfig ||
         JSON.stringify([...chainIds].sort()) !==
           JSON.stringify([...(originalValues.chainIds || [])].sort());
 
@@ -607,6 +605,7 @@ export default function DexRoute() {
         disableTestnet,
         disableEvmWallets,
         disableSolanaWallets,
+        tradingViewColorConfig,
       };
 
       if (dexData && dexData.id) {
@@ -617,7 +616,6 @@ export default function DexRoute() {
           token
         );
 
-        // Update originalValues after successful save
         setOriginalValues({
           ...savedData,
           brokerName: trimmedBrokerName,
@@ -640,6 +638,7 @@ export default function DexRoute() {
           disableTestnet,
           disableEvmWallets,
           disableSolanaWallets,
+          tradingViewColorConfig,
         });
 
         toast.success("DEX information updated successfully!");
@@ -668,6 +667,7 @@ export default function DexRoute() {
           disableTestnet,
           disableEvmWallets,
           disableSolanaWallets,
+          tradingViewColorConfig,
         });
 
         if (savedData.repoUrl) {
@@ -695,13 +695,11 @@ export default function DexRoute() {
     setDeploymentUrl(url);
     setDeploymentConfirmed(true);
 
-    // Only show the toast notification if this is a new deployment
     if (isNewDeployment) {
       toast.success("Your DEX has been successfully deployed!");
     }
   };
 
-  // Handle deleting the DEX
   const handleDelete = async () => {
     if (!dexData || !dexData.id || !token) {
       toast.error("DEX information is not available");
@@ -735,7 +733,6 @@ export default function DexRoute() {
     }
   };
 
-  // Handle showing delete confirmation
   const handleShowDeleteConfirm = () => {
     openModal("deleteConfirm", {
       onConfirm: handleDelete,
@@ -743,7 +740,6 @@ export default function DexRoute() {
     });
   };
 
-  // Handle showing custom domain removal confirmation
   const handleShowDomainRemoveConfirm = () => {
     if (!dexData || !dexData.id || !dexData.customDomain) return;
 
@@ -773,12 +769,9 @@ export default function DexRoute() {
     });
   };
 
-  // Convert hex color to space-separated RGB format
   const hexToRgbSpaceSeparated = (hex: string) => {
-    // Remove the # if present
     hex = hex.replace("#", "");
 
-    // Parse the hex values
     const r = parseInt(hex.slice(0, 2), 16);
     const g = parseInt(hex.slice(2, 4), 16);
     const b = parseInt(hex.slice(4, 6), 16);
@@ -786,17 +779,14 @@ export default function DexRoute() {
     return `${r} ${g} ${b}`;
   };
 
-  // Update the CSS with a new color
   const updateCssColor = useCallback(
     (variableName: string, newColorHex: string) => {
       const newColorRgb = hexToRgbSpaceSeparated(newColorHex);
 
-      // Use functional setState to ensure we're working with the latest state
       setCurrentTheme(prevTheme => {
         const baseTheme = prevTheme || defaultTheme;
         let updatedCss = baseTheme;
 
-        // Handle different variable prefixes - color or gradient
         if (variableName.startsWith("oui-color")) {
           const regex = new RegExp(
             `(--${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
@@ -816,13 +806,11 @@ export default function DexRoute() {
 
       setThemeApplied(true);
     },
-    [defaultTheme] // Only depend on defaultTheme, not currentTheme
+    [defaultTheme]
   );
 
-  // Update the CSS with a new value (for non-color properties)
   const updateCssValue = useCallback(
     (variableName: string, newValue: string) => {
-      // Use functional setState to ensure we're working with the latest state
       setCurrentTheme(prevTheme => {
         if (!prevTheme) return prevTheme;
 
@@ -832,10 +820,9 @@ export default function DexRoute() {
 
       setThemeApplied(true);
     },
-    [] // No dependencies needed since we're using functional updates
+    []
   );
 
-  // Tab button component for theme customization
   const ThemeTabButton = ({
     tab,
     label,
@@ -1105,6 +1092,7 @@ export default function DexRoute() {
                 primaryLogo={primaryLogo}
                 secondaryLogo={secondaryLogo}
                 themeApplied={themeApplied}
+                tradingViewColorConfig={tradingViewColorConfig}
                 toggleThemeEditor={toggleThemeEditor}
                 handleResetTheme={handleResetTheme}
                 handleResetToDefault={handleResetToDefault}
@@ -1115,6 +1103,8 @@ export default function DexRoute() {
                 updateCssValue={updateCssValue}
                 handleInputChange={handleInputChange}
                 handleGenerateTheme={handleGenerateTheme}
+                setTradingViewColorConfig={setTradingViewColorConfig}
+                idPrefix="duplicate-"
               />
             </AccordionItem>
           )}
@@ -1446,6 +1436,7 @@ export default function DexRoute() {
                 primaryLogo={primaryLogo}
                 secondaryLogo={secondaryLogo}
                 themeApplied={themeApplied}
+                tradingViewColorConfig={tradingViewColorConfig}
                 toggleThemeEditor={toggleThemeEditor}
                 handleResetTheme={handleResetTheme}
                 handleResetToDefault={handleResetToDefault}
@@ -1456,6 +1447,8 @@ export default function DexRoute() {
                 updateCssValue={updateCssValue}
                 handleInputChange={handleInputChange}
                 handleGenerateTheme={handleGenerateTheme}
+                setTradingViewColorConfig={setTradingViewColorConfig}
+                idPrefix="duplicate-"
               />
             </div>
 

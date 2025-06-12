@@ -9,6 +9,7 @@ import {
   removeCustomDomain,
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
+import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
 
 /**
  * Helper function to extract owner and repo from GitHub URL
@@ -32,7 +33,6 @@ function extractRepoInfoFromUrl(
   }
 }
 
-// Create schema for validation with base64-encoded image data
 export const dexSchema = z.object({
   brokerName: z.string().min(3).max(50).nullish(),
   chainIds: z.array(z.number().positive().int()).optional(),
@@ -90,9 +90,9 @@ export const dexSchema = z.object({
   disableTestnet: z.boolean().optional(),
   disableEvmWallets: z.boolean().optional(),
   disableSolanaWallets: z.boolean().optional(),
+  tradingViewColorConfig: z.string().nullish(),
 });
 
-// Schema for custom domain validation
 export const customDomainSchema = z.object({
   domain: z
     .string()
@@ -102,7 +102,6 @@ export const customDomainSchema = z.object({
     }),
 });
 
-// Helper function to generate a simple ID
 export function generateId() {
   return (
     Math.random().toString(36).substring(2, 15) +
@@ -110,12 +109,34 @@ export function generateId() {
   );
 }
 
-// Create DEX in database
+export const CreateDexSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional(),
+  brokerName: z.string().optional(),
+  brokerPrivateKey: z.string().optional(),
+  tradingViewColorConfig: z.string().optional(),
+});
+
+export const UpdateDexSchema = z.object({
+  name: z.string().min(1, "Name is required").optional(),
+  description: z.string().optional(),
+  brokerName: z.string().optional(),
+  brokerPrivateKey: z.string().optional(),
+  repositoryUrl: z.string().optional(),
+  deploymentUrl: z.string().optional(),
+  tradingViewColorConfig: z.string().optional(),
+});
+
 export async function createDex(
   data: z.infer<typeof dexSchema>,
   userId: string
 ): Promise<Dex> {
-  // First check if user already has a DEX
+  const validatedData = dexSchema.parse(data);
+
+  if (validatedData.tradingViewColorConfig) {
+    validateTradingViewColorConfig(validatedData.tradingViewColorConfig);
+  }
+
   const existingDex = await getUserDex(userId);
 
   if (existingDex) {
@@ -124,7 +145,6 @@ export async function createDex(
     );
   }
 
-  // Get the user's address to use as the repo owner
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { address: true },
@@ -134,15 +154,12 @@ export async function createDex(
     throw new Error("User not found");
   }
 
-  // Generate a repository name based on the broker name or a default
-  const brokerName = data.brokerName || "Orderly DEX";
+  const brokerName = validatedData.brokerName || "Orderly DEX";
 
-  // Use the helper function to generate a standardized repository name
   const repoName = generateRepositoryName(brokerName);
 
   let repoUrl: string;
 
-  // First create the repository - this is required for DEX creation
   try {
     console.log(
       "Creating repository in OrderlyNetworkDexCreator organization..."
@@ -165,39 +182,40 @@ export async function createDex(
       {
         brokerId,
         brokerName,
-        chainIds: data.chainIds,
-        themeCSS: data.themeCSS?.toString(),
-        telegramLink: data.telegramLink || undefined,
-        discordLink: data.discordLink || undefined,
-        xLink: data.xLink || undefined,
-        walletConnectProjectId: data.walletConnectProjectId || undefined,
-        privyAppId: data.privyAppId || undefined,
-        privyTermsOfUse: data.privyTermsOfUse || undefined,
-        enabledMenus: data.enabledMenus || undefined,
-        customMenus: data.customMenus || undefined,
-        enableAbstractWallet: data.enableAbstractWallet,
-        disableMainnet: data.disableMainnet,
-        disableTestnet: data.disableTestnet,
-        disableEvmWallets: data.disableEvmWallets,
-        disableSolanaWallets: data.disableSolanaWallets,
+        chainIds: validatedData.chainIds,
+        themeCSS: validatedData.themeCSS?.toString(),
+        telegramLink: validatedData.telegramLink || undefined,
+        discordLink: validatedData.discordLink || undefined,
+        xLink: validatedData.xLink || undefined,
+        walletConnectProjectId:
+          validatedData.walletConnectProjectId || undefined,
+        privyAppId: validatedData.privyAppId || undefined,
+        privyTermsOfUse: validatedData.privyTermsOfUse || undefined,
+        enabledMenus: validatedData.enabledMenus || undefined,
+        customMenus: validatedData.customMenus || undefined,
+        enableAbstractWallet: validatedData.enableAbstractWallet,
+        disableMainnet: validatedData.disableMainnet,
+        disableTestnet: validatedData.disableTestnet,
+        disableEvmWallets: validatedData.disableEvmWallets,
+        disableSolanaWallets: validatedData.disableSolanaWallets,
+        tradingViewColorConfig:
+          validatedData.tradingViewColorConfig || undefined,
       },
       {
-        primaryLogo: data.primaryLogo || undefined,
-        secondaryLogo: data.secondaryLogo || undefined,
-        favicon: data.favicon || undefined,
-        pnlPosters: data.pnlPosters || undefined,
+        primaryLogo: validatedData.primaryLogo || undefined,
+        secondaryLogo: validatedData.secondaryLogo || undefined,
+        favicon: validatedData.favicon || undefined,
+        pnlPosters: validatedData.pnlPosters || undefined,
       }
     );
     console.log(`Successfully set up repository for ${brokerName}`);
   } catch (error) {
-    // If repository creation fails, the entire DEX creation fails
     console.error("Error creating repository:", error);
 
     let errorMessage = "Unknown error";
     if (error instanceof Error) {
       errorMessage = error.message;
 
-      // Provide more context for common errors
       if (
         errorMessage.includes(
           "Resource not accessible by personal access token"
@@ -220,35 +238,33 @@ export async function createDex(
     throw new Error(`Repository creation failed: ${errorMessage}`);
   }
 
-  // If we get here, repository creation was successful
-  // Now create the DEX in the database
   try {
-    // Always use 'demo' as the brokerId - only admins can change this
     const brokerId = "demo";
 
     return await prisma.dex.create({
       data: {
-        brokerName: data.brokerName ?? undefined,
+        brokerName: validatedData.brokerName ?? undefined,
         brokerId: brokerId,
-        chainIds: data.chainIds ?? [],
-        themeCSS: data.themeCSS,
-        primaryLogo: data.primaryLogo,
-        secondaryLogo: data.secondaryLogo,
-        favicon: data.favicon,
-        pnlPosters: data.pnlPosters ?? [],
-        telegramLink: data.telegramLink,
-        discordLink: data.discordLink,
-        xLink: data.xLink,
-        walletConnectProjectId: data.walletConnectProjectId,
-        privyAppId: data.privyAppId,
-        privyTermsOfUse: data.privyTermsOfUse,
-        enabledMenus: data.enabledMenus,
-        customMenus: data.customMenus,
-        enableAbstractWallet: data.enableAbstractWallet,
-        disableMainnet: data.disableMainnet,
-        disableTestnet: data.disableTestnet,
-        disableEvmWallets: data.disableEvmWallets,
-        disableSolanaWallets: data.disableSolanaWallets,
+        chainIds: validatedData.chainIds ?? [],
+        themeCSS: validatedData.themeCSS,
+        primaryLogo: validatedData.primaryLogo,
+        secondaryLogo: validatedData.secondaryLogo,
+        favicon: validatedData.favicon,
+        pnlPosters: validatedData.pnlPosters ?? [],
+        telegramLink: validatedData.telegramLink,
+        discordLink: validatedData.discordLink,
+        xLink: validatedData.xLink,
+        walletConnectProjectId: validatedData.walletConnectProjectId,
+        privyAppId: validatedData.privyAppId,
+        privyTermsOfUse: validatedData.privyTermsOfUse,
+        enabledMenus: validatedData.enabledMenus,
+        customMenus: validatedData.customMenus,
+        enableAbstractWallet: validatedData.enableAbstractWallet,
+        disableMainnet: validatedData.disableMainnet,
+        disableTestnet: validatedData.disableTestnet,
+        disableEvmWallets: validatedData.disableEvmWallets,
+        disableSolanaWallets: validatedData.disableSolanaWallets,
+        tradingViewColorConfig: validatedData.tradingViewColorConfig,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -260,7 +276,6 @@ export async function createDex(
   } catch (dbError) {
     console.error("Error creating DEX in database:", dbError);
 
-    // Try to clean up by deleting the repository we just created
     try {
       const repoInfo = extractRepoInfoFromUrl(repoUrl);
       if (repoInfo) {
@@ -277,7 +292,6 @@ export async function createDex(
   }
 }
 
-// Get the DEX for a specific user
 export async function getUserDex(userId: string): Promise<Dex | null> {
   return prisma.dex.findUnique({
     where: {
@@ -286,7 +300,6 @@ export async function getUserDex(userId: string): Promise<Dex | null> {
   });
 }
 
-// Get a specific DEX by ID
 export async function getDexById(id: string): Promise<Dex | null> {
   return prisma.dex.findUnique({
     where: {
@@ -295,52 +308,66 @@ export async function getDexById(id: string): Promise<Dex | null> {
   });
 }
 
-// Update a DEX
 export async function updateDex(
   id: string,
-  data: z.infer<typeof dexSchema>,
-  userId: string
+  userId: string,
+  data: z.infer<typeof dexSchema>
 ): Promise<Dex> {
-  // Ensure the DEX belongs to the user
+  const validatedData = dexSchema.parse(data);
+
+  if (validatedData.tradingViewColorConfig) {
+    validateTradingViewColorConfig(validatedData.tradingViewColorConfig);
+  }
+
   const dex = await getDexById(id);
 
   if (!dex || dex.userId !== userId) {
     throw new Error("DEX not found or user is not authorized to update it");
   }
 
-  // Prepare update data with properly typed properties
   const updateData: Prisma.DexUpdateInput = {};
 
-  // Update fields that are present in the data object, including null values
-  if ("brokerName" in data)
-    updateData.brokerName = data.brokerName ?? undefined;
-  if ("chainIds" in data) updateData.chainIds = data.chainIds ?? [];
-  if ("themeCSS" in data) updateData.themeCSS = data.themeCSS;
-  if ("telegramLink" in data) updateData.telegramLink = data.telegramLink;
-  if ("discordLink" in data) updateData.discordLink = data.discordLink;
-  if ("xLink" in data) updateData.xLink = data.xLink;
-  if ("walletConnectProjectId" in data) {
-    updateData.walletConnectProjectId = data.walletConnectProjectId;
+  if ("brokerName" in validatedData)
+    updateData.brokerName = validatedData.brokerName ?? undefined;
+  if ("chainIds" in validatedData)
+    updateData.chainIds = validatedData.chainIds ?? [];
+  if ("themeCSS" in validatedData) updateData.themeCSS = validatedData.themeCSS;
+  if ("telegramLink" in validatedData)
+    updateData.telegramLink = validatedData.telegramLink;
+  if ("discordLink" in validatedData)
+    updateData.discordLink = validatedData.discordLink;
+  if ("xLink" in validatedData) updateData.xLink = validatedData.xLink;
+  if ("walletConnectProjectId" in validatedData) {
+    updateData.walletConnectProjectId = validatedData.walletConnectProjectId;
   }
-  if ("privyAppId" in data) updateData.privyAppId = data.privyAppId;
-  if ("privyTermsOfUse" in data)
-    updateData.privyTermsOfUse = data.privyTermsOfUse;
-  if ("enabledMenus" in data) updateData.enabledMenus = data.enabledMenus;
-  if ("customMenus" in data) updateData.customMenus = data.customMenus;
+  if ("privyAppId" in validatedData)
+    updateData.privyAppId = validatedData.privyAppId;
+  if ("privyTermsOfUse" in validatedData)
+    updateData.privyTermsOfUse = validatedData.privyTermsOfUse;
+  if ("enabledMenus" in validatedData)
+    updateData.enabledMenus = validatedData.enabledMenus;
+  if ("customMenus" in validatedData)
+    updateData.customMenus = validatedData.customMenus;
 
-  // Handle image data
-  if ("primaryLogo" in data) updateData.primaryLogo = data.primaryLogo;
-  if ("secondaryLogo" in data) updateData.secondaryLogo = data.secondaryLogo;
-  if ("favicon" in data) updateData.favicon = data.favicon;
-  if ("pnlPosters" in data) updateData.pnlPosters = data.pnlPosters ?? [];
-  if ("enableAbstractWallet" in data)
-    updateData.enableAbstractWallet = data.enableAbstractWallet;
-  if ("disableMainnet" in data) updateData.disableMainnet = data.disableMainnet;
-  if ("disableTestnet" in data) updateData.disableTestnet = data.disableTestnet;
-  if ("disableEvmWallets" in data)
-    updateData.disableEvmWallets = data.disableEvmWallets;
-  if ("disableSolanaWallets" in data)
-    updateData.disableSolanaWallets = data.disableSolanaWallets;
+  if ("primaryLogo" in validatedData)
+    updateData.primaryLogo = validatedData.primaryLogo;
+  if ("secondaryLogo" in validatedData)
+    updateData.secondaryLogo = validatedData.secondaryLogo;
+  if ("favicon" in validatedData) updateData.favicon = validatedData.favicon;
+  if ("pnlPosters" in validatedData)
+    updateData.pnlPosters = validatedData.pnlPosters ?? [];
+  if ("enableAbstractWallet" in validatedData)
+    updateData.enableAbstractWallet = validatedData.enableAbstractWallet;
+  if ("disableMainnet" in validatedData)
+    updateData.disableMainnet = validatedData.disableMainnet;
+  if ("disableTestnet" in validatedData)
+    updateData.disableTestnet = validatedData.disableTestnet;
+  if ("disableEvmWallets" in validatedData)
+    updateData.disableEvmWallets = validatedData.disableEvmWallets;
+  if ("disableSolanaWallets" in validatedData)
+    updateData.disableSolanaWallets = validatedData.disableSolanaWallets;
+  if ("tradingViewColorConfig" in validatedData)
+    updateData.tradingViewColorConfig = validatedData.tradingViewColorConfig;
 
   return prisma.dex.update({
     where: {
@@ -350,30 +377,24 @@ export async function updateDex(
   });
 }
 
-// Delete a DEX
 export async function deleteDex(id: string, userId: string): Promise<Dex> {
-  // Ensure the DEX belongs to the user
   const dex = await getDexById(id);
 
   if (!dex || dex.userId !== userId) {
     throw new Error("DEX not found or user is not authorized to delete it");
   }
 
-  // If the DEX has a GitHub repository, attempt to delete it
   if (dex.repoUrl) {
     try {
       const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
       if (repoInfo) {
-        // Attempt to delete the repository, but continue even if it fails
         await deleteRepository(repoInfo.owner, repoInfo.repo);
       }
     } catch (error) {
       console.error("Error deleting GitHub repository:", error);
-      // Continue with DEX deletion even if repository deletion fails
     }
   }
 
-  // Delete the DEX from the database
   return prisma.dex.delete({
     where: {
       id,
@@ -381,13 +402,10 @@ export async function deleteDex(id: string, userId: string): Promise<Dex> {
   });
 }
 
-// Update DEX repository URL after forking
 export async function updateDexRepoUrl(
   id: string,
   repoUrl: string
 ): Promise<Dex> {
-  // Simply update the repository URL without any ownership checks
-  // Authorization should be handled at the controller/route level
   return prisma.dex.update({
     where: {
       id,
@@ -398,7 +416,6 @@ export async function updateDexRepoUrl(
   });
 }
 
-// Update broker ID (admin only)
 export async function updateBrokerId(
   id: string,
   brokerId: string
@@ -414,21 +431,18 @@ export async function updateBrokerId(
   });
 }
 
-// Delete a DEX by wallet address (admin only)
 export async function deleteDexByWalletAddress(
   address: string
 ): Promise<Dex | null> {
-  // First find the user by address
   const user = await prisma.user.findUnique({
     where: {
-      address: address.toLowerCase(), // Ensure address is in lowercase
+      address: address.toLowerCase(),
     },
     include: {
       dex: true,
     },
   });
 
-  // If no user or no DEX, return null
   if (!user || !user.dex) {
     return null;
   }
@@ -436,21 +450,17 @@ export async function deleteDexByWalletAddress(
   const dexId = user.dex.id;
   const dex = user.dex;
 
-  // If the DEX has a GitHub repository, attempt to delete it
   if (dex.repoUrl) {
     try {
       const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
       if (repoInfo) {
-        // Attempt to delete the repository, but continue even if it fails
         await deleteRepository(repoInfo.owner, repoInfo.repo);
       }
     } catch (error) {
       console.error("Error deleting GitHub repository:", error);
-      // Continue with DEX deletion even if repository deletion fails
     }
   }
 
-  // Delete the DEX
   return prisma.dex.delete({
     where: {
       id: dexId,
@@ -458,7 +468,6 @@ export async function deleteDexByWalletAddress(
   });
 }
 
-// Get all DEXes with associated user data (admin only)
 export async function getAllDexes() {
   return prisma.dex.findMany({
     include: {
@@ -486,7 +495,6 @@ export async function updateDexCustomDomain(
   domain: string,
   userId: string
 ): Promise<Dex> {
-  // First check if the DEX exists and belongs to the user
   const dex = await prisma.dex.findUnique({
     where: { id },
   });
@@ -499,18 +507,15 @@ export async function updateDexCustomDomain(
     throw new Error("User is not authorized to update this DEX");
   }
 
-  // Check if the repository URL exists
   if (!dex.repoUrl) {
     throw new Error("This DEX doesn't have a repository URL");
   }
 
-  // Extract repo info from URL
   const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
   if (!repoInfo) {
     throw new Error("Invalid repository URL");
   }
 
-  // Set the custom domain in GitHub
   try {
     await setCustomDomain(repoInfo.owner, repoInfo.repo, domain);
   } catch (error) {
@@ -521,7 +526,6 @@ export async function updateDexCustomDomain(
     );
   }
 
-  // Update the DEX in the database
   return prisma.dex.update({
     where: { id },
     data: {
@@ -541,7 +545,6 @@ export async function removeDexCustomDomain(
   id: string,
   userId: string
 ): Promise<Dex> {
-  // First check if the DEX exists and belongs to the user
   const dex = await prisma.dex.findUnique({
     where: { id },
   });
@@ -554,23 +557,19 @@ export async function removeDexCustomDomain(
     throw new Error("User is not authorized to update this DEX");
   }
 
-  // Check if there is a custom domain to remove
   if (!dex.customDomain) {
     throw new Error("This DEX doesn't have a custom domain configured");
   }
 
-  // Check if the repository URL exists
   if (!dex.repoUrl) {
     throw new Error("This DEX doesn't have a repository URL");
   }
 
-  // Extract repo info from URL
   const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
   if (!repoInfo) {
     throw new Error("Invalid repository URL");
   }
 
-  // Remove the custom domain in GitHub using the new function
   try {
     await removeCustomDomain(repoInfo.owner, repoInfo.repo);
     console.log(
@@ -584,7 +583,6 @@ export async function removeDexCustomDomain(
     );
   }
 
-  // Update the DEX in the database
   return prisma.dex.update({
     where: { id },
     data: {

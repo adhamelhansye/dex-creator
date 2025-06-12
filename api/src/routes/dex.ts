@@ -114,7 +114,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
   const userId = c.get("userId");
 
   try {
-    const updatedDex = await updateDex(id, data, userId);
+    const updatedDex = await updateDex(id, userId, data);
 
     if (updatedDex.repoUrl) {
       const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
@@ -143,6 +143,8 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               disableTestnet: updatedDex.disableTestnet,
               disableEvmWallets: updatedDex.disableEvmWallets,
               disableSolanaWallets: updatedDex.disableSolanaWallets,
+              tradingViewColorConfig:
+                updatedDex.tradingViewColorConfig || undefined,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,
@@ -174,6 +176,13 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
 
     if (error instanceof Error && error.message.includes("DEX not found")) {
       return c.json({ message: "DEX not found" }, 404);
+    }
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Invalid TradingView color configuration")
+    ) {
+      return c.json({ error: error.message }, 400);
     }
 
     return c.json({ message: "Error updating DEX", error: String(error) }, 500);

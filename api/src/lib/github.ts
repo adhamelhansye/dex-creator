@@ -489,6 +489,7 @@ function prepareDexConfigContent(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    tradingViewColorConfig?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -569,6 +570,9 @@ function prepareDexConfigContent(
     VITE_HAS_SECONDARY_LOGO: secondaryLogoData ? "true" : "false",
     VITE_USE_CUSTOM_PNL_POSTERS: pnlPostersData.length > 0 ? "true" : "false",
     VITE_CUSTOM_PNL_POSTER_COUNT: String(pnlPostersData.length),
+    VITE_TRADING_VIEW_COLOR_CONFIG: config.tradingViewColorConfig
+      ? `'${config.tradingViewColorConfig}'`
+      : "",
   };
 
   const envContent = Object.entries(envVars)
@@ -712,6 +716,7 @@ export async function updateDexConfig(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    tradingViewColorConfig?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -721,7 +726,6 @@ export async function updateDexConfig(
   }
 ): Promise<void> {
   try {
-    // Use the helper function to prepare config content
     const {
       envContent,
       themeCSS,
@@ -731,7 +735,6 @@ export async function updateDexConfig(
       pnlPostersData,
     } = prepareDexConfigContent(config, files);
 
-    // Prepare file contents map for text files
     const fileContents = new Map<string, string>();
     fileContents.set(".env", envContent);
 
@@ -739,15 +742,12 @@ export async function updateDexConfig(
       fileContents.set("app/styles/theme.css", themeCSS);
     }
 
-    // Prepare binary files map
     const binaryFiles = new Map<string, Buffer>();
 
-    // Add image files if data is available
     if (faviconData) {
       binaryFiles.set("public/favicon.webp", faviconData);
     }
 
-    // Add logo files if data is available
     if (primaryLogoData) {
       binaryFiles.set("public/logo.webp", primaryLogoData);
     }
@@ -762,7 +762,6 @@ export async function updateDexConfig(
       });
     }
 
-    // Create a single commit with all changes
     await createSingleCommit(
       owner,
       repo,
@@ -820,6 +819,7 @@ export async function setupRepositoryWithSingleCommit(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    tradingViewColorConfig?: string;
   },
   files: {
     primaryLogo?: string;
@@ -849,7 +849,6 @@ export async function setupRepositoryWithSingleCommit(
       "utf-8"
     );
 
-    // Use the helper function to prepare config content
     const {
       envContent,
       themeCSS,
@@ -859,7 +858,6 @@ export async function setupRepositoryWithSingleCommit(
       pnlPostersData,
     } = prepareDexConfigContent(config, files);
 
-    // Prepare file contents map for text files
     const fileContents = new Map<string, string>();
     fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
     fileContents.set(".github/workflows/sync-fork.yml", syncForkYmlContent);
@@ -869,15 +867,12 @@ export async function setupRepositoryWithSingleCommit(
       fileContents.set("app/styles/theme.css", themeCSS);
     }
 
-    // Prepare binary files map
     const binaryFiles = new Map<string, Buffer>();
 
-    // Add image files if data is available
     if (faviconData) {
       binaryFiles.set("public/favicon.webp", faviconData);
     }
 
-    // Add logo files if data is available
     if (primaryLogoData) {
       binaryFiles.set("public/logo.webp", primaryLogoData);
     }
@@ -892,7 +887,6 @@ export async function setupRepositoryWithSingleCommit(
       });
     }
 
-    // Create a single commit with all changes
     await createSingleCommit(
       owner,
       repo,
@@ -1347,6 +1341,7 @@ export async function triggerRedeployment(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    tradingViewColorConfig?: string;
   },
   files?: {
     primaryLogo?: string;
@@ -1373,4 +1368,25 @@ export async function triggerRedeployment(
       `Failed to create redeployment commit: ${error instanceof Error ? error.message : String(error)}`
     );
   }
+}
+
+export interface DexConfig {
+  brokerId: string;
+  brokerName: string;
+  chainIds?: number[];
+  themeCSS?: string;
+  telegramLink?: string;
+  discordLink?: string;
+  xLink?: string;
+  walletConnectProjectId?: string;
+  privyAppId?: string;
+  privyTermsOfUse?: string;
+  enabledMenus?: string;
+  customMenus?: string;
+  enableAbstractWallet?: boolean;
+  disableMainnet?: boolean;
+  disableTestnet?: boolean;
+  disableEvmWallets?: boolean;
+  disableSolanaWallets?: boolean;
+  tradingViewColorConfig?: string;
 }

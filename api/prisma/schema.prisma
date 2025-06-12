@@ -77,6 +77,7 @@ model Dex {
   disableTestnet       Boolean  @default(false) // Flag to disable testnet chains
   disableEvmWallets    Boolean  @default(false) // Flag to disable EVM wallets
   disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
+  tradingViewColorConfig String? // New field for TradingView chart colors
   
   // Relation to User (owner) - one-to-one relationship
   userId               String   @unique
