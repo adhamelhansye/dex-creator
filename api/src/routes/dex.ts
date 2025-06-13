@@ -145,6 +145,7 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               disableSolanaWallets: updatedDex.disableSolanaWallets,
               tradingViewColorConfig:
                 updatedDex.tradingViewColorConfig || undefined,
+              availableLanguages: updatedDex.availableLanguages,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,

@@ -11,6 +11,25 @@ import {
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
 
+export enum LocaleEnum {
+  en = "en",
+  zh = "zh",
+  ja = "ja",
+  es = "es",
+  ko = "ko",
+  vi = "vi",
+  de = "de",
+  fr = "fr",
+  ru = "ru",
+  id = "id",
+  tr = "tr",
+  it = "it",
+  pt = "pt",
+  uk = "uk",
+  pl = "pl",
+  nl = "nl",
+}
+
 /**
  * Helper function to extract owner and repo from GitHub URL
  */
@@ -91,6 +110,7 @@ export const dexSchema = z.object({
   disableEvmWallets: z.boolean().optional(),
   disableSolanaWallets: z.boolean().optional(),
   tradingViewColorConfig: z.string().nullish(),
+  availableLanguages: z.array(z.nativeEnum(LocaleEnum)).optional(),
 });
 
 export const customDomainSchema = z.object({
@@ -200,6 +220,7 @@ export async function createDex(
         disableSolanaWallets: validatedData.disableSolanaWallets,
         tradingViewColorConfig:
           validatedData.tradingViewColorConfig || undefined,
+        availableLanguages: validatedData.availableLanguages,
       },
       {
         primaryLogo: validatedData.primaryLogo || undefined,
@@ -265,6 +286,7 @@ export async function createDex(
         disableEvmWallets: validatedData.disableEvmWallets,
         disableSolanaWallets: validatedData.disableSolanaWallets,
         tradingViewColorConfig: validatedData.tradingViewColorConfig,
+        availableLanguages: validatedData.availableLanguages,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -368,6 +390,8 @@ export async function updateDex(
     updateData.disableSolanaWallets = validatedData.disableSolanaWallets;
   if ("tradingViewColorConfig" in validatedData)
     updateData.tradingViewColorConfig = validatedData.tradingViewColorConfig;
+  if ("availableLanguages" in validatedData)
+    updateData.availableLanguages = validatedData.availableLanguages;
 
   return prisma.dex.update({
     where: {

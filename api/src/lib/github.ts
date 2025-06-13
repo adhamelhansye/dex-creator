@@ -490,6 +490,7 @@ function prepareDexConfigContent(
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
+    availableLanguages?: string[];
   },
   files?: {
     primaryLogo?: string;
@@ -573,6 +574,7 @@ function prepareDexConfigContent(
     VITE_TRADING_VIEW_COLOR_CONFIG: config.tradingViewColorConfig
       ? `'${config.tradingViewColorConfig}'`
       : "",
+    VITE_AVAILABLE_LANGUAGES: (config.availableLanguages || []).join(","),
   };
 
   const envContent = Object.entries(envVars)
@@ -604,7 +606,6 @@ async function createSingleCommit(
   binaryFiles: Map<string, Buffer> = new Map(),
   commitMessage: string
 ): Promise<void> {
-  // Get the latest commit SHA from the default branch
   console.log(`Getting latest commit for ${owner}/${repo}...`);
   const { data: refData } = await octokit.rest.git.getRef({
     owner,
@@ -613,7 +614,6 @@ async function createSingleCommit(
   });
   const latestCommitSha = refData.object.sha;
 
-  // Create blobs for text files
   console.log("Creating blobs for text files...");
   const textBlobPromises = Array.from(fileContents.entries()).map(
     ([path, content]) =>
@@ -627,7 +627,6 @@ async function createSingleCommit(
         .then(response => ({ path, sha: response.data.sha }))
   );
 
-  // Create blobs for binary files
   console.log("Creating blobs for binary files...");
   const binaryBlobPromises = Array.from(binaryFiles.entries()).map(
     ([path, buffer]) =>
@@ -641,27 +640,24 @@ async function createSingleCommit(
         .then(response => ({ path, sha: response.data.sha }))
   );
 
-  // Wait for all blobs to be created
   const textBlobs = await Promise.all(textBlobPromises);
   const binaryBlobs = await Promise.all(binaryBlobPromises);
 
-  // Combine all blobs into tree entries
   const treeEntries = [
     ...textBlobs.map(({ path, sha }) => ({
       path,
-      mode: "100644" as const, // file mode (100644 = file)
+      mode: "100644" as const,
       type: "blob" as const,
       sha,
     })),
     ...binaryBlobs.map(({ path, sha }) => ({
       path,
-      mode: "100644" as const, // file mode (100644 = file)
+      mode: "100644" as const,
       type: "blob" as const,
       sha,
     })),
   ];
 
-  // Create a tree with all files
   console.log("Creating git tree with all files...");
   const { data: newTree } = await octokit.rest.git.createTree({
     owner,
@@ -670,7 +666,6 @@ async function createSingleCommit(
     tree: treeEntries,
   });
 
-  // Create a commit
   console.log("Creating commit with all files...");
   const { data: newCommit } = await octokit.rest.git.createCommit({
     owner,
@@ -680,7 +675,6 @@ async function createSingleCommit(
     parents: [latestCommitSha],
   });
 
-  // Update the reference
   console.log("Updating branch reference...");
   await octokit.rest.git.updateRef({
     owner,
@@ -717,6 +711,7 @@ export async function updateDexConfig(
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
+    availableLanguages?: string[];
   },
   files?: {
     primaryLogo?: string;
@@ -820,6 +815,7 @@ export async function setupRepositoryWithSingleCommit(
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
+    availableLanguages?: string[];
   },
   files: {
     primaryLogo?: string;
@@ -1342,6 +1338,7 @@ export async function triggerRedeployment(
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
+    availableLanguages?: string[];
   },
   files?: {
     primaryLogo?: string;
@@ -1389,4 +1386,5 @@ export interface DexConfig {
   disableEvmWallets?: boolean;
   disableSolanaWallets?: boolean;
   tradingViewColorConfig?: string;
+  availableLanguages?: string[];
 }

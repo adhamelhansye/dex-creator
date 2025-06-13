@@ -138,6 +138,7 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
               disableSolanaWallets: updatedDex.disableSolanaWallets || false,
               tradingViewColorConfig:
                 updatedDex.tradingViewColorConfig || undefined,
+              availableLanguages: updatedDex.availableLanguages,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,
@@ -404,11 +405,13 @@ adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
         disableEvmWallets: dex.disableEvmWallets || false,
         disableSolanaWallets: dex.disableSolanaWallets || false,
         tradingViewColorConfig: dex.tradingViewColorConfig || undefined,
+        availableLanguages: dex.availableLanguages,
       },
       {
         primaryLogo: dex.primaryLogo || undefined,
         secondaryLogo: dex.secondaryLogo || undefined,
         favicon: dex.favicon || undefined,
+        pnlPosters: dex.pnlPosters || undefined,
       }
     );
 

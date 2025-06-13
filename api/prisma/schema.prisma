@@ -70,6 +70,7 @@ model Dex {
   preferredBrokerId    String?  // User's preferred broker ID after verification
   makerFee             Int?     // Maker fee in basis points (0.01%)
   takerFee             Int?     // Taker fee in basis points (0.01%)
+  availableLanguages   String[] @default(["en"]) // Array of language codes that the DEX should support
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   enableAbstractWallet Boolean  @default(false) // New flag for Abstract Wallet

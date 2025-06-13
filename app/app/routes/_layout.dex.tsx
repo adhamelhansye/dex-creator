@@ -26,6 +26,7 @@ import PrivyConfigSection from "../components/PrivyConfigSection";
 import NavigationMenuSection from "../components/NavigationMenuSection";
 import AccordionItem from "../components/AccordionItem";
 import BlockchainConfigSection from "../components/BlockchainConfigSection";
+import LanguageSupportSection from "../components/LanguageSupportSection";
 
 // Define type for DEX data
 interface DexData {
@@ -55,6 +56,7 @@ interface DexData {
   disableEvmWallets?: boolean;
   disableSolanaWallets?: boolean;
   tradingViewColorConfig?: string | null;
+  availableLanguages?: string[] | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -73,8 +75,9 @@ const STEPS_CONFIG = [
   { id: 5, title: "Reown Configuration", isOptional: true },
   { id: 6, title: "Privy Configuration", isOptional: true },
   { id: 7, title: "Blockchain Configuration", isOptional: true },
-  { id: 8, title: "Navigation Menus", isOptional: true },
-  { id: 9, title: "PnL Posters", isOptional: true },
+  { id: 8, title: "Language Support", isOptional: true },
+  { id: 9, title: "Navigation Menus", isOptional: true },
+  { id: 10, title: "PnL Posters", isOptional: true },
 ];
 const TOTAL_STEPS = STEPS_CONFIG.length;
 
@@ -191,6 +194,7 @@ export default function DexRoute() {
   const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
   const [favicon, setFavicon] = useState<string | null>(null);
   const [pnlPosters, setPnlPosters] = useState<(string | null)[]>([]);
+  const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isForking, setIsForking] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -236,6 +240,7 @@ export default function DexRoute() {
     disableEvmWallets: false,
     disableSolanaWallets: false,
     tradingViewColorConfig: null,
+    availableLanguages: null,
     createdAt: "",
     updatedAt: "",
   });
@@ -290,6 +295,7 @@ export default function DexRoute() {
           setSecondaryLogo(response.secondaryLogo || null);
           setFavicon(response.favicon || null);
           setPnlPosters(response.pnlPosters || []);
+          setAvailableLanguages(response.availableLanguages || []);
           setViewCssCode(false);
 
           setIsGraduationEligible(response.brokerId === "demo");
@@ -317,6 +323,7 @@ export default function DexRoute() {
             disableTestnet: response.disableTestnet || false,
             disableEvmWallets: response.disableEvmWallets || false,
             disableSolanaWallets: response.disableSolanaWallets || false,
+            availableLanguages: response.availableLanguages || [],
           });
 
           setActiveThemeTab("colors");
@@ -462,7 +469,6 @@ export default function DexRoute() {
     }
   };
 
-  // Validation functions for form fields
   const brokerNameValidator = composeValidators(
     required("Broker name"),
     minLength(3, "Broker name"),
@@ -517,20 +523,16 @@ export default function DexRoute() {
     }
   };
 
-  // Handle saving the DEX information
   const handleSubmit = async (_: FormEvent, errors: FormErrors) => {
     if (!isAuthenticated) {
       toast.error("Please connect your wallet and login first");
       return;
     }
 
-    // Check if there are any validation errors
     if (Object.values(errors).some(error => error !== null)) {
-      // Don't submit if validation errors exist
       return;
     }
 
-    // Prepare trimmed values
     const trimmedBrokerName = brokerName.trim();
     const trimmedTelegramLink = telegramLink.trim();
     const trimmedDiscordLink = discordLink.trim();
@@ -539,7 +541,6 @@ export default function DexRoute() {
     const trimmedPrivyAppId = privyAppId.trim();
     const trimmedPrivyTermsOfUse = privyTermsOfUse.trim();
 
-    // If this is an update (DEX already exists), check for changes
     if (dexData && dexData.id) {
       const hasChanges =
         trimmedBrokerName !== originalValues.brokerName ||
@@ -565,7 +566,9 @@ export default function DexRoute() {
         disableSolanaWallets !== originalValues.disableSolanaWallets ||
         tradingViewColorConfig !== originalValues.tradingViewColorConfig ||
         JSON.stringify([...chainIds].sort()) !==
-          JSON.stringify([...(originalValues.chainIds || [])].sort());
+          JSON.stringify([...(originalValues.chainIds || [])].sort()) ||
+        JSON.stringify([...availableLanguages].sort()) !==
+          JSON.stringify([...(originalValues.availableLanguages || [])].sort());
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -606,10 +609,10 @@ export default function DexRoute() {
         disableEvmWallets,
         disableSolanaWallets,
         tradingViewColorConfig,
+        availableLanguages,
       };
 
       if (dexData && dexData.id) {
-        // Update existing DEX
         savedData = await put<DexData>(
           `api/dex/${dexData.id}`,
           dexFormData,
@@ -668,6 +671,7 @@ export default function DexRoute() {
           disableEvmWallets,
           disableSolanaWallets,
           tradingViewColorConfig,
+          availableLanguages,
         });
 
         if (savedData.repoUrl) {
@@ -1262,11 +1266,11 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* Step 8: Navigation Menus */}
+          {/* Step 8: Language Support */}
           {areAllPreviousStepsCompleted(8) && (
             <AccordionItem
               title={
-                STEPS_CONFIG.find(s => s.id === 8)?.title || "Navigation Menus"
+                STEPS_CONFIG.find(s => s.id === 8)?.title || "Language Support"
               }
               stepNumber={8}
               isOptional={
@@ -1284,19 +1288,19 @@ export default function DexRoute() {
                 allRequiredPreviousStepsCompleted
               }
             >
-              <NavigationMenuSection
-                enabledMenus={enabledMenus}
-                setEnabledMenus={setEnabledMenus}
-                customMenus={customMenus}
-                setCustomMenus={setCustomMenus}
+              <LanguageSupportSection
+                availableLanguages={availableLanguages}
+                onAvailableLanguagesChange={setAvailableLanguages}
               />
             </AccordionItem>
           )}
 
-          {/* Step 9: PnL Posters */}
+          {/* Step 9: Navigation Menus */}
           {areAllPreviousStepsCompleted(9) && (
             <AccordionItem
-              title={STEPS_CONFIG.find(s => s.id === 9)?.title || "PnL Posters"}
+              title={
+                STEPS_CONFIG.find(s => s.id === 9)?.title || "Navigation Menus"
+              }
               stepNumber={9}
               isOptional={
                 STEPS_CONFIG.find(s => s.id === 9)?.isOptional || false
@@ -1307,6 +1311,37 @@ export default function DexRoute() {
               isCompleted={!!completedSteps[9]}
               canOpen={
                 allRequiredPreviousStepsCompleted(9) || !!completedSteps[9]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <NavigationMenuSection
+                enabledMenus={enabledMenus}
+                setEnabledMenus={setEnabledMenus}
+                customMenus={customMenus}
+                setCustomMenus={setCustomMenus}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 10: PnL Posters */}
+          {areAllPreviousStepsCompleted(10) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 10)?.title || "PnL Posters"
+              }
+              stepNumber={10}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 10)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(10)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 10}
+              isCompleted={!!completedSteps[10]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(10) || !!completedSteps[10]
               }
               setCurrentStep={setCurrentStep}
               allRequiredPreviousStepsCompleted={
@@ -1567,6 +1602,25 @@ export default function DexRoute() {
                 disableTestnet={disableTestnet}
                 onDisableMainnetChange={setDisableMainnet}
                 onDisableTestnetChange={setDisableTestnet}
+              />
+            </div>
+
+            <div className="mb-4 mt-6 border-t border-light/10 pt-4">
+              <label className="block text-md font-medium mb-3">
+                Language Support{" "}
+                <span className="text-gray-400 text-sm font-normal">
+                  (optional)
+                </span>
+              </label>
+              <p className="text-xs text-gray-400 mb-4">
+                Select the languages you want to support in your DEX interface.{" "}
+                <span className="text-primary-light">
+                  This is optional - your DEX will default to English only.
+                </span>
+              </p>
+              <LanguageSupportSection
+                availableLanguages={availableLanguages}
+                onAvailableLanguagesChange={setAvailableLanguages}
               />
             </div>
 
