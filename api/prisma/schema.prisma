@@ -80,6 +80,15 @@ model Dex {
   disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
   tradingViewColorConfig String? // New field for TradingView chart colors
   
+  // SEO Configuration Fields
+  seoSiteName          String?  // Site name for titles and branding (VITE_SEO_SITE_NAME)
+  seoSiteDescription   String?  // Meta description for all pages (VITE_SEO_SITE_DESCRIPTION)
+  seoSiteLanguage      String?  // HTML lang attribute override (VITE_SEO_SITE_LANGUAGE)
+  seoSiteLocale        String?  // Open Graph locale for social platforms (VITE_SEO_SITE_LOCALE)
+  seoTwitterHandle     String?  // Twitter handle for Twitter Cards (VITE_SEO_TWITTER_HANDLE)
+  seoThemeColor        String?  // Browser theme color for mobile (VITE_SEO_THEME_COLOR)
+  seoKeywords          String?  // Meta keywords for search engines (VITE_SEO_KEYWORDS)
+  
   // Relation to User (owner) - one-to-one relationship
   userId               String   @unique
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)

@@ -146,13 +146,21 @@ dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
               tradingViewColorConfig:
                 updatedDex.tradingViewColorConfig || undefined,
               availableLanguages: updatedDex.availableLanguages,
+              seoSiteName: updatedDex.seoSiteName || undefined,
+              seoSiteDescription: updatedDex.seoSiteDescription || undefined,
+              seoSiteLanguage: updatedDex.seoSiteLanguage || undefined,
+              seoSiteLocale: updatedDex.seoSiteLocale || undefined,
+              seoTwitterHandle: updatedDex.seoTwitterHandle || undefined,
+              seoThemeColor: updatedDex.seoThemeColor || undefined,
+              seoKeywords: updatedDex.seoKeywords || undefined,
             },
             {
               primaryLogo: updatedDex.primaryLogo || undefined,
               secondaryLogo: updatedDex.secondaryLogo || undefined,
               favicon: updatedDex.favicon || undefined,
               pnlPosters: updatedDex.pnlPosters || undefined,
-            }
+            },
+            updatedDex.customDomain || undefined
           );
 
           console.log(

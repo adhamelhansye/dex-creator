@@ -491,13 +491,22 @@ function prepareDexConfigContent(
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
+    seoSiteName?: string;
+    seoSiteDescription?: string;
+    seoSiteLanguage?: string;
+    seoSiteLocale?: string;
+    seoTwitterHandle?: string;
+    seoThemeColor?: string;
+    seoKeywords?: string;
   },
   files?: {
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
     pnlPosters?: string[];
-  }
+  },
+  customDomain?: string,
+  repoUrl?: string
 ): {
   envContent: string;
   themeCSS?: string;
@@ -515,6 +524,26 @@ function prepareDexConfigContent(
     (files?.pnlPosters
       ?.map(poster => extractImageDataFromUri(poster))
       .filter(Boolean) as Buffer[]) || [];
+
+  const generateSiteUrl = (): string => {
+    if (customDomain) {
+      return `https://${customDomain}`;
+    }
+
+    if (repoUrl) {
+      try {
+        const match = repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
+        if (match && match[1]) {
+          const repoName = match[1];
+          return `https://dex.orderly.network/${repoName}/`;
+        }
+      } catch (error) {
+        console.error("Error constructing deployment URL:", error);
+      }
+    }
+
+    return "";
+  };
 
   const mainnetChainIds = [
     42161, // Arbitrum One
@@ -575,6 +604,14 @@ function prepareDexConfigContent(
       ? `'${config.tradingViewColorConfig}'`
       : "",
     VITE_AVAILABLE_LANGUAGES: (config.availableLanguages || []).join(","),
+    VITE_SEO_SITE_NAME: config.seoSiteName || "",
+    VITE_SEO_SITE_DESCRIPTION: config.seoSiteDescription || "",
+    VITE_SEO_SITE_URL: generateSiteUrl(),
+    VITE_SEO_SITE_LANGUAGE: config.seoSiteLanguage || "",
+    VITE_SEO_SITE_LOCALE: config.seoSiteLocale || "",
+    VITE_SEO_TWITTER_HANDLE: config.seoTwitterHandle || "",
+    VITE_SEO_THEME_COLOR: config.seoThemeColor || "",
+    VITE_SEO_KEYWORDS: config.seoKeywords || "",
   };
 
   const envContent = Object.entries(envVars)
@@ -712,13 +749,21 @@ export async function updateDexConfig(
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
+    seoSiteName?: string;
+    seoSiteDescription?: string;
+    seoSiteLanguage?: string;
+    seoSiteLocale?: string;
+    seoTwitterHandle?: string;
+    seoThemeColor?: string;
+    seoKeywords?: string;
   },
   files?: {
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
     pnlPosters?: string[];
-  }
+  },
+  customDomain?: string
 ): Promise<void> {
   try {
     const {
@@ -728,7 +773,12 @@ export async function updateDexConfig(
       primaryLogoData,
       secondaryLogoData,
       pnlPostersData,
-    } = prepareDexConfigContent(config, files);
+    } = prepareDexConfigContent(
+      config,
+      files,
+      customDomain,
+      `https://github.com/${owner}/${repo}`
+    );
 
     const fileContents = new Map<string, string>();
     fileContents.set(".env", envContent);
@@ -816,13 +866,21 @@ export async function setupRepositoryWithSingleCommit(
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
+    seoSiteName?: string;
+    seoSiteDescription?: string;
+    seoSiteLanguage?: string;
+    seoSiteLocale?: string;
+    seoTwitterHandle?: string;
+    seoThemeColor?: string;
+    seoKeywords?: string;
   },
   files: {
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
     pnlPosters?: string[];
-  }
+  },
+  customDomain?: string
 ): Promise<void> {
   console.log(`Setting up repository ${owner}/${repo} with a single commit...`);
 
@@ -852,7 +910,12 @@ export async function setupRepositoryWithSingleCommit(
       primaryLogoData,
       secondaryLogoData,
       pnlPostersData,
-    } = prepareDexConfigContent(config, files);
+    } = prepareDexConfigContent(
+      config,
+      files,
+      customDomain,
+      `https://github.com/${owner}/${repo}`
+    );
 
     const fileContents = new Map<string, string>();
     fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
@@ -1339,18 +1402,26 @@ export async function triggerRedeployment(
     disableSolanaWallets?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
+    seoSiteName?: string;
+    seoSiteDescription?: string;
+    seoSiteLanguage?: string;
+    seoSiteLocale?: string;
+    seoTwitterHandle?: string;
+    seoThemeColor?: string;
+    seoKeywords?: string;
   },
   files?: {
     primaryLogo?: string;
     secondaryLogo?: string;
     favicon?: string;
     pnlPosters?: string[];
-  }
+  },
+  customDomain?: string
 ): Promise<boolean> {
   try {
     console.log(`Creating redeployment commit for ${owner}/${repo}...`);
 
-    await updateDexConfig(owner, repo, dexConfig, files);
+    await updateDexConfig(owner, repo, dexConfig, files, customDomain);
 
     console.log(
       `Successfully created redeployment commit for ${owner}/${repo}`
@@ -1387,4 +1458,11 @@ export interface DexConfig {
   disableSolanaWallets?: boolean;
   tradingViewColorConfig?: string;
   availableLanguages?: string[];
+  seoSiteName?: string;
+  seoSiteDescription?: string;
+  seoSiteLanguage?: string;
+  seoSiteLocale?: string;
+  seoTwitterHandle?: string;
+  seoThemeColor?: string;
+  seoKeywords?: string;
 }

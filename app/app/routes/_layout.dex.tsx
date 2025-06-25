@@ -27,8 +27,8 @@ import NavigationMenuSection from "../components/NavigationMenuSection";
 import AccordionItem from "../components/AccordionItem";
 import BlockchainConfigSection from "../components/BlockchainConfigSection";
 import LanguageSupportSection from "../components/LanguageSupportSection";
+import SEOConfigSection from "../components/SEOConfigSection";
 
-// Define type for DEX data
 interface DexData {
   id: string;
   brokerName: string;
@@ -57,6 +57,13 @@ interface DexData {
   disableSolanaWallets?: boolean;
   tradingViewColorConfig?: string | null;
   availableLanguages?: string[] | null;
+  seoSiteName?: string | null;
+  seoSiteDescription?: string | null;
+  seoSiteLanguage?: string | null;
+  seoSiteLocale?: string | null;
+  seoTwitterHandle?: string | null;
+  seoThemeColor?: string | null;
+  seoKeywords?: string | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -71,13 +78,14 @@ const STEPS_CONFIG = [
   { id: 1, title: "Broker Details", isOptional: false },
   { id: 2, title: "Branding", isOptional: true },
   { id: 3, title: "Theme Customization", isOptional: true },
-  { id: 4, title: "Social Media Links", isOptional: true },
-  { id: 5, title: "Reown Configuration", isOptional: true },
-  { id: 6, title: "Privy Configuration", isOptional: true },
-  { id: 7, title: "Blockchain Configuration", isOptional: true },
-  { id: 8, title: "Language Support", isOptional: true },
-  { id: 9, title: "Navigation Menus", isOptional: true },
-  { id: 10, title: "PnL Posters", isOptional: true },
+  { id: 4, title: "PnL Posters", isOptional: true },
+  { id: 5, title: "Social Media Links", isOptional: true },
+  { id: 6, title: "SEO Configuration", isOptional: true },
+  { id: 7, title: "Reown Configuration", isOptional: true },
+  { id: 8, title: "Privy Configuration", isOptional: true },
+  { id: 9, title: "Blockchain Configuration", isOptional: true },
+  { id: 10, title: "Language Support", isOptional: true },
+  { id: 11, title: "Navigation Menus", isOptional: true },
 ];
 const TOTAL_STEPS = STEPS_CONFIG.length;
 
@@ -241,6 +249,14 @@ export default function DexRoute() {
     disableSolanaWallets: false,
     tradingViewColorConfig: null,
     availableLanguages: null,
+    seoSiteName: null,
+    seoSiteDescription: null,
+
+    seoSiteLanguage: null,
+    seoSiteLocale: null,
+    seoTwitterHandle: null,
+    seoThemeColor: null,
+    seoKeywords: null,
     createdAt: "",
     updatedAt: "",
   });
@@ -260,6 +276,15 @@ export default function DexRoute() {
   const [tradingViewColorConfig, setTradingViewColorConfig] = useState<
     string | null
   >(null);
+
+  const [seoSiteName, setSeoSiteName] = useState("");
+  const [seoSiteDescription, setSeoSiteDescription] = useState("");
+
+  const [seoSiteLanguage, setSeoSiteLanguage] = useState("");
+  const [seoSiteLocale, setSeoSiteLocale] = useState("");
+  const [seoTwitterHandle, setSeoTwitterHandle] = useState("");
+  const [seoThemeColor, setSeoThemeColor] = useState("");
+  const [seoKeywords, setSeoKeywords] = useState("");
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -296,6 +321,14 @@ export default function DexRoute() {
           setFavicon(response.favicon || null);
           setPnlPosters(response.pnlPosters || []);
           setAvailableLanguages(response.availableLanguages || []);
+          setSeoSiteName(response.seoSiteName || "");
+          setSeoSiteDescription(response.seoSiteDescription || "");
+
+          setSeoSiteLanguage(response.seoSiteLanguage || "");
+          setSeoSiteLocale(response.seoSiteLocale || "");
+          setSeoTwitterHandle(response.seoTwitterHandle || "");
+          setSeoThemeColor(response.seoThemeColor || "");
+          setSeoKeywords(response.seoKeywords || "");
           setViewCssCode(false);
 
           setIsGraduationEligible(response.brokerId === "demo");
@@ -324,6 +357,14 @@ export default function DexRoute() {
             disableEvmWallets: response.disableEvmWallets || false,
             disableSolanaWallets: response.disableSolanaWallets || false,
             availableLanguages: response.availableLanguages || [],
+            seoSiteName: response.seoSiteName || null,
+            seoSiteDescription: response.seoSiteDescription || null,
+
+            seoSiteLanguage: response.seoSiteLanguage || null,
+            seoSiteLocale: response.seoSiteLocale || null,
+            seoTwitterHandle: response.seoTwitterHandle || null,
+            seoThemeColor: response.seoThemeColor || null,
+            seoKeywords: response.seoKeywords || null,
           });
 
           setActiveThemeTab("colors");
@@ -506,6 +547,27 @@ export default function DexRoute() {
         case "themePrompt":
           setThemePrompt(value);
           break;
+        case "seoSiteName":
+          setSeoSiteName(value);
+          break;
+        case "seoSiteDescription":
+          setSeoSiteDescription(value);
+          break;
+        case "seoSiteLanguage":
+          setSeoSiteLanguage(value);
+          break;
+        case "seoSiteLocale":
+          setSeoSiteLocale(value);
+          break;
+        case "seoTwitterHandle":
+          setSeoTwitterHandle(value);
+          break;
+        case "seoThemeColor":
+          setSeoThemeColor(value);
+          break;
+        case "seoKeywords":
+          setSeoKeywords(value);
+          break;
       }
     };
 
@@ -540,6 +602,13 @@ export default function DexRoute() {
     const trimmedWalletConnectProjectId = walletConnectProjectId.trim();
     const trimmedPrivyAppId = privyAppId.trim();
     const trimmedPrivyTermsOfUse = privyTermsOfUse.trim();
+    const trimmedSeoSiteName = seoSiteName.trim();
+    const trimmedSeoSiteDescription = seoSiteDescription.trim();
+    const trimmedSeoSiteLanguage = seoSiteLanguage.trim();
+    const trimmedSeoSiteLocale = seoSiteLocale.trim();
+    const trimmedSeoTwitterHandle = seoTwitterHandle.trim();
+    const trimmedSeoThemeColor = seoThemeColor.trim();
+    const trimmedSeoKeywords = seoKeywords.trim();
 
     if (dexData && dexData.id) {
       const hasChanges =
@@ -568,7 +637,17 @@ export default function DexRoute() {
         JSON.stringify([...chainIds].sort()) !==
           JSON.stringify([...(originalValues.chainIds || [])].sort()) ||
         JSON.stringify([...availableLanguages].sort()) !==
-          JSON.stringify([...(originalValues.availableLanguages || [])].sort());
+          JSON.stringify(
+            [...(originalValues.availableLanguages || [])].sort()
+          ) ||
+        trimmedSeoSiteName !== (originalValues.seoSiteName || "") ||
+        trimmedSeoSiteDescription !==
+          (originalValues.seoSiteDescription || "") ||
+        trimmedSeoSiteLanguage !== (originalValues.seoSiteLanguage || "") ||
+        trimmedSeoSiteLocale !== (originalValues.seoSiteLocale || "") ||
+        trimmedSeoTwitterHandle !== (originalValues.seoTwitterHandle || "") ||
+        trimmedSeoThemeColor !== (originalValues.seoThemeColor || "") ||
+        trimmedSeoKeywords !== (originalValues.seoKeywords || "");
 
       if (!hasChanges) {
         toast.info("No changes to save");
@@ -610,6 +689,13 @@ export default function DexRoute() {
         disableSolanaWallets,
         tradingViewColorConfig,
         availableLanguages,
+        seoSiteName: trimmedSeoSiteName || null,
+        seoSiteDescription: trimmedSeoSiteDescription || null,
+        seoSiteLanguage: trimmedSeoSiteLanguage || null,
+        seoSiteLocale: trimmedSeoSiteLocale || null,
+        seoTwitterHandle: trimmedSeoTwitterHandle || null,
+        seoThemeColor: trimmedSeoThemeColor || null,
+        seoKeywords: trimmedSeoKeywords || null,
       };
 
       if (dexData && dexData.id) {
@@ -642,6 +728,13 @@ export default function DexRoute() {
           disableEvmWallets,
           disableSolanaWallets,
           tradingViewColorConfig,
+          seoSiteName: trimmedSeoSiteName || null,
+          seoSiteDescription: trimmedSeoSiteDescription || null,
+          seoSiteLanguage: trimmedSeoSiteLanguage || null,
+          seoSiteLocale: trimmedSeoSiteLocale || null,
+          seoTwitterHandle: trimmedSeoTwitterHandle || null,
+          seoThemeColor: trimmedSeoThemeColor || null,
+          seoKeywords: trimmedSeoKeywords || null,
         });
 
         toast.success("DEX information updated successfully!");
@@ -672,6 +765,13 @@ export default function DexRoute() {
           disableSolanaWallets,
           tradingViewColorConfig,
           availableLanguages,
+          seoSiteName: trimmedSeoSiteName || null,
+          seoSiteDescription: trimmedSeoSiteDescription || null,
+          seoSiteLanguage: trimmedSeoSiteLanguage || null,
+          seoSiteLocale: trimmedSeoSiteLocale || null,
+          seoTwitterHandle: trimmedSeoTwitterHandle || null,
+          seoThemeColor: trimmedSeoThemeColor || null,
+          seoKeywords: trimmedSeoKeywords || null,
         });
 
         if (savedData.repoUrl) {
@@ -1113,13 +1213,10 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* Step 4: Social Media Links */}
+          {/* Step 4: PnL Posters */}
           {areAllPreviousStepsCompleted(4) && (
             <AccordionItem
-              title={
-                STEPS_CONFIG.find(s => s.id === 4)?.title ||
-                "Social Media Links"
-              }
+              title={STEPS_CONFIG.find(s => s.id === 4)?.title || "PnL Posters"}
               stepNumber={4}
               isOptional={
                 STEPS_CONFIG.find(s => s.id === 4)?.isOptional || false
@@ -1130,6 +1227,44 @@ export default function DexRoute() {
               isCompleted={!!completedSteps[4]}
               canOpen={
                 allRequiredPreviousStepsCompleted(4) || !!completedSteps[4]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Upload custom background images for PnL sharing posters. Users
+                can share their trading performance with these backgrounds.{" "}
+                <span className="text-primary-light">
+                  You can upload up to 8 custom poster backgrounds.
+                </span>{" "}
+                Leave empty to use default poster designs.
+              </p>
+              <PnLPostersSection
+                pnlPosters={pnlPosters}
+                onChange={setPnlPosters}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 5: Social Media Links */}
+          {areAllPreviousStepsCompleted(5) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 5)?.title ||
+                "Social Media Links"
+              }
+              stepNumber={5}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 5)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(5)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 5}
+              isCompleted={!!completedSteps[5]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(5) || !!completedSteps[5]
               }
               setCurrentStep={setCurrentStep}
               allRequiredPreviousStepsCompleted={
@@ -1153,23 +1288,66 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* Step 5: Reown Configuration */}
-          {areAllPreviousStepsCompleted(5) && (
+          {/* Step 6: SEO Configuration */}
+          {areAllPreviousStepsCompleted(6) && (
             <AccordionItem
               title={
-                STEPS_CONFIG.find(s => s.id === 5)?.title ||
+                STEPS_CONFIG.find(s => s.id === 6)?.title || "SEO Configuration"
+              }
+              stepNumber={6}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 6)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(6)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 6}
+              isCompleted={!!completedSteps[6]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(6) || !!completedSteps[6]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <p className="text-xs text-gray-400 mb-4">
+                Configure SEO settings to optimize how your DEX appears in
+                search engines and social media sharing.{" "}
+                <span className="text-primary-light">
+                  All SEO fields are optional but recommended for better
+                  discoverability.
+                </span>
+              </p>
+              <SEOConfigSection
+                seoSiteName={seoSiteName}
+                seoSiteDescription={seoSiteDescription}
+                seoSiteLanguage={seoSiteLanguage}
+                seoSiteLocale={seoSiteLocale}
+                seoTwitterHandle={seoTwitterHandle}
+                seoThemeColor={seoThemeColor}
+                seoKeywords={seoKeywords}
+                handleInputChange={handleInputChange}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 7: Reown Configuration */}
+          {areAllPreviousStepsCompleted(7) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 7)?.title ||
                 "Reown Configuration"
               }
-              stepNumber={5}
+              stepNumber={7}
               isOptional={
-                STEPS_CONFIG.find(s => s.id === 5)?.isOptional || false
+                STEPS_CONFIG.find(s => s.id === 7)?.isOptional || false
               }
-              onNextInternal={() => handleNextStep(5)}
+              onNextInternal={() => handleNextStep(7)}
               isStepContentValidTest={true}
-              isActive={currentStep === 5}
-              isCompleted={!!completedSteps[5]}
+              isActive={currentStep === 7}
+              isCompleted={!!completedSteps[7]}
               canOpen={
-                allRequiredPreviousStepsCompleted(5) || !!completedSteps[5]
+                allRequiredPreviousStepsCompleted(7) || !!completedSteps[7]
               }
               setCurrentStep={setCurrentStep}
               allRequiredPreviousStepsCompleted={
@@ -1190,27 +1368,27 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* Step 6: Privy Configuration */}
-          {areAllPreviousStepsCompleted(6) && (
+          {/* Step 8: Privy Configuration */}
+          {areAllPreviousStepsCompleted(8) && (
             <AccordionItem
               title={
-                STEPS_CONFIG.find(s => s.id === 6)?.title ||
+                STEPS_CONFIG.find(s => s.id === 8)?.title ||
                 "Privy Configuration"
               }
-              stepNumber={6}
+              stepNumber={8}
               isOptional={
-                STEPS_CONFIG.find(s => s.id === 6)?.isOptional || false
+                STEPS_CONFIG.find(s => s.id === 8)?.isOptional || false
               }
-              onNextInternal={() => handleNextStep(6)}
+              onNextInternal={() => handleNextStep(8)}
               isStepContentValidTest={
                 privyTermsOfUse.trim()
                   ? urlValidator(privyTermsOfUse.trim()) === null
                   : true
               }
-              isActive={currentStep === 6}
-              isCompleted={!!completedSteps[6]}
+              isActive={currentStep === 8}
+              isCompleted={!!completedSteps[8]}
               canOpen={
-                allRequiredPreviousStepsCompleted(6) || !!completedSteps[6]
+                allRequiredPreviousStepsCompleted(8) || !!completedSteps[8]
               }
               setCurrentStep={setCurrentStep}
               allRequiredPreviousStepsCompleted={
@@ -1232,74 +1410,12 @@ export default function DexRoute() {
             </AccordionItem>
           )}
 
-          {/* Step 7: Blockchain Configuration */}
-          {areAllPreviousStepsCompleted(7) && (
-            <AccordionItem
-              title={
-                STEPS_CONFIG.find(s => s.id === 7)?.title ||
-                "Blockchain Configuration"
-              }
-              stepNumber={7}
-              isOptional={
-                STEPS_CONFIG.find(s => s.id === 7)?.isOptional || false
-              }
-              onNextInternal={() => handleNextStep(7)}
-              isStepContentValidTest={true}
-              isActive={currentStep === 7}
-              isCompleted={!!completedSteps[7]}
-              canOpen={
-                allRequiredPreviousStepsCompleted(7) || !!completedSteps[7]
-              }
-              setCurrentStep={setCurrentStep}
-              allRequiredPreviousStepsCompleted={
-                allRequiredPreviousStepsCompleted
-              }
-            >
-              <BlockchainConfigSection
-                chainIds={chainIds}
-                onChainIdsChange={setChainIds}
-                disableMainnet={disableMainnet}
-                disableTestnet={disableTestnet}
-                onDisableMainnetChange={setDisableMainnet}
-                onDisableTestnetChange={setDisableTestnet}
-              />
-            </AccordionItem>
-          )}
-
-          {/* Step 8: Language Support */}
-          {areAllPreviousStepsCompleted(8) && (
-            <AccordionItem
-              title={
-                STEPS_CONFIG.find(s => s.id === 8)?.title || "Language Support"
-              }
-              stepNumber={8}
-              isOptional={
-                STEPS_CONFIG.find(s => s.id === 8)?.isOptional || false
-              }
-              onNextInternal={() => handleNextStep(8)}
-              isStepContentValidTest={true}
-              isActive={currentStep === 8}
-              isCompleted={!!completedSteps[8]}
-              canOpen={
-                allRequiredPreviousStepsCompleted(8) || !!completedSteps[8]
-              }
-              setCurrentStep={setCurrentStep}
-              allRequiredPreviousStepsCompleted={
-                allRequiredPreviousStepsCompleted
-              }
-            >
-              <LanguageSupportSection
-                availableLanguages={availableLanguages}
-                onAvailableLanguagesChange={setAvailableLanguages}
-              />
-            </AccordionItem>
-          )}
-
-          {/* Step 9: Navigation Menus */}
+          {/* Step 9: Blockchain Configuration */}
           {areAllPreviousStepsCompleted(9) && (
             <AccordionItem
               title={
-                STEPS_CONFIG.find(s => s.id === 9)?.title || "Navigation Menus"
+                STEPS_CONFIG.find(s => s.id === 9)?.title ||
+                "Blockchain Configuration"
               }
               stepNumber={9}
               isOptional={
@@ -1317,20 +1433,22 @@ export default function DexRoute() {
                 allRequiredPreviousStepsCompleted
               }
             >
-              <NavigationMenuSection
-                enabledMenus={enabledMenus}
-                setEnabledMenus={setEnabledMenus}
-                customMenus={customMenus}
-                setCustomMenus={setCustomMenus}
+              <BlockchainConfigSection
+                chainIds={chainIds}
+                onChainIdsChange={setChainIds}
+                disableMainnet={disableMainnet}
+                disableTestnet={disableTestnet}
+                onDisableMainnetChange={setDisableMainnet}
+                onDisableTestnetChange={setDisableTestnet}
               />
             </AccordionItem>
           )}
 
-          {/* Step 10: PnL Posters */}
+          {/* Step 10: Language Support */}
           {areAllPreviousStepsCompleted(10) && (
             <AccordionItem
               title={
-                STEPS_CONFIG.find(s => s.id === 10)?.title || "PnL Posters"
+                STEPS_CONFIG.find(s => s.id === 10)?.title || "Language Support"
               }
               stepNumber={10}
               isOptional={
@@ -1348,17 +1466,40 @@ export default function DexRoute() {
                 allRequiredPreviousStepsCompleted
               }
             >
-              <p className="text-xs text-gray-400 mb-4">
-                Upload custom background images for PnL sharing posters. Users
-                can share their trading performance with these backgrounds.{" "}
-                <span className="text-primary-light">
-                  You can upload up to 8 custom poster backgrounds.
-                </span>{" "}
-                Leave empty to use default poster designs.
-              </p>
-              <PnLPostersSection
-                pnlPosters={pnlPosters}
-                onChange={setPnlPosters}
+              <LanguageSupportSection
+                availableLanguages={availableLanguages}
+                onAvailableLanguagesChange={setAvailableLanguages}
+              />
+            </AccordionItem>
+          )}
+
+          {/* Step 11: Navigation Menus */}
+          {areAllPreviousStepsCompleted(11) && (
+            <AccordionItem
+              title={
+                STEPS_CONFIG.find(s => s.id === 11)?.title || "Navigation Menus"
+              }
+              stepNumber={11}
+              isOptional={
+                STEPS_CONFIG.find(s => s.id === 11)?.isOptional || false
+              }
+              onNextInternal={() => handleNextStep(11)}
+              isStepContentValidTest={true}
+              isActive={currentStep === 11}
+              isCompleted={!!completedSteps[11]}
+              canOpen={
+                allRequiredPreviousStepsCompleted(11) || !!completedSteps[11]
+              }
+              setCurrentStep={setCurrentStep}
+              allRequiredPreviousStepsCompleted={
+                allRequiredPreviousStepsCompleted
+              }
+            >
+              <NavigationMenuSection
+                enabledMenus={enabledMenus}
+                setEnabledMenus={setEnabledMenus}
+                customMenus={customMenus}
+                setCustomMenus={setCustomMenus}
               />
             </AccordionItem>
           )}
@@ -1528,6 +1669,33 @@ export default function DexRoute() {
               handleInputChange={handleInputChange}
               urlValidator={urlValidator}
             />
+
+            <div className="mb-4 mt-6 border-t border-light/10 pt-4">
+              <h3 className="text-md font-medium mb-3">
+                SEO Configuration{" "}
+                <span className="text-gray-400 text-sm font-normal">
+                  (optional)
+                </span>
+              </h3>
+              <p className="text-xs text-gray-400 mb-4">
+                Configure SEO settings to optimize how your DEX appears in
+                search engines and social media sharing.{" "}
+                <span className="text-primary-light">
+                  All SEO fields are optional but recommended for better
+                  discoverability.
+                </span>
+              </p>
+              <SEOConfigSection
+                seoSiteName={seoSiteName}
+                seoSiteDescription={seoSiteDescription}
+                seoSiteLanguage={seoSiteLanguage}
+                seoSiteLocale={seoSiteLocale}
+                seoTwitterHandle={seoTwitterHandle}
+                seoThemeColor={seoThemeColor}
+                seoKeywords={seoKeywords}
+                handleInputChange={handleInputChange}
+              />
+            </div>
 
             <h3 className="text-md font-medium mb-3 mt-6 border-t border-light/10 pt-4">
               Reown Configuration (formerly WalletConnect){" "}

@@ -111,6 +111,44 @@ export const dexSchema = z.object({
   disableSolanaWallets: z.boolean().optional(),
   tradingViewColorConfig: z.string().nullish(),
   availableLanguages: z.array(z.nativeEnum(LocaleEnum)).optional(),
+
+  seoSiteName: z
+    .string()
+    .max(100, "Site name must be 100 characters or less")
+    .nullish(),
+  seoSiteDescription: z
+    .string()
+    .max(300, "Site description must be 300 characters or less")
+    .nullish(),
+  seoSiteLanguage: z
+    .string()
+    .regex(
+      /^[a-z]{2}(-[A-Z]{2})?$/,
+      "Site language must be in format 'en' or 'en-US'"
+    )
+    .nullish(),
+  seoSiteLocale: z
+    .string()
+    .regex(/^[a-z]{2}_[A-Z]{2}$/, "Site locale must be in format 'en_US'")
+    .nullish(),
+  seoTwitterHandle: z
+    .string()
+    .regex(
+      /^@[a-zA-Z0-9_]+$/,
+      "Twitter handle must start with @ and contain only alphanumeric characters and underscores"
+    )
+    .nullish(),
+  seoThemeColor: z
+    .string()
+    .regex(
+      /^#[0-9a-fA-F]{6}$/,
+      "Theme color must be a valid hex color (e.g., #1a1b23)"
+    )
+    .nullish(),
+  seoKeywords: z
+    .string()
+    .max(500, "Keywords must be 500 characters or less")
+    .nullish(),
 });
 
 export const customDomainSchema = z.object({
@@ -221,13 +259,21 @@ export async function createDex(
         tradingViewColorConfig:
           validatedData.tradingViewColorConfig || undefined,
         availableLanguages: validatedData.availableLanguages,
+        seoSiteName: validatedData.seoSiteName || undefined,
+        seoSiteDescription: validatedData.seoSiteDescription || undefined,
+        seoSiteLanguage: validatedData.seoSiteLanguage || undefined,
+        seoSiteLocale: validatedData.seoSiteLocale || undefined,
+        seoTwitterHandle: validatedData.seoTwitterHandle || undefined,
+        seoThemeColor: validatedData.seoThemeColor || undefined,
+        seoKeywords: validatedData.seoKeywords || undefined,
       },
       {
         primaryLogo: validatedData.primaryLogo || undefined,
         secondaryLogo: validatedData.secondaryLogo || undefined,
         favicon: validatedData.favicon || undefined,
         pnlPosters: validatedData.pnlPosters || undefined,
-      }
+      },
+      undefined
     );
     console.log(`Successfully set up repository for ${brokerName}`);
   } catch (error) {
@@ -287,6 +333,13 @@ export async function createDex(
         disableSolanaWallets: validatedData.disableSolanaWallets,
         tradingViewColorConfig: validatedData.tradingViewColorConfig,
         availableLanguages: validatedData.availableLanguages,
+        seoSiteName: validatedData.seoSiteName,
+        seoSiteDescription: validatedData.seoSiteDescription,
+        seoSiteLanguage: validatedData.seoSiteLanguage,
+        seoSiteLocale: validatedData.seoSiteLocale,
+        seoTwitterHandle: validatedData.seoTwitterHandle,
+        seoThemeColor: validatedData.seoThemeColor,
+        seoKeywords: validatedData.seoKeywords,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -392,6 +445,21 @@ export async function updateDex(
     updateData.tradingViewColorConfig = validatedData.tradingViewColorConfig;
   if ("availableLanguages" in validatedData)
     updateData.availableLanguages = validatedData.availableLanguages;
+
+  if ("seoSiteName" in validatedData)
+    updateData.seoSiteName = validatedData.seoSiteName;
+  if ("seoSiteDescription" in validatedData)
+    updateData.seoSiteDescription = validatedData.seoSiteDescription;
+  if ("seoSiteLanguage" in validatedData)
+    updateData.seoSiteLanguage = validatedData.seoSiteLanguage;
+  if ("seoSiteLocale" in validatedData)
+    updateData.seoSiteLocale = validatedData.seoSiteLocale;
+  if ("seoTwitterHandle" in validatedData)
+    updateData.seoTwitterHandle = validatedData.seoTwitterHandle;
+  if ("seoThemeColor" in validatedData)
+    updateData.seoThemeColor = validatedData.seoThemeColor;
+  if ("seoKeywords" in validatedData)
+    updateData.seoKeywords = validatedData.seoKeywords;
 
   return prisma.dex.update({
     where: {
