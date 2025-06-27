@@ -71,9 +71,24 @@ export default function ImagePaste({
       setIsProcessing(true);
 
       try {
-        // Use customDimensions (from crop) if provided, otherwise use default dimensions
-        const targetWidth = customDimensions?.width || dimensions.width;
-        const targetHeight = customDimensions?.height || dimensions.height;
+        const croppedWidth = customDimensions?.width || dimensions.width;
+        const croppedHeight = customDimensions?.height || dimensions.height;
+
+        let targetWidth = croppedWidth;
+        let targetHeight = croppedHeight;
+
+        const needsWidthResize = croppedWidth > dimensions.width;
+        const needsHeightResize = croppedHeight > dimensions.height;
+
+        if (needsWidthResize || needsHeightResize) {
+          const widthScale = dimensions.width / croppedWidth;
+          const heightScale = dimensions.height / croppedHeight;
+
+          const scale = Math.min(widthScale, heightScale);
+
+          targetWidth = Math.round(croppedWidth * scale);
+          targetHeight = Math.round(croppedHeight * scale);
+        }
 
         // Convert the image to WebP and resize
         const processedImage = await convertImage(
@@ -182,11 +197,11 @@ export default function ImagePaste({
           await processAndSaveImage(imageSource, cropParams, finalDimensions);
         };
 
-        // Open crop modal
         openModal("imageCrop", {
           imageSource: imageDataUrl,
           originalDimensions: imageDims,
           initialCrop,
+          targetDimensions: dimensions,
           enforceSquare,
           enforce16by9,
           onApply: handleApplyCropForThisImage,
@@ -474,8 +489,8 @@ export default function ImagePaste({
           {dimensions.width}x{dimensions.height}px
         </p>
         <p className="mt-1">
-          Images will be converted to WebP format and resized automatically if
-          larger.
+          Images will be converted to WebP format. The final size will be your
+          crop area size.
         </p>
       </Card>
     </div>

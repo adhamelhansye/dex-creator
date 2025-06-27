@@ -49,9 +49,9 @@ export function ModalProvider({ children }: ModalProviderProps) {
   // Function to open a modal with specific props
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openModal = (type: ModalType, props: Record<string, any> = {}) => {
+    setIsModalOpen(true);
     setCurrentModalType(type);
     setCurrentModalProps(props);
-    setIsModalOpen(true);
   };
 
   // Function to close the current modal
@@ -119,7 +119,9 @@ function ModalManager() {
           imageSource={currentModalProps.imageSource}
           originalDimensions={currentModalProps.originalDimensions}
           initialCrop={currentModalProps.initialCrop}
+          targetDimensions={currentModalProps.targetDimensions}
           enforceSquare={currentModalProps.enforceSquare}
+          enforce16by9={currentModalProps.enforce16by9}
         />
       );
     case "themePreview":

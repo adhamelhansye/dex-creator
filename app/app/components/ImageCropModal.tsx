@@ -12,6 +12,7 @@ interface ImageCropModalProps {
   imageSource: string;
   originalDimensions: { width: number; height: number };
   initialCrop: CropParams;
+  targetDimensions: { width: number; height: number };
   enforceSquare?: boolean;
   enforce16by9?: boolean;
 }
@@ -35,6 +36,7 @@ export default function ImageCropModal({
   imageSource,
   originalDimensions,
   initialCrop,
+  targetDimensions,
   enforceSquare = false,
   enforce16by9 = false,
 }: ImageCropModalProps) {
@@ -61,6 +63,31 @@ export default function ImageCropModal({
   const cropCanvasRef = useRef<HTMLCanvasElement>(null);
   const cropPreviewRef = useRef<HTMLDivElement>(null);
 
+  const calculateFinalDimensions = useCallback(
+    (cropWidth: number, cropHeight: number) => {
+      const needsWidthResize = cropWidth > targetDimensions.width;
+      const needsHeightResize = cropHeight > targetDimensions.height;
+
+      if (needsWidthResize || needsHeightResize) {
+        const widthScale = targetDimensions.width / cropWidth;
+        const heightScale = targetDimensions.height / cropHeight;
+
+        const scale = Math.min(widthScale, heightScale);
+
+        return {
+          width: Math.round(cropWidth * scale),
+          height: Math.round(cropHeight * scale),
+        };
+      }
+
+      return {
+        width: cropWidth,
+        height: cropHeight,
+      };
+    },
+    [targetDimensions]
+  );
+
   // Define handleApply here using useCallback to avoid unnecessary re-creation
   const handleApply = useCallback(async () => {
     if (cropDimensions.width <= 0 || cropDimensions.height <= 0) {
@@ -78,7 +105,6 @@ export default function ImageCropModal({
     }
   }, [cropDimensions, finalDimensions, onApply, onClose]);
 
-  // Keep refs in sync with state
   useEffect(() => {
     cropDimensionsRef.current = cropDimensions;
   }, [cropDimensions]);
@@ -95,14 +121,18 @@ export default function ImageCropModal({
     scaleRef.current = scale;
   }, [scale]);
 
-  // Reset when props change
   useEffect(() => {
     setCropDimensions(initialCrop);
-    setFinalDimensions({
-      width: initialCrop.width,
-      height: initialCrop.height,
-    });
-  }, [initialCrop]);
+    setFinalDimensions(
+      calculateFinalDimensions(initialCrop.width, initialCrop.height)
+    );
+  }, [initialCrop, calculateFinalDimensions]);
+
+  useEffect(() => {
+    setFinalDimensions(
+      calculateFinalDimensions(cropDimensions.width, cropDimensions.height)
+    );
+  }, [calculateFinalDimensions, cropDimensions.width, cropDimensions.height]);
 
   // Update crop preview whenever crop dimensions change
   useEffect(() => {
@@ -431,10 +461,9 @@ export default function ImageCropModal({
 
       // Update crop dimensions and final dimensions
       setCropDimensions(newCrop);
-      setFinalDimensions({
-        width: newCrop.width,
-        height: newCrop.height,
-      });
+      setFinalDimensions(
+        calculateFinalDimensions(newCrop.width, newCrop.height)
+      );
     };
 
     const handleMouseUp = () => {
@@ -461,7 +490,13 @@ export default function ImageCropModal({
     }
 
     return undefined;
-  }, [isDragging, enforceSquare, enforce16by9, originalDimensions]);
+  }, [
+    isDragging,
+    enforceSquare,
+    enforce16by9,
+    originalDimensions,
+    calculateFinalDimensions,
+  ]);
 
   if (!isOpen) return null;
 
@@ -650,10 +685,7 @@ export default function ImageCropModal({
           width: newValue,
           height: newHeight,
         }));
-        setFinalDimensions({
-          width: newValue,
-          height: newHeight,
-        });
+        setFinalDimensions(calculateFinalDimensions(newValue, newHeight));
         return;
       }
     } else if (key === "height") {
@@ -680,10 +712,7 @@ export default function ImageCropModal({
           height: newValue,
           width: newWidth,
         }));
-        setFinalDimensions({
-          width: newWidth,
-          height: newValue,
-        });
+        setFinalDimensions(calculateFinalDimensions(newWidth, newValue));
         return;
       }
     }
@@ -694,12 +723,12 @@ export default function ImageCropModal({
       [key]: newValue,
     }));
 
-    // Update final dimensions to match crop for output size
+    // Update final dimensions using smart resizing logic
     if (key === "width" || key === "height") {
-      setFinalDimensions(prev => ({
-        ...prev,
-        [key]: newValue,
-      }));
+      const updatedCrop = { ...cropDimensions, [key]: newValue };
+      setFinalDimensions(
+        calculateFinalDimensions(updatedCrop.width, updatedCrop.height)
+      );
     }
   };
 
@@ -969,9 +998,14 @@ export default function ImageCropModal({
                 {originalDimensions.height}px
               </p>
               <p>
-                Final size will be: {finalDimensions.width}x
-                {finalDimensions.height}
-                px
+                Crop size: {cropDimensions.width}x{cropDimensions.height}px
+              </p>
+              <p>
+                Final output size: {finalDimensions.width}x
+                {finalDimensions.height}px
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Max size: {targetDimensions.width}x{targetDimensions.height}px
               </p>
             </div>
           </div>
