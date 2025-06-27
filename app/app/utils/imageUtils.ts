@@ -5,8 +5,8 @@ import encodeWebp from "@jsquash/webp/encode";
 import resize from "@jsquash/resize";
 
 export const DEFAULT_DIMENSIONS = {
-  primaryLogo: { width: 200, height: 42 },
-  secondaryLogo: { width: 40, height: 40 },
+  primaryLogo: { width: 600, height: 120 },
+  secondaryLogo: { width: 120, height: 120 },
   favicon: { width: 96, height: 96 },
   pnlPoster: { width: 960, height: 540 },
 };
