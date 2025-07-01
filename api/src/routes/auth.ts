@@ -16,7 +16,7 @@ app.post("/nonce", zValidator("json", authRequestSchema), async c => {
 
   try {
     const nonce = await userStore.generateNonce(address);
-    const message = `Sign this message to authenticate with DEX Creator: ${nonce}`;
+    const message = `Sign this message to authenticate with Orderly One: ${nonce}`;
 
     return c.json({
       message,
@@ -38,7 +38,7 @@ app.post("/verify", zValidator("json", authVerifySchema), async c => {
       return c.json({ error: "User not found" }, 404);
     }
 
-    const message = `Sign this message to authenticate with DEX Creator: ${user.nonce}`;
+    const message = `Sign this message to authenticate with Orderly One: ${user.nonce}`;
 
     // Verify signature
     const recoveredAddress = ethers.verifyMessage(message, signature);

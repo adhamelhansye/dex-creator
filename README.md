@@ -1,10 +1,10 @@
-# DEX Creator
+# Orderly One
 
 A platform that lets you create your own perpetual decentralized exchange (DEX) easily using Orderly Networks infrastructure.
 
 ## Project Overview
 
-DEX Creator is a tool that simplifies the process of launching your own perpetual DEX. The platform handles the complexity of DEX creation and deployment by leveraging Orderly Networks' infrastructure.
+Orderly One is a tool that simplifies the process of launching your own perpetual DEX. The platform handles the complexity of DEX creation and deployment by leveraging Orderly Networks' infrastructure.
 
 ## Project Structure
 
@@ -239,7 +239,7 @@ The application requires several environment variables for proper operation. Bel
 
 ## DEX Graduation System
 
-The DEX Creator includes a graduation system that allows DEX owners to upgrade their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
+Orderly One includes a graduation system that allows DEX owners to upgrade their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
 
 1. Users sending a specified amount of ORDER tokens (set by `REQUIRED_ORDER_AMOUNT`)
 2. Choosing a unique broker ID for their DEX

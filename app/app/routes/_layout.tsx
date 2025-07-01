@@ -41,7 +41,7 @@ export default function Layout() {
               <div className="flex justify-between items-center py-4 px-4 md:py-6 md:px-8">
                 <div className="flex items-center">
                   <h1 className="text-xl md:text-2xl lg:text-3xl font-bold gradient-text">
-                    Orderly DEX Creator
+                    Orderly One
                   </h1>
                   {/* Desktop navigation - hidden on mobile */}
                   <div className="hidden md:block ml-8">

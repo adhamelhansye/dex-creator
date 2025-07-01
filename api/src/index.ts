@@ -40,7 +40,7 @@ app.use("/api/admin/*", async (c, next) => {
 });
 
 // Routes
-app.get("/", c => c.json({ message: "DEX Creator API is running" }));
+app.get("/", c => c.json({ message: "Orderly One API is running" }));
 app.route("/api/dex", dexRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/api/admin", adminRoutes);

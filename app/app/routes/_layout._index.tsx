@@ -6,7 +6,7 @@ import { Outlet, useNavigate } from "@remix-run/react";
 import { useAppKit } from "@reown/appkit/react";
 
 export const meta: MetaFunction = () => [
-  { title: "DEX Creator | Orderly Network" },
+  { title: "Orderly One | Orderly Network" },
 ];
 
 export function Layout() {

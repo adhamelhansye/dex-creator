@@ -1,4 +1,4 @@
-# DEX Creator - Composer Documentation
+# Orderly One - Composer Documentation
 
 This document provides a comprehensive guide for AI composers working on this project, focusing on the current structure and technical decisions.
 
@@ -27,7 +27,7 @@ You should proactively update this document without waiting for explicit instruc
 
 ## Project Overview
 
-DEX Creator is a platform that lets users create their own perpetual decentralized exchanges (DEXs) using Orderly Networks infrastructure. The platform simplifies DEX creation and deployment through an intuitive UI and automated processes.
+Orderly One is a platform that lets users create their own perpetual decentralized exchanges (DEXs) using Orderly Networks infrastructure. The platform simplifies DEX creation and deployment through an intuitive UI and automated processes.
 
 ## Git Hooks and Module Configuration
 
@@ -94,7 +94,7 @@ dex-creator/
 
 ## Admin Functionality
 
-The DEX Creator platform includes a comprehensive admin system that allows privileged users to manage DEX instances across the platform.
+The Orderly One platform includes a comprehensive admin system that allows privileged users to manage DEX instances across the platform.
 
 ### Key Features
 
@@ -671,11 +671,11 @@ The project uses PostgreSQL with Prisma ORM:
    ```bash
    # Start a PostgreSQL container
    docker run --name dex-creator-postgres \
-     -e POSTGRES_PASSWORD=postgres \
-     -e POSTGRES_USER=postgres \
-     -e POSTGRES_DB=dex_creator \
-     -p 5432:5432 \
-     -d postgres:16
+  -e POSTGRES_PASSWORD=postgres \
+  -e POSTGRES_USER=postgres \
+  -e POSTGRES_DB=dex_creator \
+  -p 5432:5432 \
+  -d postgres:16
    ```
 
 2. **Connection String**:
