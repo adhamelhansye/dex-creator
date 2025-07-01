@@ -38,8 +38,8 @@ export interface ThemeCustomizationProps {
   themePrompt: string;
   isGeneratingTheme: boolean;
   brokerName: string;
-  primaryLogo: string | null;
-  secondaryLogo: string | null;
+  primaryLogo: Blob | null;
+  secondaryLogo: Blob | null;
   themeApplied: boolean;
   tradingViewColorConfig: string | null;
   toggleThemeEditor: () => void;

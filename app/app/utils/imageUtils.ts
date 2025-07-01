@@ -219,3 +219,63 @@ export function extractImageFromClipboard(
     resolve(null);
   });
 }
+
+/**
+ * Convert an image to a WebP binary Blob with optional cropping and resizing
+ * @param base64Icon Base64 data URI of source image
+ * @param width Optional width to resize to
+ * @param height Optional height to resize to
+ * @param fitMethod Resizing method ('contain' or 'stretch')
+ * @param cropParams Optional parameters for cropping before resize: {x, y, width, height}
+ * @returns Promise resolving to WebP binary Blob
+ */
+export async function convertImageToBinary(
+  base64Icon: string,
+  width?: number,
+  height?: number,
+  fitMethod: "contain" | "stretch" = "contain",
+  cropParams?: CropParams
+): Promise<Blob> {
+  try {
+    const base64Data = base64Icon.replace(/^data:[^,]+,/, "");
+
+    const imageBuffer = Uint8Array.from(atob(base64Data), v => v.charCodeAt(0));
+
+    let sourceType: "jpeg" | "png" | "webp";
+    if (base64Icon.includes("image/png")) {
+      sourceType = "png";
+    } else if (base64Icon.includes("image/jpeg")) {
+      sourceType = "jpeg";
+    } else if (base64Icon.includes("image/webp")) {
+      sourceType = "webp";
+    } else {
+      throw new Error(
+        "Unsupported image format. Please use JPEG, PNG, or WebP."
+      );
+    }
+
+    let decodedImage = await decode(sourceType, imageBuffer);
+
+    if (cropParams && cropParams.width > 0 && cropParams.height > 0) {
+      decodedImage = cropImage(decodedImage, cropParams);
+    }
+
+    const resizedImage =
+      width && height
+        ? await resize(decodedImage, {
+            width,
+            height,
+            fitMethod,
+          })
+        : decodedImage;
+
+    const encodedImage = await encode(resizedImage);
+
+    return new Blob([encodedImage], { type: "image/webp" });
+  } catch (error) {
+    console.error("Error processing image:", error);
+    throw new Error(
+      `Failed to process image: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}

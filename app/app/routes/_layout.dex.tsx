@@ -2,11 +2,18 @@ import { useState, useEffect, FormEvent, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
-import { get, post, put, del } from "../utils/apiClient";
+import {
+  get,
+  post,
+  postFormData,
+  putFormData,
+  del,
+  createDexFormData,
+} from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
-import Form, { FormErrors } from "../components/Form";
+import Form from "../components/Form";
 import {
   validateUrl,
   required,
@@ -198,10 +205,25 @@ export default function DexRoute() {
   const [enabledMenus, setEnabledMenus] = useState("");
   const [customMenus, setCustomMenus] = useState("");
   const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
-  const [primaryLogo, setPrimaryLogo] = useState<string | null>(null);
-  const [secondaryLogo, setSecondaryLogo] = useState<string | null>(null);
-  const [favicon, setFavicon] = useState<string | null>(null);
-  const [pnlPosters, setPnlPosters] = useState<(string | null)[]>([]);
+
+  const [primaryLogo, setPrimaryLogo] = useState<Blob | null>(null);
+  const [secondaryLogo, setSecondaryLogo] = useState<Blob | null>(null);
+  const [favicon, setFavicon] = useState<Blob | null>(null);
+  const [pnlPosters, setPnlPosters] = useState<(Blob | null)[]>([]);
+
+  const base64ToBlob = async (base64: string): Promise<Blob> => {
+    const response = await fetch(base64);
+    return response.blob();
+  };
+
+  const blobToBase64 = (blob: Blob): Promise<string> => {
+    return new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onloadend = () => resolve(reader.result as string);
+      reader.readAsDataURL(blob);
+    });
+  };
+
   const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [isForking, setIsForking] = useState(false);
@@ -316,10 +338,7 @@ export default function DexRoute() {
           setDisableEvmWallets(response.disableEvmWallets || false);
           setDisableSolanaWallets(response.disableSolanaWallets || false);
           setTradingViewColorConfig(response.tradingViewColorConfig || null);
-          setPrimaryLogo(response.primaryLogo || null);
-          setSecondaryLogo(response.secondaryLogo || null);
-          setFavicon(response.favicon || null);
-          setPnlPosters(response.pnlPosters || []);
+          // Images will be loaded in separate useEffect
           setAvailableLanguages(response.availableLanguages || []);
           setSeoSiteName(response.seoSiteName || "");
           setSeoSiteDescription(response.seoSiteDescription || "");
@@ -395,6 +414,31 @@ export default function DexRoute() {
       setThemeApplied(true);
     }
   }, [currentTheme, originalValues.themeCSS]);
+
+  useEffect(() => {
+    if (dexData) {
+      const loadImages = async () => {
+        if (dexData.primaryLogo) {
+          setPrimaryLogo(await base64ToBlob(dexData.primaryLogo));
+        }
+        if (dexData.secondaryLogo) {
+          setSecondaryLogo(await base64ToBlob(dexData.secondaryLogo));
+        }
+        if (dexData.favicon) {
+          setFavicon(await base64ToBlob(dexData.favicon));
+        }
+        if (dexData.pnlPosters) {
+          const posterBlobs = await Promise.all(
+            dexData.pnlPosters.map(poster =>
+              poster ? base64ToBlob(poster) : Promise.resolve(null)
+            )
+          );
+          setPnlPosters(posterBlobs);
+        }
+      };
+      loadImages();
+    }
+  }, [dexData]);
 
   const handleGenerateTheme = async () => {
     if (!themePrompt.trim()) {
@@ -571,29 +615,26 @@ export default function DexRoute() {
       }
     };
 
-  const handleImageChange = (field: string) => (value: string | null) => {
+  const handleImageChange = (field: string) => (blob: Blob | null) => {
     switch (field) {
       case "primaryLogo":
-        setPrimaryLogo(value);
+        setPrimaryLogo(blob);
         break;
       case "secondaryLogo":
-        setSecondaryLogo(value);
+        setSecondaryLogo(blob);
         break;
       case "favicon":
-        setFavicon(value);
+        setFavicon(blob);
         break;
     }
   };
 
-  const handleSubmit = async (_: FormEvent, errors: FormErrors) => {
-    if (!isAuthenticated) {
-      toast.error("Please connect your wallet and login first");
-      return;
-    }
+  const handlePnLPosterChange = (newPosters: (Blob | null)[]) => {
+    setPnlPosters(newPosters);
+  };
 
-    if (Object.values(errors).some(error => error !== null)) {
-      return;
-    }
+  const handleSubmit = async (event: FormEvent) => {
+    event.preventDefault();
 
     const trimmedBrokerName = brokerName.trim();
     const trimmedTelegramLink = telegramLink.trim();
@@ -610,36 +651,59 @@ export default function DexRoute() {
     const trimmedSeoThemeColor = seoThemeColor.trim();
     const trimmedSeoKeywords = seoKeywords.trim();
 
+    if (!trimmedBrokerName) {
+      toast.error("Broker name is required");
+      return;
+    }
+
+    // Convert blobs to base64 for comparison and originalValues storage
+    const [
+      primaryLogoBase64,
+      secondaryLogoBase64,
+      faviconBase64,
+      pnlPostersBase64,
+    ] = await Promise.all([
+      primaryLogo ? blobToBase64(primaryLogo) : Promise.resolve(null),
+      secondaryLogo ? blobToBase64(secondaryLogo) : Promise.resolve(null),
+      favicon ? blobToBase64(favicon) : Promise.resolve(null),
+      Promise.all(
+        pnlPosters.map(poster =>
+          poster ? blobToBase64(poster) : Promise.resolve(null)
+        )
+      ),
+    ]);
+
     if (dexData && dexData.id) {
       const hasChanges =
-        trimmedBrokerName !== originalValues.brokerName ||
-        trimmedTelegramLink !== originalValues.telegramLink ||
-        trimmedDiscordLink !== originalValues.discordLink ||
-        trimmedXLink !== originalValues.xLink ||
+        trimmedBrokerName !== (originalValues.brokerName || "") ||
+        trimmedTelegramLink !== (originalValues.telegramLink || "") ||
+        trimmedDiscordLink !== (originalValues.discordLink || "") ||
+        trimmedXLink !== (originalValues.xLink || "") ||
         trimmedWalletConnectProjectId !==
-          originalValues.walletConnectProjectId ||
-        trimmedPrivyAppId !== originalValues.privyAppId ||
-        trimmedPrivyTermsOfUse !== originalValues.privyTermsOfUse ||
-        primaryLogo !== originalValues.primaryLogo ||
-        secondaryLogo !== originalValues.secondaryLogo ||
-        favicon !== originalValues.favicon ||
-        JSON.stringify(pnlPosters) !==
+          (originalValues.walletConnectProjectId || "") ||
+        trimmedPrivyAppId !== (originalValues.privyAppId || "") ||
+        trimmedPrivyTermsOfUse !== (originalValues.privyTermsOfUse || "") ||
+        enabledMenus !== (originalValues.enabledMenus || "") ||
+        customMenus !== (originalValues.customMenus || "") ||
+        primaryLogoBase64 !== (originalValues.primaryLogo || null) ||
+        secondaryLogoBase64 !== (originalValues.secondaryLogo || null) ||
+        faviconBase64 !== (originalValues.favicon || null) ||
+        JSON.stringify(pnlPostersBase64) !==
           JSON.stringify(originalValues.pnlPosters || []) ||
-        (themeApplied && currentTheme !== originalValues.themeCSS) ||
-        enabledMenus !== originalValues.enabledMenus ||
-        customMenus !== originalValues.customMenus ||
-        enableAbstractWallet !== originalValues.enableAbstractWallet ||
-        disableMainnet !== originalValues.disableMainnet ||
-        disableTestnet !== originalValues.disableTestnet ||
-        disableEvmWallets !== originalValues.disableEvmWallets ||
-        disableSolanaWallets !== originalValues.disableSolanaWallets ||
-        tradingViewColorConfig !== originalValues.tradingViewColorConfig ||
-        JSON.stringify([...chainIds].sort()) !==
-          JSON.stringify([...(originalValues.chainIds || [])].sort()) ||
-        JSON.stringify([...availableLanguages].sort()) !==
-          JSON.stringify(
-            [...(originalValues.availableLanguages || [])].sort()
-          ) ||
+        themeApplied ||
+        JSON.stringify(chainIds) !==
+          JSON.stringify(originalValues.chainIds || []) ||
+        enableAbstractWallet !==
+          (originalValues.enableAbstractWallet || false) ||
+        disableMainnet !== (originalValues.disableMainnet || false) ||
+        disableTestnet !== (originalValues.disableTestnet || false) ||
+        disableEvmWallets !== (originalValues.disableEvmWallets || false) ||
+        disableSolanaWallets !==
+          (originalValues.disableSolanaWallets || false) ||
+        JSON.stringify(tradingViewColorConfig || null) !==
+          JSON.stringify(originalValues.tradingViewColorConfig || null) ||
+        JSON.stringify(availableLanguages) !==
+          JSON.stringify(originalValues.availableLanguages || []) ||
         trimmedSeoSiteName !== (originalValues.seoSiteName || "") ||
         trimmedSeoSiteDescription !==
           (originalValues.seoSiteDescription || "") ||
@@ -665,8 +729,20 @@ export default function DexRoute() {
     try {
       let savedData: DexData;
 
+      const imageBlobs: {
+        primaryLogo?: Blob | null;
+        secondaryLogo?: Blob | null;
+        favicon?: Blob | null;
+        pnlPosters?: (Blob | null)[];
+      } = {
+        primaryLogo,
+        secondaryLogo,
+        favicon,
+        pnlPosters,
+      };
+
       // Prepare the form data
-      const dexFormData = {
+      const dexData_ToSend = {
         brokerName: trimmedBrokerName,
         telegramLink: trimmedTelegramLink || null,
         discordLink: trimmedDiscordLink || null,
@@ -674,10 +750,6 @@ export default function DexRoute() {
         walletConnectProjectId: trimmedWalletConnectProjectId || null,
         privyAppId: trimmedPrivyAppId || null,
         privyTermsOfUse: trimmedPrivyTermsOfUse || null,
-        primaryLogo: primaryLogo,
-        secondaryLogo: secondaryLogo,
-        favicon: favicon,
-        pnlPosters: pnlPosters.filter(Boolean) as string[],
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
         customMenus,
@@ -698,10 +770,12 @@ export default function DexRoute() {
         seoKeywords: trimmedSeoKeywords || null,
       };
 
+      const formData = createDexFormData(dexData_ToSend, imageBlobs);
+
       if (dexData && dexData.id) {
-        savedData = await put<DexData>(
+        savedData = await putFormData<DexData>(
           `api/dex/${dexData.id}`,
-          dexFormData,
+          formData,
           token
         );
 
@@ -716,10 +790,10 @@ export default function DexRoute() {
           privyTermsOfUse: trimmedPrivyTermsOfUse,
           enabledMenus: enabledMenus,
           customMenus,
-          primaryLogo,
-          secondaryLogo,
-          favicon,
-          pnlPosters: pnlPosters.filter(Boolean) as string[],
+          primaryLogo: primaryLogoBase64,
+          secondaryLogo: secondaryLogoBase64,
+          favicon: faviconBase64,
+          pnlPosters: pnlPostersBase64 as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
           chainIds,
@@ -739,7 +813,7 @@ export default function DexRoute() {
 
         toast.success("DEX information updated successfully!");
       } else {
-        savedData = await post<DexData>("api/dex", dexFormData, token);
+        savedData = await postFormData<DexData>("api/dex", formData, token);
 
         setOriginalValues({
           ...originalValues,
@@ -752,10 +826,10 @@ export default function DexRoute() {
           privyTermsOfUse: trimmedPrivyTermsOfUse,
           enabledMenus: enabledMenus,
           customMenus,
-          primaryLogo,
-          secondaryLogo,
-          favicon,
-          pnlPosters: pnlPosters.filter(Boolean) as string[],
+          primaryLogo: primaryLogoBase64,
+          secondaryLogo: secondaryLogoBase64,
+          favicon: faviconBase64,
+          pnlPosters: pnlPostersBase64 as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
           chainIds,
@@ -1243,7 +1317,7 @@ export default function DexRoute() {
               </p>
               <PnLPostersSection
                 pnlPosters={pnlPosters}
-                onChange={setPnlPosters}
+                onChange={handlePnLPosterChange}
               />
             </AccordionItem>
           )}
@@ -1645,7 +1719,7 @@ export default function DexRoute() {
             </p>
             <PnLPostersSection
               pnlPosters={pnlPosters}
-              onChange={setPnlPosters}
+              onChange={handlePnLPosterChange}
             />
 
             {/* Social Media Links Section: Add back H3 and P for Manage view */}
@@ -2205,7 +2279,7 @@ export default function DexRoute() {
                                     "Custom domain configured successfully"
                                   );
                                 })
-                                .catch(error => {
+                                .catch((error: Error) => {
                                   console.error(
                                     "Error setting custom domain:",
                                     error

@@ -1,21 +1,24 @@
 import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
+
 import {
   createDex,
-  dexSchema,
   getUserDex,
   getDexById,
   updateDex,
   deleteDex,
-  customDomainSchema,
   updateDexCustomDomain,
   removeDexCustomDomain,
+  extractRepoInfoFromUrl,
+  dexFormSchema,
+  convertFormDataToInternal,
 } from "../models/dex";
 import {
   getWorkflowRunStatus,
   getWorkflowRunDetails,
   updateDexConfig,
 } from "../lib/github";
+import { z } from "zod";
 
 // Create a router for authenticated routes
 const dexRoutes = new Hono();
@@ -65,13 +68,16 @@ dexRoutes.get("/:id", async c => {
 });
 
 // Create a new DEX
-dexRoutes.post("/", zValidator("json", dexSchema), async c => {
+dexRoutes.post("/", zValidator("form", dexFormSchema), async c => {
   try {
     // Get userId from context (set by authMiddleware)
     const userId = c.get("userId");
 
-    // Parse the request body
-    const data = await c.req.json();
+    // Get validated form data
+    const formData = c.req.valid("form");
+
+    // Convert to internal format
+    const data = await convertFormDataToInternal(formData);
 
     // Create the DEX
     const dex = await createDex(data, userId);
@@ -79,6 +85,7 @@ dexRoutes.post("/", zValidator("json", dexSchema), async c => {
     return c.json(dex, { status: 201 });
   } catch (error) {
     console.error("Error creating DEX:", error);
+
     let message = "Failed to create DEX";
     if (error instanceof Error) {
       message = error.message;
@@ -87,33 +94,18 @@ dexRoutes.post("/", zValidator("json", dexSchema), async c => {
   }
 });
 
-// Helper function to extract owner and repo from GitHub URL
-function extractRepoInfoFromUrl(
-  repoUrl: string
-): { owner: string; repo: string } | null {
-  if (!repoUrl) return null;
-
-  try {
-    const repoPath = repoUrl.split("github.com/")[1];
-    if (!repoPath) return null;
-
-    const [owner, repo] = repoPath.split("/");
-    if (!owner || !repo) return null;
-
-    return { owner, repo };
-  } catch (error) {
-    console.error("Error extracting repo info from URL:", error);
-    return null;
-  }
-}
-
 // Update an existing DEX
-dexRoutes.put("/:id", zValidator("json", dexSchema), async c => {
+dexRoutes.put("/:id", zValidator("form", dexFormSchema), async c => {
   const id = c.req.param("id");
-  const data = c.req.valid("json");
   const userId = c.get("userId");
 
   try {
+    // Get validated form data
+    const formData = c.req.valid("form");
+
+    // Convert to internal format
+    const data = await convertFormDataToInternal(formData);
+
     const updatedDex = await updateDex(id, userId, data);
 
     if (updatedDex.repoUrl) {
@@ -316,51 +308,53 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
 });
 
 // Set a custom domain for a DEX
-dexRoutes.post(
-  "/:id/custom-domain",
-  zValidator("json", customDomainSchema),
-  async c => {
-    const id = c.req.param("id");
-    const { domain } = c.req.valid("json");
-    const userId = c.get("userId");
+dexRoutes.post("/:id/custom-domain", async c => {
+  const id = c.req.param("id");
+  const userId = c.get("userId");
 
-    try {
-      const updatedDex = await updateDexCustomDomain(id, domain, userId);
-      return c.json(
-        {
-          message: "Custom domain set successfully",
-          dex: updatedDex,
-        },
-        { status: 200 }
-      );
-    } catch (error) {
-      console.error("Error setting custom domain:", error);
+  try {
+    const body = await c.req.json();
+    const customDomainSchema = z.object({
+      domain: z.string().min(1, "Domain is required"),
+    });
 
-      if (error instanceof Error) {
-        if (error.message.includes("DEX not found")) {
-          return c.json({ message: "DEX not found" }, { status: 404 });
-        }
-        if (error.message.includes("User is not authorized")) {
-          return c.json({ message: error.message }, { status: 403 });
-        }
-        if (error.message.includes("Invalid domain format")) {
-          return c.json({ message: error.message }, { status: 400 });
-        }
-        if (error.message.includes("doesn't have a repository URL")) {
-          return c.json({ message: error.message }, { status: 400 });
-        }
+    const { domain } = customDomainSchema.parse(body);
+
+    const updatedDex = await updateDexCustomDomain(id, domain, userId);
+    return c.json(
+      {
+        message: "Custom domain set successfully",
+        dex: updatedDex,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Error setting custom domain:", error);
+
+    if (error instanceof Error) {
+      if (error.message.includes("DEX not found")) {
+        return c.json({ message: "DEX not found" }, { status: 404 });
       }
-
-      return c.json(
-        {
-          message: "Failed to set custom domain",
-          error: error instanceof Error ? error.message : String(error),
-        },
-        { status: 500 }
-      );
+      if (error.message.includes("User is not authorized")) {
+        return c.json({ message: error.message }, { status: 403 });
+      }
+      if (error.message.includes("Invalid domain format")) {
+        return c.json({ message: error.message }, { status: 400 });
+      }
+      if (error.message.includes("doesn't have a repository URL")) {
+        return c.json({ message: error.message }, { status: 400 });
+      }
     }
+
+    return c.json(
+      {
+        message: "Failed to set custom domain",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
   }
-);
+});
 
 // Remove custom domain from a DEX
 dexRoutes.delete("/:id/custom-domain", async c => {

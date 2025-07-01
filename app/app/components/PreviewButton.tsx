@@ -8,8 +8,8 @@ interface PreviewButtonProps {
   brokerName: string;
   networkId?: NetworkId;
   initialSymbol?: string;
-  primaryLogo?: string | null;
-  secondaryLogo?: string | null;
+  primaryLogo?: Blob | null;
+  secondaryLogo?: Blob | null;
   themeCSS?: string | null;
 
   // Button styling
@@ -44,7 +44,8 @@ const PreviewButton: FC<PreviewButtonProps> = ({
     initialSymbol,
     primaryLogo,
     secondaryLogo,
-    themeCSS
+    themeCSS,
+    undefined // PnL posters not used in theme preview
   );
 
   const togglePreview = () => {

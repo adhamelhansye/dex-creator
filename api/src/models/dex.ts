@@ -33,7 +33,7 @@ export enum LocaleEnum {
 /**
  * Helper function to extract owner and repo from GitHub URL
  */
-function extractRepoInfoFromUrl(
+export function extractRepoInfoFromUrl(
   repoUrl: string
 ): { owner: string; repo: string } | null {
   if (!repoUrl) return null;
@@ -50,6 +50,25 @@ function extractRepoInfoFromUrl(
     console.error("Error extracting repo info from URL:", error);
     return null;
   }
+}
+
+/**
+ * Convert a File/Blob to base64 data URI
+ */
+async function fileToBase64(file: File): Promise<string> {
+  const buffer = await file.arrayBuffer();
+  const uint8Array = new Uint8Array(buffer);
+  let binaryString = "";
+  const chunkSize = 8192;
+  for (let i = 0; i < uint8Array.length; i += chunkSize) {
+    const chunk = uint8Array.subarray(
+      i,
+      Math.min(i + chunkSize, uint8Array.length)
+    );
+    binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  const base64String = btoa(binaryString);
+  return `data:image/webp;base64,${base64String}`;
 }
 
 export const dexSchema = z.object({
@@ -150,6 +169,56 @@ export const dexSchema = z.object({
     .max(500, "Keywords must be 500 characters or less")
     .nullish(),
 });
+
+export const dexFormSchema = dexSchema
+  .extend({
+    primaryLogo: z.instanceof(File).optional(),
+    secondaryLogo: z.instanceof(File).optional(),
+    favicon: z.instanceof(File).optional(),
+    pnlPosters: z.array(z.instanceof(File)).optional(),
+    chainIds: z
+      .union([
+        z.array(z.number().positive().int()),
+        z.string().transform(val => {
+          if (!val || val.trim() === "") return [];
+          try {
+            return JSON.parse(val);
+          } catch {
+            return [];
+          }
+        }),
+      ])
+      .optional(),
+    enableAbstractWallet: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    disableMainnet: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    disableTestnet: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    disableEvmWallets: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    disableSolanaWallets: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    availableLanguages: z
+      .union([
+        z.array(z.nativeEnum(LocaleEnum)),
+        z.string().transform(val => {
+          if (!val || val.trim() === "") return ["en"];
+          try {
+            return JSON.parse(val);
+          } catch {
+            return ["en"];
+          }
+        }),
+      ])
+      .optional(),
+  })
+  .catchall(z.union([z.instanceof(File), z.string()]).optional()); // Allow pnlPoster0, pnlPoster1, etc.
 
 export const customDomainSchema = z.object({
   domain: z
@@ -682,4 +751,49 @@ export async function removeDexCustomDomain(
       updatedAt: new Date(),
     },
   });
+}
+
+export async function convertFormDataToInternal(
+  formData: z.infer<typeof dexFormSchema>
+): Promise<z.infer<typeof dexSchema>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: any = { ...formData };
+
+  if (formData.primaryLogo instanceof File) {
+    data.primaryLogo = await fileToBase64(formData.primaryLogo);
+  }
+  if (formData.secondaryLogo instanceof File) {
+    data.secondaryLogo = await fileToBase64(formData.secondaryLogo);
+  }
+  if (formData.favicon instanceof File) {
+    data.favicon = await fileToBase64(formData.favicon);
+  }
+
+  const pnlPosters: string[] = [];
+  let posterIndex = 0;
+
+  while (true) {
+    const posterKey = `pnlPoster${posterIndex}`;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const posterFile = (formData as any)[posterKey];
+
+    if (!posterFile || !(posterFile instanceof File)) {
+      break;
+    }
+
+    pnlPosters.push(await fileToBase64(posterFile));
+    posterIndex++;
+  }
+
+  if (pnlPosters.length > 0) {
+    data.pnlPosters = pnlPosters;
+  }
+
+  Object.keys(data).forEach(key => {
+    if (key.startsWith("pnlPoster") && /^pnlPoster\d+$/.test(key)) {
+      delete data[key];
+    }
+  });
+
+  return data;
 }

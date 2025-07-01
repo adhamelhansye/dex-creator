@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback, ReactNode } from "react";
 import {
-  convertImage,
+  convertImageToBinary,
   extractImageFromClipboard,
   DEFAULT_DIMENSIONS,
   getImageDimensions,
@@ -16,8 +16,8 @@ type ImageType = "primaryLogo" | "secondaryLogo" | "favicon" | "pnlPoster";
 interface ImagePasteProps {
   id: string;
   label: string | ReactNode;
-  value?: string;
-  onChange: (value: string | null) => void;
+  value?: Blob;
+  onChange: (blob: Blob | null) => void;
   imageType: ImageType;
   helpText?: string;
 }
@@ -32,7 +32,7 @@ export default function ImagePaste({
 }: ImagePasteProps) {
   const { openModal } = useModal();
   const [isProcessing, setIsProcessing] = useState(false);
-  const [previewSrc, setPreviewSrc] = useState<string | null>(value || null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
 
   // Use refs for data that needs to persist between re-renders and survive component updates
@@ -42,7 +42,7 @@ export default function ImagePaste({
     height: number;
   } | null>(null);
   const pasteAreaRef = useRef<HTMLDivElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for file input
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Get dimensions for the specific image type
   const dimensions = DEFAULT_DIMENSIONS[imageType];
@@ -55,13 +55,24 @@ export default function ImagePaste({
   const enforce16by9 = imageType === "pnlPoster";
 
   useEffect(() => {
-    // Update preview if value changes externally
-    if (value !== undefined && value !== previewSrc) {
-      setPreviewSrc(value || null);
+    if (previewUrl) {
+      URL.revokeObjectURL(previewUrl);
     }
-  }, [value, previewSrc]);
 
-  // Process and save the image
+    if (value) {
+      const newUrl = URL.createObjectURL(value);
+      setPreviewUrl(newUrl);
+    } else {
+      setPreviewUrl(null);
+    }
+
+    return () => {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+    };
+  }, [value]);
+
   const processAndSaveImage = useCallback(
     async (
       imageDataUrl: string,
@@ -90,8 +101,7 @@ export default function ImagePaste({
           targetHeight = Math.round(croppedHeight * scale);
         }
 
-        // Convert the image to WebP and resize
-        const processedImage = await convertImage(
+        const processedImageBlob = await convertImageToBinary(
           imageDataUrl,
           targetWidth,
           targetHeight,
@@ -99,9 +109,7 @@ export default function ImagePaste({
           cropParams
         );
 
-        // Set the preview and call onChange
-        setPreviewSrc(processedImage);
-        onChange(processedImage);
+        onChange(processedImageBlob);
       } catch (error) {
         console.error("Image processing error:", error);
         toast.error("Failed to process image. Please try again.");
@@ -333,7 +341,6 @@ export default function ImagePaste({
 
   // Clear the image
   const handleClear = () => {
-    setPreviewSrc(null);
     originalImageRef.current = null;
     originalDimensionsRef.current = null;
     onChange(null);
@@ -361,7 +368,7 @@ export default function ImagePaste({
         <label htmlFor={id} className="block text-sm font-medium text-gray-200">
           {label}
         </label>
-        {previewSrc && (
+        {previewUrl && (
           <button
             type="button"
             onClick={handleClear}
@@ -374,10 +381,10 @@ export default function ImagePaste({
       </div>
 
       <div className="mt-1">
-        {previewSrc ? (
+        {previewUrl ? (
           <div className="relative group border border-light/15 rounded-lg p-2 flex justify-center items-center bg-base-8/30 min-h-[150px]">
             <img
-              src={previewSrc}
+              src={previewUrl}
               alt={`${imageType} preview`}
               className="max-h-40 max-w-full object-contain rounded"
             />

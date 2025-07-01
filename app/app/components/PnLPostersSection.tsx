@@ -7,8 +7,8 @@ import { OrderlyAppProvider } from "@orderly.network/react-app";
 import { WalletConnectorProvider } from "@orderly.network/wallet-connector";
 
 interface PnLPostersSectionProps {
-  pnlPosters: (string | null)[];
-  onChange: (posters: (string | null)[]) => void;
+  pnlPosters: (Blob | null)[];
+  onChange: (posters: (Blob | null)[]) => void;
   idPrefix?: string;
 }
 
@@ -19,9 +19,9 @@ export default function PnLPostersSection({
 }: PnLPostersSectionProps) {
   const [showPreview, setShowPreview] = useState(false);
 
-  const handlePosterChange = (index: number) => (value: string | null) => {
+  const handlePosterChange = (index: number) => (blob: Blob | null) => {
     const newPosters = [...pnlPosters];
-    newPosters[index] = value;
+    newPosters[index] = blob;
     onChange(newPosters);
   };
 
@@ -37,6 +37,12 @@ export default function PnLPostersSection({
   };
 
   const getPosterImageType = () => "pnlPoster" as const;
+
+  // Convert blobs to object URLs for preview widget
+  const posterUrls = pnlPosters
+    .filter(Boolean)
+    .map(blob => (blob ? URL.createObjectURL(blob) : null))
+    .filter(Boolean) as string[];
 
   return (
     <div className="space-y-4">
@@ -190,7 +196,7 @@ export default function PnLPostersSection({
                           quantity: 0.0794,
                         },
                         leverage: 10,
-                        backgroundImages: pnlPosters as string[],
+                        backgroundImages: posterUrls,
                       }}
                     />
                   </form>

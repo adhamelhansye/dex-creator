@@ -34,44 +34,97 @@ export interface DexPreviewConfig {
  * - Reading configuration from localStorage
  * - Updating configuration when props change
  * - Safely persisting configuration to localStorage
+ * - Converting Blob objects to object URLs for preview usage
  */
 export function usePreviewConfig(
   brokerName: string,
   networkId: NetworkId = "testnet",
   initialSymbol: string = "PERP_BTC_USDC",
-  primaryLogo?: string | null,
-  secondaryLogo?: string | null,
+  primaryLogo?: Blob | null,
+  secondaryLogo?: Blob | null,
   themeCSS?: string | null,
-  pnlPosters?: (string | null)[]
+  pnlPosters?: (Blob | null)[]
 ) {
-  // Local state to track if the config has been updated
   const [configUpdated, setConfigUpdated] = useState(false);
 
-  // Create a custom appIcons config that includes our logos if available
+  const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string | null>(null);
+  const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string | null>(null);
+  const [pnlPosterUrls, setPnlPosterUrls] = useState<string[]>([]);
+
+  useEffect(() => {
+    if (primaryLogoUrl) {
+      URL.revokeObjectURL(primaryLogoUrl);
+    }
+
+    if (primaryLogo) {
+      const url = URL.createObjectURL(primaryLogo);
+      setPrimaryLogoUrl(url);
+    } else {
+      setPrimaryLogoUrl(null);
+    }
+
+    return () => {
+      if (primaryLogoUrl) {
+        URL.revokeObjectURL(primaryLogoUrl);
+      }
+    };
+  }, [primaryLogo]);
+
+  useEffect(() => {
+    if (secondaryLogoUrl) {
+      URL.revokeObjectURL(secondaryLogoUrl);
+    }
+
+    if (secondaryLogo) {
+      const url = URL.createObjectURL(secondaryLogo);
+      setSecondaryLogoUrl(url);
+    } else {
+      setSecondaryLogoUrl(null);
+    }
+
+    return () => {
+      if (secondaryLogoUrl) {
+        URL.revokeObjectURL(secondaryLogoUrl);
+      }
+    };
+  }, [secondaryLogo]);
+
+  useEffect(() => {
+    pnlPosterUrls.forEach(url => URL.revokeObjectURL(url));
+
+    if (pnlPosters && pnlPosters.length > 0) {
+      const urls = pnlPosters
+        .filter(Boolean)
+        .map(poster => URL.createObjectURL(poster as Blob));
+      setPnlPosterUrls(urls);
+    } else {
+      setPnlPosterUrls([]);
+    }
+
+    return () => {
+      pnlPosterUrls.forEach(url => URL.revokeObjectURL(url));
+    };
+  }, [pnlPosters]);
+
   const appIcons = { ...config.orderlyAppProvider.appIcons };
 
-  if (primaryLogo) {
+  if (primaryLogoUrl) {
     appIcons.main = {
-      img: primaryLogo,
+      img: primaryLogoUrl,
     };
   }
 
-  if (secondaryLogo) {
+  if (secondaryLogoUrl) {
     appIcons.secondary = {
-      img: secondaryLogo,
+      img: secondaryLogoUrl,
     };
   }
 
-  // Create custom sharePnLConfig with custom posters if available
   const sharePnLConfig = { ...config.tradingPage.sharePnLConfig };
-  if (pnlPosters && pnlPosters.length > 0) {
-    const customBackgrounds = pnlPosters.filter(Boolean) as string[];
-    if (customBackgrounds.length > 0) {
-      sharePnLConfig.backgroundImages = customBackgrounds;
-    }
+  if (pnlPosterUrls.length > 0) {
+    sharePnLConfig.backgroundImages = pnlPosterUrls;
   }
 
-  // Generate the current configuration
   const currentConfig: DexPreviewConfig = {
     brokerId: DEMO_BROKER_ID,
     brokerName,
@@ -82,12 +135,11 @@ export function usePreviewConfig(
     tradingViewConfig: config.tradingPage.tradingViewConfig,
     sharePnLConfig,
     appIcons,
-    primaryLogo,
-    secondaryLogo,
+    primaryLogo: primaryLogoUrl,
+    secondaryLogo: secondaryLogoUrl,
     customStyles: themeCSS || undefined,
   };
 
-  // Update localStorage whenever the props change
   useEffect(() => {
     try {
       localStorage.setItem(
@@ -103,13 +155,12 @@ export function usePreviewConfig(
     brokerName,
     networkId,
     initialSymbol,
-    primaryLogo,
-    secondaryLogo,
+    primaryLogoUrl,
+    secondaryLogoUrl,
     themeCSS,
-    pnlPosters,
+    pnlPosterUrls,
   ]);
 
-  // Read the config from localStorage
   const getStoredConfig = (): DexPreviewConfig | null => {
     try {
       const storedConfig = localStorage.getItem(DEX_PREVIEW_CONFIG_KEY);
@@ -120,7 +171,6 @@ export function usePreviewConfig(
     }
   };
 
-  // Update a specific config property
   const updateConfig = (updates: Partial<DexPreviewConfig>) => {
     try {
       const currentStored = getStoredConfig() || currentConfig;

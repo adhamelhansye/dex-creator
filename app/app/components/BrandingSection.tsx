@@ -2,10 +2,10 @@ import React from "react";
 import ImagePaste from "./ImagePaste";
 
 export interface BrandingProps {
-  primaryLogo: string | null;
-  secondaryLogo: string | null;
-  favicon: string | null;
-  handleImageChange: (field: string) => (value: string | null) => void;
+  primaryLogo: Blob | null;
+  secondaryLogo: Blob | null;
+  favicon: Blob | null;
+  handleImageChange: (field: string) => (blob: Blob | null) => void;
   idPrefix?: string;
 }
 
