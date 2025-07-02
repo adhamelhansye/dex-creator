@@ -551,6 +551,7 @@ function prepareDexConfigContent(
     8453, // Base
     5000, // Mantle
     1, // Ethereum
+    56, // BNB Chain
     1329, // Sei
     43114, // Avalanche
     900900900, // Solana
@@ -566,6 +567,7 @@ function prepareDexConfigContent(
   const testnetChainIds = [
     421614, // Arbitrum Sepolia
     84532, // Base Sepolia
+    97, // BSC Testnet
     901901901, // Solana Devnet
     11124, // Abstract Sepolia
   ];

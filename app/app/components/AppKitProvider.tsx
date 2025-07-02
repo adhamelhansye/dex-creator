@@ -22,6 +22,7 @@ function getChainName(chainId: number): string {
     42161: "Arbitrum",
     10: "Optimism",
     56: "BNB Chain",
+    97: "BSC Testnet",
     137: "Polygon",
     8453: "Base",
     43114: "Avalanche",

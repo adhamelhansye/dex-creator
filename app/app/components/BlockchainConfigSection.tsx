@@ -30,6 +30,13 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
     { id: 8453, name: "Base", symbol: "ETH", type: "L2", network: "mainnet" },
     { id: 5000, name: "Mantle", symbol: "MNT", type: "L2", network: "mainnet" },
     { id: 1, name: "Ethereum", symbol: "ETH", type: "L1", network: "mainnet" },
+    {
+      id: 56,
+      name: "BNB Chain",
+      symbol: "BNB",
+      type: "L1",
+      network: "mainnet",
+    },
     { id: 1329, name: "Sei", symbol: "SEI", type: "L1", network: "mainnet" },
     {
       id: 43114,
@@ -78,6 +85,13 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
       name: "Base Sepolia",
       symbol: "ETH",
       type: "L2",
+      network: "testnet",
+    },
+    {
+      id: 97,
+      name: "BSC Testnet",
+      symbol: "BNB",
+      type: "L1",
       network: "testnet",
     },
     {
