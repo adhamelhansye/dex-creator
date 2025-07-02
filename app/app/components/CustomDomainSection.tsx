@@ -109,6 +109,26 @@ export default function CustomDomainSection({
           point to GitHub Pages.
         </p>
 
+        {/* Mobile Feature Warning - Only show if no custom domain is configured */}
+        {!dexData.customDomain && (
+          <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/30">
+            <h5 className="text-sm font-medium mb-2 flex items-center">
+              <div className="i-mdi:alert-circle h-4 w-4 mr-2 text-warning"></div>
+              Limited Mobile Functionality
+            </h5>
+            <p className="text-xs text-gray-300 mb-2">
+              Your DEX is currently using the default deployment domain. This
+              means a special mobile feature that allows users to connect to
+              their mobile device without requiring a mobile wallet will not
+              work.
+            </p>
+            <p className="text-xs text-gray-300">
+              Configure a custom domain below to enable this mobile connection
+              feature for your users.
+            </p>
+          </div>
+        )}
+
         {/* TradingView license warning */}
         <div className="mb-4 p-3 bg-red-900/30 rounded-lg border border-red-500/30">
           <h5 className="text-sm font-medium mb-2 flex items-center">
