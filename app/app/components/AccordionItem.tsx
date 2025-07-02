@@ -32,6 +32,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
 }) => {
   return (
     <Card
+      id={`step-${stepNumber}`}
       className={`overflow-visible transition-all duration-300 ease-in-out ${isActive ? "border-primary shadow-lg" : "border-light/10"}`}
     >
       <div

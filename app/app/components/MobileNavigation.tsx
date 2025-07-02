@@ -94,20 +94,6 @@ export default function MobileNavigation() {
             >
               My DEX
             </Link>
-            <Link
-              to="/graduation"
-              className={`
-                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive("/graduation")
-                    ? "bg-light/10 text-white"
-                    : "text-gray-300 hover:bg-light/5 hover:text-white"
-                }
-              `}
-              onClick={closeMenu}
-            >
-              Fee Sharing
-            </Link>
           </nav>
         </div>
       </div>

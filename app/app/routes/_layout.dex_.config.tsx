@@ -2,16 +2,8 @@ import { useState, useEffect, FormEvent, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
 import { useModal } from "../context/ModalContext";
-import {
-  get,
-  post,
-  postFormData,
-  putFormData,
-  del,
-  createDexFormData,
-} from "../utils/apiClient";
+import { get, post, putFormData, createDexFormData } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
-import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import Form from "../components/Form";
 import {
@@ -25,8 +17,6 @@ import { useNavigate, Link } from "@remix-run/react";
 import DexSectionRenderer, {
   DEX_SECTIONS,
 } from "../components/DexSectionRenderer";
-import DexCreationStatus from "../components/DexCreationStatus";
-import CustomDomainSection from "../components/CustomDomainSection";
 
 interface DexData {
   id: string;
@@ -72,8 +62,6 @@ interface ThemeResponse {
 }
 
 type ThemeTabType = "colors" | "rounded" | "spacing" | "tradingview";
-
-const TOTAL_STEPS = DEX_SECTIONS.length;
 
 const defaultTheme = `:root {
   --oui-font-family: 'Manrope', sans-serif;
@@ -170,7 +158,7 @@ const defaultTheme = `:root {
   --oui-spacing-xl: 33.75rem;
 }`;
 
-export default function DexRoute() {
+export default function DexConfigRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
   const { openModal } = useModal();
   const navigate = useNavigate();
@@ -205,21 +193,9 @@ export default function DexRoute() {
 
   const [availableLanguages, setAvailableLanguages] = useState<string[]>([]);
   const [isSaving, setIsSaving] = useState(false);
-  const [isForking, setIsForking] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const [forkingStatus, setForkingStatus] = useState("");
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [isLoadingDexData, setIsLoadingDexData] = useState(false);
-  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
   const [viewCssCode, setViewCssCode] = useState(false);
-  const [isGraduationEligible, setIsGraduationEligible] = useState(false);
-  const [isGraduated, setIsGraduated] = useState(false);
-  const [deploymentConfirmed, setDeploymentConfirmed] = useState(false);
-
-  const [currentStep, setCurrentStep] = useState(1);
-  const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>(
-    {}
-  );
 
   const [originalValues, setOriginalValues] = useState<DexData>({
     id: "",
@@ -251,7 +227,6 @@ export default function DexRoute() {
     availableLanguages: null,
     seoSiteName: null,
     seoSiteDescription: null,
-
     seoSiteLanguage: null,
     seoSiteLocale: null,
     seoTwitterHandle: null,
@@ -279,7 +254,6 @@ export default function DexRoute() {
 
   const [seoSiteName, setSeoSiteName] = useState("");
   const [seoSiteDescription, setSeoSiteDescription] = useState("");
-
   const [seoSiteLanguage, setSeoSiteLanguage] = useState("");
   const [seoSiteLocale, setSeoSiteLocale] = useState("");
   const [seoTwitterHandle, setSeoTwitterHandle] = useState("");
@@ -298,7 +272,8 @@ export default function DexRoute() {
         );
 
         if (response && "exists" in response && response.exists === false) {
-          setDexData(null);
+          navigate("/dex");
+          return;
         } else if (response && "id" in response) {
           setDexData(response);
           setBrokerName(response.brokerName);
@@ -316,26 +291,15 @@ export default function DexRoute() {
           setDisableEvmWallets(response.disableEvmWallets || false);
           setDisableSolanaWallets(response.disableSolanaWallets || false);
           setTradingViewColorConfig(response.tradingViewColorConfig || null);
-          // Images will be loaded in separate useEffect
           setAvailableLanguages(response.availableLanguages || []);
           setSeoSiteName(response.seoSiteName || "");
           setSeoSiteDescription(response.seoSiteDescription || "");
-
           setSeoSiteLanguage(response.seoSiteLanguage || "");
           setSeoSiteLocale(response.seoSiteLocale || "");
           setSeoTwitterHandle(response.seoTwitterHandle || "");
           setSeoThemeColor(response.seoThemeColor || "");
           setSeoKeywords(response.seoKeywords || "");
           setViewCssCode(false);
-
-          setIsGraduationEligible(response.brokerId === "demo");
-
-          const isGraduated =
-            response.brokerId !== "demo" &&
-            (response.preferredBrokerId
-              ? response.brokerId === response.preferredBrokerId
-              : false);
-          setIsGraduated(isGraduated);
 
           if (response.themeCSS) {
             setCurrentTheme(response.themeCSS);
@@ -356,7 +320,6 @@ export default function DexRoute() {
             availableLanguages: response.availableLanguages || [],
             seoSiteName: response.seoSiteName || null,
             seoSiteDescription: response.seoSiteDescription || null,
-
             seoSiteLanguage: response.seoSiteLanguage || null,
             seoSiteLocale: response.seoSiteLocale || null,
             seoTwitterHandle: response.seoTwitterHandle || null,
@@ -365,25 +328,20 @@ export default function DexRoute() {
           });
 
           setActiveThemeTab("colors");
-          setDeploymentUrl(
-            response.repoUrl
-              ? `https://dex.orderly.network/${response.repoUrl.split("/").pop()}/`
-              : null
-          );
           setChainIds(response.chainIds || []);
         } else {
-          setDexData(null);
+          navigate("/dex");
         }
       } catch (error) {
         console.error("Failed to fetch DEX data", error);
-        setDexData(null);
+        navigate("/dex");
       } finally {
         setIsLoadingDexData(false);
       }
     }
 
     fetchDexData();
-  }, [isAuthenticated, token]);
+  }, [isAuthenticated, token, navigate]);
 
   useEffect(() => {
     if (!currentTheme && !originalValues.themeCSS) {
@@ -489,56 +447,6 @@ export default function DexRoute() {
     setShowThemeEditor(!showThemeEditor);
   };
 
-  const handleRetryForking = async () => {
-    if (!dexData || !dexData.id || !token) {
-      toast.error("DEX information is not available");
-      return;
-    }
-
-    setIsForking(true);
-    setForkingStatus("Creating repository from template...");
-
-    try {
-      const result = await post<{ dex: DexData }>(
-        `api/dex/${dexData.id}/fork`,
-        {},
-        token
-      );
-
-      if (result && result.dex) {
-        setDexData(result.dex);
-
-        if (result.dex.repoUrl) {
-          toast.success("Repository forked successfully!");
-
-          setDeploymentUrl(
-            `https://dex.orderly.network/${result.dex.repoUrl.split("/").pop()}/`
-          );
-        } else {
-          toast.error("Repository creation failed. Please try again later.");
-        }
-      } else {
-        toast.error(
-          "Failed to get response from server. Please try again later."
-        );
-      }
-    } catch (error) {
-      console.error("Error forking repository:", error);
-      toast.error("Failed to fork repository. Please try again later.");
-    } finally {
-      setIsForking(false);
-      setForkingStatus("");
-    }
-  };
-
-  const brokerNameValidator = composeValidators(
-    required("Broker name"),
-    minLength(3, "Broker name"),
-    maxLength(50, "Broker name")
-  );
-
-  const urlValidator = validateUrl();
-
   const handleInputChange =
     (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value;
@@ -633,7 +541,6 @@ export default function DexRoute() {
       return;
     }
 
-    // Convert blobs to base64 for comparison and originalValues storage
     const [
       primaryLogoBase64,
       secondaryLogoBase64,
@@ -698,14 +605,7 @@ export default function DexRoute() {
 
     setIsSaving(true);
 
-    // If we're creating the DEX for the first time, show a forking status
-    if (!dexData || !dexData.id) {
-      setForkingStatus("Creating DEX and forking repository...");
-    }
-
     try {
-      let savedData: DexData;
-
       const imageBlobs: {
         primaryLogo?: Blob | null;
         secondaryLogo?: Blob | null;
@@ -718,7 +618,6 @@ export default function DexRoute() {
         pnlPosters,
       };
 
-      // Prepare the form data
       const dexData_ToSend = {
         brokerName: trimmedBrokerName,
         telegramLink: trimmedTelegramLink || null,
@@ -750,7 +649,7 @@ export default function DexRoute() {
       const formData = createDexFormData(dexData_ToSend, imageBlobs);
 
       if (dexData && dexData.id) {
-        savedData = await putFormData<DexData>(
+        const savedData = await putFormData<DexData>(
           `api/dex/${dexData.id}`,
           formData,
           token
@@ -788,140 +687,15 @@ export default function DexRoute() {
           seoKeywords: trimmedSeoKeywords || null,
         });
 
-        toast.success("DEX information updated successfully!");
-      } else {
-        savedData = await postFormData<DexData>("api/dex", formData, token);
-
-        setOriginalValues({
-          ...originalValues,
-          brokerName: trimmedBrokerName,
-          telegramLink: trimmedTelegramLink,
-          discordLink: trimmedDiscordLink,
-          xLink: trimmedXLink,
-          walletConnectProjectId: trimmedWalletConnectProjectId,
-          privyAppId: trimmedPrivyAppId,
-          privyTermsOfUse: trimmedPrivyTermsOfUse,
-          enabledMenus: enabledMenus,
-          customMenus,
-          primaryLogo: primaryLogoBase64,
-          secondaryLogo: secondaryLogoBase64,
-          favicon: faviconBase64,
-          pnlPosters: pnlPostersBase64 as string[],
-          themeCSS: themeApplied ? currentTheme : null,
-          enableAbstractWallet,
-          chainIds,
-          disableMainnet,
-          disableTestnet,
-          disableEvmWallets,
-          disableSolanaWallets,
-          tradingViewColorConfig,
-          availableLanguages,
-          seoSiteName: trimmedSeoSiteName || null,
-          seoSiteDescription: trimmedSeoSiteDescription || null,
-          seoSiteLanguage: trimmedSeoSiteLanguage || null,
-          seoSiteLocale: trimmedSeoSiteLocale || null,
-          seoTwitterHandle: trimmedSeoTwitterHandle || null,
-          seoThemeColor: trimmedSeoThemeColor || null,
-          seoKeywords: trimmedSeoKeywords || null,
-        });
-
-        if (savedData.repoUrl) {
-          toast.success("DEX created and repository forked successfully!");
-        } else {
-          toast.success("DEX information saved successfully!");
-          toast.warning("Repository could not be forked. You can retry later.");
-        }
+        setDexData(savedData);
+        toast.success("DEX configuration updated successfully!");
       }
-
-      setDexData(savedData);
-      setIsGraduationEligible(savedData.brokerId === "demo");
     } catch (error) {
-      console.error("Error in component:", error);
+      console.error("Error updating DEX:", error);
+      toast.error("Failed to update DEX configuration");
     } finally {
       setIsSaving(false);
-      setForkingStatus("");
     }
-  };
-
-  const handleSuccessfulDeployment = (
-    url: string,
-    isNewDeployment: boolean
-  ) => {
-    setDeploymentUrl(url);
-    setDeploymentConfirmed(true);
-
-    if (isNewDeployment) {
-      toast.success("Your DEX has been successfully deployed!");
-    }
-  };
-
-  const handleDelete = async () => {
-    if (!dexData || !dexData.id || !token) {
-      toast.error("DEX information is not available");
-      return;
-    }
-
-    setIsDeleting(true);
-
-    try {
-      await del<{ message: string }>(`api/dex/${dexData.id}`, null, token);
-      toast.success("DEX deleted successfully!");
-
-      // Reset state and redirect to home page
-      setDexData(null);
-      setBrokerName("");
-      setTelegramLink("");
-      setDiscordLink("");
-      setXLink("");
-      setPrimaryLogo(null);
-      setSecondaryLogo(null);
-      setFavicon(null);
-      setDeploymentUrl(null);
-
-      // Redirect to home
-      navigate("/");
-    } catch (error) {
-      console.error("Error deleting DEX:", error);
-      toast.error("Failed to delete the DEX. Please try again later.");
-    } finally {
-      setIsDeleting(false);
-    }
-  };
-
-  const handleShowDeleteConfirm = () => {
-    openModal("deleteConfirm", {
-      onConfirm: handleDelete,
-      entityName: "DEX",
-    });
-  };
-
-  const handleShowDomainRemoveConfirm = () => {
-    if (!dexData || !dexData.id || !dexData.customDomain) return;
-
-    openModal("deleteConfirm", {
-      onConfirm: () => {
-        setIsSaving(true);
-
-        del(`api/dex/${dexData.id}/custom-domain`, null, token)
-          .then(() => {
-            setDexData({
-              ...dexData,
-              customDomain: null,
-            });
-            toast.success("Custom domain removed successfully");
-          })
-          .catch(error => {
-            console.error("Error removing custom domain:", error);
-            toast.error("Failed to remove custom domain");
-          })
-          .finally(() => {
-            setIsSaving(false);
-          });
-      },
-      entityName: "custom domain",
-      title: "Remove Custom Domain",
-      message: `Are you sure you want to remove the custom domain "${dexData.customDomain}"? This action cannot be undone.`,
-    });
   };
 
   const hexToRgbSpaceSeparated = (hex: string) => {
@@ -978,6 +752,13 @@ export default function DexRoute() {
     []
   );
 
+  const urlValidator = validateUrl();
+  const brokerNameValidator = composeValidators(
+    required("Broker name"),
+    minLength(3, "Broker name"),
+    maxLength(50, "Broker name")
+  );
+
   const ThemeTabButton = ({
     tab,
     label,
@@ -998,76 +779,16 @@ export default function DexRoute() {
     </button>
   );
 
-  const allRequiredPreviousStepsCompleted = (stepNumber: number) => {
-    if (stepNumber === 1) return true;
-    for (let i = 1; i < stepNumber; i++) {
-      const stepConfig = DEX_SECTIONS.find(s => s.id === i);
-      if (stepConfig && !stepConfig.isOptional && !completedSteps[i]) {
-        return false;
-      }
-    }
-    return true;
-  };
-
-  const handleNextStep = (step: number) => {
-    const currentStepConfig = DEX_SECTIONS.find(s => s.id === step);
-    if (currentStepConfig && !currentStepConfig.isOptional) {
-      if (step === 1) {
-        const validationError = brokerNameValidator(brokerName.trim());
-        if (validationError !== null) {
-          toast.error(
-            typeof validationError === "string"
-              ? validationError
-              : "Broker name is invalid. It must be between 3 and 50 characters."
-          );
-          return;
-        }
-      }
-    }
-
-    if (
-      step === DEX_SECTIONS.find(s => s.title === "Privy Configuration")?.id
-    ) {
-      const privyTermsOfUseFilled =
-        privyTermsOfUse && privyTermsOfUse.trim() !== "";
-
-      if (
-        privyTermsOfUseFilled &&
-        urlValidator(privyTermsOfUse.trim()) !== null
-      ) {
-        toast.error("Privy Terms of Use URL is not a valid URL.");
-        return;
-      }
-    }
-
-    setCompletedSteps(prev => ({ ...prev, [step]: true }));
-    if (step < TOTAL_STEPS) {
-      setCurrentStep(step + 1);
-
-      setTimeout(() => {
-        const nextStepElement = document.getElementById(`step-${step + 1}`);
-        if (nextStepElement) {
-          nextStepElement.scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-            inline: "nearest",
-          });
-        }
-      }, 100);
-    } else {
-      setCurrentStep(TOTAL_STEPS + 1);
-      window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
-    }
-  };
-
   if (isLoading || isLoadingDexData) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center">
           <div className="i-svg-spinners:pulse-rings-multiple h-12 w-12 mx-auto text-primary-light mb-4"></div>
-          <div className="text-base md:text-lg mb-2">Loading your DEX</div>
+          <div className="text-base md:text-lg mb-2">
+            Loading DEX Configuration
+          </div>
           <div className="text-xs md:text-sm text-gray-400">
-            Please wait while we fetch your configuration
+            Please wait while we fetch your settings
           </div>
         </div>
       </div>
@@ -1079,15 +800,14 @@ export default function DexRoute() {
       <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10">
         <div className="text-center">
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">
-            Create Your DEX
+            DEX Configuration
           </h1>
           <Card>
             <h2 className="text-lg md:text-xl font-medium mb-3 md:mb-4">
               Authentication Required
             </h2>
             <p className="mb-4 md:mb-6 text-sm md:text-base text-gray-300">
-              Please connect your wallet and login to create and manage your
-              DEX.
+              Please connect your wallet and login to access DEX configuration.
             </p>
             <div className="flex justify-center">
               <WalletConnect />
@@ -1098,136 +818,27 @@ export default function DexRoute() {
     );
   }
 
-  if ((isSaving || isForking) && forkingStatus && !dexData) {
+  if (!dexData) {
     return (
-      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
+      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10">
         <div className="text-center">
-          <div className="i-svg-spinners:pulse-rings-multiple h-12 w-12 mx-auto text-primary-light mb-4"></div>
-          <div className="text-lg md:text-xl mb-4 font-medium">
-            {forkingStatus}
-          </div>
-          <div className="text-xs md:text-sm text-gray-400 max-w-sm mx-auto">
-            This may take a moment. We're setting up your DEX repository and
-            configuring it with your information.
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (!dexData && isAuthenticated) {
-    return (
-      <div className="container mx-auto p-4 max-w-3xl">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-          <h1 className="text-2xl md:text-3xl font-bold gradient-text">
-            Create Your DEX - Step-by-Step
+          <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">
+            DEX Configuration
           </h1>
-        </div>
-        <Form
-          onSubmit={handleSubmit}
-          className="flex flex-col gap-4"
-          submitText={
-            currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS]
-              ? "Create Your DEX"
-              : ""
-          }
-          isLoading={isSaving}
-          loadingText="Creating DEX..."
-          disabled={
-            isForking ||
-            isDeleting ||
-            isSaving ||
-            !(currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS])
-          }
-        >
-          <DexSectionRenderer
-            mode="accordion"
-            sections={DEX_SECTIONS}
-            allProps={{
-              brokerName,
-              handleInputChange,
-              brokerNameValidator,
-              primaryLogo,
-              secondaryLogo,
-              favicon,
-              handleImageChange,
-              currentTheme,
-              defaultTheme,
-              showThemeEditor,
-              viewCssCode,
-              activeThemeTab,
-              themePrompt,
-              isGeneratingTheme,
-              themeApplied,
-              tradingViewColorConfig,
-              toggleThemeEditor,
-              handleResetTheme,
-              handleResetToDefault,
-              handleThemeEditorChange,
-              setViewCssCode,
-              ThemeTabButton,
-              updateCssColor,
-              updateCssValue,
-              handleGenerateTheme,
-              setTradingViewColorConfig,
-              pnlPosters,
-              handlePnLPosterChange,
-              telegramLink,
-              discordLink,
-              xLink,
-              urlValidator,
-              seoSiteName,
-              seoSiteDescription,
-              seoSiteLanguage,
-              seoSiteLocale,
-              seoTwitterHandle,
-              seoThemeColor,
-              seoKeywords,
-              walletConnectProjectId,
-              privyAppId,
-              privyTermsOfUse,
-              enableAbstractWallet,
-              onEnableAbstractWalletChange: setEnableAbstractWallet,
-              disableEvmWallets,
-              disableSolanaWallets,
-              onDisableEvmWalletsChange: setDisableEvmWallets,
-              onDisableSolanaWalletsChange: setDisableSolanaWallets,
-              chainIds,
-              onChainIdsChange: setChainIds,
-              disableMainnet,
-              disableTestnet,
-              onDisableMainnetChange: setDisableMainnet,
-              onDisableTestnetChange: setDisableTestnet,
-              availableLanguages,
-              onAvailableLanguagesChange: setAvailableLanguages,
-              enabledMenus,
-              setEnabledMenus,
-              customMenus,
-              setCustomMenus,
-            }}
-            currentStep={currentStep}
-            completedSteps={completedSteps}
-            setCurrentStep={setCurrentStep}
-            handleNextStep={handleNextStep}
-            allRequiredPreviousStepsCompleted={
-              allRequiredPreviousStepsCompleted
-            }
-          />
-        </Form>
-
-        {currentStep > TOTAL_STEPS &&
-          completedSteps[TOTAL_STEPS] &&
-          !isSaving && (
-            <div className="mt-8 p-6 bg-success/10 border border-success/20 rounded-lg text-center slide-fade-in">
-              <h3 className="text-lg font-semibold text-success mb-2">
-                All steps completed!
-              </h3>
-              <p className="text-gray-300 mb-4">
-                You're ready to create your DEX. Click the "Create Your DEX"
-                button above to proceed.
-              </p>
+          <Card>
+            <h2 className="text-lg md:text-xl font-medium mb-3 md:mb-4">
+              No DEX Found
+            </h2>
+            <p className="mb-4 md:mb-6 text-sm md:text-base text-gray-300">
+              You need to create a DEX first before you can configure it.
+            </p>
+            <div className="flex justify-center">
+              <Link to="/dex" className="btn-connect">
+                Create Your DEX
+              </Link>
             </div>
-          )}
+          </Card>
+        </div>
       </div>
     );
   }
@@ -1235,173 +846,96 @@ export default function DexRoute() {
   return (
     <div className="container mx-auto p-4 max-w-3xl">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
-        <h1 className="text-2xl md:text-3xl font-bold gradient-text">
-          {dexData ? "Manage Your DEX" : "Create Your DEX"}
-        </h1>
+        <div>
+          <Link
+            to="/dex"
+            className="text-sm text-gray-400 hover:text-primary-light mb-2 inline-flex items-center"
+          >
+            <div className="i-mdi:arrow-left h-4 w-4 mr-1"></div>
+            Back to DEX Dashboard
+          </Link>
+          <h1 className="text-2xl md:text-3xl font-bold gradient-text">
+            DEX Configuration
+          </h1>
+        </div>
       </div>
 
-      {!isAuthenticated && !isLoading ? (
-        <div className="text-center mt-16">
-          <Card className="p-8">
-            <p className="text-lg mb-6">
-              Please connect your wallet to create or manage your DEX.
-            </p>
-            <div className="flex justify-center">
-              <WalletConnect />
-            </div>
-          </Card>
-        </div>
-      ) : (
-        <div className="space-y-8">
-          {dexData && dexData.repoUrl && (
-            <Card className="my-6 bg-gradient-to-r from-secondary/20 to-primary/20 border border-secondary/30">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 bg-secondary/20 p-2 rounded-full">
-                    <div className="i-mdi:cog text-secondary w-6 h-6"></div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">
-                      Configure Your DEX
-                    </h3>
-                    <p className="text-gray-300">
-                      Customize branding, themes, social links, wallets, and
-                      advanced settings for your DEX.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => navigate("/dex/config")}
-                  className="whitespace-nowrap flex-shrink-0"
-                >
-                  Open Settings
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {isGraduationEligible && !isGraduated && dexData && (
-            <Card className="my-6 bg-gradient-to-r from-primary/20 to-secondary/20 border border-primary/30">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 bg-primary/20 p-2 rounded-full">
-                    <div className="i-mdi:rocket-launch text-primary w-6 h-6"></div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">
-                      Ready to Upgrade?
-                    </h3>
-                    <p className="text-gray-300">
-                      Graduate your DEX to earn fee splits and provide rewards
-                      for your traders.
-                    </p>
-                  </div>
-                </div>
-                <Button
-                  onClick={() => navigate("/graduation")}
-                  className="whitespace-nowrap flex-shrink-0"
-                >
-                  Upgrade Now
-                </Button>
-              </div>
-            </Card>
-          )}
-
-          {isGraduated && dexData && (
-            <Card className="my-6 bg-gradient-to-r from-success/20 to-primary/20 border border-success/30">
-              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-                <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 bg-success/20 p-2 rounded-full">
-                    <div className="i-mdi:check-badge text-success w-6 h-6"></div>
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold mb-1">
-                      Graduated DEX
-                    </h3>
-                    <p className="text-gray-300">
-                      Your DEX is earning fee share revenue!{" "}
-                      <a
-                        href={
-                          dexData.customDomain
-                            ? `https://${dexData.customDomain}`
-                            : deploymentUrl || "#"
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-light hover:underline inline-flex items-center"
-                      >
-                        Log in to your DEX
-                        <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
-                      </a>{" "}
-                      with your admin wallet to access and withdraw your
-                      earnings.
-                    </p>
-                  </div>
-                </div>
-                <Link
-                  to="/graduation"
-                  className="px-4 py-2 bg-success/20 hover:bg-success/30 text-success font-medium rounded-full transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-2"
-                >
-                  <div className="i-mdi:cash-multiple h-4 w-4"></div>
-                  View Benefits
-                </Link>
-              </div>
-            </Card>
-          )}
-
-          <DexCreationStatus
-            dexData={dexData}
-            deploymentUrl={deploymentUrl}
-            deploymentConfirmed={deploymentConfirmed}
-            isForking={isForking}
-            handleRetryForking={handleRetryForking}
-            handleSuccessfulDeployment={handleSuccessfulDeployment}
-          />
-
-          {dexData && dexData.repoUrl && (
-            <Card>
-              <h3 className="text-lg font-medium mb-4">Custom Domain</h3>
-              <CustomDomainSection
-                dexData={dexData}
-                token={token}
-                isSaving={isSaving}
-                onDexDataUpdate={setDexData}
-                onSavingChange={setIsSaving}
-                onShowDomainRemoveConfirm={handleShowDomainRemoveConfirm}
-              />
-            </Card>
-          )}
-
-          {dexData && (
-            <Card>
-              <h3 className="text-lg font-medium mb-4 text-red-400">
-                Danger Zone
-              </h3>
-              <div className="border border-red-500/20 rounded-lg p-4 bg-red-500/5">
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                  <div>
-                    <h4 className="font-medium text-red-400 mb-1">
-                      Delete DEX
-                    </h4>
-                    <p className="text-sm text-gray-400">
-                      Permanently delete your DEX configuration and repository.
-                      This action cannot be undone.
-                    </p>
-                  </div>
-                  <Button
-                    variant="danger"
-                    onClick={handleShowDeleteConfirm}
-                    disabled={isDeleting}
-                    className="whitespace-nowrap"
-                  >
-                    {isDeleting ? "Deleting..." : "Delete DEX"}
-                  </Button>
-                </div>
-              </div>
-            </Card>
-          )}
-        </div>
-      )}
+      <Form
+        onSubmit={handleSubmit}
+        className="space-y-6"
+        submitText="Update DEX Configuration"
+        isLoading={isSaving}
+        loadingText="Saving"
+        disabled={false}
+      >
+        <DexSectionRenderer
+          mode="direct"
+          sections={DEX_SECTIONS}
+          allProps={{
+            brokerName,
+            handleInputChange,
+            brokerNameValidator,
+            primaryLogo,
+            secondaryLogo,
+            favicon,
+            handleImageChange,
+            currentTheme,
+            defaultTheme,
+            showThemeEditor,
+            viewCssCode,
+            activeThemeTab,
+            themePrompt,
+            isGeneratingTheme,
+            themeApplied,
+            tradingViewColorConfig,
+            toggleThemeEditor,
+            handleResetTheme,
+            handleResetToDefault,
+            handleThemeEditorChange,
+            setViewCssCode,
+            ThemeTabButton,
+            updateCssColor,
+            updateCssValue,
+            handleGenerateTheme,
+            setTradingViewColorConfig,
+            pnlPosters,
+            handlePnLPosterChange,
+            telegramLink,
+            discordLink,
+            xLink,
+            urlValidator,
+            seoSiteName,
+            seoSiteDescription,
+            seoSiteLanguage,
+            seoSiteLocale,
+            seoTwitterHandle,
+            seoThemeColor,
+            seoKeywords,
+            walletConnectProjectId,
+            privyAppId,
+            privyTermsOfUse,
+            enableAbstractWallet,
+            onEnableAbstractWalletChange: setEnableAbstractWallet,
+            disableEvmWallets,
+            disableSolanaWallets,
+            onDisableEvmWalletsChange: setDisableEvmWallets,
+            onDisableSolanaWalletsChange: setDisableSolanaWallets,
+            chainIds,
+            onChainIdsChange: setChainIds,
+            disableMainnet,
+            disableTestnet,
+            onDisableMainnetChange: setDisableMainnet,
+            onDisableTestnetChange: setDisableTestnet,
+            availableLanguages,
+            onAvailableLanguagesChange: setAvailableLanguages,
+            enabledMenus,
+            setEnabledMenus,
+            customMenus,
+            setCustomMenus,
+          }}
+          idPrefix="config-"
+        />
+      </Form>
     </div>
   );
 }

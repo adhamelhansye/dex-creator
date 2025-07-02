@@ -5,9 +5,15 @@ interface CardProps {
   children: React.ReactNode;
   className?: string;
   variant?: "default" | "error" | "success" | "warning";
+  id?: string;
 }
 
-export function Card({ children, className, variant = "default" }: CardProps) {
+export function Card({
+  children,
+  className,
+  variant = "default",
+  id,
+}: CardProps) {
   const baseClasses = "rounded-xl backdrop-blur-sm p-2 md:p-6";
 
   const variantClasses = {
@@ -19,5 +25,9 @@ export function Card({ children, className, variant = "default" }: CardProps) {
 
   const classes = clsx(baseClasses, variantClasses[variant], className);
 
-  return <div className={classes}>{children}</div>;
+  return (
+    <div id={id} className={classes}>
+      {children}
+    </div>
+  );
 }
