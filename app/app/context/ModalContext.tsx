@@ -3,6 +3,7 @@ import LoginModal from "../components/LoginModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ImageCropModal from "../components/ImageCropModal";
 import ThemePreviewModal from "../components/ThemePreviewModal";
+import TradingViewLicenseModal from "../components/TradingViewLicenseModal";
 
 // Define types for our modals
 type ModalType =
@@ -10,6 +11,7 @@ type ModalType =
   | "deleteConfirm"
   | "imageCrop"
   | "themePreview"
+  | "tradingViewLicense"
   | null;
 
 interface ModalContextType {
@@ -138,6 +140,10 @@ function ModalManager() {
           onCancel={currentModalProps.onCancel}
           css={currentModalProps.theme}
         />
+      );
+    case "tradingViewLicense":
+      return (
+        <TradingViewLicenseModal isOpen={isModalOpen} onClose={closeModal} />
       );
     default:
       return null;
