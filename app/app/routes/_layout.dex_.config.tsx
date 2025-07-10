@@ -689,7 +689,7 @@ export default function DexConfigRoute() {
 
         setDexData(savedData);
         toast.success("DEX configuration updated successfully!");
-        navigate("/dex");
+        navigate("/dex#dex-creation-status");
       }
     } catch (error) {
       console.error("Error updating DEX:", error);

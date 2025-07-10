@@ -29,7 +29,7 @@ export default function DexCreationStatus({
 
   if (dexData.repoUrl) {
     return (
-      <Card variant="success" className="mb-6">
+      <Card variant="success" className="mb-6" id="dex-creation-status">
         <h3 className="text-lg font-semibold mb-2">DEX Creation Status</h3>
         <p className="text-sm text-gray-300 mb-4">
           We've created the source code for your DEX! Here's what's happening
@@ -184,7 +184,7 @@ export default function DexCreationStatus({
 
   if (dexData.id && !dexData.repoUrl) {
     return (
-      <Card variant="error" className="mb-6">
+      <Card variant="error" className="mb-6" id="dex-creation-status">
         <p className="text-sm text-gray-300 mb-2">
           <span className="text-red-300 font-medium">⚠️ Note:</span> Your DEX
           configuration was saved, but we couldn't create your repository.

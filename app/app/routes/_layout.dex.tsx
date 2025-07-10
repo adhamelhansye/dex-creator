@@ -1,9 +1,9 @@
 import { useState, useEffect, FormEvent, useCallback } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/AuthContext";
+import { useDex } from "../context/DexContext";
 import { useModal } from "../context/ModalContext";
 import {
-  get,
   post,
   postFormData,
   putFormData,
@@ -172,8 +172,17 @@ const defaultTheme = `:root {
 
 export default function DexRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
+  const {
+    dexData,
+    isLoading: isDexLoading,
+    updateDexData,
+    isGraduationEligible,
+    isGraduated,
+    deploymentUrl: contextDeploymentUrl,
+  } = useDex();
   const { openModal } = useModal();
   const navigate = useNavigate();
+
   const [brokerName, setBrokerName] = useState("");
   const [telegramLink, setTelegramLink] = useState("");
   const [discordLink, setDiscordLink] = useState("");
@@ -208,12 +217,11 @@ export default function DexRoute() {
   const [isForking, setIsForking] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [forkingStatus, setForkingStatus] = useState("");
-  const [dexData, setDexData] = useState<DexData | null>(null);
-  const [isLoadingDexData, setIsLoadingDexData] = useState(false);
-  const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
+  const [localDeploymentUrl, setLocalDeploymentUrl] = useState<string | null>(
+    null
+  );
+  const deploymentUrl = localDeploymentUrl || contextDeploymentUrl;
   const [viewCssCode, setViewCssCode] = useState(false);
-  const [isGraduationEligible, setIsGraduationEligible] = useState(false);
-  const [isGraduated, setIsGraduated] = useState(false);
   const [deploymentConfirmed, setDeploymentConfirmed] = useState(false);
 
   const [currentStep, setCurrentStep] = useState(1);
@@ -287,103 +295,67 @@ export default function DexRoute() {
   const [seoKeywords, setSeoKeywords] = useState("");
 
   useEffect(() => {
-    if (!isAuthenticated || !token) return;
+    if (dexData) {
+      setBrokerName(dexData.brokerName);
+      setTelegramLink(dexData.telegramLink || "");
+      setDiscordLink(dexData.discordLink || "");
+      setXLink(dexData.xLink || "");
+      setWalletConnectProjectId(dexData.walletConnectProjectId || "");
+      setPrivyAppId(dexData.privyAppId || "");
+      setPrivyTermsOfUse(dexData.privyTermsOfUse || "");
+      setEnabledMenus(dexData.enabledMenus || "");
+      setCustomMenus(dexData.customMenus || "");
+      setEnableAbstractWallet(dexData.enableAbstractWallet || false);
+      setDisableMainnet(dexData.disableMainnet || false);
+      setDisableTestnet(dexData.disableTestnet || false);
+      setDisableEvmWallets(dexData.disableEvmWallets || false);
+      setDisableSolanaWallets(dexData.disableSolanaWallets || false);
+      setTradingViewColorConfig(dexData.tradingViewColorConfig || null);
+      setAvailableLanguages(dexData.availableLanguages || []);
+      setSeoSiteName(dexData.seoSiteName || "");
+      setSeoSiteDescription(dexData.seoSiteDescription || "");
+      setSeoSiteLanguage(dexData.seoSiteLanguage || "");
+      setSeoSiteLocale(dexData.seoSiteLocale || "");
+      setSeoTwitterHandle(dexData.seoTwitterHandle || "");
+      setSeoThemeColor(dexData.seoThemeColor || "");
+      setSeoKeywords(dexData.seoKeywords || "");
+      setViewCssCode(false);
 
-    async function fetchDexData() {
-      setIsLoadingDexData(true);
-      try {
-        const response = await get<DexData | { exists: false }>(
-          "api/dex",
-          token
-        );
-
-        if (response && "exists" in response && response.exists === false) {
-          setDexData(null);
-        } else if (response && "id" in response) {
-          setDexData(response);
-          setBrokerName(response.brokerName);
-          setTelegramLink(response.telegramLink || "");
-          setDiscordLink(response.discordLink || "");
-          setXLink(response.xLink || "");
-          setWalletConnectProjectId(response.walletConnectProjectId || "");
-          setPrivyAppId(response.privyAppId || "");
-          setPrivyTermsOfUse(response.privyTermsOfUse || "");
-          setEnabledMenus(response.enabledMenus || "");
-          setCustomMenus(response.customMenus || "");
-          setEnableAbstractWallet(response.enableAbstractWallet || false);
-          setDisableMainnet(response.disableMainnet || false);
-          setDisableTestnet(response.disableTestnet || false);
-          setDisableEvmWallets(response.disableEvmWallets || false);
-          setDisableSolanaWallets(response.disableSolanaWallets || false);
-          setTradingViewColorConfig(response.tradingViewColorConfig || null);
-          // Images will be loaded in separate useEffect
-          setAvailableLanguages(response.availableLanguages || []);
-          setSeoSiteName(response.seoSiteName || "");
-          setSeoSiteDescription(response.seoSiteDescription || "");
-
-          setSeoSiteLanguage(response.seoSiteLanguage || "");
-          setSeoSiteLocale(response.seoSiteLocale || "");
-          setSeoTwitterHandle(response.seoTwitterHandle || "");
-          setSeoThemeColor(response.seoThemeColor || "");
-          setSeoKeywords(response.seoKeywords || "");
-          setViewCssCode(false);
-
-          setIsGraduationEligible(response.brokerId === "demo");
-
-          const isGraduated =
-            response.brokerId !== "demo" &&
-            (response.preferredBrokerId
-              ? response.brokerId === response.preferredBrokerId
-              : false);
-          setIsGraduated(isGraduated);
-
-          if (response.themeCSS) {
-            setCurrentTheme(response.themeCSS);
-            setThemeApplied(true);
-          } else {
-            setCurrentTheme(defaultTheme);
-            setThemeApplied(true);
-          }
-
-          setOriginalValues({
-            ...response,
-            chainIds: response.chainIds || [],
-            enableAbstractWallet: response.enableAbstractWallet || false,
-            disableMainnet: response.disableMainnet || false,
-            disableTestnet: response.disableTestnet || false,
-            disableEvmWallets: response.disableEvmWallets || false,
-            disableSolanaWallets: response.disableSolanaWallets || false,
-            availableLanguages: response.availableLanguages || [],
-            seoSiteName: response.seoSiteName || null,
-            seoSiteDescription: response.seoSiteDescription || null,
-
-            seoSiteLanguage: response.seoSiteLanguage || null,
-            seoSiteLocale: response.seoSiteLocale || null,
-            seoTwitterHandle: response.seoTwitterHandle || null,
-            seoThemeColor: response.seoThemeColor || null,
-            seoKeywords: response.seoKeywords || null,
-          });
-
-          setActiveThemeTab("colors");
-          setDeploymentUrl(
-            response.repoUrl
-              ? `https://dex.orderly.network/${response.repoUrl.split("/").pop()}/`
-              : null
-          );
-          setChainIds(response.chainIds || []);
-        } else {
-          setDexData(null);
-        }
-      } catch (error) {
-        console.error("Failed to fetch DEX data", error);
-        setDexData(null);
-      } finally {
-        setIsLoadingDexData(false);
+      if (dexData.themeCSS) {
+        setCurrentTheme(dexData.themeCSS);
+        setThemeApplied(true);
+      } else {
+        setCurrentTheme(defaultTheme);
+        setThemeApplied(true);
       }
-    }
 
-    fetchDexData();
-  }, [isAuthenticated, token]);
+      setOriginalValues({
+        ...dexData,
+        chainIds: dexData.chainIds || [],
+        enableAbstractWallet: dexData.enableAbstractWallet || false,
+        disableMainnet: dexData.disableMainnet || false,
+        disableTestnet: dexData.disableTestnet || false,
+        disableEvmWallets: dexData.disableEvmWallets || false,
+        disableSolanaWallets: dexData.disableSolanaWallets || false,
+        availableLanguages: dexData.availableLanguages || [],
+        seoSiteName: dexData.seoSiteName || null,
+        seoSiteDescription: dexData.seoSiteDescription || null,
+        seoSiteLanguage: dexData.seoSiteLanguage || null,
+        seoSiteLocale: dexData.seoSiteLocale || null,
+        seoTwitterHandle: dexData.seoTwitterHandle || null,
+        seoThemeColor: dexData.seoThemeColor || null,
+        seoKeywords: dexData.seoKeywords || null,
+      });
+
+      setActiveThemeTab("colors");
+      setLocalDeploymentUrl(
+        dexData.repoUrl
+          ? `https://dex.orderly.network/${dexData.repoUrl.split("/").pop()}/`
+          : null
+      );
+      setChainIds(dexData.chainIds || []);
+    }
+  }, [dexData]);
 
   useEffect(() => {
     if (!currentTheme && !originalValues.themeCSS) {
@@ -416,6 +388,27 @@ export default function DexRoute() {
       loadImages();
     }
   }, [dexData]);
+
+  // Handle smooth scrolling to DEX Creation Status when navigating from config
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash === "#dex-creation-status") {
+      // Wait for the component to render, then scroll
+      const timer = setTimeout(() => {
+        const element = document.getElementById("dex-creation-status");
+        if (element) {
+          element.scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+            inline: "nearest",
+          });
+          // Clear the hash after scrolling
+          window.history.replaceState(null, "", window.location.pathname);
+        }
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [dexData, isLoading, isDexLoading]);
 
   const handleGenerateTheme = async () => {
     if (!themePrompt.trim()) {
@@ -506,12 +499,12 @@ export default function DexRoute() {
       );
 
       if (result && result.dex) {
-        setDexData(result.dex);
+        updateDexData(result.dex);
 
         if (result.dex.repoUrl) {
           toast.success("Repository forked successfully!");
 
-          setDeploymentUrl(
+          setLocalDeploymentUrl(
             `https://dex.orderly.network/${result.dex.repoUrl.split("/").pop()}/`
           );
         } else {
@@ -833,8 +826,7 @@ export default function DexRoute() {
         }
       }
 
-      setDexData(savedData);
-      setIsGraduationEligible(savedData.brokerId === "demo");
+      updateDexData(savedData);
     } catch (error) {
       console.error("Error in component:", error);
     } finally {
@@ -847,7 +839,7 @@ export default function DexRoute() {
     url: string,
     isNewDeployment: boolean
   ) => {
-    setDeploymentUrl(url);
+    setLocalDeploymentUrl(url);
     setDeploymentConfirmed(true);
 
     if (isNewDeployment) {
@@ -867,8 +859,6 @@ export default function DexRoute() {
       await del<{ message: string }>(`api/dex/${dexData.id}`, null, token);
       toast.success("DEX deleted successfully!");
 
-      // Reset state and redirect to home page
-      setDexData(null);
       setBrokerName("");
       setTelegramLink("");
       setDiscordLink("");
@@ -876,9 +866,8 @@ export default function DexRoute() {
       setPrimaryLogo(null);
       setSecondaryLogo(null);
       setFavicon(null);
-      setDeploymentUrl(null);
+      setLocalDeploymentUrl(null);
 
-      // Redirect to home
       navigate("/");
     } catch (error) {
       console.error("Error deleting DEX:", error);
@@ -904,8 +893,7 @@ export default function DexRoute() {
 
         del(`api/dex/${dexData.id}/custom-domain`, null, token)
           .then(() => {
-            setDexData({
-              ...dexData,
+            updateDexData({
               customDomain: null,
             });
             toast.success("Custom domain removed successfully");
@@ -1060,7 +1048,7 @@ export default function DexRoute() {
     }
   };
 
-  if (isLoading || isLoadingDexData) {
+  if (isLoading || isDexLoading) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
         <div className="text-center">
@@ -1312,7 +1300,7 @@ export default function DexRoute() {
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
                   <div className="flex-shrink-0 bg-success/20 p-2 rounded-full">
-                    <div className="i-mdi:check-badge text-success w-6 h-6"></div>
+                    <div className="i-mdi:check-circle text-success w-6 h-6"></div>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold mb-1">
@@ -1349,6 +1337,60 @@ export default function DexRoute() {
             </Card>
           )}
 
+          {dexData && dexData.repoUrl && (
+            <Card
+              className={`my-6 ${
+                isGraduated
+                  ? "bg-gradient-to-r from-warning/20 to-primary/20 border border-warning/30"
+                  : "bg-gradient-to-r from-gray-500/20 to-gray-400/20 border border-gray-400/30"
+              }`}
+            >
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`flex-shrink-0 p-2 rounded-full ${
+                      isGraduated ? "bg-warning/20" : "bg-gray-400/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 ${
+                        isGraduated
+                          ? "i-mdi:account-group text-warning"
+                          : "i-mdi:lock text-gray-400"
+                      }`}
+                    ></div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      Referral Settings
+                    </h3>
+                    <p className="text-gray-300">
+                      {isGraduated
+                        ? "Set up and manage your auto referral program to incentivize traders and grow your DEX community."
+                        : "Referral settings become available after graduating your DEX. Graduate first to start earning revenue and enable referrals."}
+                    </p>
+                  </div>
+                </div>
+                {isGraduated ? (
+                  <Button
+                    onClick={() => navigate("/referral")}
+                    className="whitespace-nowrap flex-shrink-0"
+                  >
+                    Manage Referrals
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => navigate("/graduation")}
+                    variant="secondary"
+                    className="whitespace-nowrap flex-shrink-0"
+                  >
+                    Graduate DEX
+                  </Button>
+                )}
+              </div>
+            </Card>
+          )}
+
           <DexCreationStatus
             dexData={dexData}
             deploymentUrl={deploymentUrl}
@@ -1365,7 +1407,7 @@ export default function DexRoute() {
                 dexData={dexData}
                 token={token}
                 isSaving={isSaving}
-                onDexDataUpdate={setDexData}
+                onDexDataUpdate={updateDexData}
                 onSavingChange={setIsSaving}
                 onShowDomainRemoveConfirm={handleShowDomainRemoveConfirm}
               />

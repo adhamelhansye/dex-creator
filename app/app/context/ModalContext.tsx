@@ -4,6 +4,8 @@ import DeleteConfirmModal from "../components/DeleteConfirmModal";
 import ImageCropModal from "../components/ImageCropModal";
 import ThemePreviewModal from "../components/ThemePreviewModal";
 import TradingViewLicenseModal from "../components/TradingViewLicenseModal";
+import OrderlyKeyLoginModal from "../components/OrderlyKeyLoginModal";
+import AdminLoginModal from "../components/AdminLoginModal";
 
 // Define types for our modals
 type ModalType =
@@ -12,6 +14,8 @@ type ModalType =
   | "imageCrop"
   | "themePreview"
   | "tradingViewLicense"
+  | "orderlyKeyLogin"
+  | "adminLogin"
   | null;
 
 interface ModalContextType {
@@ -144,6 +148,26 @@ function ModalManager() {
     case "tradingViewLicense":
       return (
         <TradingViewLicenseModal isOpen={isModalOpen} onClose={closeModal} />
+      );
+    case "orderlyKeyLogin":
+      return (
+        <OrderlyKeyLoginModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSuccess={currentModalProps.onSuccess}
+          onCancel={currentModalProps.onCancel}
+          brokerId={currentModalProps.brokerId}
+          accountId={currentModalProps.accountId}
+        />
+      );
+    case "adminLogin":
+      return (
+        <AdminLoginModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          orderlyKey={currentModalProps.orderlyKey}
+          accountId={currentModalProps.accountId}
+        />
       );
     default:
       return null;

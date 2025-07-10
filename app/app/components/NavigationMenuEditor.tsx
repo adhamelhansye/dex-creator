@@ -12,6 +12,7 @@ const AVAILABLE_MENUS = [
   { id: "Portfolio", label: "Portfolio", icon: "i-mdi:wallet-outline" },
   { id: "Markets", label: "Markets", icon: "i-mdi:chart-box-outline" },
   { id: "Leaderboard", label: "Leaderboard", icon: "i-mdi:trophy-outline" },
+  { id: "Rewards", label: "Rewards", icon: "i-mdi:gift-outline" },
 ];
 
 const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
@@ -134,7 +135,27 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
           </p>
           <p className="text-xs text-gray-400">
             Default navigation includes: Trading, Portfolio, Markets, and
-            Leaderboard pages.
+            Leaderboard pages. The Rewards page includes referral management and
+            trader incentives.
+          </p>
+        </div>
+      </div>
+
+      {/* Graduation requirement note for Rewards */}
+      <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-sm flex items-start">
+        <div className="i-mdi:school-outline h-5 w-5 mr-2 text-warning flex-shrink-0 mt-0.5"></div>
+        <div className="text-gray-300">
+          <p className="mb-1">
+            <span className="text-warning font-medium">
+              Rewards Page Requirement:
+            </span>{" "}
+            The Rewards page (which includes referral management) can only be
+            fully utilized after your DEX has been graduated.
+          </p>
+          <p className="text-xs text-gray-400">
+            You can enable the Rewards menu now, but referral features will only
+            become active once you graduate your DEX and start earning fee
+            splits.
           </p>
         </div>
       </div>
