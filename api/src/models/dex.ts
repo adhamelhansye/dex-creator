@@ -74,6 +74,7 @@ async function fileToBase64(file: File): Promise<string> {
 export const dexSchema = z.object({
   brokerName: z.string().min(3).max(50).nullish(),
   chainIds: z.array(z.number().positive().int()).optional(),
+  defaultChain: z.number().positive().int().optional(),
   themeCSS: z.string().nullish(),
   primaryLogo: z
     .string()
@@ -187,6 +188,16 @@ export const dexFormSchema = dexSchema
           } catch {
             return [];
           }
+        }),
+      ])
+      .optional(),
+    defaultChain: z
+      .union([
+        z.number().positive().int(),
+        z.string().transform(val => {
+          if (!val || val.trim() === "") return undefined;
+          const parsed = parseInt(val, 10);
+          return isNaN(parsed) ? undefined : parsed;
         }),
       ])
       .optional(),
@@ -314,6 +325,7 @@ export async function createDex(
         brokerId,
         brokerName,
         chainIds: validatedData.chainIds,
+        defaultChain: validatedData.defaultChain,
         themeCSS: validatedData.themeCSS?.toString(),
         telegramLink: validatedData.telegramLink || undefined,
         discordLink: validatedData.discordLink || undefined,
@@ -387,6 +399,7 @@ export async function createDex(
         brokerName: validatedData.brokerName ?? undefined,
         brokerId: brokerId,
         chainIds: validatedData.chainIds ?? [],
+        defaultChain: validatedData.defaultChain,
         themeCSS: validatedData.themeCSS,
         primaryLogo: validatedData.primaryLogo,
         secondaryLogo: validatedData.secondaryLogo,
@@ -481,6 +494,8 @@ export async function updateDex(
     updateData.brokerName = validatedData.brokerName ?? undefined;
   if ("chainIds" in validatedData)
     updateData.chainIds = validatedData.chainIds ?? [];
+  if ("defaultChain" in validatedData)
+    updateData.defaultChain = validatedData.defaultChain;
   if ("themeCSS" in validatedData) updateData.themeCSS = validatedData.themeCSS;
   if ("telegramLink" in validatedData)
     updateData.telegramLink = validatedData.telegramLink;

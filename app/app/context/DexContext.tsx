@@ -30,6 +30,7 @@ interface DexData {
   enableAbstractWallet?: boolean;
   enableCampaigns?: boolean;
   chainIds?: number[] | null;
+  defaultChain?: number | null;
   repoUrl?: string | null;
   customDomain?: string | null;
   disableMainnet?: boolean;

@@ -475,6 +475,7 @@ function prepareDexConfigContent(
     brokerId: string;
     brokerName: string;
     chainIds?: number[];
+    defaultChain?: number;
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -586,6 +587,7 @@ function prepareDexConfigContent(
     VITE_ORDERLY_BROKER_NAME: config.brokerName,
     VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains.join(","),
     VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains.join(","),
+    VITE_DEFAULT_CHAIN: config.defaultChain ? String(config.defaultChain) : "",
     VITE_TELEGRAM_URL: config.telegramLink || "",
     VITE_DISCORD_URL: config.discordLink || "",
     VITE_TWITTER_URL: config.xLink || "",
@@ -737,6 +739,7 @@ export async function updateDexConfig(
     brokerId: string;
     brokerName: string;
     chainIds?: number[];
+    defaultChain?: number;
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -855,6 +858,7 @@ export async function setupRepositoryWithSingleCommit(
     brokerId: string;
     brokerName: string;
     chainIds?: number[];
+    defaultChain?: number;
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -1392,6 +1396,7 @@ export async function triggerRedeployment(
     brokerId: string;
     brokerName: string;
     chainIds?: number[];
+    defaultChain?: number;
     themeCSS?: string;
     telegramLink?: string;
     discordLink?: string;
@@ -1449,6 +1454,7 @@ export interface DexConfig {
   brokerId: string;
   brokerName: string;
   chainIds?: number[];
+  defaultChain?: number;
   themeCSS?: string;
   telegramLink?: string;
   discordLink?: string;

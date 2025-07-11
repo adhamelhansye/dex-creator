@@ -120,6 +120,7 @@ dexRoutes.put("/:id", zValidator("form", dexFormSchema), async c => {
               brokerId: updatedDex.brokerId,
               brokerName: updatedDex.brokerName,
               chainIds: updatedDex.chainIds,
+              defaultChain: updatedDex.defaultChain || undefined,
               themeCSS: updatedDex.themeCSS?.toString(),
               telegramLink: updatedDex.telegramLink || undefined,
               discordLink: updatedDex.discordLink || undefined,

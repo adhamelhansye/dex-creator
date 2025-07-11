@@ -98,6 +98,8 @@ export interface DexSectionAllProps {
   // Blockchain
   chainIds: number[];
   onChainIdsChange: (chainIds: number[]) => void;
+  defaultChain?: number;
+  onDefaultChainChange?: (chainId: number | undefined) => void;
   disableMainnet: boolean;
   disableTestnet: boolean;
   onDisableMainnetChange: (value: boolean) => void;
@@ -279,6 +281,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     getProps: props => ({
       chainIds: props.chainIds,
       onChainIdsChange: props.onChainIdsChange,
+      defaultChain: props.defaultChain,
+      onDefaultChainChange: props.onDefaultChainChange,
       disableMainnet: props.disableMainnet,
       disableTestnet: props.disableTestnet,
       onDisableMainnetChange: props.onDisableMainnetChange,

@@ -39,6 +39,7 @@ interface DexData {
   enableAbstractWallet?: boolean;
   enableCampaigns?: boolean;
   chainIds?: number[] | null;
+  defaultChain?: number | null;
   repoUrl?: string | null;
   customDomain?: string | null;
   disableMainnet?: boolean;
@@ -220,6 +221,7 @@ export default function DexConfigRoute() {
     enableAbstractWallet: false,
     enableCampaigns: false,
     chainIds: [],
+    defaultChain: null,
     repoUrl: null,
     customDomain: null,
     disableMainnet: false,
@@ -247,6 +249,9 @@ export default function DexConfigRoute() {
   const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
 
   const [chainIds, setChainIds] = useState<number[]>([]);
+  const [defaultChain, setDefaultChain] = useState<number | undefined>(
+    undefined
+  );
   const [disableMainnet, setDisableMainnet] = useState(false);
   const [disableTestnet, setDisableTestnet] = useState(false);
   const [disableEvmWallets, setDisableEvmWallets] = useState(false);
@@ -316,6 +321,7 @@ export default function DexConfigRoute() {
           setOriginalValues({
             ...response,
             chainIds: response.chainIds || [],
+            defaultChain: response.defaultChain || null,
             enableAbstractWallet: response.enableAbstractWallet || false,
             enableCampaigns: response.enableCampaigns || false,
             disableMainnet: response.disableMainnet || false,
@@ -334,6 +340,7 @@ export default function DexConfigRoute() {
 
           setActiveThemeTab("colors");
           setChainIds(response.chainIds || []);
+          setDefaultChain(response.defaultChain || undefined);
         } else {
           navigate("/dex");
         }
@@ -582,6 +589,7 @@ export default function DexConfigRoute() {
         themeApplied ||
         JSON.stringify(chainIds) !==
           JSON.stringify(originalValues.chainIds || []) ||
+        defaultChain !== (originalValues.defaultChain || undefined) ||
         enableAbstractWallet !==
           (originalValues.enableAbstractWallet || false) ||
         enableCampaigns !== (originalValues.enableCampaigns || false) ||
@@ -638,6 +646,7 @@ export default function DexConfigRoute() {
         enableAbstractWallet,
         enableCampaigns,
         chainIds,
+        defaultChain,
         disableMainnet,
         disableTestnet,
         disableEvmWallets,
@@ -681,6 +690,7 @@ export default function DexConfigRoute() {
           enableAbstractWallet,
           enableCampaigns,
           chainIds,
+          defaultChain,
           disableMainnet,
           disableTestnet,
           disableEvmWallets,
@@ -931,6 +941,8 @@ export default function DexConfigRoute() {
             onDisableSolanaWalletsChange: setDisableSolanaWallets,
             chainIds,
             onChainIdsChange: setChainIds,
+            defaultChain,
+            onDefaultChainChange: setDefaultChain,
             disableMainnet,
             disableTestnet,
             onDisableMainnetChange: setDisableMainnet,

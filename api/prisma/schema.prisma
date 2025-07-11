@@ -52,6 +52,7 @@ model Dex {
   brokerId             String   @default("demo") // Set by admin later, defaults to "demo"
   brokerName           String   @default("Orderly DEX") // Broker name with default value
   chainIds             Int[]    @default([]) // Array of chain IDs that the DEX should support
+  defaultChain         Int?     // Default chain ID for the DEX
   primaryLogo          String?  // Base64-encoded primary logo data
   secondaryLogo        String?  // Base64-encoded secondary logo data
   favicon              String?  // Base64-encoded favicon data

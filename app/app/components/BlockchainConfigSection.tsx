@@ -3,6 +3,8 @@ import React, { useEffect } from "react";
 interface BlockchainConfigProps {
   chainIds: number[];
   onChainIdsChange: (chainIds: number[]) => void;
+  defaultChain?: number;
+  onDefaultChainChange?: (chainId: number | undefined) => void;
   disableMainnet?: boolean;
   disableTestnet?: boolean;
   onDisableMainnetChange?: (disabled: boolean) => void;
@@ -12,6 +14,8 @@ interface BlockchainConfigProps {
 const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
   chainIds,
   onChainIdsChange,
+  defaultChain,
+  onDefaultChainChange,
   disableMainnet,
   disableTestnet,
   onDisableMainnetChange,
@@ -187,40 +191,55 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
   const testnetL1 = testnetChains.filter(chain => chain.type === "L1");
   const testnetL2 = testnetChains.filter(chain => chain.type === "L2");
 
-  const ChainCheckbox = ({ chain }: { chain: (typeof supportedChains)[0] }) => (
-    <label className="flex items-center p-3 rounded-lg border border-light/10 bg-light/5 hover:bg-light/10 cursor-pointer transition-all duration-200 ease-in-out">
-      <input
-        type="checkbox"
-        checked={chainIds.includes(chain.id)}
-        onChange={() => handleChainToggle(chain.id)}
-        className="mr-3 w-4 h-4 text-primary bg-transparent border-2 border-light/30 rounded focus:ring-primary focus:ring-2 transition-colors duration-200"
-      />
-      <div className="flex items-center flex-1">
-        <div className="flex-1">
-          <div className="font-medium text-sm text-white flex items-center gap-2">
-            {chain.name}
-            <span
-              className={`text-xs px-1.5 py-0.5 rounded ${
-                chain.type === "L1"
-                  ? "bg-blue-500/20 text-blue-300"
-                  : "bg-green-500/20 text-green-300"
-              }`}
-            >
-              {chain.type}
-            </span>
-            {chain.network === "testnet" && (
-              <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
-                Testnet
+  const ChainCheckbox = ({ chain }: { chain: (typeof supportedChains)[0] }) => {
+    const isDefaultChain = defaultChain === chain.id;
+    return (
+      <label
+        className={`flex items-center p-3 rounded-lg border cursor-pointer transition-all duration-200 ease-in-out ${
+          isDefaultChain
+            ? "border-primary/50 bg-primary/10 hover:bg-primary/15"
+            : "border-light/10 bg-light/5 hover:bg-light/10"
+        }`}
+      >
+        <input
+          type="checkbox"
+          checked={chainIds.includes(chain.id)}
+          onChange={() => handleChainToggle(chain.id)}
+          className="mr-3 w-4 h-4 text-primary bg-transparent border-2 border-light/30 rounded focus:ring-primary focus:ring-2 transition-colors duration-200"
+        />
+        <div className="flex items-center flex-1">
+          <div className="flex-1">
+            <div className="font-medium text-sm text-white flex items-center gap-2">
+              {chain.name}
+              <span
+                className={`text-xs px-1.5 py-0.5 rounded ${
+                  chain.type === "L1"
+                    ? "bg-blue-500/20 text-blue-300"
+                    : "bg-green-500/20 text-green-300"
+                }`}
+              >
+                {chain.type}
               </span>
-            )}
-          </div>
-          <div className="text-xs text-light/70">
-            Chain ID: {chain.id} • {chain.symbol}
+              {chain.network === "testnet" && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-orange-500/20 text-orange-300">
+                  Testnet
+                </span>
+              )}
+              {isDefaultChain && (
+                <span className="text-xs px-1.5 py-0.5 rounded bg-primary/30 text-primary-light flex items-center gap-1">
+                  <div className="i-mdi:star w-3 h-3"></div>
+                  Default
+                </span>
+              )}
+            </div>
+            <div className="text-xs text-light/70">
+              Chain ID: {chain.id} • {chain.symbol}
+            </div>
           </div>
         </div>
-      </div>
-    </label>
-  );
+      </label>
+    );
+  };
 
   return (
     <div className="space-y-6">
@@ -264,6 +283,64 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
           </div>
         </div>
       )}
+
+      {/* Default Chain Selection */}
+      <div className="space-y-3">
+        <div>
+          <label
+            htmlFor="defaultChain"
+            className="block text-sm font-medium mb-1"
+          >
+            Default Chain (Optional)
+          </label>
+          <p className="text-xs text-gray-400 mb-2">
+            Choose which mainnet blockchain your DEX will use by default when
+            users first connect. Users can always switch to other supported
+            chains afterward.
+          </p>
+        </div>
+        <select
+          id="defaultChain"
+          value={defaultChain || ""}
+          onChange={e =>
+            onDefaultChainChange?.(
+              e.target.value ? parseInt(e.target.value) : undefined
+            )
+          }
+          className="w-full px-3 py-2 bg-background-card border border-light/10 rounded-lg text-sm"
+        >
+          <option value="">No default chain</option>
+          {(chainIds.length > 0
+            ? chainIds
+            : supportedChains.map(chain => chain.id)
+          )
+            .filter(chainId => {
+              const chain = supportedChains.find(c => c.id === chainId);
+              if (!chain) return false;
+              // Only allow mainnet chains as default
+              if (chain.network !== "mainnet") return false;
+              if (disableMainnet) return false;
+              return true;
+            })
+            .map(chainId => {
+              const chain = supportedChains.find(c => c.id === chainId);
+              return chain ? (
+                <option key={chain.id} value={chain.id}>
+                  {chain.name}
+                </option>
+              ) : null;
+            })}
+        </select>
+        {defaultChain && (
+          <div className="text-xs text-gray-400">
+            Selected default:{" "}
+            <span className="text-primary-light">
+              {supportedChains.find(c => c.id === defaultChain)?.name ||
+                `Chain ${defaultChain}`}
+            </span>
+          </div>
+        )}
+      </div>
 
       {/* Network Toggle Controls */}
       <div className="flex gap-4">
