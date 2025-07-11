@@ -489,6 +489,7 @@ function prepareDexConfigContent(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
     seoSiteName?: string;
@@ -598,6 +599,7 @@ function prepareDexConfigContent(
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
     VITE_DISABLE_EVM_WALLETS: String(config.disableEvmWallets ?? false),
     VITE_DISABLE_SOLANA_WALLETS: String(config.disableSolanaWallets ?? false),
+    VITE_ENABLE_CAMPAIGNS: String(config.enableCampaigns ?? false),
     VITE_HAS_PRIMARY_LOGO: primaryLogoData ? "true" : "false",
     VITE_HAS_SECONDARY_LOGO: secondaryLogoData ? "true" : "false",
     VITE_USE_CUSTOM_PNL_POSTERS: pnlPostersData.length > 0 ? "true" : "false",
@@ -749,6 +751,7 @@ export async function updateDexConfig(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
     seoSiteName?: string;
@@ -866,6 +869,7 @@ export async function setupRepositoryWithSingleCommit(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
     seoSiteName?: string;
@@ -1402,6 +1406,7 @@ export async function triggerRedeployment(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
     seoSiteName?: string;
@@ -1458,6 +1463,7 @@ export interface DexConfig {
   disableTestnet?: boolean;
   disableEvmWallets?: boolean;
   disableSolanaWallets?: boolean;
+  enableCampaigns?: boolean;
   tradingViewColorConfig?: string;
   availableLanguages?: string[];
   seoSiteName?: string;

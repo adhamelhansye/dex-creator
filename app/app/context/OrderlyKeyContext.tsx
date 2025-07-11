@@ -30,7 +30,6 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
   const [orderlyKey, setOrderlyKeyState] = useState<Uint8Array | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
 
-  // Update account ID when address or broker ID changes
   useEffect(() => {
     if (address && brokerId) {
       const newAccountId = getAccountId(address, brokerId);
@@ -40,7 +39,6 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
     }
   }, [address, brokerId]);
 
-  // Load orderly key from localStorage when account ID changes
   useEffect(() => {
     if (accountId) {
       const savedKey = loadOrderlyKey(accountId);
@@ -50,7 +48,6 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
     }
   }, [accountId]);
 
-  // Clear orderly key when wallet disconnects
   useEffect(() => {
     if (!isConnected) {
       setOrderlyKeyState(null);
@@ -61,7 +58,6 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
   const setOrderlyKey = useCallback(
     (key: Uint8Array | null) => {
       setOrderlyKeyState(key);
-      // Save to localStorage when key is set
       if (key && accountId) {
         saveOrderlyKey(accountId, key);
       }
@@ -71,7 +67,6 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
 
   const clearOrderlyKey = useCallback(() => {
     if (accountId) {
-      // Remove from localStorage
       const storageKey = `orderly-key:${accountId}:${import.meta.env.VITE_IS_TESTNET === "true" ? "testnet" : "mainnet"}`;
       localStorage.removeItem(storageKey);
     }

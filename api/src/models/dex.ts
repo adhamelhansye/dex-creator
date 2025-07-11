@@ -128,6 +128,7 @@ export const dexSchema = z.object({
   disableTestnet: z.boolean().optional(),
   disableEvmWallets: z.boolean().optional(),
   disableSolanaWallets: z.boolean().optional(),
+  enableCampaigns: z.boolean().optional(),
   tradingViewColorConfig: z.string().nullish(),
   availableLanguages: z.array(z.nativeEnum(LocaleEnum)).optional(),
 
@@ -202,6 +203,9 @@ export const dexFormSchema = dexSchema
       .union([z.boolean(), z.string().transform(val => val === "true")])
       .optional(),
     disableSolanaWallets: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    enableCampaigns: z
       .union([z.boolean(), z.string().transform(val => val === "true")])
       .optional(),
     availableLanguages: z
@@ -325,6 +329,7 @@ export async function createDex(
         disableTestnet: validatedData.disableTestnet,
         disableEvmWallets: validatedData.disableEvmWallets,
         disableSolanaWallets: validatedData.disableSolanaWallets,
+        enableCampaigns: validatedData.enableCampaigns,
         tradingViewColorConfig:
           validatedData.tradingViewColorConfig || undefined,
         availableLanguages: validatedData.availableLanguages,
@@ -400,6 +405,7 @@ export async function createDex(
         disableTestnet: validatedData.disableTestnet,
         disableEvmWallets: validatedData.disableEvmWallets,
         disableSolanaWallets: validatedData.disableSolanaWallets,
+        enableCampaigns: validatedData.enableCampaigns,
         tradingViewColorConfig: validatedData.tradingViewColorConfig,
         availableLanguages: validatedData.availableLanguages,
         seoSiteName: validatedData.seoSiteName,
@@ -510,6 +516,8 @@ export async function updateDex(
     updateData.disableEvmWallets = validatedData.disableEvmWallets;
   if ("disableSolanaWallets" in validatedData)
     updateData.disableSolanaWallets = validatedData.disableSolanaWallets;
+  if ("enableCampaigns" in validatedData)
+    updateData.enableCampaigns = validatedData.enableCampaigns;
   if ("tradingViewColorConfig" in validatedData)
     updateData.tradingViewColorConfig = validatedData.tradingViewColorConfig;
   if ("availableLanguages" in validatedData)

@@ -71,6 +71,7 @@ model Dex {
   makerFee             Int?     // Maker fee in basis points (0.01%)
   takerFee             Int?     // Taker fee in basis points (0.01%)
   availableLanguages   String[] @default(["en"]) // Array of language codes that the DEX should support
+  enableCampaigns      Boolean  @default(false) // Flag to enable ORDER token campaigns and related features
   createdAt            DateTime @default(now())
   updatedAt            DateTime @updatedAt
   enableAbstractWallet Boolean  @default(false) // New flag for Abstract Wallet
@@ -78,18 +79,18 @@ model Dex {
   disableTestnet       Boolean  @default(false) // Flag to disable testnet chains
   disableEvmWallets    Boolean  @default(false) // Flag to disable EVM wallets
   disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
-  tradingViewColorConfig String? // New field for TradingView chart colors
-  
-  // SEO Configuration Fields
-  seoSiteName          String?  // Site name for titles and branding (VITE_SEO_SITE_NAME)
-  seoSiteDescription   String?  // Meta description for all pages (VITE_SEO_SITE_DESCRIPTION)
-  seoSiteLanguage      String?  // HTML lang attribute override (VITE_SEO_SITE_LANGUAGE)
-  seoSiteLocale        String?  // Open Graph locale for social platforms (VITE_SEO_SITE_LOCALE)
-  seoTwitterHandle     String?  // Twitter handle for Twitter Cards (VITE_SEO_TWITTER_HANDLE)
-  seoThemeColor        String?  // Browser theme color for mobile (VITE_SEO_THEME_COLOR)
-  seoKeywords          String?  // Meta keywords for search engines (VITE_SEO_KEYWORDS)
-  
-  // Relation to User (owner) - one-to-one relationship
-  userId               String   @unique
+  tradingViewColorConfig String? // TradingView color configuration JSON
+  seoSiteName          String?  // SEO Site Name
+  seoSiteDescription   String?  // SEO Site Description
+  seoSiteLanguage      String?  // SEO Site Language (e.g., "en")
+  seoSiteLocale        String?  // SEO Site Locale (e.g., "en_US")
+  seoTwitterHandle     String?  // SEO Twitter Handle (e.g., "@orderly_network")
+  seoThemeColor        String?  // SEO Theme Color (e.g., "#1a1b23")
+  seoKeywords          String?  // SEO Keywords
+
+  // Relation to User
+  userId               String
   user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId])
 }

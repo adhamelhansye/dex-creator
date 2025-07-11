@@ -47,6 +47,7 @@ interface DexData {
   enabledMenus?: string | null;
   customMenus?: string | null;
   enableAbstractWallet?: boolean;
+  enableCampaigns?: boolean;
   chainIds?: number[] | null;
   repoUrl?: string | null;
   customDomain?: string | null;
@@ -193,6 +194,7 @@ export default function DexRoute() {
   const [enabledMenus, setEnabledMenus] = useState("");
   const [customMenus, setCustomMenus] = useState("");
   const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
+  const [enableCampaigns, setEnableCampaigns] = useState(false);
 
   const [primaryLogo, setPrimaryLogo] = useState<Blob | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<Blob | null>(null);
@@ -248,6 +250,7 @@ export default function DexRoute() {
     enabledMenus: "",
     customMenus: "",
     enableAbstractWallet: false,
+    enableCampaigns: false,
     chainIds: [],
     repoUrl: null,
     customDomain: null,
@@ -306,6 +309,7 @@ export default function DexRoute() {
       setEnabledMenus(dexData.enabledMenus || "");
       setCustomMenus(dexData.customMenus || "");
       setEnableAbstractWallet(dexData.enableAbstractWallet || false);
+      setEnableCampaigns(dexData.enableCampaigns || false);
       setDisableMainnet(dexData.disableMainnet || false);
       setDisableTestnet(dexData.disableTestnet || false);
       setDisableEvmWallets(dexData.disableEvmWallets || false);
@@ -333,6 +337,7 @@ export default function DexRoute() {
         ...dexData,
         chainIds: dexData.chainIds || [],
         enableAbstractWallet: dexData.enableAbstractWallet || false,
+        enableCampaigns: dexData.enableCampaigns || false,
         disableMainnet: dexData.disableMainnet || false,
         disableTestnet: dexData.disableTestnet || false,
         disableEvmWallets: dexData.disableEvmWallets || false,
@@ -665,6 +670,7 @@ export default function DexRoute() {
           JSON.stringify(originalValues.chainIds || []) ||
         enableAbstractWallet !==
           (originalValues.enableAbstractWallet || false) ||
+        enableCampaigns !== (originalValues.enableCampaigns || false) ||
         disableMainnet !== (originalValues.disableMainnet || false) ||
         disableTestnet !== (originalValues.disableTestnet || false) ||
         disableEvmWallets !== (originalValues.disableEvmWallets || false) ||
@@ -724,6 +730,7 @@ export default function DexRoute() {
         enabledMenus: enabledMenus,
         customMenus,
         enableAbstractWallet,
+        enableCampaigns,
         chainIds,
         disableMainnet,
         disableTestnet,
@@ -766,6 +773,7 @@ export default function DexRoute() {
           pnlPosters: pnlPostersBase64 as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
+          enableCampaigns,
           chainIds,
           disableMainnet,
           disableTestnet,
@@ -802,6 +810,7 @@ export default function DexRoute() {
           pnlPosters: pnlPostersBase64 as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
+          enableCampaigns,
           chainIds,
           disableMainnet,
           disableTestnet,
@@ -1192,6 +1201,8 @@ export default function DexRoute() {
               setEnabledMenus,
               customMenus,
               setCustomMenus,
+              enableCampaigns,
+              setEnableCampaigns,
             }}
             currentStep={currentStep}
             completedSteps={completedSteps}

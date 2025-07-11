@@ -28,6 +28,7 @@ interface DexData {
   enabledMenus?: string | null;
   customMenus?: string | null;
   enableAbstractWallet?: boolean;
+  enableCampaigns?: boolean;
   chainIds?: number[] | null;
   repoUrl?: string | null;
   customDomain?: string | null;

@@ -112,6 +112,8 @@ export interface DexSectionAllProps {
   setEnabledMenus: (menus: string) => void;
   customMenus: string;
   setCustomMenus: (menus: string) => void;
+  enableCampaigns: boolean;
+  setEnableCampaigns: (value: boolean) => void;
 }
 
 export const DEX_SECTIONS: DexSectionConfig[] = [
@@ -309,6 +311,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       setEnabledMenus: props.setEnabledMenus,
       customMenus: props.customMenus,
       setCustomMenus: props.setCustomMenus,
+      enableCampaigns: props.enableCampaigns,
+      setEnableCampaigns: props.setEnableCampaigns,
     }),
   },
 ];

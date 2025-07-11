@@ -346,7 +346,7 @@ export function getOnChainDomain(chainId: number | string): EIP712Domain {
   };
 }
 
-function getBaseUrl(): string {
+export function getBaseUrl(): string {
   return import.meta.env.VITE_IS_TESTNET === "true"
     ? "https://testnet-api.orderly.org"
     : "https://api.orderly.org";

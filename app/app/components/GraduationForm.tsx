@@ -24,6 +24,7 @@ import clsx from "clsx";
 import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "./BaseFeeExplanation";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
+import { getBaseUrl } from "../utils/orderly";
 
 const ERC20_ABI = [
   {
@@ -238,9 +239,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
   useEffect(() => {
     async function fetchExistingBrokerIds() {
       try {
-        const response = await fetch(
-          "https://api.orderly.org/v1/public/broker/name"
-        );
+        const response = await fetch(`${getBaseUrl()}/v1/public/broker/name`);
         if (!response.ok) {
           throw new Error("Failed to fetch broker IDs");
         }

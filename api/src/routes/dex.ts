@@ -135,6 +135,7 @@ dexRoutes.put("/:id", zValidator("form", dexFormSchema), async c => {
               disableTestnet: updatedDex.disableTestnet,
               disableEvmWallets: updatedDex.disableEvmWallets,
               disableSolanaWallets: updatedDex.disableSolanaWallets,
+              enableCampaigns: updatedDex.enableCampaigns,
               tradingViewColorConfig:
                 updatedDex.tradingViewColorConfig || undefined,
               availableLanguages: updatedDex.availableLanguages,

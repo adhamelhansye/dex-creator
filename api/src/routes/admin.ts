@@ -136,6 +136,7 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
               disableTestnet: updatedDex.disableTestnet || false,
               disableEvmWallets: updatedDex.disableEvmWallets || false,
               disableSolanaWallets: updatedDex.disableSolanaWallets || false,
+              enableCampaigns: updatedDex.enableCampaigns || false,
               tradingViewColorConfig:
                 updatedDex.tradingViewColorConfig || undefined,
               availableLanguages: updatedDex.availableLanguages,
@@ -413,6 +414,7 @@ adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
         disableTestnet: dex.disableTestnet || false,
         disableEvmWallets: dex.disableEvmWallets || false,
         disableSolanaWallets: dex.disableSolanaWallets || false,
+        enableCampaigns: dex.enableCampaigns || false,
         tradingViewColorConfig: dex.tradingViewColorConfig || undefined,
         availableLanguages: dex.availableLanguages,
         seoSiteName: dex.seoSiteName || undefined,

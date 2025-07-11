@@ -37,6 +37,7 @@ interface DexData {
   enabledMenus?: string | null;
   customMenus?: string | null;
   enableAbstractWallet?: boolean;
+  enableCampaigns?: boolean;
   chainIds?: number[] | null;
   repoUrl?: string | null;
   customDomain?: string | null;
@@ -172,6 +173,7 @@ export default function DexConfigRoute() {
   const [enabledMenus, setEnabledMenus] = useState("");
   const [customMenus, setCustomMenus] = useState("");
   const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
+  const [enableCampaigns, setEnableCampaigns] = useState(false);
 
   const [primaryLogo, setPrimaryLogo] = useState<Blob | null>(null);
   const [secondaryLogo, setSecondaryLogo] = useState<Blob | null>(null);
@@ -216,6 +218,7 @@ export default function DexConfigRoute() {
     enabledMenus: "",
     customMenus: "",
     enableAbstractWallet: false,
+    enableCampaigns: false,
     chainIds: [],
     repoUrl: null,
     customDomain: null,
@@ -286,6 +289,7 @@ export default function DexConfigRoute() {
           setEnabledMenus(response.enabledMenus || "");
           setCustomMenus(response.customMenus || "");
           setEnableAbstractWallet(response.enableAbstractWallet || false);
+          setEnableCampaigns(response.enableCampaigns || false);
           setDisableMainnet(response.disableMainnet || false);
           setDisableTestnet(response.disableTestnet || false);
           setDisableEvmWallets(response.disableEvmWallets || false);
@@ -313,6 +317,7 @@ export default function DexConfigRoute() {
             ...response,
             chainIds: response.chainIds || [],
             enableAbstractWallet: response.enableAbstractWallet || false,
+            enableCampaigns: response.enableCampaigns || false,
             disableMainnet: response.disableMainnet || false,
             disableTestnet: response.disableTestnet || false,
             disableEvmWallets: response.disableEvmWallets || false,
@@ -579,6 +584,7 @@ export default function DexConfigRoute() {
           JSON.stringify(originalValues.chainIds || []) ||
         enableAbstractWallet !==
           (originalValues.enableAbstractWallet || false) ||
+        enableCampaigns !== (originalValues.enableCampaigns || false) ||
         disableMainnet !== (originalValues.disableMainnet || false) ||
         disableTestnet !== (originalValues.disableTestnet || false) ||
         disableEvmWallets !== (originalValues.disableEvmWallets || false) ||
@@ -630,6 +636,7 @@ export default function DexConfigRoute() {
         enabledMenus: enabledMenus,
         customMenus,
         enableAbstractWallet,
+        enableCampaigns,
         chainIds,
         disableMainnet,
         disableTestnet,
@@ -672,6 +679,7 @@ export default function DexConfigRoute() {
           pnlPosters: pnlPostersBase64 as string[],
           themeCSS: themeApplied ? currentTheme : null,
           enableAbstractWallet,
+          enableCampaigns,
           chainIds,
           disableMainnet,
           disableTestnet,
@@ -933,6 +941,8 @@ export default function DexConfigRoute() {
             setEnabledMenus,
             customMenus,
             setCustomMenus,
+            enableCampaigns,
+            setEnableCampaigns,
           }}
           idPrefix="config-"
         />
