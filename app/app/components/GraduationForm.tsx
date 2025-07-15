@@ -100,7 +100,6 @@ interface FeeConfigResponse {
   success: boolean;
   makerFee: number;
   takerFee: number;
-  canUpdate: boolean;
   message?: string;
 }
 
@@ -158,8 +157,8 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [deploymentUrl, setDeploymentUrl] = useState<string | null>(null);
 
-  const [makerFee, setMakerFee] = useState<number>(3);
-  const [takerFee, setTakerFee] = useState<number>(6);
+  const [makerFee, setMakerFee] = useState<number>(30); // 3 bps = 30 units
+  const [takerFee, setTakerFee] = useState<number>(60); // 6 bps = 60 units
   const [isSavingFees, setIsSavingFees] = useState(false);
 
   const currentReceiverAddress = ORDER_RECEIVER_ADDRESSES[chain];
@@ -309,9 +308,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
 
         setStatus(response);
 
-        if (response.preferredBrokerId || response.approved) {
-          await loadFeeConfiguration();
-        }
+        await loadFeeConfiguration();
       } catch (error) {
         console.error("Error loading graduation status:", error);
 
@@ -351,6 +348,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
       if (response.success) {
         setMakerFee(newMakerFee);
         setTakerFee(newTakerFee);
+
         toast.success("Fee configuration updated successfully");
       } else {
         toast.error(response.message || "Failed to update fees");
@@ -452,6 +450,8 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
           txHash: transactionHash,
           chain,
           preferredBrokerId,
+          makerFee,
+          takerFee,
         },
         token,
         { showToastOnError: false }
@@ -570,6 +570,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
             takerFee={takerFee}
             readOnly={true}
             defaultOpenCalculator={true}
+            showSaveButton={false}
           />
         </div>
       </Card>
@@ -650,7 +651,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
                       className="text-primary-light hover:underline inline-flex items-center"
                     >
                       logging into your DEX
-                      <div className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></div>
+                      <span className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></span>
                     </a>{" "}
                     with your admin wallet.
                   </p>
@@ -682,6 +683,8 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
           isSavingFees={isSavingFees}
           onSaveFees={handleSaveFees}
           defaultOpenCalculator={true}
+          alwaysShowConfig={false}
+          showSaveButton={true}
         />
       </Card>
     );
@@ -739,12 +742,41 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
           className="ml-1 text-primary-light hover:underline inline-flex items-center"
         >
           Need ORDER tokens? Buy here
-          <div className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></div>
+          <span className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></span>
         </a>
       </p>
 
       {/* Base Fee Explanation - Add here */}
       <BaseFeeExplanation />
+
+      {/* Fee Configuration Section */}
+      <div className="mb-6">
+        <div className="bg-light/5 rounded-xl p-4 mb-4">
+          <h3 className="text-md font-medium mb-2 flex items-center">
+            <div className="i-mdi:cog text-gray-400 w-5 h-5 mr-2"></div>
+            Trading Fee Configuration
+          </h3>
+          <p className="text-sm text-gray-300 mb-4">
+            Configure your trading fees to determine your revenue split. Default
+            values are shown below.
+          </p>
+
+          <FeeConfigWithCalculator
+            makerFee={makerFee}
+            takerFee={takerFee}
+            readOnly={false}
+            isSavingFees={isSavingFees}
+            onSaveFees={handleSaveFees}
+            onFeesChange={(newMakerFee, newTakerFee) => {
+              setMakerFee(newMakerFee);
+              setTakerFee(newTakerFee);
+            }}
+            defaultOpenCalculator={false}
+            alwaysShowConfig={true}
+            showSaveButton={false}
+          />
+        </div>
+      </div>
 
       <div className="mb-6">
         <div className="mb-4">
@@ -784,14 +816,14 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
           required
           helpText={
             <>
-              <div className="text-gray-400 mb-1">
+              <span className="text-gray-400 mb-1 block">
                 Your preferred unique broker ID (lowercase letters, numbers,
                 hyphens, and underscores only)
-              </div>
-              <div className="text-gray-400 mt-1">
+              </span>
+              <span className="text-gray-400 mt-1 block">
                 This ID uniquely identifies your DEX in the Orderly ecosystem
                 and will be used for revenue tracking and user rewards.
-              </div>
+              </span>
             </>
           }
           validator={value => {
@@ -814,10 +846,10 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
 
         <div className="space-y-4 mt-6">
           {/* Direct transfer button */}
-          <div className="bg-primary/10 border border-primary/20 rounded-xl p-4">
+          <div className="border rounded-xl p-4 bg-primary/10 border-primary/20">
             <h3 className="text-md font-medium mb-2 flex items-center">
-              <div className="i-mdi:rocket-launch text-primary w-5 h-5 mr-2"></div>
-              Option 1: One-Click Transfer
+              <div className="w-5 h-5 mr-2 i-mdi:rocket-launch text-primary"></div>
+              Send ORDER Tokens
             </h3>
             <p className="text-sm text-gray-300 mb-4">
               Send ORDER tokens and verify in one step directly from your
@@ -853,7 +885,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
                         className="ml-2 text-primary-light hover:underline inline-flex items-center"
                       >
                         Buy ORDER
-                        <div className="i-mdi:open-in-new w-3 h-3 ml-0.5"></div>
+                        <span className="i-mdi:open-in-new w-3 h-3 ml-0.5"></span>
                       </a>
                     </div>
                   )}
@@ -925,7 +957,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
             <div className="bg-light/5 border border-light/10 rounded-xl p-4 slide-fade-in">
               <h3 className="text-md font-medium mb-2 flex items-center">
                 <div className="i-mdi:file-document-outline text-gray-300 w-5 h-5 mr-2"></div>
-                Option 2: Enter Transaction Hash
+                Alternative Option: Enter Transaction Hash
               </h3>
               <p className="text-sm text-gray-300 mb-4">
                 If you've already sent ORDER tokens, enter the transaction hash
@@ -1026,16 +1058,6 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
           )}
         </div>
       )}
-
-      {/* Show the calculator regardless of verification status */}
-      <FeeConfigWithCalculator
-        makerFee={makerFee}
-        takerFee={takerFee}
-        readOnly={!result?.success}
-        isSavingFees={isSavingFees}
-        onSaveFees={handleSaveFees}
-        defaultOpenCalculator={true}
-      />
     </Card>
   );
 }

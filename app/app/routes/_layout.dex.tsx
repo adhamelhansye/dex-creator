@@ -178,6 +178,8 @@ export default function DexRoute() {
     dexData,
     isLoading: isDexLoading,
     updateDexData,
+    refreshDexData,
+    clearDexData,
     isGraduationEligible,
     isGraduated,
     deploymentUrl: contextDeploymentUrl,
@@ -800,6 +802,8 @@ export default function DexRoute() {
         });
 
         toast.success("DEX information updated successfully!");
+
+        updateDexData(savedData);
       } else {
         savedData = await postFormData<DexData>("api/dex", formData, token);
 
@@ -844,9 +848,9 @@ export default function DexRoute() {
           toast.success("DEX information saved successfully!");
           toast.warning("Repository could not be forked. You can retry later.");
         }
-      }
 
-      updateDexData(savedData);
+        await refreshDexData();
+      }
     } catch (error) {
       console.error("Error in component:", error);
     } finally {
@@ -887,6 +891,8 @@ export default function DexRoute() {
       setSecondaryLogo(null);
       setFavicon(null);
       setLocalDeploymentUrl(null);
+
+      clearDexData();
 
       navigate("/");
     } catch (error) {

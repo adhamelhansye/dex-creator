@@ -20,14 +20,14 @@ const ORDER_RECEIVER_ADDRESSES: Record<string, string> = {
 // Required ORDER token amount
 const REQUIRED_ORDER_AMOUNT = process.env.REQUIRED_ORDER_AMOUNT || "1000";
 
-// Default fee values (hardcoded)
-const DEFAULT_MAKER_FEE = 3; // Default maker fee (3 bps)
-const DEFAULT_TAKER_FEE = 6; // Default taker fee (6 bps)
+// Default fee values (hardcoded) - stored in 0.1 bps precision
+const DEFAULT_MAKER_FEE = 30; // Default maker fee (3 bps = 30 units)
+const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
 
-// Fee constraints
-const MIN_MAKER_FEE = 0; // Minimum maker fee in basis points
-const MIN_TAKER_FEE = 3; // Minimum taker fee in basis points
-const MAX_FEE = 15; // Maximum fee in basis points (for both maker and taker)
+// Fee constraints - stored in 0.1 bps precision
+const MIN_MAKER_FEE = 0; // Minimum maker fee (0 bps = 0 units)
+const MIN_TAKER_FEE = 30; // Minimum taker fee (3 bps = 30 units)
+const MAX_FEE = 150; // Maximum fee (15 bps = 150 units)
 
 const ACCEPTED_CHAINS = ["ethereum", "arbitrum"];
 
@@ -214,8 +214,8 @@ export async function updatePreferredBrokerId(
 /**
  * Set the maker and taker fees for a DEX
  * @param userId The user ID
- * @param makerFee The maker fee in basis points (0.01%)
- * @param takerFee The taker fee in basis points (0.01%)
+ * @param makerFee The maker fee in 0.1 basis points (0.001% precision)
+ * @param takerFee The taker fee in 0.1 basis points (0.001% precision)
  * @returns Success status and message
  */
 export async function updateDexFees(
@@ -227,28 +227,28 @@ export async function updateDexFees(
     if (makerFee < MIN_MAKER_FEE) {
       return {
         success: false,
-        message: `Maker fee cannot be less than ${MIN_MAKER_FEE} basis points`,
+        message: `Maker fee cannot be less than ${MIN_MAKER_FEE / 10} basis points`,
       };
     }
 
     if (takerFee < MIN_TAKER_FEE) {
       return {
         success: false,
-        message: `Taker fee cannot be less than ${MIN_TAKER_FEE} basis points`,
+        message: `Taker fee cannot be less than ${MIN_TAKER_FEE / 10} basis points`,
       };
     }
 
     if (makerFee > MAX_FEE) {
       return {
         success: false,
-        message: `Maker fee cannot exceed ${MAX_FEE} basis points`,
+        message: `Maker fee cannot exceed ${MAX_FEE / 10} basis points`,
       };
     }
 
     if (takerFee > MAX_FEE) {
       return {
         success: false,
-        message: `Taker fee cannot exceed ${MAX_FEE} basis points`,
+        message: `Taker fee cannot exceed ${MAX_FEE / 10} basis points`,
       };
     }
 
@@ -297,10 +297,12 @@ export async function updateDexFees(
  * @param userId The user ID
  * @returns The current fee configuration or error message
  */
-export async function getDexFees(
-  userId: string
-): Promise<
-  | { success: true; makerFee: number; takerFee: number; canUpdate: boolean }
+export async function getDexFees(userId: string): Promise<
+  | {
+      success: true;
+      makerFee: number;
+      takerFee: number;
+    }
   | { success: false; message: string }
 > {
   try {
@@ -315,14 +317,12 @@ export async function getDexFees(
       };
     }
 
-    const canUpdate = !!dex.preferredBrokerId;
     const dexWithFees = dex;
 
     return {
       success: true,
       makerFee: dexWithFees.makerFee ?? DEFAULT_MAKER_FEE,
       takerFee: dexWithFees.takerFee ?? DEFAULT_TAKER_FEE,
-      canUpdate,
     };
   } catch (error) {
     console.error("Error getting DEX fees:", error);

@@ -75,7 +75,7 @@ export const BaseFeeExplanation: FC = () => {
             className="text-primary-light hover:underline text-xs flex items-center"
           >
             View documentation
-            <div className="i-mdi:open-in-new w-3 h-3 ml-1"></div>
+            <span className="i-mdi:open-in-new w-3 h-3 ml-1"></span>
           </a>
         </div>
 
@@ -93,14 +93,14 @@ export const BaseFeeExplanation: FC = () => {
           <li>Your Revenue: Your Custom Fee - Base Fee</li>
         </ul>
 
-        <p className="flex items-center gap-2">
-          <div className="i-mdi:lightbulb text-warning w-4 h-4 flex-shrink-0"></div>
+        <div className="flex items-center gap-2">
+          <span className="i-mdi:lightbulb text-warning w-4 h-4 flex-shrink-0"></span>
           <span>
             By staking more ORDER tokens or achieving higher trading volume, you
             can reduce the base fee charged by Orderly, maximizing your DEX's
             competitiveness.
           </span>
-        </p>
+        </div>
 
         <div className="mt-4 flex justify-center">
           <a
@@ -109,9 +109,9 @@ export const BaseFeeExplanation: FC = () => {
             rel="noopener noreferrer"
             className="bg-primary hover:bg-primary-light transition-colors px-4 py-2 rounded-full text-white font-medium flex items-center gap-2"
           >
-            <div className="i-mdi:trending-up w-4 h-4"></div>
+            <span className="i-mdi:trending-up w-4 h-4"></span>
             Stake ORDER for Better Rates
-            <div className="i-mdi:open-in-new w-3.5 h-3.5"></div>
+            <span className="i-mdi:open-in-new w-3.5 h-3.5"></span>
           </a>
         </div>
 

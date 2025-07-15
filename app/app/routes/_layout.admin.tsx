@@ -9,7 +9,14 @@ import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
 const formatFee = (fee: number | null | undefined): string => {
   if (fee === null || fee === undefined) return "-";
-  return `${fee} bps (${(fee * 0.01).toFixed(2)}%)`;
+  const displayFee = fee / 10;
+  const formatNumber = (value: number, maxDecimals: number = 1) =>
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxDecimals,
+    }).format(value);
+
+  return `${formatNumber(displayFee)} bps (${formatNumber(displayFee * 0.01, 3)}%)`;
 };
 
 const copyToClipboard = async (text: string, label: string) => {

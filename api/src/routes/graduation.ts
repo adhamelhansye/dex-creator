@@ -14,11 +14,13 @@ const verifyTxSchema = z.object({
   txHash: z.string().min(10).max(100),
   chain: z.string().min(1).max(50),
   preferredBrokerId: z.string().min(3).max(50),
+  makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
+  takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
 });
 
 const updateFeesSchema = z.object({
-  makerFee: z.number().int().min(0),
-  takerFee: z.number().int().min(3),
+  makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
+  takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
 });
 
 const graduationRoutes = new Hono();
@@ -31,7 +33,8 @@ graduationRoutes.post(
     try {
       const userId = c.get("userId");
 
-      const { txHash, chain, preferredBrokerId } = c.req.valid("json");
+      const { txHash, chain, preferredBrokerId, makerFee, takerFee } =
+        c.req.valid("json");
 
       const dex = await getUserDex(userId);
       if (!dex) {
@@ -83,10 +86,16 @@ graduationRoutes.post(
         return c.json(updateResult, { status: 400 });
       }
 
+      const feeUpdateResult = await updateDexFees(userId, makerFee, takerFee);
+
+      if (!feeUpdateResult.success) {
+        return c.json(feeUpdateResult, { status: 400 });
+      }
+
       return c.json({
         success: true,
         message:
-          "Transaction verified and preferred broker ID updated successfully",
+          "Transaction verified, broker ID and fees updated successfully",
         amount: verificationResult.amount,
         preferredBrokerId,
       });

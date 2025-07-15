@@ -1,23 +1,33 @@
 import { useEffect, useState, FormEvent, ChangeEvent } from "react";
 import { Button } from "./Button";
 
-const MIN_MAKER_FEE = 0;
-const MIN_TAKER_FEE = 3;
-const MAX_FEE = 15;
+const MIN_MAKER_FEE = 0; // 0 bps = 0 units
+const MIN_TAKER_FEE = 30; // 3 bps = 30 units
+const MAX_FEE = 150; // 15 bps = 150 units
 
 interface FeeConfigWithCalculatorProps {
-  makerFee: number;
-  takerFee: number;
+  makerFee: number; // In 0.1 bps precision (35 = 3.5 bps)
+  takerFee: number; // In 0.1 bps precision (35 = 3.5 bps)
   readOnly?: boolean;
   isSavingFees?: boolean;
   onSaveFees?: (
     e: FormEvent,
-    makerFee: number,
-    takerFee: number
+    makerFee: number, // In 0.1 bps precision
+    takerFee: number // In 0.1 bps precision
   ) => Promise<void>;
+  onFeesChange?: (makerFee: number, takerFee: number) => void; // Real-time callback
   feeError?: string | null;
   defaultOpenCalculator?: boolean;
+  showSaveButton?: boolean; // Control whether to show save button
+  alwaysShowConfig?: boolean; // Control whether to always show config (no toggle)
 }
+
+const formatNumber = (value: number, maxDecimals: number = 1) => {
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxDecimals,
+  }).format(value);
+};
 
 export const FeeConfigWithCalculator: React.FC<
   FeeConfigWithCalculatorProps
@@ -27,10 +37,13 @@ export const FeeConfigWithCalculator: React.FC<
   readOnly = false,
   isSavingFees = false,
   onSaveFees,
+  onFeesChange,
   defaultOpenCalculator = false,
+  showSaveButton = true,
+  alwaysShowConfig = false,
 }) => {
   // State for fee configuration
-  const [showFeeConfig, setShowFeeConfig] = useState(false);
+  const [showFeeConfig, setShowFeeConfig] = useState(alwaysShowConfig);
   const [makerFee, setMakerFee] = useState<number>(initialMakerFee);
   const [takerFee, setTakerFee] = useState<number>(initialTakerFee);
   const [makerFeeError, setMakerFeeError] = useState<string | null>(null);
@@ -47,21 +60,14 @@ export const FeeConfigWithCalculator: React.FC<
 
   // Fee validation functions
   const validateFees = (type: "maker" | "taker", value: number) => {
-    if (isNaN(value)) {
-      if (type === "maker") {
-        setMakerFeeError("Please enter a valid number");
-      } else {
-        setTakerFeeError("Please enter a valid number");
-      }
-      return false;
-    }
-
     if (type === "maker") {
       if (value < MIN_MAKER_FEE) {
-        setMakerFeeError(`Maker fee must be at least ${MIN_MAKER_FEE} bps`);
+        setMakerFeeError(
+          `Maker fee must be at least ${MIN_MAKER_FEE / 10} bps`
+        );
         return false;
       } else if (value > MAX_FEE) {
-        setMakerFeeError(`Maker fee cannot exceed ${MAX_FEE} bps`);
+        setMakerFeeError(`Maker fee cannot exceed ${MAX_FEE / 10} bps`);
         return false;
       } else {
         setMakerFeeError(null);
@@ -70,10 +76,12 @@ export const FeeConfigWithCalculator: React.FC<
     } else {
       // taker
       if (value < MIN_TAKER_FEE) {
-        setTakerFeeError(`Taker fee must be at least ${MIN_TAKER_FEE} bps`);
+        setTakerFeeError(
+          `Taker fee must be at least ${MIN_TAKER_FEE / 10} bps`
+        );
         return false;
       } else if (value > MAX_FEE) {
-        setTakerFeeError(`Taker fee cannot exceed ${MAX_FEE} bps`);
+        setTakerFeeError(`Taker fee cannot exceed ${MAX_FEE / 10} bps`);
         return false;
       } else {
         setTakerFeeError(null);
@@ -83,15 +91,99 @@ export const FeeConfigWithCalculator: React.FC<
   };
 
   const handleMakerFeeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    setMakerFee(value);
-    validateFees("maker", value);
+    const value = e.target.value;
+
+    if (value === "") {
+      setMakerFee(0);
+      setMakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (value.includes(".") && value.split(".")[1].length > 1) {
+      setMakerFeeError("Please enter only one decimal place (e.g., 3.5)");
+      return;
+    }
+
+    const internalValue = bpsValue * 10;
+    setMakerFee(internalValue);
+    validateFees("maker", internalValue);
+
+    if (onFeesChange) {
+      onFeesChange(internalValue, takerFee);
+    }
   };
 
   const handleTakerFeeChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const value = parseInt(e.target.value);
-    setTakerFee(value);
-    validateFees("taker", value);
+    const value = e.target.value;
+
+    if (value === "") {
+      setTakerFee(0);
+      setTakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (value.includes(".") && value.split(".")[1].length > 1) {
+      setTakerFeeError("Please enter only one decimal place (e.g., 6.5)");
+      return;
+    }
+
+    const internalValue = bpsValue * 10;
+    setTakerFee(internalValue);
+    validateFees("taker", internalValue);
+
+    if (onFeesChange) {
+      onFeesChange(makerFee, internalValue);
+    }
+  };
+
+  const handleMakerFeeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "") {
+      setMakerFee(0);
+      setMakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (!(value.includes(".") && value.split(".")[1].length > 1)) {
+      const internalValue = bpsValue * 10;
+      setMakerFee(internalValue);
+      validateFees("maker", internalValue);
+    }
+  };
+
+  const handleTakerFeeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "") {
+      setTakerFee(0);
+      setTakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (!(value.includes(".") && value.split(".")[1].length > 1)) {
+      const internalValue = bpsValue * 10;
+      setTakerFee(internalValue);
+      validateFees("taker", internalValue);
+    }
   };
 
   const handleSaveFees = (e: FormEvent) => {
@@ -165,11 +257,11 @@ export const FeeConfigWithCalculator: React.FC<
     }).format(amount);
   };
 
-  // Calculate revenue based on current fees
+  // Calculate revenue based on current fees (convert to bps for calculation)
   const { makerRevenue, takerRevenue, totalRevenue } = calculateRevenue(
     tradingVolume,
-    makerFee,
-    takerFee
+    makerFee / 10,
+    takerFee / 10
   );
 
   return (
@@ -178,7 +270,7 @@ export const FeeConfigWithCalculator: React.FC<
       <div className="bg-light/5 rounded-lg p-4">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold">Fee Configuration</h3>
-          {!readOnly && (
+          {!readOnly && !alwaysShowConfig && (
             <button
               type="button"
               onClick={() => setShowFeeConfig(!showFeeConfig)}
@@ -192,7 +284,7 @@ export const FeeConfigWithCalculator: React.FC<
           )}
         </div>
 
-        {!readOnly && showFeeConfig ? (
+        {!readOnly && (showFeeConfig || alwaysShowConfig) ? (
           <form onSubmit={handleSaveFees} className="slide-fade-in">
             <div className="mb-4">
               <p className="text-sm text-gray-300 mb-4">
@@ -202,8 +294,8 @@ export const FeeConfigWithCalculator: React.FC<
               </p>
 
               <div className="bg-warning/10 rounded-lg p-3 mb-4">
-                <p className="text-sm flex items-start gap-2">
-                  <div className="i-mdi:alert-circle text-warning w-5 h-5 flex-shrink-0 mt-0.5"></div>
+                <div className="text-sm flex items-start gap-2">
+                  <span className="i-mdi:alert-circle text-warning w-5 h-5 flex-shrink-0 mt-0.5"></span>
                   <span>
                     <span className="font-medium text-warning">
                       Important Fee Note:
@@ -219,7 +311,7 @@ export const FeeConfigWithCalculator: React.FC<
                     </span>
                     .
                   </span>
-                </p>
+                </div>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
@@ -234,20 +326,22 @@ export const FeeConfigWithCalculator: React.FC<
                     <input
                       type="number"
                       id="makerFee"
-                      min={MIN_MAKER_FEE}
-                      max={MAX_FEE}
-                      step="1"
-                      value={makerFee}
+                      value={makerFee === 0 ? "" : (makerFee / 10).toString()}
                       onChange={handleMakerFeeChange}
+                      onBlur={handleMakerFeeBlur}
+                      step="0.1"
+                      min="0"
+                      max="50"
                       className={`w-full px-3 py-2 bg-background-dark border ${makerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
+                      placeholder="0.0"
                     />
                     <span className="ml-2 text-gray-400 text-sm">
                       bps (0.01%)
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 mt-1">
-                    Minimum: {MIN_MAKER_FEE} bps (0.00%), Maximum: {MAX_FEE} bps
-                    ({(MAX_FEE * 0.01).toFixed(2)}%)
+                    Minimum: {MIN_MAKER_FEE / 10} bps (0.00%), Maximum:{" "}
+                    {MAX_FEE / 10} bps ({((MAX_FEE / 10) * 0.01).toFixed(2)}%)
                   </p>
                   {makerFeeError && (
                     <p className="text-xs text-error mt-1">{makerFeeError}</p>
@@ -265,20 +359,22 @@ export const FeeConfigWithCalculator: React.FC<
                     <input
                       type="number"
                       id="takerFee"
-                      min={MIN_TAKER_FEE}
-                      max={MAX_FEE}
-                      step="1"
-                      value={takerFee}
+                      value={takerFee === 0 ? "" : (takerFee / 10).toString()}
                       onChange={handleTakerFeeChange}
+                      onBlur={handleTakerFeeBlur}
+                      step="0.1"
+                      min="0"
+                      max="50"
                       className={`w-full px-3 py-2 bg-background-dark border ${takerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
+                      placeholder="0.0"
                     />
                     <span className="ml-2 text-gray-400 text-sm">
                       bps (0.01%)
                     </span>
                   </div>
                   <p className="text-xs text-gray-400 mt-1">
-                    Minimum: {MIN_TAKER_FEE} bps (0.03%), Maximum: {MAX_FEE} bps
-                    ({(MAX_FEE * 0.01).toFixed(2)}%)
+                    Minimum: {MIN_TAKER_FEE / 10} bps (0.03%), Maximum:{" "}
+                    {MAX_FEE / 10} bps ({((MAX_FEE / 10) * 0.01).toFixed(2)}%)
                   </p>
                   {takerFeeError && (
                     <p className="text-xs text-error mt-1">{takerFeeError}</p>
@@ -291,15 +387,15 @@ export const FeeConfigWithCalculator: React.FC<
               )}
 
               <div className="flex items-center gap-2 text-sm bg-info/10 rounded p-3 mb-4">
-                <div className="i-mdi:information-outline text-info w-5 h-5 flex-shrink-0"></div>
-                <p>
+                <span className="i-mdi:information-outline text-info w-5 h-5 flex-shrink-0"></span>
+                <span>
                   Setting competitive fees can attract more traders to your DEX.
                   The fee split you receive will be based on the fees your
                   traders pay.
-                </p>
+                </span>
               </div>
 
-              {!readOnly && (
+              {!readOnly && showSaveButton && (
                 <Button
                   type="submit"
                   variant="primary"
@@ -324,28 +420,28 @@ export const FeeConfigWithCalculator: React.FC<
               <div className="bg-background-dark/50 p-3 rounded">
                 <div className="text-sm text-gray-400">Maker Fee</div>
                 <div className="text-xl font-semibold">
-                  {makerFee}{" "}
+                  {formatNumber(makerFee / 10)}{" "}
                   <span className="text-sm font-normal text-gray-400">bps</span>
                 </div>
                 <div className="text-xs text-gray-400">
-                  ({(makerFee * 0.01).toFixed(2)}%)
+                  ({formatNumber((makerFee / 10) * 0.01, 3)}%)
                 </div>
               </div>
               <div className="bg-background-dark/50 p-3 rounded">
                 <div className="text-sm text-gray-400">Taker Fee</div>
                 <div className="text-xl font-semibold">
-                  {takerFee}{" "}
+                  {formatNumber(takerFee / 10)}{" "}
                   <span className="text-sm font-normal text-gray-400">bps</span>
                 </div>
                 <div className="text-xs text-gray-400">
-                  ({(takerFee * 0.01).toFixed(2)}%)
+                  ({formatNumber((takerFee / 10) * 0.01, 3)}%)
                 </div>
               </div>
             </div>
 
             <div className="mt-4 bg-info/10 rounded-lg p-3 flex items-start gap-2 text-xs">
-              <div className="i-mdi:information-outline text-info w-4 h-4 flex-shrink-0 mt-0.5"></div>
-              <p className="text-gray-300">
+              <span className="i-mdi:information-outline text-info w-4 h-4 flex-shrink-0 mt-0.5"></span>
+              <span className="text-gray-300">
                 <span className="font-medium">Note:</span> These are the total
                 fees that traders will pay on your DEX. The Orderly base fee
                 (3.00 bps taker for Public tier) is included in these amounts.
@@ -360,7 +456,7 @@ export const FeeConfigWithCalculator: React.FC<
                   Builder Staking Programme
                 </a>{" "}
                 to reduce the base fee and increase your revenue.
-              </p>
+              </span>
             </div>
           </div>
         )}
@@ -370,7 +466,7 @@ export const FeeConfigWithCalculator: React.FC<
       <div className="border-t border-light/10 pt-6">
         <div className="flex justify-between items-center mb-4">
           <h3 className="text-lg font-semibold flex items-center">
-            <div className="i-mdi:calculator mr-2 h-5 w-5 text-success"></div>
+            <span className="i-mdi:calculator mr-2 h-5 w-5 text-success"></span>
             Revenue Calculator
           </h3>
           <button
@@ -379,9 +475,9 @@ export const FeeConfigWithCalculator: React.FC<
             className="text-primary-light hover:text-primary flex items-center gap-1 text-sm"
           >
             {showCalculator ? "Hide Calculator" : "Show Calculator"}
-            <div
+            <span
               className={`i-mdi:chevron-right w-4 h-4 transition-transform ${showCalculator ? "rotate-90" : ""}`}
-            ></div>
+            ></span>
           </button>
         </div>
 
@@ -431,7 +527,7 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(makerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({Math.max(0, makerFee - 0)} bps after base fee)
+                    ({Math.max(0, makerFee / 10 - 0)} bps after base fee)
                   </div>
                 </div>
 
@@ -441,7 +537,7 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(takerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({Math.max(0, takerFee - 3)} bps after base fee)
+                    ({Math.max(0, takerFee / 10 - 3)} bps after base fee)
                   </div>
                 </div>
 
@@ -455,14 +551,14 @@ export const FeeConfigWithCalculator: React.FC<
               </div>
 
               <div className="mt-4 flex items-start gap-2 text-xs">
-                <div className="i-mdi:information-outline text-info w-4 h-4 flex-shrink-0 mt-0.5"></div>
-                <p className="text-gray-300">
+                <span className="i-mdi:information-outline text-info w-4 h-4 flex-shrink-0 mt-0.5"></span>
+                <span className="text-gray-300">
                   This calculation assumes an equal split between maker and
                   taker volume. Actual revenue may vary based on market
                   conditions, trading patterns, and fee changes. Revenue shown
                   represents your earnings after the Orderly base fee (0 bps
                   maker, 3 bps taker) is deducted from your custom fees.
-                </p>
+                </span>
               </div>
             </div>
           </div>
