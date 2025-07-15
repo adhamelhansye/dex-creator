@@ -1,35 +1,41 @@
 import { prisma } from "../lib/prisma";
 import { ethers } from "ethers";
 
-// Default ORDER token addresses
 const DEFAULT_ETH_ORDER_ADDRESS = "0xABD4C63d2616A5201454168269031355f4764337";
 const DEFAULT_ARB_ORDER_ADDRESS = "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8";
+const DEFAULT_ETH_SEPOLIA_ORDER_ADDRESS =
+  "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+const DEFAULT_ARB_SEPOLIA_ORDER_ADDRESS =
+  "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
 
-// Chain-specific token addresses
 const ORDER_TOKEN_ADDRESSES: Record<string, string> = {
   ethereum: process.env.ETH_ORDER_ADDRESS || DEFAULT_ETH_ORDER_ADDRESS,
   arbitrum: process.env.ARB_ORDER_ADDRESS || DEFAULT_ARB_ORDER_ADDRESS,
+  sepolia:
+    process.env.SEPOLIA_ORDER_ADDRESS || DEFAULT_ETH_SEPOLIA_ORDER_ADDRESS,
+  "arbitrum-sepolia":
+    process.env.ARB_SEPOLIA_ORDER_ADDRESS || DEFAULT_ARB_SEPOLIA_ORDER_ADDRESS,
 };
 
-// Chain-specific receiver addresses
+const DEFAULT_RECEIVER = "0x7E301E34Ee1A0524225a91BD445344d11a1B4869";
 const ORDER_RECEIVER_ADDRESSES: Record<string, string> = {
-  ethereum: process.env.ETH_RECEIVER_ADDRESS || "0xOrderlyReceiverAddress",
-  arbitrum: process.env.ARB_RECEIVER_ADDRESS || "0xOrderlyReceiverAddress",
+  ethereum: process.env.ETH_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
+  arbitrum: process.env.ARB_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
+  sepolia: process.env.SEPOLIA_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
+  "arbitrum-sepolia":
+    process.env.ARB_SEPOLIA_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
 };
 
-// Required ORDER token amount
 const REQUIRED_ORDER_AMOUNT = process.env.REQUIRED_ORDER_AMOUNT || "1000";
 
-// Default fee values (hardcoded) - stored in 0.1 bps precision
 const DEFAULT_MAKER_FEE = 30; // Default maker fee (3 bps = 30 units)
 const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
 
-// Fee constraints - stored in 0.1 bps precision
 const MIN_MAKER_FEE = 0; // Minimum maker fee (0 bps = 0 units)
 const MIN_TAKER_FEE = 30; // Minimum taker fee (3 bps = 30 units)
 const MAX_FEE = 150; // Maximum fee (15 bps = 150 units)
 
-const ACCEPTED_CHAINS = ["ethereum", "arbitrum"];
+const ACCEPTED_CHAINS = ["ethereum", "arbitrum", "sepolia", "arbitrum-sepolia"];
 
 const ERC20_TRANSFER_EVENT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -100,13 +106,14 @@ export async function verifyOrderTransaction(
 
     const iface = new ethers.Interface(ERC20_TRANSFER_EVENT_ABI);
 
+    console.log("receipt.logs", receipt.logs);
+    console.log("tokenAddress", tokenAddress);
     const orderTransferEvents = receipt.logs
       .filter(log => {
         return log.address.toLowerCase() === tokenAddress.toLowerCase();
       })
       .map(log => {
         try {
-          // Parse the log data
           return iface.parseLog({
             topics: log.topics as string[],
             data: log.data,
@@ -116,11 +123,14 @@ export async function verifyOrderTransaction(
         }
       })
       .filter(event => event !== null);
+    console.log("orderTransferEvents", orderTransferEvents);
 
     const validTransfers = orderTransferEvents.filter(event => {
       if (!event) return false;
 
       const to = event.args[1].toLowerCase();
+      console.log("to", to);
+      console.log("receiverAddress", receiverAddress);
       return to === receiverAddress.toLowerCase();
     });
 
@@ -138,13 +148,31 @@ export async function verifyOrderTransaction(
       return sum + amount;
     }, ethers.getBigInt(0));
 
-    const totalTransferredDecimal = ethers.formatUnits(totalTransferred, 18);
+    let tokenDecimals = 18;
+    try {
+      const tokenContract = new ethers.Contract(
+        tokenAddress,
+        ["function decimals() view returns (uint8)"],
+        provider
+      );
+      tokenDecimals = await tokenContract.decimals();
+    } catch (error) {
+      console.warn(
+        `Could not read decimals for token ${tokenAddress}, using default 18:`,
+        error
+      );
+    }
+
+    const totalTransferredDecimal = ethers.formatUnits(
+      totalTransferred,
+      tokenDecimals
+    );
     const requiredAmount = parseFloat(REQUIRED_ORDER_AMOUNT);
 
     if (parseFloat(totalTransferredDecimal) < requiredAmount) {
       return {
         success: false,
-        message: `Insufficient ORDER tokens transferred. Required: ${requiredAmount}, Found: ${totalTransferredDecimal}`,
+        message: `Insufficient ORDER tokens transferred. Required: ${requiredAmount}, Found: ${totalTransferredDecimal} (${tokenDecimals} decimals)`,
         amount: totalTransferredDecimal,
       };
     }
@@ -342,10 +370,19 @@ function getRpcUrlForChain(chain: string): string | null {
   const envVarMap: Record<string, string> = {
     ethereum: "ETH_RPC_URL",
     arbitrum: "ARBITRUM_RPC_URL",
+    sepolia: "SEPOLIA_RPC_URL",
+    "arbitrum-sepolia": "ARB_SEPOLIA_RPC_URL",
+  };
+
+  const fallbackUrls: Record<string, string> = {
+    ethereum: "https://ethereum-rpc.publicnode.com",
+    arbitrum: "https://arbitrum-one.public.blastapi.io",
+    sepolia: "https://ethereum-sepolia-rpc.publicnode.com",
+    "arbitrum-sepolia": "https://arbitrum-sepolia-rpc.publicnode.com",
   };
 
   const envVar = envVarMap[chainLower];
   if (!envVar) return null;
 
-  return process.env[envVar] || null;
+  return process.env[envVar] || fallbackUrls[chainLower] || null;
 }

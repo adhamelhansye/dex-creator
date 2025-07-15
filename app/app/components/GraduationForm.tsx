@@ -18,8 +18,9 @@ import {
   useWaitForTransactionReceipt,
   useSwitchChain,
   useChainId,
+  useReadContract,
 } from "wagmi";
-import { parseEther } from "viem";
+import { parseEther, parseUnits } from "viem";
 import clsx from "clsx";
 import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "./BaseFeeExplanation";
@@ -39,10 +40,47 @@ const ERC20_ABI = [
   },
 ];
 
-const SUPPORTED_CHAINS = [
-  { id: "arbitrum", name: "Arbitrum", chainId: 42161 },
-  { id: "ethereum", name: "Ethereum", chainId: 1 },
+const ALL_SUPPORTED_CHAINS = [
+  { id: "arbitrum", name: "Arbitrum", chainId: 42161, isTestnet: false },
+  { id: "ethereum", name: "Ethereum", chainId: 1, isTestnet: false },
+  {
+    id: "arbitrum-sepolia",
+    name: "Arbitrum Sepolia",
+    chainId: 421614,
+    isTestnet: true,
+  },
+  { id: "sepolia", name: "Sepolia", chainId: 11155111, isTestnet: true },
 ];
+
+const IS_TESTNET = import.meta.env.VITE_IS_TESTNET === "true";
+
+// Filter chains based on testnet mode
+const SUPPORTED_CHAINS = ALL_SUPPORTED_CHAINS.filter(
+  chain => chain.isTestnet === IS_TESTNET
+);
+
+// Map chains to their testnet/mainnet equivalents
+const getPreferredChain = (selectedChain: string): string => {
+  if (IS_TESTNET) {
+    // When in testnet mode, prefer testnet chains
+    const testnetMap: Record<string, string> = {
+      arbitrum: "arbitrum-sepolia",
+      ethereum: "sepolia",
+      "arbitrum-sepolia": "arbitrum-sepolia", // Already testnet
+      sepolia: "sepolia", // Already testnet
+    };
+    return testnetMap[selectedChain] || selectedChain;
+  } else {
+    // When in mainnet mode, prefer mainnet chains
+    const mainnetMap: Record<string, string> = {
+      "arbitrum-sepolia": "arbitrum",
+      sepolia: "ethereum",
+      arbitrum: "arbitrum", // Already mainnet
+      ethereum: "ethereum", // Already mainnet
+    };
+    return mainnetMap[selectedChain] || selectedChain;
+  }
+};
 
 const REQUIRED_ORDER_AMOUNT = parseInt(
   import.meta.env.VITE_REQUIRED_ORDER_AMOUNT || "1000"
@@ -50,16 +88,28 @@ const REQUIRED_ORDER_AMOUNT = parseInt(
 
 const DEFAULT_ETH_ORDER_ADDRESS = "0xABD4C63d2616A5201454168269031355f4764337";
 const DEFAULT_ARB_ORDER_ADDRESS = "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8";
+const DEFAULT_ETH_SEPOLIA_ORDER_ADDRESS =
+  "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
+const DEFAULT_ARB_SEPOLIA_ORDER_ADDRESS =
+  "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
 
 const ORDER_TOKEN_ADDRESSES: Record<string, string> = {
   ethereum: import.meta.env.VITE_ETH_ORDER_ADDRESS || DEFAULT_ETH_ORDER_ADDRESS,
   arbitrum: import.meta.env.VITE_ARB_ORDER_ADDRESS || DEFAULT_ARB_ORDER_ADDRESS,
+  sepolia:
+    import.meta.env.VITE_SEPOLIA_ORDER_ADDRESS ||
+    DEFAULT_ETH_SEPOLIA_ORDER_ADDRESS,
+  "arbitrum-sepolia":
+    import.meta.env.VITE_ARB_SEPOLIA_ORDER_ADDRESS ||
+    DEFAULT_ARB_SEPOLIA_ORDER_ADDRESS,
 };
 
 // Remove default receiver addresses - require environment variables
 const ORDER_RECEIVER_ADDRESSES: Record<string, string> = {
   ethereum: import.meta.env.VITE_ETH_RECEIVER_ADDRESS || "",
   arbitrum: import.meta.env.VITE_ARB_RECEIVER_ADDRESS || "",
+  sepolia: import.meta.env.VITE_SEPOLIA_RECEIVER_ADDRESS || "",
+  "arbitrum-sepolia": import.meta.env.VITE_ARB_SEPOLIA_RECEIVER_ADDRESS || "",
 };
 
 // Validate receiver addresses
@@ -161,10 +211,13 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
   const [takerFee, setTakerFee] = useState<number>(60); // 6 bps = 60 units
   const [isSavingFees, setIsSavingFees] = useState(false);
 
-  const currentReceiverAddress = ORDER_RECEIVER_ADDRESSES[chain];
-  const currentTokenAddress = ORDER_TOKEN_ADDRESSES[chain];
+  // Use preferred chain for both display and wallet connection
+  const preferredChain = getPreferredChain(chain);
+  const currentReceiverAddress = ORDER_RECEIVER_ADDRESSES[preferredChain];
+  const currentTokenAddress = ORDER_TOKEN_ADDRESSES[preferredChain];
+
   const currentChainId =
-    SUPPORTED_CHAINS.find(c => c.id === chain)?.chainId || 1;
+    SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
 
   const connectedChainId = useChainId();
   const isCorrectChain = connectedChainId === currentChainId;
@@ -177,8 +230,11 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
     const newChain = e.target.value;
     setChain(newChain);
 
-    // Get the chain ID for the selected chain
-    const chainId = SUPPORTED_CHAINS.find(c => c.id === newChain)?.chainId;
+    const preferredChain = getPreferredChain(newChain);
+
+    const chainId = SUPPORTED_CHAINS.find(
+      c => c.id === preferredChain
+    )?.chainId;
 
     // If we have a chain ID, prompt the user to switch
     if (chainId) {
@@ -216,6 +272,22 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
   const { data: tokenBalance } = useBalance({
     address,
     token: currentTokenAddress as `0x${string}`,
+    chainId: currentChainId,
+  });
+
+  // Read token decimals to ensure correct amount calculation
+  const { data: tokenDecimals } = useReadContract({
+    address: currentTokenAddress as `0x${string}`,
+    abi: [
+      {
+        name: "decimals",
+        type: "function",
+        stateMutability: "view",
+        inputs: [],
+        outputs: [{ name: "", type: "uint8" }],
+      },
+    ],
+    functionName: "decimals",
     chainId: currentChainId,
   });
 
@@ -394,6 +466,12 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         return;
       }
 
+      // Wait for token decimals to load
+      if (tokenDecimals === undefined) {
+        toast.error("Loading token information, please try again in a moment");
+        return;
+      }
+
       if (!validateAddress(currentReceiverAddress)) {
         console.log(`Invalid receiver address format for ${chain}`);
         toast.error("Invalid receiver address configuration");
@@ -411,9 +489,15 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         return;
       }
 
-      const amount = parseEther(REQUIRED_ORDER_AMOUNT.toString());
+      // Use actual token decimals instead of hardcoded 18
+      const decimals = tokenDecimals ?? 18; // fallback to 18 if not available
+      const amount = parseUnits(REQUIRED_ORDER_AMOUNT.toString(), decimals);
 
       console.log({
+        chain: preferredChain,
+        decimals,
+        requiredAmount: REQUIRED_ORDER_AMOUNT,
+        calculatedAmount: amount.toString(),
         address: currentTokenAddress as `0x${string}`,
         functionName: "transfer",
         args: [currentReceiverAddress, amount],
@@ -448,7 +532,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         "api/graduation/verify-tx",
         {
           txHash: transactionHash,
-          chain,
+          chain: preferredChain,
           preferredBrokerId,
           makerFee,
           takerFee,
@@ -736,7 +820,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         {REQUIRED_ORDER_AMOUNT.toLocaleString()} ORDER tokens to the address
         below and submit the transaction hash.
         <a
-          href={getSwapUrl(chain)}
+          href={getSwapUrl(preferredChain)}
           target="_blank"
           rel="noopener noreferrer"
           className="ml-1 text-primary-light hover:underline inline-flex items-center"
@@ -862,7 +946,9 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
                 <div className="text-xs bg-info/20 text-info px-2 py-1 rounded-full flex items-center">
                   <div className="i-mdi:information-outline mr-1 w-3.5 h-3.5"></div>
                   <span>
-                    {chain === "ethereum" ? "Ethereum" : "Arbitrum"} ORDER
+                    {SUPPORTED_CHAINS.find(c => c.id === preferredChain)
+                      ?.name || preferredChain}{" "}
+                    ORDER
                   </span>
                 </div>
               </div>
@@ -879,7 +965,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
                     <div className="ml-2 text-warning flex items-center">
                       (Insufficient for graduation)
                       <a
-                        href={getSwapUrl(chain)}
+                        href={getSwapUrl(preferredChain)}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="ml-2 text-primary-light hover:underline inline-flex items-center"
@@ -997,7 +1083,7 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
                       ORDER Token Address:
                     </p>
                     <a
-                      href={getSwapUrl(chain)}
+                      href={getSwapUrl(preferredChain)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="text-primary-light hover:text-primary text-xs flex items-center"

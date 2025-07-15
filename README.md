@@ -229,11 +229,16 @@ The application requires several environment variables for proper operation. Bel
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_ETH_ORDER_ADDRESS` | Ethereum ORDER token address | Yes |
-| `VITE_ARB_ORDER_ADDRESS` | Arbitrum ORDER token address | Yes |
-| `VITE_ETH_RECEIVER_ADDRESS` | Ethereum wallet address to receive ORDER tokens | Yes |
-| `VITE_ARB_RECEIVER_ADDRESS` | Arbitrum wallet address to receive ORDER tokens | Yes |
+| `VITE_ETH_ORDER_ADDRESS` | Ethereum ORDER token address | No |
+| `VITE_ARB_ORDER_ADDRESS` | Arbitrum ORDER token address | No |
+| `VITE_SEPOLIA_ORDER_ADDRESS` | Sepolia ORDER token address | No |
+| `VITE_ARB_SEPOLIA_ORDER_ADDRESS` | Arbitrum Sepolia ORDER token address | No |
+| `VITE_ETH_RECEIVER_ADDRESS` | Ethereum wallet address to receive ORDER tokens | No |
+| `VITE_ARB_RECEIVER_ADDRESS` | Arbitrum wallet address to receive ORDER tokens | No |
+| `VITE_SEPOLIA_RECEIVER_ADDRESS` | Sepolia wallet address to receive ORDER tokens | No |
+| `VITE_ARB_SEPOLIA_RECEIVER_ADDRESS` | Arbitrum Sepolia wallet address to receive ORDER tokens | No |
 | `VITE_REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
+| `VITE_IS_TESTNET` | Enable testnet mode (true/false) - when true, prefers testnet chains for wallet switching | No |
 
 **Important**: The ORDER token addresses and required amounts must match between frontend and backend environments.
 

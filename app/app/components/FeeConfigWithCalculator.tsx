@@ -527,7 +527,8 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(makerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({Math.max(0, makerFee / 10 - 0)} bps after base fee)
+                    ({formatNumber(Math.max(0, makerFee / 10 - 0))} bps after
+                    base fee)
                   </div>
                 </div>
 
@@ -537,7 +538,8 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(takerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({Math.max(0, takerFee / 10 - 3)} bps after base fee)
+                    ({formatNumber(Math.max(0, takerFee / 10 - 3))} bps after
+                    base fee)
                   </div>
                 </div>
 

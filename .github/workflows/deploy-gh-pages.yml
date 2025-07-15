@@ -3,7 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     tags:
-      - '*'
+      - "*"
   workflow_dispatch:
 
 jobs:
@@ -11,20 +11,20 @@ jobs:
     name: Deploy to GitHub Pages
     runs-on: ubuntu-latest
     if: github.ref_type == 'tag' && (github.event_name == 'workflow_dispatch' || contains(github.event.base_ref, 'refs/heads/main'))
-    
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      
+
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
-          cache: 'yarn'
-      
+          cache: "yarn"
+
       - name: Install dependencies
         run: yarn install --frozen-lockfile
-      
+
       - name: Build Remix app in SPA mode
         run: |
           yarn app build
@@ -32,16 +32,21 @@ jobs:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
           VITE_ETH_ORDER_ADDRESS: ${{ vars.VITE_ETH_ORDER_ADDRESS }}
           VITE_ARB_ORDER_ADDRESS: ${{ vars.VITE_ARB_ORDER_ADDRESS }}
+          VITE_SEPOLIA_ORDER_ADDRESS: ${{ vars.VITE_SEPOLIA_ORDER_ADDRESS }}
+          VITE_ARB_SEPOLIA_ORDER_ADDRESS: ${{ vars.VITE_ARB_SEPOLIA_ORDER_ADDRESS }}
           VITE_ETH_RECEIVER_ADDRESS: ${{ vars.VITE_ETH_RECEIVER_ADDRESS }}
           VITE_ARB_RECEIVER_ADDRESS: ${{ vars.VITE_ARB_RECEIVER_ADDRESS }}
+          VITE_SEPOLIA_RECEIVER_ADDRESS: ${{ vars.VITE_SEPOLIA_RECEIVER_ADDRESS }}
+          VITE_ARB_SEPOLIA_RECEIVER_ADDRESS: ${{ vars.VITE_ARB_SEPOLIA_RECEIVER_ADDRESS }}
           VITE_REQUIRED_ORDER_AMOUNT: ${{ vars.VITE_REQUIRED_ORDER_AMOUNT }}
-      
+          VITE_IS_TESTNET: ${{ vars.VITE_IS_TESTNET }}
+
       - name: Setup Git for GitHub Pages deployment
         run: |
           git config --global user.name "GitHub Actions"
           git config --global user.email "github-actions@github.com"
           git config --global init.defaultBranch main
-      
+
       - name: Create GitHub Pages Repository
         run: |
           mkdir -p gh-pages-repo
@@ -50,7 +55,7 @@ jobs:
           echo "dex.orderly.network" > gh-pages-repo/CNAME
           # Add .nojekyll file to disable Jekyll processing
           touch gh-pages-repo/.nojekyll
-      
+
       - name: Deploy to GitHub Pages
         run: |
           cd gh-pages-repo
@@ -59,4 +64,4 @@ jobs:
           git remote add origin https://${{ secrets.GH_PAGES_DEPLOY_TOKEN }}@github.com/OrderlyNetworkDexCreator/orderlynetworkdexcreator.github.io.git
           git add -A
           git commit -m "Deploy: $(date +%Y-%m-%d_%H-%M-%S)"
-          git push -f origin main 
+          git push -f origin main
