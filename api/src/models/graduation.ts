@@ -106,8 +106,6 @@ export async function verifyOrderTransaction(
 
     const iface = new ethers.Interface(ERC20_TRANSFER_EVENT_ABI);
 
-    console.log("receipt.logs", receipt.logs);
-    console.log("tokenAddress", tokenAddress);
     const orderTransferEvents = receipt.logs
       .filter(log => {
         return log.address.toLowerCase() === tokenAddress.toLowerCase();
@@ -123,14 +121,11 @@ export async function verifyOrderTransaction(
         }
       })
       .filter(event => event !== null);
-    console.log("orderTransferEvents", orderTransferEvents);
 
     const validTransfers = orderTransferEvents.filter(event => {
       if (!event) return false;
 
       const to = event.args[1].toLowerCase();
-      console.log("to", to);
-      console.log("receiverAddress", receiverAddress);
       return to === receiverAddress.toLowerCase();
     });
 
