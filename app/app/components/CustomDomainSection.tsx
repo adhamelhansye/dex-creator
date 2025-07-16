@@ -261,15 +261,95 @@ export default function CustomDomainSection({
             To use a custom domain, you'll need to configure your domain's DNS
             settings:
           </p>
-          <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto mb-3">
-            <div className="mb-1 text-gray-400">
-              Add a <span className="text-primary-light">CNAME record</span>{" "}
-              with the following values:
+
+          {/* Check if it's an apex domain or subdomain */}
+          {dexData.customDomain &&
+          dexData.customDomain.split(".").length === 2 ? (
+            // Apex domain - show A records
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto mb-3">
+              <div className="mb-1 text-gray-400">
+                Add <span className="text-primary-light">A records</span> with
+                the following values:
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <span className="text-gray-400">Type:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">A</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("A", "Copied to clipboard")
+                      }
+                      aria-label="Copy record type to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">Name:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">@</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("@", "Copied to clipboard")
+                      }
+                      aria-label="Copy @ symbol to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="text-gray-400">
+                  Values (create 4 separate A records):
+                </div>
+                {[
+                  "185.199.108.153",
+                  "185.199.109.153",
+                  "185.199.110.153",
+                  "185.199.111.153",
+                ].map(ip => (
+                  <div key={ip} className="flex items-center ml-2">
+                    <span className="text-white">{ip}</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() => copyToClipboard(ip, "Copied to clipboard")}
+                      aria-label={`Copy IP address ${ip} to clipboard`}
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                ))}
+                <div className="flex items-center">
+                  <span className="text-gray-400">TTL:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">3600</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("3600", "Copied to clipboard")
+                      }
+                      aria-label="Copy TTL value to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>{" "}
+                    (or automatic)
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center">
-              <span className="text-gray-400">Name:</span>{" "}
-              {dexData.customDomain &&
-              dexData.customDomain.split(".").length > 2 ? (
+          ) : dexData.customDomain &&
+            dexData.customDomain.split(".").length > 2 ? (
+            // Subdomain - show CNAME record
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto mb-3">
+              <div className="mb-1 text-gray-400">
+                Add a <span className="text-primary-light">CNAME record</span>{" "}
+                with the following values:
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-400">Name:</span>{" "}
                 <div className="flex items-center">
                   <span className="text-white">
                     {dexData.customDomain.split(".")[0]}
@@ -287,55 +367,92 @@ export default function CustomDomainSection({
                     <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
                   </button>
                 </div>
-              ) : (
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-400">Value:</span>{" "}
                 <div className="flex items-center">
-                  <span className="text-white">@</span>
+                  <span className="text-white">
+                    orderlynetworkdexcreator.github.io
+                  </span>
                   <button
                     className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                    onClick={() => copyToClipboard("@", "Copied to clipboard")}
-                    aria-label="Copy @ symbol to clipboard"
+                    onClick={() =>
+                      copyToClipboard(
+                        "orderlynetworkdexcreator.github.io",
+                        "Copied to clipboard"
+                      )
+                    }
+                    aria-label="Copy domain value to clipboard"
+                  >
+                    <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                  </button>
+                </div>
+              </div>
+              <div className="flex items-center">
+                <span className="text-gray-400">TTL:</span>{" "}
+                <div className="flex items-center">
+                  <span className="text-white">3600</span>
+                  <button
+                    className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                    onClick={() =>
+                      copyToClipboard("3600", "Copied to clipboard")
+                    }
+                    aria-label="Copy TTL value to clipboard"
                   >
                     <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
                   </button>{" "}
-                  or <span className="text-white">subdomain</span>
+                  (or automatic)
                 </div>
-              )}
-            </div>
-            <div className="flex items-center">
-              <span className="text-gray-400">Value:</span>{" "}
-              <div className="flex items-center">
-                <span className="text-white">
-                  orderlynetworkdexcreator.github.io
-                </span>
-                <button
-                  className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                  onClick={() =>
-                    copyToClipboard(
-                      "orderlynetworkdexcreator.github.io",
-                      "Copied to clipboard"
-                    )
-                  }
-                  aria-label="Copy domain value to clipboard"
-                >
-                  <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
-                </button>
               </div>
             </div>
-            <div className="flex items-center">
-              <span className="text-gray-400">TTL:</span>{" "}
-              <div className="flex items-center">
-                <span className="text-white">3600</span>
-                <button
-                  className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                  onClick={() => copyToClipboard("3600", "Copied to clipboard")}
-                  aria-label="Copy TTL value to clipboard"
-                >
-                  <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
-                </button>{" "}
-                (or automatic)
+          ) : (
+            // No domain configured yet - show generic instructions
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto mb-3">
+              <div className="mb-2 text-gray-400">
+                DNS configuration depends on your domain type:
+              </div>
+              <div className="mb-3">
+                <div className="text-primary-light mb-1">
+                  For apex domains (example.com):
+                </div>
+                <div className="ml-2 space-y-1">
+                  <div>
+                    Type: <span className="text-white">A</span>
+                  </div>
+                  <div>
+                    Name: <span className="text-white">@</span>
+                  </div>
+                  <div>
+                    Values:{" "}
+                    <span className="text-white">
+                      185.199.108.153, 185.199.109.153, 185.199.110.153,
+                      185.199.111.153
+                    </span>
+                  </div>
+                </div>
+              </div>
+              <div>
+                <div className="text-primary-light mb-1">
+                  For subdomains (dex.example.com):
+                </div>
+                <div className="ml-2 space-y-1">
+                  <div>
+                    Type: <span className="text-white">CNAME</span>
+                  </div>
+                  <div>
+                    Name: <span className="text-white">dex</span> (your
+                    subdomain)
+                  </div>
+                  <div>
+                    Value:{" "}
+                    <span className="text-white">
+                      orderlynetworkdexcreator.github.io
+                    </span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Deployment info card */}
           <div className="mb-3 p-3 bg-info/10 rounded-lg border border-info/20">
@@ -356,7 +473,17 @@ export default function CustomDomainSection({
 
           <div className="text-xs text-gray-400">
             {dexData.customDomain &&
-            dexData.customDomain.split(".").length > 2 ? (
+            dexData.customDomain.split(".").length === 2 ? (
+              <div className="flex items-start gap-1 mb-1">
+                <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
+                <span>
+                  You've configured an apex domain ({dexData.customDomain}). You
+                  must create 4 separate A records with the IP addresses shown
+                  above.
+                </span>
+              </div>
+            ) : dexData.customDomain &&
+              dexData.customDomain.split(".").length > 2 ? (
               <div className="flex items-start gap-1 mb-1">
                 <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
                 <span>
@@ -370,8 +497,8 @@ export default function CustomDomainSection({
               <div className="flex items-start gap-1 mb-1">
                 <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0"></div>
                 <span>
-                  For subdomain setups (e.g., dex.yourdomain.com), set the Name
-                  field to your subdomain.
+                  Choose between an apex domain (example.com) using A records or
+                  a subdomain (dex.example.com) using a CNAME record.
                 </span>
               </div>
             )}
