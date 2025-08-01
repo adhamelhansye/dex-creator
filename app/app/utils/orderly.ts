@@ -51,7 +51,6 @@ export type AutoReferralInfo = {
 };
 
 const ORDERLY_KEY_LOCAL_STORAGE = "orderly-key";
-const BROKER_ID_LOCAL_STORAGE = "broker-id";
 
 const MESSAGE_TYPES = {
   EIP712Domain: [
@@ -89,13 +88,6 @@ const MESSAGE_TYPES = {
     { name: "settleNonce", type: "uint64" },
     { name: "timestamp", type: "uint64" },
   ],
-};
-
-export type DelegateSignerResponse = {
-  // TODO no GET yet available
-  // account_id: string;
-  user_id: number;
-  valid_signer: string;
 };
 
 export async function registerAccount(
@@ -268,8 +260,9 @@ export function getAccountId(address: string, brokerId: string) {
 }
 
 export function loadOrderlyKey(accountId: string): Uint8Array | undefined {
+  const deploymentEnv = import.meta.env.VITE_DEPLOYMENT_ENV || "dev";
   const key = window.localStorage.getItem(
-    `${ORDERLY_KEY_LOCAL_STORAGE}:${accountId}:${import.meta.env.VITE_IS_TESTNET === "true" ? "testnet" : "mainnet"}`
+    `${ORDERLY_KEY_LOCAL_STORAGE}:${accountId}:${deploymentEnv}`
   );
   if (!key) return;
   return base64DecodeURL(key);
@@ -279,22 +272,10 @@ export function saveOrderlyKey(
   accountId: string,
   privateKey: Uint8Array
 ): void {
+  const deploymentEnv = import.meta.env.VITE_DEPLOYMENT_ENV || "dev";
   window.localStorage.setItem(
-    `${ORDERLY_KEY_LOCAL_STORAGE}:${accountId}:${import.meta.env.VITE_IS_TESTNET === "true" ? "testnet" : "mainnet"}`,
+    `${ORDERLY_KEY_LOCAL_STORAGE}:${accountId}:${deploymentEnv}`,
     base64EncodeURL(privateKey)
-  );
-}
-
-export function loadBrokerId(chainId: number | string): string {
-  return (
-    window.localStorage.getItem(`${BROKER_ID_LOCAL_STORAGE}:${chainId}`) ?? ""
-  );
-}
-
-export function saveBrokerId(chainId: number | string, brokerId: string) {
-  return window.localStorage.setItem(
-    `${BROKER_ID_LOCAL_STORAGE}:${chainId}`,
-    brokerId
   );
 }
 
@@ -347,13 +328,33 @@ export function getOnChainDomain(chainId: number | string): EIP712Domain {
 }
 
 export function getBaseUrl(): string {
-  return import.meta.env.VITE_IS_TESTNET === "true"
-    ? "https://testnet-api.orderly.org"
-    : "https://api.orderly.org";
+  const deploymentEnv = import.meta.env.VITE_DEPLOYMENT_ENV;
+
+  switch (deploymentEnv) {
+    case "mainnet":
+      return "https://api.orderly.org";
+    case "staging":
+      return "https://testnet-api.orderly.org";
+    case "qa":
+      return "https://qa-api-aliyun.orderly.network";
+    case "dev":
+    default:
+      return "https://dev-api-aliyun.orderly.network";
+  }
 }
 
 function getVerifyingAddress(): string {
-  return import.meta.env.VITE_IS_TESTNET === "true"
-    ? "0x1826B75e2ef249173FC735149AE4B8e9ea10abff"
-    : "0x6F7a338F2aA472838dEFD3283eB360d4Dff5D203";
+  const deploymentEnv = import.meta.env.VITE_DEPLOYMENT_ENV;
+
+  switch (deploymentEnv) {
+    case "mainnet":
+      return "0x6F7a338F2aA472838dEFD3283eB360d4Dff5D203";
+    case "staging":
+      return "0x1826B75e2ef249173FC735149AE4B8e9ea10abff";
+    case "qa":
+      return "0x50F59504D3623Ad99302835da367676d1f7E3D44";
+    case "dev":
+    default:
+      return "0x8794E7260517B1766fc7b55cAfcd56e6bf08600e";
+  }
 }

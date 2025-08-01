@@ -22,7 +22,6 @@ interface DexData {
   id: string;
   brokerName: string;
   brokerId: string;
-  preferredBrokerId?: string | null;
   themeCSS?: string | null;
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
@@ -204,7 +203,6 @@ export default function DexConfigRoute() {
     id: "",
     brokerName: "",
     brokerId: "",
-    preferredBrokerId: null,
     themeCSS: null,
     primaryLogo: null,
     secondaryLogo: null,

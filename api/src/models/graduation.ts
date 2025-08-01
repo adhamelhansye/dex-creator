@@ -1,5 +1,13 @@
 import { prisma } from "../lib/prisma";
 import { ethers } from "ethers";
+import { createAutomatedBrokerId as createBrokerOnAllChains } from "../lib/brokerCreation.js";
+import { getCurrentEnvironment } from "./dex.js";
+import { ALL_CHAINS, type ChainName } from "../../../config";
+
+export interface BrokerCreationData {
+  brokerId: string;
+  transactionHashes: Record<number, string>; // chainId -> txHash
+}
 
 const DEFAULT_ETH_ORDER_ADDRESS = "0xABD4C63d2616A5201454168269031355f4764337";
 const DEFAULT_ARB_ORDER_ADDRESS = "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8";
@@ -73,7 +81,7 @@ export async function verifyOrderTransaction(
   }
 
   try {
-    const rpcUrl = getRpcUrlForChain(chain);
+    const rpcUrl = ALL_CHAINS[chain as ChainName].rpcUrl;
     if (!rpcUrl) {
       return {
         success: false,
@@ -187,14 +195,19 @@ export async function verifyOrderTransaction(
 }
 
 /**
- * Update the preferred broker ID for a DEX
+ * Create broker ID automatically on all chains after successful ORDER token verification
  */
-export async function updatePreferredBrokerId(
+export async function createAutomatedBrokerId(
   userId: string,
-  preferredBrokerId: string
-): Promise<{ success: boolean; message: string }> {
+  brokerId: string,
+  userAddress: string
+): Promise<{
+  success: boolean;
+  message: string;
+  brokerCreationData?: BrokerCreationData;
+}> {
   try {
-    if (!/^[a-z0-9_-]+$/.test(preferredBrokerId)) {
+    if (!/^[a-z0-9_-]+$/.test(brokerId)) {
       return {
         success: false,
         message:
@@ -202,9 +215,10 @@ export async function updatePreferredBrokerId(
       };
     }
 
+    // Check if broker ID is already taken
     const existingDex = await prisma.dex.findFirst({
       where: {
-        brokerId: preferredBrokerId,
+        brokerId: brokerId,
         NOT: { userId },
       },
     });
@@ -216,20 +230,61 @@ export async function updatePreferredBrokerId(
       };
     }
 
+    console.log(`🚀 Attempting to create broker ID for user ${userAddress}...`);
+
+    const environment = getCurrentEnvironment();
+
+    const brokerCreationResult = await createBrokerOnAllChains(
+      brokerId,
+      environment
+    );
+
+    if (!brokerCreationResult.success) {
+      console.error(
+        `❌ Failed to create broker ID:`,
+        brokerCreationResult.errors
+      );
+      return {
+        success: false,
+        message: `Failed to create broker ID: ${brokerCreationResult.errors?.join(", ") || "Unknown error"}`,
+      };
+    }
+
+    console.log(`✅ Successfully created broker ID: ${brokerId} on all chains`);
+
+    console.log(
+      `✅ Broker creation completed successfully for all configured chains!`
+    );
+
+    console.log(`🎯 Final broker information:`);
+    console.log(`  - Broker ID: ${brokerId}`);
+    console.log(
+      `  - Transaction hashes: ${brokerCreationResult.transactionHashes ? Object.values(brokerCreationResult.transactionHashes).join(", ") : "none"}`
+    );
+
     await prisma.dex.update({
       where: { userId },
-      data: { preferredBrokerId },
+      data: {
+        brokerId: brokerId,
+        isGraduated: false,
+      },
     });
+
+    console.log(`🎉 Broker ID ${brokerId} created and assigned to DEX!`);
 
     return {
       success: true,
-      message: "Preferred broker ID updated successfully",
+      message: `Broker ID ${brokerId} created successfully and DEX graduated!`,
+      brokerCreationData: {
+        brokerId: brokerId,
+        transactionHashes: brokerCreationResult.transactionHashes || {},
+      },
     };
   } catch (error) {
-    console.error("Error updating preferred broker ID:", error);
+    console.error("Error creating automated broker ID:", error);
     return {
       success: false,
-      message: `Error updating preferred broker ID: ${error instanceof Error ? error.message : String(error)}`,
+      message: `Error creating broker ID: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
@@ -286,7 +341,7 @@ export async function updateDexFees(
       };
     }
 
-    if (!dex.preferredBrokerId) {
+    if (!dex.brokerId) {
       return {
         success: false,
         message:
@@ -354,30 +409,4 @@ export async function getDexFees(userId: string): Promise<
       message: `Error getting DEX fees: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
-}
-
-/**
- * Helper function to get RPC URL for a specific chain
- */
-function getRpcUrlForChain(chain: string): string | null {
-  const chainLower = chain.toLowerCase();
-
-  const envVarMap: Record<string, string> = {
-    ethereum: "ETH_RPC_URL",
-    arbitrum: "ARBITRUM_RPC_URL",
-    sepolia: "SEPOLIA_RPC_URL",
-    "arbitrum-sepolia": "ARB_SEPOLIA_RPC_URL",
-  };
-
-  const fallbackUrls: Record<string, string> = {
-    ethereum: "https://ethereum-rpc.publicnode.com",
-    arbitrum: "https://arbitrum-one.public.blastapi.io",
-    sepolia: "https://ethereum-sepolia-rpc.publicnode.com",
-    "arbitrum-sepolia": "https://arbitrum-sepolia-rpc.publicnode.com",
-  };
-
-  const envVar = envVarMap[chainLower];
-  if (!envVar) return null;
-
-  return process.env[envVar] || fallbackUrls[chainLower] || null;
 }

@@ -8,6 +8,7 @@
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
+    "typechain": "typechain --target ethers-v6 --out-dir ./types './abi/**/*.json'",
     "build": "tsup src/index.ts --format esm --clean --dts",
     "db:migrate:dev": "prisma migrate dev",
     "db:migrate:deploy": "prisma migrate deploy",
@@ -27,15 +28,17 @@
     "hono": "^4.3.0",
     "libsodium-wrappers": "^0.7.15",
     "octokit": "^4.1.2",
-		"openai": "^4.96.0",
+    "openai": "^4.96.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@typechain/ethers-v6": "^0.5.1",
     "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^22.14.0",
     "prisma": "^6.5.0",
     "tsup": "^8.4.0",
     "tsx": "^4.7.1",
+    "typechain": "^8.3.2",
     "typescript": "^5.8.2"
   },
   "engines": {

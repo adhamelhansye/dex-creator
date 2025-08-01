@@ -67,7 +67,8 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
 
   const clearOrderlyKey = useCallback(() => {
     if (accountId) {
-      const storageKey = `orderly-key:${accountId}:${import.meta.env.VITE_IS_TESTNET === "true" ? "testnet" : "mainnet"}`;
+      const deploymentEnv = import.meta.env.VITE_DEPLOYMENT_ENV || "dev";
+      const storageKey = `orderly-key:${accountId}:${deploymentEnv}`;
       localStorage.removeItem(storageKey);
     }
     setOrderlyKeyState(null);

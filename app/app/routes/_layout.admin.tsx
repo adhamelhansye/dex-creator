@@ -6,6 +6,9 @@ import { Button } from "../components/Button";
 import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
+import { getBlockExplorerUrlByChainId } from "../../../config";
+import { getCurrentEnvironment } from "../utils/config";
+import { getChainById } from "../../../config";
 
 const formatFee = (fee: number | null | undefined): string => {
   if (fee === null || fee === undefined) return "-";
@@ -70,7 +73,6 @@ interface Dex {
   id: string;
   brokerName: string;
   brokerId: string;
-  preferredBrokerId?: string | null;
   repoUrl: string | null;
   customDomain?: string | null;
   createdAt: string;
@@ -93,9 +95,25 @@ interface ApproveBrokerIdResponse {
     id: string;
     brokerName: string;
     brokerId: string;
-    preferredBrokerId: string | null;
   };
 }
+
+interface DeleteBrokerIdResponse {
+  success: boolean;
+  message: string;
+  brokerId: string;
+  transactionHashes: Record<number, string>;
+  dex: {
+    id: string;
+    brokerName: string;
+    brokerId: string;
+  };
+}
+
+const getChainName = (chainId: number): string => {
+  const chain = getChainById(chainId);
+  return chain ? chain.name : "Unknown";
+};
 
 export default function AdminRoute() {
   const [allDexes, setAllDexes] = useState<Dex[]>([]);
@@ -137,6 +155,12 @@ export default function AdminRoute() {
   const [redeployingDexes, setRedeployingDexes] = useState<Set<string>>(
     new Set()
   );
+
+  const [brokerIdToDelete, setBrokerIdToDelete] = useState("");
+  const currentEnvironment = getCurrentEnvironment();
+  const [isDeletingBrokerId, setIsDeletingBrokerId] = useState(false);
+  const [deleteBrokerIdResult, setDeleteBrokerIdResult] =
+    useState<DeleteBrokerIdResponse | null>(null);
 
   const toggleThemeVisibility = (dexId: string) => {
     setExpandedThemes(prev => {
@@ -212,7 +236,7 @@ export default function AdminRoute() {
       setAllDexes(response.dexes);
 
       const pending = response.dexes.filter(
-        dex => dex.preferredBrokerId && dex.preferredBrokerId !== dex.brokerId
+        dex => dex.brokerId && dex.brokerId !== dex.brokerId
       );
       setPendingBrokerIds(pending);
     } catch (error) {
@@ -470,6 +494,44 @@ export default function AdminRoute() {
     }
   };
 
+  const handleDeleteBrokerId = async (e: FormEvent) => {
+    e.preventDefault();
+
+    if (!brokerIdToDelete.trim()) {
+      toast.error("Please enter a broker ID to delete");
+      return;
+    }
+
+    setIsDeletingBrokerId(true);
+    setDeleteBrokerIdResult(null);
+
+    try {
+      const response = await post<DeleteBrokerIdResponse>(
+        "api/admin/broker/delete",
+        {
+          brokerId: brokerIdToDelete.trim(),
+        },
+        token,
+        { showToastOnError: false }
+      );
+
+      toast.success(response.message);
+      setDeleteBrokerIdResult(response);
+      loadAllDexes();
+      setBrokerIdToDelete("");
+    } catch (error) {
+      setDeleteBrokerIdResult(null);
+      console.error("Error deleting broker ID:", error);
+      if (error instanceof Error) {
+        toast.error(error.message);
+      } else {
+        toast.error("An unknown error occurred");
+      }
+    } finally {
+      setIsDeletingBrokerId(false);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 text-center">
@@ -621,7 +683,7 @@ export default function AdminRoute() {
                         {allDexes.filter(
                           dex =>
                             dex.brokerId !== "demo" &&
-                            dex.brokerId === dex.preferredBrokerId
+                            dex.brokerId === dex.brokerId
                         ).length || 0}
                       </span>
                     </div>
@@ -647,7 +709,7 @@ export default function AdminRoute() {
                               </span>
                               :{" "}
                               <span className="text-primary-light">
-                                {dex.preferredBrokerId}
+                                {dex.brokerId}
                               </span>
                               {/* Show fee information */}
                               <span className="text-gray-400 ml-2">
@@ -665,9 +727,7 @@ export default function AdminRoute() {
                               <button
                                 onClick={() => {
                                   setSelectedDexForApproval(dex.id);
-                                  setCustomBrokerId(
-                                    dex.preferredBrokerId || ""
-                                  );
+                                  setCustomBrokerId(dex.brokerId || "");
                                 }}
                                 className="text-primary-light hover:text-primary"
                                 title="Modify broker ID"
@@ -767,9 +827,7 @@ export default function AdminRoute() {
 
               {/* Fee Configurations */}
               {allDexes.filter(
-                dex =>
-                  dex.brokerId !== "demo" &&
-                  dex.brokerId === dex.preferredBrokerId
+                dex => dex.brokerId !== "demo" && dex.brokerId === dex.brokerId
               ).length > 0 && (
                 <div className="mt-4">
                   <h3 className="text-sm font-medium mb-2 flex items-center">
@@ -785,7 +843,7 @@ export default function AdminRoute() {
                         .filter(
                           dex =>
                             dex.brokerId !== "demo" &&
-                            dex.brokerId === dex.preferredBrokerId
+                            dex.brokerId === dex.brokerId
                         )
                         .slice(0, 3)
                         .map(dex => (
@@ -1214,11 +1272,11 @@ export default function AdminRoute() {
                           </div>
                         ) : (
                           <div className="flex items-center justify-between">
-                            {dex.preferredBrokerId}
+                            {dex.brokerId}
                             <button
                               onClick={() => {
                                 setSelectedDexForApproval(dex.id);
-                                setCustomBrokerId(dex.preferredBrokerId || "");
+                                setCustomBrokerId(dex.brokerId || "");
                               }}
                               className="text-primary-light hover:text-primary ml-2"
                               title="Edit broker ID"
@@ -1257,6 +1315,112 @@ export default function AdminRoute() {
                   ))}
                 </tbody>
               </table>
+            </div>
+          )}
+        </div>
+
+        {/* Delete Broker ID Section */}
+        <div className="bg-error/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-error/20">
+          <div className="flex items-center mb-4">
+            <div className="i-mdi:alert-octagon text-error mr-2 h-6 w-6" />
+            <h2 className="text-xl font-medium text-error">Delete Broker ID</h2>
+          </div>
+          <p className="text-gray-400 text-sm mb-6">
+            Danger zone! This tool will{" "}
+            <span className="text-error font-semibold">
+              delete a broker ID on-chain
+            </span>{" "}
+            and reset any DEX using it to demo mode. This action{" "}
+            <span className="font-semibold">cannot be undone</span>.
+          </p>
+
+          <form onSubmit={handleDeleteBrokerId} className="space-y-4">
+            <div>
+              <label
+                htmlFor="brokerIdToDelete"
+                className="block text-sm font-medium mb-1 text-error"
+              >
+                Broker ID
+              </label>
+              <input
+                type="text"
+                id="brokerIdToDelete"
+                value={brokerIdToDelete}
+                onChange={e => setBrokerIdToDelete(e.target.value)}
+                placeholder="Enter broker ID to delete"
+                className="w-full bg-dark rounded px-4 py-3 text-base border border-error/30 focus:border-error outline-none placeholder:text-gray-500"
+              />
+              <div className="text-xs text-gray-400 mt-1">
+                Enter the broker ID to delete
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-medium mb-1 text-error">
+                Environment
+              </label>
+              <div className="w-full bg-dark rounded px-4 py-3 text-base border border-error/30">
+                <span className="text-gray-300 capitalize">
+                  {currentEnvironment}
+                </span>
+              </div>
+              <div className="text-xs text-gray-400 mt-1">
+                Current deployment environment
+              </div>
+            </div>
+            <Button
+              type="submit"
+              variant="danger"
+              isLoading={isDeletingBrokerId}
+              loadingText="Deleting..."
+              className="w-full rounded-lg mt-2 text-base font-semibold py-3"
+            >
+              Delete Broker ID
+            </Button>
+          </form>
+
+          {deleteBrokerIdResult && (
+            <div className="mt-6 bg-dark/40 border border-success/30 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <div className="i-mdi:check-circle text-success mr-2 h-5 w-5" />
+                <span className="text-success font-medium">
+                  Broker ID deleted on-chain
+                </span>
+              </div>
+              <div className="text-xs text-gray-300 mb-1">
+                <strong>Broker ID:</strong> {deleteBrokerIdResult.brokerId}
+              </div>
+
+              {deleteBrokerIdResult.dex && (
+                <div className="text-xs text-gray-300 mb-1">
+                  <strong>DEX Reset:</strong>{" "}
+                  {deleteBrokerIdResult.dex.brokerName} (ID:{" "}
+                  {deleteBrokerIdResult.dex.id})
+                </div>
+              )}
+              <div className="text-xs text-gray-300">
+                <strong>Transaction Hashes:</strong>
+                <ul className="list-disc ml-6 mt-1">
+                  {Object.entries(deleteBrokerIdResult.transactionHashes).map(
+                    ([chainId, txHash]) => (
+                      <li key={txHash} className="break-all">
+                        <a
+                          href={
+                            getBlockExplorerUrlByChainId(
+                              txHash,
+                              parseInt(chainId)
+                            ) || "#"
+                          }
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary-light hover:underline"
+                        >
+                          {getChainName(parseInt(chainId))}: {txHash}
+                        </a>
+                      </li>
+                    )
+                  )}
+                </ul>
+              </div>
             </div>
           )}
         </div>
@@ -1324,130 +1488,88 @@ export default function AdminRoute() {
                       </button>
                     </div>
 
-                    {dex.preferredBrokerId && (
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <strong>Preferred Broker ID:</strong>{" "}
-                          {dex.preferredBrokerId}
+                    {dex.repoUrl && (
+                      <div className="md:col-span-2 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <strong>Repo URL:</strong>{" "}
+                          <a
+                            href={dex.repoUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-light hover:underline break-all"
+                          >
+                            {dex.repoUrl}
+                          </a>
                         </div>
                         <button
                           onClick={() =>
-                            copyToClipboard(
-                              dex.preferredBrokerId!,
-                              "Preferred Broker ID"
-                            )
+                            copyToClipboard(dex.repoUrl!, "Repository URL")
                           }
-                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2"
-                          title="Copy Preferred Broker ID"
+                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                          title="Copy Repository URL"
                         >
                           <div className="i-mdi:content-copy h-3 w-3"></div>
                         </button>
                       </div>
                     )}
 
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <strong>Wallet Address:</strong>{" "}
-                        <span className="font-mono">{dex.user.address}</span>
+                    {dex.customDomain && (
+                      <div className="md:col-span-2 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <strong>Custom Domain:</strong>{" "}
+                          <a
+                            href={`https://${dex.customDomain}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-warning hover:underline break-all"
+                          >
+                            {dex.customDomain}
+                          </a>
+                        </div>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              `https://${dex.customDomain}`,
+                              "Custom Domain URL"
+                            )
+                          }
+                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                          title="Copy Custom Domain URL"
+                        >
+                          <div className="i-mdi:content-copy h-3 w-3"></div>
+                        </button>
                       </div>
-                      <button
-                        onClick={() =>
-                          copyToClipboard(dex.user.address, "Wallet Address")
-                        }
-                        className="text-gray-400 hover:text-primary-light p-1 rounded ml-2"
-                        title="Copy Wallet Address"
-                      >
-                        <div className="i-mdi:content-copy h-3 w-3"></div>
-                      </button>
-                    </div>
-
-                    <div>
-                      <strong>Created At:</strong>{" "}
-                      {new Date(dex.createdAt).toLocaleString()}
-                    </div>
+                    )}
 
                     {dex.repoUrl && (
-                      <>
-                        <div className="md:col-span-2 flex items-center justify-between">
-                          <div className="flex-1 min-w-0">
-                            <strong>Repo URL:</strong>{" "}
-                            <a
-                              href={dex.repoUrl}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-primary-light hover:underline break-all"
-                            >
-                              {dex.repoUrl}
-                            </a>
-                          </div>
-                          <button
-                            onClick={() =>
-                              copyToClipboard(dex.repoUrl!, "Repository URL")
-                            }
-                            className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
-                            title="Copy Repository URL"
+                      <div className="md:col-span-2 flex items-center justify-between">
+                        <div className="flex-1 min-w-0">
+                          <strong>Deployment URL:</strong>{" "}
+                          <a
+                            href={generateDeploymentUrl(dex.repoUrl)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-success hover:underline break-all"
                           >
-                            <div className="i-mdi:content-copy h-3 w-3"></div>
-                          </button>
+                            {generateDeploymentUrl(dex.repoUrl).replace(
+                              "https://",
+                              ""
+                            )}
+                          </a>
                         </div>
-
-                        {dex.customDomain ? (
-                          <div className="md:col-span-2 flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <strong>Custom Domain:</strong>{" "}
-                              <a
-                                href={`https://${dex.customDomain}`}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-warning hover:underline break-all"
-                              >
-                                {dex.customDomain}
-                              </a>
-                            </div>
-                            <button
-                              onClick={() =>
-                                copyToClipboard(
-                                  `https://${dex.customDomain}`,
-                                  "Custom Domain URL"
-                                )
-                              }
-                              className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
-                              title="Copy Custom Domain URL"
-                            >
-                              <div className="i-mdi:content-copy h-3 w-3"></div>
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="md:col-span-2 flex items-center justify-between">
-                            <div className="flex-1 min-w-0">
-                              <strong>Deployment URL:</strong>{" "}
-                              <a
-                                href={generateDeploymentUrl(dex.repoUrl)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-success hover:underline break-all"
-                              >
-                                {generateDeploymentUrl(dex.repoUrl).replace(
-                                  "https://",
-                                  ""
-                                )}
-                              </a>
-                            </div>
-                            <button
-                              onClick={() =>
-                                copyToClipboard(
-                                  generateDeploymentUrl(dex.repoUrl!),
-                                  "Deployment URL"
-                                )
-                              }
-                              className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
-                              title="Copy Deployment URL"
-                            >
-                              <div className="i-mdi:content-copy h-3 w-3"></div>
-                            </button>
-                          </div>
-                        )}
-                      </>
+                        <button
+                          onClick={() =>
+                            copyToClipboard(
+                              generateDeploymentUrl(dex.repoUrl!),
+                              "Deployment URL"
+                            )
+                          }
+                          className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                          title="Copy Deployment URL"
+                        >
+                          <div className="i-mdi:content-copy h-3 w-3"></div>
+                        </button>
+                      </div>
                     )}
 
                     <div>

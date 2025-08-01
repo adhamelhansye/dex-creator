@@ -11,6 +11,22 @@ import {
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
 
+export type Environment = "mainnet" | "staging" | "qa" | "dev";
+
+export function getCurrentEnvironment(): Environment {
+  switch (process.env.DEPLOYMENT_ENV) {
+    case "mainnet":
+      return "mainnet";
+    case "staging":
+      return "staging";
+    case "qa":
+      return "qa";
+    case "dev":
+    default:
+      return "dev";
+  }
+}
+
 export enum LocaleEnum {
   en = "en",
   zh = "zh",
@@ -610,7 +626,6 @@ export async function updateBrokerId(
     },
     data: {
       brokerId,
-      preferredBrokerId: brokerId,
     },
   });
 }

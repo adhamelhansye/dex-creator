@@ -13,7 +13,6 @@ interface DexData {
   id: string;
   brokerName: string;
   brokerId: string;
-  preferredBrokerId?: string | null;
   themeCSS?: string | null;
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
@@ -46,6 +45,7 @@ interface DexData {
   seoTwitterHandle?: string | null;
   seoThemeColor?: string | null;
   seoKeywords?: string | null;
+  isGraduated?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -125,10 +125,7 @@ export function DexProvider({ children }: { children: ReactNode }) {
   const hasDex = Boolean(dexData);
   const isGraduationEligible = dexData?.brokerId === "demo";
   const isGraduated = Boolean(
-    dexData &&
-      dexData.brokerId !== "demo" &&
-      dexData.preferredBrokerId &&
-      dexData.brokerId === dexData.preferredBrokerId
+    dexData && dexData.brokerId !== "demo" && dexData.isGraduated === true
   );
   const deploymentUrl = dexData?.repoUrl
     ? `https://dex.orderly.network/${dexData.repoUrl.split("/").pop()}/`

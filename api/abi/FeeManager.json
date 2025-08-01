@@ -1,0 +1,561 @@
+[
+  { "inputs": [], "stateMutability": "nonpayable", "type": "constructor" },
+  { "inputs": [], "name": "AccessControlBadConfirmation", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "account", "type": "address" },
+      { "internalType": "bytes32", "name": "neededRole", "type": "bytes32" }
+    ],
+    "name": "AccessControlUnauthorizedAccount",
+    "type": "error"
+  },
+  { "inputs": [], "name": "AccountIdInvalid", "type": "error" },
+  { "inputs": [], "name": "AddressZero", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint128", "name": "balance", "type": "uint128" },
+      { "internalType": "int128", "name": "amount", "type": "int128" }
+    ],
+    "name": "BalanceNotEnough",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint64", "name": "batchId", "type": "uint64" },
+      {
+        "internalType": "uint64",
+        "name": "futuresUploadBatchId",
+        "type": "uint64"
+      }
+    ],
+    "name": "BatchIdNotMatch",
+    "type": "error"
+  },
+  { "inputs": [], "name": "BrokerNotAllowed", "type": "error" },
+  { "inputs": [], "name": "Bytes32Zero", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "length", "type": "uint256" },
+      { "internalType": "uint256", "name": "count", "type": "uint256" }
+    ],
+    "name": "CountNotMatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "accountId", "type": "bytes32" },
+      { "internalType": "uint256", "name": "savedChainId", "type": "uint256" },
+      { "internalType": "uint256", "name": "givenChainId", "type": "uint256" }
+    ],
+    "name": "DelegateChainIdNotMatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "receiver", "type": "address" },
+      {
+        "internalType": "address",
+        "name": "delegateContract",
+        "type": "address"
+      }
+    ],
+    "name": "DelegateReceiverNotMatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "accountId", "type": "bytes32" },
+      { "internalType": "address", "name": "savedSginer", "type": "address" },
+      { "internalType": "address", "name": "givenSigner", "type": "address" }
+    ],
+    "name": "DelegateSignerNotMatch",
+    "type": "error"
+  },
+  { "inputs": [], "name": "DelegatecallFail", "type": "error" },
+  { "inputs": [], "name": "EnumerableSetError", "type": "error" },
+  { "inputs": [], "name": "FrozenBalanceInconsistent", "type": "error" },
+  {
+    "inputs": [
+      {
+        "internalType": "int128",
+        "name": "adlPositionQtyTransfer",
+        "type": "int128"
+      },
+      { "internalType": "int128", "name": "userPositionQty", "type": "int128" }
+    ],
+    "name": "InsurancePositionQtyInvalid",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "int128", "name": "balance", "type": "int128" },
+      {
+        "internalType": "uint128",
+        "name": "insuranceTransferAmount",
+        "type": "uint128"
+      },
+      { "internalType": "int128", "name": "settledAmount", "type": "int128" }
+    ],
+    "name": "InsuranceTransferAmountInvalid",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InsuranceTransferToSelf", "type": "error" },
+  {
+    "inputs": [{ "internalType": "uint8", "name": "bizType", "type": "uint8" }],
+    "name": "InvalidBizType",
+    "type": "error"
+  },
+  { "inputs": [], "name": "InvalidFeeCollectorType", "type": "error" },
+  { "inputs": [], "name": "InvalidPrimeWallet", "type": "error" },
+  { "inputs": [], "name": "LedgerAddressZero", "type": "error" },
+  { "inputs": [], "name": "NotImplemented", "type": "error" },
+  { "inputs": [], "name": "OnlyCrossChainManagerCanCall", "type": "error" },
+  { "inputs": [], "name": "OnlyCrossChainManagerV2CanCall", "type": "error" },
+  { "inputs": [], "name": "OnlyLedgerCanCall", "type": "error" },
+  { "inputs": [], "name": "OnlyOperatorCanCall", "type": "error" },
+  { "inputs": [], "name": "OnlyOperatorManagerCanCall", "type": "error" },
+  { "inputs": [], "name": "OnlySymbolManagerOrOwner", "type": "error" },
+  { "inputs": [], "name": "OperatorManagerAddressZero", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "want", "type": "address" },
+      { "internalType": "address", "name": "got", "type": "address" }
+    ],
+    "name": "ProtocolVaultAddressMismatch",
+    "type": "error"
+  },
+  { "inputs": [], "name": "RebalanceAlreadySucc", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "chainId", "type": "uint256" }
+    ],
+    "name": "RebalanceChainIdInvalid",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint64", "name": "givenId", "type": "uint64" },
+      { "internalType": "uint64", "name": "wantId", "type": "uint64" }
+    ],
+    "name": "RebalanceIdNotMatch",
+    "type": "error"
+  },
+  { "inputs": [], "name": "RebalanceMintUnexpected", "type": "error" },
+  { "inputs": [], "name": "RebalanceStillPending", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "tokenHash", "type": "bytes32" },
+      { "internalType": "uint256", "name": "chainId", "type": "uint256" }
+    ],
+    "name": "RebalanceTokenNotSupported",
+    "type": "error"
+  },
+  { "inputs": [], "name": "SafeCastOverflow", "type": "error" },
+  { "inputs": [], "name": "SafeCastUnderflow", "type": "error" },
+  { "inputs": [], "name": "SignatureNotMatch", "type": "error" },
+  { "inputs": [], "name": "SymbolNotAllowed", "type": "error" },
+  { "inputs": [], "name": "SymbolNotRegister", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "tokenHash", "type": "bytes32" },
+      { "internalType": "uint256", "name": "chainId", "type": "uint256" }
+    ],
+    "name": "TokenNotAllowed",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "int128", "name": "amount", "type": "int128" }
+    ],
+    "name": "TotalSettleAmountNotMatch",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "accountId", "type": "bytes32" },
+      { "internalType": "bytes32", "name": "symbolHash", "type": "bytes32" }
+    ],
+    "name": "UserPerpPositionQtyZero",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "int128", "name": "balance", "type": "int128" },
+      { "internalType": "uint128", "name": "withdrawAmount", "type": "uint128" }
+    ],
+    "name": "WithdrawBalanceNotEnough",
+    "type": "error"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint128", "name": "maxFee", "type": "uint128" },
+      { "internalType": "uint128", "name": "withdrawFee", "type": "uint128" }
+    ],
+    "name": "WithdrawFeeTooLarge",
+    "type": "error"
+  },
+  { "inputs": [], "name": "WithdrawToAddressZero", "type": "error" },
+  {
+    "inputs": [
+      { "internalType": "uint128", "name": "balance", "type": "uint128" },
+      { "internalType": "uint128", "name": "withdrawAmount", "type": "uint128" }
+    ],
+    "name": "WithdrawVaultBalanceNotEnough",
+    "type": "error"
+  },
+  { "inputs": [], "name": "ZeroChainId", "type": "error" },
+  { "inputs": [], "name": "ZeroDelegateContract", "type": "error" },
+  { "inputs": [], "name": "ZeroDelegateSigner", "type": "error" },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "oldBrokerAccountId",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "newBrokerAccountId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ChangeBrokerAccountId",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "enum IFeeManager.FeeCollectorType",
+        "name": "feeCollectorType",
+        "type": "uint8"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "oldFeeCollector",
+        "type": "bytes32"
+      },
+      {
+        "indexed": false,
+        "internalType": "bytes32",
+        "name": "newFeeCollector",
+        "type": "bytes32"
+      }
+    ],
+    "name": "ChangeFeeCollector",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "oldAddress",
+        "type": "address"
+      },
+      {
+        "indexed": false,
+        "internalType": "address",
+        "name": "newAddress",
+        "type": "address"
+      }
+    ],
+    "name": "ChangeLedger",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": false,
+        "internalType": "uint8",
+        "name": "version",
+        "type": "uint8"
+      }
+    ],
+    "name": "Initialized",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "previousOwner",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "newOwner",
+        "type": "address"
+      }
+    ],
+    "name": "OwnershipTransferred",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "previousAdminRole",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "newAdminRole",
+        "type": "bytes32"
+      }
+    ],
+    "name": "RoleAdminChanged",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleGranted",
+    "type": "event"
+  },
+  {
+    "anonymous": false,
+    "inputs": [
+      {
+        "indexed": true,
+        "internalType": "bytes32",
+        "name": "role",
+        "type": "bytes32"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "account",
+        "type": "address"
+      },
+      {
+        "indexed": true,
+        "internalType": "address",
+        "name": "sender",
+        "type": "address"
+      }
+    ],
+    "name": "RoleRevoked",
+    "type": "event"
+  },
+  {
+    "inputs": [],
+    "name": "BROKER_MANAGER_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "DEFAULT_ADMIN_ROLE",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "name": "brokerHash2BrokerAccountId",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum IFeeManager.FeeCollectorType",
+        "name": "feeCollectorType",
+        "type": "uint8"
+      },
+      { "internalType": "bytes32", "name": "_newCollector", "type": "bytes32" }
+    ],
+    "name": "changeFeeCollector",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "futuresFeeCollector",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      {
+        "internalType": "enum IFeeManager.FeeCollectorType",
+        "name": "feeCollectorType",
+        "type": "uint8"
+      }
+    ],
+    "name": "getFeeCollector",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" }
+    ],
+    "name": "getRoleAdmin",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "grantRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "hasRole",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "initialize",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "ledgerAddress",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "renounceOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      {
+        "internalType": "address",
+        "name": "callerConfirmation",
+        "type": "address"
+      }
+    ],
+    "name": "renounceRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "role", "type": "bytes32" },
+      { "internalType": "address", "name": "account", "type": "address" }
+    ],
+    "name": "revokeRole",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "bytes32", "name": "brokerHash", "type": "bytes32" },
+      {
+        "internalType": "bytes32",
+        "name": "brokerAccountId",
+        "type": "bytes32"
+      }
+    ],
+    "name": "setBrokerAccountId",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "_ledgerAddress", "type": "address" }
+    ],
+    "name": "setLedgerAddress",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "address", "name": "newOwner", "type": "address" }
+    ],
+    "name": "transferOwnership",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "version",
+    "outputs": [{ "internalType": "string", "name": "", "type": "string" }],
+    "stateMutability": "pure",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "withdrawFeeCollector",
+    "outputs": [{ "internalType": "bytes32", "name": "", "type": "bytes32" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

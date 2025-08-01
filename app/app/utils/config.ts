@@ -2,6 +2,13 @@ import { TradingPageProps } from "@orderly.network/trading";
 import { FooterProps, MainNavWidgetProps } from "@orderly.network/ui-scaffold";
 import { AppLogos } from "@orderly.network/react-app";
 
+import {
+  type Environment,
+  type ChainName,
+  type ChainConfig,
+  ALL_CHAINS,
+} from "../../../config";
+
 export type OrderlyConfig = {
   orderlyAppProvider: {
     appIcons: AppLogos;
@@ -16,18 +23,23 @@ export type OrderlyConfig = {
   };
 };
 
-const config: OrderlyConfig = {
+export const ORDER_RECEIVER_ADDRESS =
+  import.meta.env.VITE_ORDER_RECEIVER_ADDRESS || "";
+
+export const REQUIRED_ORDER_AMOUNT = parseInt(
+  import.meta.env.VITE_REQUIRED_ORDER_AMOUNT || "8000"
+);
+
+export const previewConfig: OrderlyConfig = {
   scaffold: {
     mainNavProps: {
       initialMenu: "/",
       mainMenus: [{ name: "Trading", href: "/" }],
-      // Simple menu structure without custom icons for preview
     },
     footerProps: {
       telegramUrl: "https://orderly.network",
       discordUrl: "https://discord.com/invite/orderlynetwork",
       twitterUrl: "https://twitter.com/OrderlyNetwork",
-      // Simplified footer properties for preview
     },
   },
   orderlyAppProvider: {
@@ -63,4 +75,69 @@ const config: OrderlyConfig = {
   },
 };
 
-export default config;
+export function getCurrentEnvironment(): Environment {
+  switch (import.meta.env.VITE_DEPLOYMENT_ENV) {
+    case "mainnet":
+      return "mainnet";
+    case "staging":
+      return "staging";
+    case "qa":
+      return "qa";
+    case "dev":
+      return "dev";
+    default:
+      return "dev";
+  }
+}
+
+export function getSupportedChains(): ChainConfig[] {
+  const deploymentEnv = getCurrentEnvironment();
+  const isTestnet =
+    deploymentEnv === "staging" ||
+    deploymentEnv === "qa" ||
+    deploymentEnv === "dev";
+  return Object.values(ALL_CHAINS).filter(
+    chain => chain.isTestnet === isTestnet
+  );
+}
+
+export function getOrderTokenSupportedChains(): ChainConfig[] {
+  const deploymentEnv = getCurrentEnvironment();
+  const isTestnet =
+    deploymentEnv === "staging" ||
+    deploymentEnv === "qa" ||
+    deploymentEnv === "dev";
+  return Object.values(ALL_CHAINS).filter(
+    chain => chain.isTestnet === isTestnet && !chain.id.includes("orderly")
+  );
+}
+
+export function getPreferredChain(selectedChain: ChainName): ChainName {
+  const deploymentEnv = getCurrentEnvironment();
+  const isTestnet =
+    deploymentEnv === "staging" ||
+    deploymentEnv === "qa" ||
+    deploymentEnv === "dev";
+
+  if (isTestnet) {
+    const testnetMap: Record<ChainName, ChainName> = {
+      arbitrum: "arbitrum-sepolia",
+      ethereum: "sepolia",
+      "arbitrum-sepolia": "arbitrum-sepolia",
+      sepolia: "sepolia",
+      orderlyL2: "orderlyTestnet",
+      orderlyTestnet: "orderlyTestnet",
+    };
+    return testnetMap[selectedChain] || selectedChain;
+  } else {
+    const mainnetMap: Record<ChainName, ChainName> = {
+      "arbitrum-sepolia": "arbitrum",
+      sepolia: "ethereum",
+      arbitrum: "arbitrum",
+      ethereum: "ethereum",
+      orderlyTestnet: "orderlyL2",
+      orderlyL2: "orderlyL2",
+    };
+    return mainnetMap[selectedChain] || selectedChain;
+  }
+}

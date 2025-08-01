@@ -32,7 +32,6 @@ interface DexData {
   id: string;
   brokerName: string;
   brokerId: string;
-  preferredBrokerId?: string | null;
   themeCSS?: string | null;
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
@@ -238,7 +237,6 @@ export default function DexRoute() {
     id: "",
     brokerName: "",
     brokerId: "",
-    preferredBrokerId: null,
     themeCSS: null,
     primaryLogo: null,
     secondaryLogo: null,
@@ -1325,43 +1323,80 @@ export default function DexRoute() {
             </Card>
           )}
 
-          {isGraduated && dexData && (
-            <Card className="my-6 bg-gradient-to-r from-success/20 to-primary/20 border border-success/30">
+          {dexData && dexData.brokerId !== "demo" && (
+            <Card
+              className={`my-6 ${
+                isGraduated
+                  ? "bg-gradient-to-r from-success/20 to-primary/20 border border-success/30"
+                  : "bg-gradient-to-r from-warning/20 to-primary/20 border border-warning/30"
+              }`}
+            >
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">
                 <div className="flex items-center gap-3">
-                  <div className="flex-shrink-0 bg-success/20 p-2 rounded-full">
-                    <div className="i-mdi:check-circle text-success w-6 h-6"></div>
+                  <div
+                    className={`flex-shrink-0 p-2 rounded-full ${
+                      isGraduated ? "bg-success/20" : "bg-warning/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-6 h-6 ${
+                        isGraduated
+                          ? "i-mdi:check-circle text-success"
+                          : "i-mdi:account-key text-warning"
+                      }`}
+                    ></div>
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold mb-1">
-                      Graduated DEX
+                      {isGraduated ? "Graduated DEX" : "Broker ID Created"}
                     </h3>
                     <p className="text-gray-300">
-                      Your DEX is earning fee share revenue!{" "}
-                      <a
-                        href={
-                          dexData.customDomain
-                            ? `https://${dexData.customDomain}`
-                            : deploymentUrl || "#"
-                        }
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary-light hover:underline inline-flex items-center"
-                      >
-                        Log in to your DEX
-                        <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
-                      </a>{" "}
-                      with your admin wallet to access and withdraw your
-                      earnings.
+                      {isGraduated ? (
+                        <>
+                          Your DEX is earning fee share revenue!{" "}
+                          <a
+                            href={
+                              dexData.customDomain
+                                ? `https://${dexData.customDomain}`
+                                : deploymentUrl || "#"
+                            }
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-primary-light hover:underline inline-flex items-center"
+                          >
+                            Log in to your DEX
+                            <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
+                          </a>{" "}
+                          with your admin wallet to access and withdraw your
+                          earnings.
+                        </>
+                      ) : (
+                        <>
+                          Your broker ID{" "}
+                          <span className="font-mono text-primary-light">
+                            {dexData.brokerId}
+                          </span>{" "}
+                          has been created. Complete the registration process to
+                          start earning fees.
+                        </>
+                      )}
                     </p>
                   </div>
                 </div>
                 <Link
                   to="/graduation"
-                  className="px-4 py-2 bg-success/20 hover:bg-success/30 text-success font-medium rounded-full transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-2"
+                  className={`px-4 py-2 font-medium rounded-full transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${
+                    isGraduated
+                      ? "bg-success/20 hover:bg-success/30 text-success"
+                      : "bg-warning/20 hover:bg-warning/30 text-warning"
+                  }`}
                 >
-                  <div className="i-mdi:cash-multiple h-4 w-4"></div>
-                  View Benefits
+                  <div
+                    className={`h-4 w-4 ${
+                      isGraduated ? "i-mdi:cash-multiple" : "i-mdi:account-plus"
+                    }`}
+                  ></div>
+                  {isGraduated ? "View Benefits" : "Complete Registration"}
                 </Link>
               </div>
             </Card>

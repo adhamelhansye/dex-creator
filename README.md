@@ -208,13 +208,8 @@ The application requires several environment variables for proper operation. Bel
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `ETH_ORDER_ADDRESS` | Ethereum ORDER token address | Yes |
-| `ARB_ORDER_ADDRESS` | Arbitrum ORDER token address | Yes |
-| `ETH_RECEIVER_ADDRESS` | Ethereum wallet address to receive ORDER tokens | Yes |
-| `ARB_RECEIVER_ADDRESS` | Arbitrum wallet address to receive ORDER tokens | Yes |
+| `ORDER_RECEIVER_ADDRESS` | Wallet address to receive ORDER tokens (used for all chains) | Yes |
 | `REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
-| `ETH_RPC_URL` | Ethereum RPC URL for transaction verification | Yes |
-| `ARBITRUM_RPC_URL` | Arbitrum RPC URL for transaction verification | Yes |
 
 ### Frontend Environment (.env in app/ directory)
 
@@ -224,23 +219,16 @@ The application requires several environment variables for proper operation. Bel
 |----------|-------------|---------|----------|
 | `PORT` | Frontend server port | 3000 | No |
 | `NODE_ENV` | Environment (development/production) | development | No |
+| `VITE_DEPLOYMENT_ENV` | Deployment environment (mainnet/staging/qa/dev) | dev | Yes |
 
 #### DEX Graduation System
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `VITE_ETH_ORDER_ADDRESS` | Ethereum ORDER token address | No |
-| `VITE_ARB_ORDER_ADDRESS` | Arbitrum ORDER token address | No |
-| `VITE_SEPOLIA_ORDER_ADDRESS` | Sepolia ORDER token address | No |
-| `VITE_ARB_SEPOLIA_ORDER_ADDRESS` | Arbitrum Sepolia ORDER token address | No |
-| `VITE_ETH_RECEIVER_ADDRESS` | Ethereum wallet address to receive ORDER tokens | No |
-| `VITE_ARB_RECEIVER_ADDRESS` | Arbitrum wallet address to receive ORDER tokens | No |
-| `VITE_SEPOLIA_RECEIVER_ADDRESS` | Sepolia wallet address to receive ORDER tokens | No |
-| `VITE_ARB_SEPOLIA_RECEIVER_ADDRESS` | Arbitrum Sepolia wallet address to receive ORDER tokens | No |
+| `VITE_ORDER_RECEIVER_ADDRESS` | Wallet address to receive ORDER tokens (used for all chains) | Yes |
 | `VITE_REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
-| `VITE_IS_TESTNET` | Enable testnet mode (true/false) - when true, prefers testnet chains for wallet switching | No |
 
-**Important**: The ORDER token addresses and required amounts must match between frontend and backend environments.
+**Important**: The ORDER token required amount must match between frontend and backend environments.
 
 ## DEX Graduation System
 
@@ -255,18 +243,14 @@ Orderly One includes a graduation system that allows DEX owners to upgrade their
 
 For the graduation system to work properly, you need to:
 
-1. Set valid addresses for `ETH_RECEIVER_ADDRESS` and `ARB_RECEIVER_ADDRESS` in the API environment
-2. Set the same addresses in `VITE_ETH_RECEIVER_ADDRESS` and `VITE_ARB_RECEIVER_ADDRESS` in the frontend environment
-3. Configure working RPC URLs for Ethereum and Arbitrum in `ETH_RPC_URL` and `ARBITRUM_RPC_URL`
-4. Set the same `REQUIRED_ORDER_AMOUNT` in both environments
+1. Set a valid address for `ORDER_RECEIVER_ADDRESS` in the API environment
+2. Set the same address in `VITE_ORDER_RECEIVER_ADDRESS` in the frontend environment
+3. Set the same `REQUIRED_ORDER_AMOUNT` in both environments
+4. Configure `VITE_DEPLOYMENT_ENV` to match your deployment environment (mainnet/staging/qa/dev)
 
-### Testing the Graduation Process
-
-For testing purposes, you may want to:
-
-1. Use a testnet instead of mainnet by configuring appropriate RPC URLs
-2. Set a smaller `REQUIRED_ORDER_AMOUNT` value (e.g., 10 instead of 1000)
-3. Use test tokens instead of real ORDER tokens
+The ORDER token addresses are automatically configured based on the deployment environment:
+- **Mainnet**: Uses mainnet ORDER token addresses for Ethereum and Arbitrum
+- **Testnet environments**: Uses testnet USDC token addresses for Sepolia and Arbitrum Sepolia
 
 ## Deployment
 
@@ -299,13 +283,8 @@ docker run -d \
   -e TEMPLATE_PAT=your-template-personal-access-token \
   -e CEREBRAS_API_KEY=your-cerebras-api-key \
   -e CEREBRAS_API_URL=https://api.cerebras.ai/v1 \
-  -e ETH_ORDER_ADDRESS=0xABD4C63d2616A5201454168269031355f4764337 \
-  -e ARB_ORDER_ADDRESS=0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8 \
-  -e ETH_RECEIVER_ADDRESS=0xyourEthereumReceiverAddress \
-  -e ARB_RECEIVER_ADDRESS=0xyourArbitrumReceiverAddress \
-  -e REQUIRED_ORDER_AMOUNT=1000 \
-  -e ETH_RPC_URL=https://ethereum-rpc.publicnode.com \
-  -e ARBITRUM_RPC_URL=https://arbitrum-one.public.blastapi.io \
+  -e ORDER_RECEIVER_ADDRESS=0xyourReceiverAddress \
+  -e REQUIRED_ORDER_AMOUNT=8000 \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```

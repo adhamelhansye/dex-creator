@@ -1,14 +1,12 @@
 import { useState, useEffect } from "react";
 import { NetworkId } from "@orderly.network/types";
-import config from "../utils/config";
+import { previewConfig } from "../utils/config";
 import { FooterProps, MainNavWidgetProps } from "@orderly.network/ui-scaffold";
 import { TradingPageProps } from "@orderly.network/trading";
 import { AppLogos } from "@orderly.network/react-app";
 
-// Constant key for localStorage
 export const DEX_PREVIEW_CONFIG_KEY = "dex-preview-config";
 
-// Hardcoded brokerId for demo
 const DEMO_BROKER_ID = "demo";
 
 export interface DexPreviewConfig {
@@ -106,7 +104,7 @@ export function usePreviewConfig(
     };
   }, [pnlPosters]);
 
-  const appIcons = { ...config.orderlyAppProvider.appIcons };
+  const appIcons = { ...previewConfig.orderlyAppProvider.appIcons };
 
   if (primaryLogoUrl) {
     appIcons.main = {
@@ -120,7 +118,7 @@ export function usePreviewConfig(
     };
   }
 
-  const sharePnLConfig = { ...config.tradingPage.sharePnLConfig };
+  const sharePnLConfig = { ...previewConfig.tradingPage.sharePnLConfig };
   if (pnlPosterUrls.length > 0) {
     sharePnLConfig.backgroundImages = pnlPosterUrls;
   }
@@ -130,9 +128,9 @@ export function usePreviewConfig(
     brokerName,
     networkId,
     initialSymbol,
-    mainNavProps: config.scaffold.mainNavProps,
-    footerProps: config.scaffold.footerProps,
-    tradingViewConfig: config.tradingPage.tradingViewConfig,
+    mainNavProps: previewConfig.scaffold.mainNavProps,
+    footerProps: previewConfig.scaffold.footerProps,
+    tradingViewConfig: previewConfig.tradingPage.tradingViewConfig,
     sharePnLConfig,
     appIcons,
     primaryLogo: primaryLogoUrl,

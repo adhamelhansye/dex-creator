@@ -7,6 +7,9 @@ import {
   updateDexRepoUrl,
   getAllDexes,
 } from "../models/dex";
+
+import { getCurrentEnvironment } from "../models/dex.js";
+import { deleteBrokerId } from "../lib/brokerCreation.js";
 import { PrismaClient } from "@prisma/client";
 import {
   setupRepositoryWithSingleCommit,
@@ -17,7 +20,6 @@ import {
 
 const prisma = new PrismaClient();
 
-// Define a type for the context that includes userId and isAdmin
 type AdminContext = Context<{
   Variables: {
     userId: string;
@@ -27,7 +29,6 @@ type AdminContext = Context<{
 
 const adminRoutes = new Hono();
 
-// Get all admins (protected by adminMiddleware in app)
 adminRoutes.get("/users", async (c: AdminContext) => {
   try {
     const admins = await getAllAdmins();
@@ -38,23 +39,18 @@ adminRoutes.get("/users", async (c: AdminContext) => {
   }
 });
 
-// Check if current user is admin (public endpoint - always returns 200)
 adminRoutes.get("/check", async c => {
-  // Get userId from context if it exists (user might not be logged in)
   const userId = c.get("userId") as string | undefined;
   console.log("userId", userId);
 
-  // If no userId is provided, user is not logged in, so definitely not admin
   if (!userId) {
     return c.json({ isAdmin: false }, 200);
   }
 
-  // Check if user is admin
   const isAdmin = await isUserAdmin(userId);
   return c.json({ isAdmin }, 200);
 });
 
-// Get all DEXes (admin only)
 adminRoutes.get("/dexes", async (c: AdminContext) => {
   try {
     const dexes = await getAllDexes();
@@ -65,7 +61,6 @@ adminRoutes.get("/dexes", async (c: AdminContext) => {
   }
 });
 
-// Helper function to extract owner and repo from GitHub URL
 function extractRepoInfoFromUrl(
   repoUrl: string
 ): { owner: string; repo: string } | null {
@@ -85,7 +80,6 @@ function extractRepoInfoFromUrl(
   }
 }
 
-// Admin endpoint to update brokerId (protected by adminMiddleware)
 adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
   const id = c.req.param("id");
 
@@ -162,9 +156,7 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
             `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
           );
         } catch (configError) {
-          // Log the error but don't fail the update
           console.error("Error updating repository files:", configError);
-          // We continue even if the repo update failed
         }
       }
     }
@@ -212,11 +204,9 @@ adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
   }
 });
 
-// Admin endpoint to rename a repository (protected by adminMiddleware)
 adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
   const id = c.req.param("id");
 
-  // Validate the request body
   const renameSchema = z.object({
     newName: z
       .string()
@@ -228,7 +218,6 @@ adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
       ),
   });
 
-  // Validate body
   let body;
   try {
     body = await c.req.json();
@@ -238,33 +227,27 @@ adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
   }
 
   try {
-    // Get the DEX with current data
     const dex = await getDexById(id);
     if (!dex) {
       return c.json({ message: "DEX not found" }, 404);
     }
 
-    // Check if the DEX has a repository URL
     if (!dex.repoUrl) {
       return c.json({ message: "This DEX does not have a repository" }, 400);
     }
 
-    // Extract owner and repo from GitHub URL
     const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
     if (!repoInfo) {
       return c.json({ message: "Invalid repository URL" }, 400);
     }
 
     try {
-      // Use the renameRepository function from github.ts
       const newRepoUrl = await renameRepository(
         repoInfo.owner,
         repoInfo.repo,
         body.newName
       );
 
-      // Update the DEX record with the new repository URL
-      // No need to pass userId since we removed the authorization check in the model
       const updatedDex = await updateDexRepoUrl(id, newRepoUrl);
 
       return c.json({
@@ -274,10 +257,8 @@ adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
         newName: body.newName,
       });
     } catch (githubError) {
-      // Handle GitHub API errors
       console.error("GitHub API error:", githubError);
 
-      // Check for specific GitHub errors
       if (
         githubError instanceof Error &&
         githubError.message.includes("Repository with this name already exists")
@@ -305,7 +286,6 @@ adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
   }
 });
 
-// Admin endpoint to approve a broker ID
 adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
   try {
     const approveBrokerIdSchema = z.object({
@@ -334,23 +314,12 @@ adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
       );
     }
 
-    if (!dex.preferredBrokerId) {
-      return c.json(
-        {
-          success: false,
-          message: "This DEX has not requested a broker ID yet",
-        },
-        { status: 400 }
-      );
-    }
-
-    const brokerId = customBrokerId || dex.preferredBrokerId;
+    const brokerId = customBrokerId || dex.brokerId;
 
     const updatedDex = await prisma.dex.update({
       where: { id: dexId },
       data: {
         brokerId,
-        preferredBrokerId: brokerId,
       },
     });
 
@@ -361,7 +330,6 @@ adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
         id: updatedDex.id,
         brokerName: updatedDex.brokerName,
         brokerId: updatedDex.brokerId,
-        preferredBrokerId: updatedDex.preferredBrokerId,
       },
     });
   } catch (error) {
@@ -370,6 +338,85 @@ adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
       {
         success: false,
         message: `Error approving broker ID: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+adminRoutes.post("/broker/delete", async (c: AdminContext) => {
+  try {
+    const deleteBrokerSchema = z.object({
+      brokerId: z.string().min(1).max(50),
+    });
+
+    const result = deleteBrokerSchema.safeParse(await c.req.json());
+    if (!result.success) {
+      return c.json(
+        { error: "Invalid request", details: result.error },
+        { status: 400 }
+      );
+    }
+
+    const { brokerId } = result.data;
+    const env = getCurrentEnvironment();
+
+    console.log(
+      `Admin attempting to delete broker ID: ${brokerId} on environment: ${env}`
+    );
+
+    const dex = await prisma.dex.findFirst({
+      where: { brokerId },
+    });
+
+    const deletionResult = await deleteBrokerId(brokerId, env);
+
+    if (!deletionResult.success) {
+      return c.json(
+        {
+          success: false,
+          message: `Failed to delete broker ID from blockchain: ${deletionResult.errors?.join(", ")}`,
+        },
+        { status: 500 }
+      );
+    }
+
+    let updatedDex = null;
+    if (dex) {
+      updatedDex = await prisma.dex.update({
+        where: { id: dex.id },
+        data: { brokerId: "demo" },
+      });
+      console.log(
+        `Successfully deleted broker ID ${brokerId} and reset DEX ${dex.id} to demo status`
+      );
+    } else {
+      console.log(
+        `No DEX found with broker ID ${brokerId}, but on-chain deletion succeeded.`
+      );
+    }
+
+    return c.json({
+      success: true,
+      message:
+        `Broker ID '${brokerId}' deleted successfully from all chains` +
+        (dex ? " and DEX reset to demo" : " (no DEX found in DB)"),
+      brokerId,
+      transactionHashes: deletionResult.transactionHashes || {},
+      dex: updatedDex
+        ? {
+            id: updatedDex.id,
+            brokerName: updatedDex.brokerName,
+            brokerId: updatedDex.brokerId,
+          }
+        : null,
+    });
+  } catch (error) {
+    console.error("Error deleting broker ID:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error deleting broker ID: ${error instanceof Error ? error.message : String(error)}`,
       },
       { status: 500 }
     );
