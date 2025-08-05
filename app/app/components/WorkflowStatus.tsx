@@ -74,7 +74,6 @@ export default function WorkflowStatus({
   const [error, setError] = useState<string | null>(null);
   const [deploymentChecked, setDeploymentChecked] = useState(false);
 
-  // Define fetchRunDetails before fetchWorkflowStatus to avoid circular dependency
   const fetchRunDetails = useCallback(
     async (runId: number, showLoading = true) => {
       if (!token || !dexId) return;
@@ -90,10 +89,27 @@ export default function WorkflowStatus({
           token
         );
         setSelectedRun(data);
+
+        setWorkflowStatus(prevStatus => {
+          if (!prevStatus) return prevStatus;
+
+          return {
+            ...prevStatus,
+            workflowRuns: prevStatus.workflowRuns.map(run =>
+              run.id === runId
+                ? {
+                    ...run,
+                    status: data.status,
+                    conclusion: data.conclusion,
+                    updatedAt: data.updatedAt,
+                  }
+                : run
+            ),
+          };
+        });
       } catch (error) {
         console.error("Error fetching run details:", error);
         toast.error("Could not fetch workflow run details");
-        // Reset selected run ID on error
         setSelectedRunId(null);
       } finally {
         if (showLoading) {
@@ -119,16 +135,12 @@ export default function WorkflowStatus({
       const data = await get<WorkflowStatusResponse>(url, token);
       setWorkflowStatus(data);
 
-      // If this is a manual refresh, reset the deployment checked flag
       setDeploymentChecked(false);
 
-      // If we have a selectedRun and the workflow is refreshed,
-      // check if that run exists in the new data and update it if needed
       if (
         selectedRunId &&
         data.workflowRuns.some(run => run.id === selectedRunId)
       ) {
-        // Only refresh the run details if it's in progress
         const selectedWorkflow = data.workflowRuns.find(
           run => run.id === selectedRunId
         );
@@ -137,7 +149,6 @@ export default function WorkflowStatus({
           (selectedWorkflow.status === "in_progress" ||
             selectedWorkflow.status === "queued")
         ) {
-          // Use silent refresh (no loading indicator) during auto-updates
           fetchRunDetails(selectedRunId, false);
         }
       }
@@ -153,14 +164,10 @@ export default function WorkflowStatus({
   useEffect(() => {
     fetchWorkflowStatus();
 
-    // Set up auto-refresh if enabled
     let interval: NodeJS.Timeout | null = null;
     if (autoRefresh) {
-      // Use much longer intervals to reduce API load
       const refreshInterval =
-        !workflowStatus || workflowStatus.totalCount === 0
-          ? 5_000 // 5 seconds when no workflows found
-          : 20_000; // 10 seconds otherwise
+        !workflowStatus || workflowStatus.totalCount === 0 ? 5_000 : 20_000;
 
       interval = setInterval(fetchWorkflowStatus, refreshInterval);
     }
@@ -170,7 +177,6 @@ export default function WorkflowStatus({
     };
   }, [fetchWorkflowStatus, autoRefresh]);
 
-  // Function to check for successful deployments
   const checkForSuccessfulDeployment = useCallback(() => {
     if (
       !workflowStatus ||
@@ -180,7 +186,6 @@ export default function WorkflowStatus({
       return;
     }
 
-    // Get previously notified workflow IDs from localStorage
     const storageKey = `notified-deployments-${dexId}`;
     let notifiedDeployments: number[] = [];
     try {
@@ -192,34 +197,27 @@ export default function WorkflowStatus({
       console.error("Error reading from localStorage:", err);
     }
 
-    // Look for the most recent successful "Deploy to GitHub Pages" workflow run
     const deployWorkflows = workflowStatus.workflowRuns.filter(
       run => run.name === "Deploy to GitHub Pages"
     );
 
-    // If we have deploy workflows, check for successful ones
     if (deployWorkflows.length > 0) {
-      // Find the most recent successful deployment
       const successfulDeployment = deployWorkflows.find(
         run => run.status === "completed" && run.conclusion === "success"
       );
 
       if (successfulDeployment) {
-        // Get deployment URL from the HTML URL (repo URL)
         if (successfulDeployment.htmlUrl) {
           const repoUrl =
             successfulDeployment.htmlUrl.split("/actions/runs/")[0];
           const deploymentUrl = generateDeploymentUrl(repoUrl);
           if (deploymentUrl) {
-            // Check if we've already notified for this workflow
             const isNewDeployment = !notifiedDeployments.includes(
               successfulDeployment.id
             );
 
-            // Call parent handler with the deploymentUrl
             onSuccessfulDeployment(deploymentUrl, isNewDeployment);
 
-            // Store this workflow ID in localStorage to avoid repeat notifications
             if (isNewDeployment) {
               notifiedDeployments.push(successfulDeployment.id);
               try {
@@ -238,7 +236,6 @@ export default function WorkflowStatus({
         }
       }
 
-      // If we have workflows but none are successful yet, select the most recent one for display
       if (!selectedRun && deployWorkflows.length > 0) {
         fetchRunDetails(deployWorkflows[0].id);
       }
@@ -251,19 +248,16 @@ export default function WorkflowStatus({
     dexId,
   ]);
 
-  // Check for successful deployment when workflowStatus changes
   useEffect(() => {
     if (!deploymentChecked && workflowStatus) {
       checkForSuccessfulDeployment();
     }
   }, [workflowStatus, checkForSuccessfulDeployment, deploymentChecked]);
 
-  // Format date to local time
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleString();
   };
 
-  // Get status badge class based on workflow status/conclusion
   const getStatusBadgeClass = (status: string, conclusion: string | null) => {
     if (status === "completed") {
       switch (conclusion) {
@@ -284,7 +278,6 @@ export default function WorkflowStatus({
     return "bg-gray-400";
   };
 
-  // Get human-readable status
   const getStatusText = (status: string, conclusion: string | null) => {
     if (status === "completed") {
       switch (conclusion) {
@@ -325,7 +318,6 @@ export default function WorkflowStatus({
     );
   }
 
-  // If no workflows or empty response
   if (!workflowStatus || workflowStatus.totalCount === 0) {
     return (
       <div className={`p-4 ${className}`}>
