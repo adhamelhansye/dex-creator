@@ -1,15 +1,3 @@
-/**
- * Automated Broker Creation Service
- *
- * Handles automated creation of broker IDs across multiple blockchain networks.
- * Implements atomic execution by simulating all transactions first, then executing
- * them simultaneously if all simulations pass.
- *
- * Two-step process:
- * 1. createAutomatedBrokerId - Creates broker on L1 Vaults and Orderly L2 VaultManager
- * 2. setBrokerAccountId - Later sets account ID on FeeManager (after user wallet registration)
- */
-
 import { ethers } from "ethers";
 import { Environment, getCurrentEnvironment } from "../models/dex.js";
 import {
@@ -24,6 +12,144 @@ import {
   FeeManager__factory,
 } from "../../types/index.js";
 
+import * as anchor from "@coral-xyz/anchor";
+import { SystemProgram } from "@solana/web3.js";
+import { solidityPackedKeccak256 } from "ethers";
+import { IDL, type SolanaVault } from "../interface/types/solana_vault.js";
+
+// Constants matching the other repository
+export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
+export const ACCESS_CONTROL_SEED = "AccessControl";
+
+let evmPrivateKey: string | null = null;
+let solanaPrivateKey: string | null = null;
+let solanaKeypair: anchor.web3.Keypair | null = null;
+let isInitialized = false;
+
+export function initializeBrokerCreation(): void {
+  console.log("🔧 Initializing broker creation system...");
+
+  evmPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY || null;
+  if (!evmPrivateKey) {
+    console.warn(
+      "⚠️  BROKER_CREATION_PRIVATE_KEY not found - EVM operations will fail"
+    );
+  } else {
+    const evmWallet = new ethers.Wallet(evmPrivateKey);
+    console.log("✅ EVM private key loaded");
+    console.log(`📍 EVM wallet address: ${evmWallet.address}`);
+  }
+
+  solanaPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null;
+  if (!solanaPrivateKey) {
+    console.warn(
+      "⚠️  BROKER_CREATION_PRIVATE_KEY_SOL not found - Solana operations will fail"
+    );
+  } else {
+    try {
+      const privateKeyArray = JSON.parse(solanaPrivateKey);
+      if (!Array.isArray(privateKeyArray)) {
+        throw new Error("Solana private key must be a JSON array");
+      }
+      solanaKeypair = anchor.web3.Keypair.fromSecretKey(
+        new Uint8Array(privateKeyArray)
+      );
+      console.log("✅ Solana private key loaded");
+      console.log(
+        `📍 Solana wallet address: ${solanaKeypair.publicKey.toString()}`
+      );
+    } catch (error) {
+      console.error("❌ Failed to parse Solana private key:", error);
+      console.error(
+        "   Expected format: [1,2,3,4,...] (JSON array of numbers)"
+      );
+      solanaKeypair = null;
+    }
+  }
+
+  if (!evmPrivateKey && !solanaPrivateKey) {
+    console.error("❌ No private keys found! Broker creation will not work.");
+    console.error(
+      "   Please set either BROKER_CREATION_PRIVATE_KEY (for EVM) or BROKER_CREATION_PRIVATE_KEY_SOL (for Solana)"
+    );
+  }
+
+  isInitialized = true;
+  console.log("🚀 Broker creation system initialized");
+}
+
+function getEvmPrivateKey(): string {
+  if (!isInitialized) {
+    initializeBrokerCreation();
+  }
+
+  if (!evmPrivateKey) {
+    throw new Error(
+      "BROKER_CREATION_PRIVATE_KEY environment variable is required for EVM operations"
+    );
+  }
+
+  return evmPrivateKey;
+}
+
+function getSolanaKeypair(): anchor.web3.Keypair {
+  if (!isInitialized) {
+    initializeBrokerCreation();
+  }
+
+  if (!solanaKeypair) {
+    throw new Error("Solana keypair not initialized");
+  }
+
+  return solanaKeypair;
+}
+
+function getEvmProvider(chainName: string): ethers.JsonRpcProvider {
+  if (!isInitialized) {
+    initializeBrokerCreation();
+  }
+
+  const provider = new ethers.JsonRpcProvider(
+    ALL_CHAINS[chainName as ChainName].rpcUrl
+  );
+  return provider;
+}
+
+function getSolanaConnection(
+  environment?: Environment
+): anchor.web3.Connection {
+  if (!isInitialized) {
+    initializeBrokerCreation();
+  }
+
+  const env = environment || getCurrentEnvironment();
+
+  let solanaChainName: ChainName;
+  if (env === "mainnet") {
+    solanaChainName = "solana-mainnet-beta";
+  } else {
+    solanaChainName = "solana-devnet";
+  }
+
+  const solanaChain = ALL_CHAINS[solanaChainName];
+  if (!solanaChain) {
+    throw new Error(
+      `No Solana chain configuration found for environment: ${env}`
+    );
+  }
+
+  try {
+    console.log("solanaChain.rpcUrl", solanaChain.rpcUrl);
+    return new anchor.web3.Connection(solanaChain.rpcUrl);
+  } catch (error) {
+    console.warn(
+      `⚠️  Failed to initialize Solana connection for ${env}:`,
+      error
+    );
+    throw new Error(`Failed to initialize Solana connection for ${env}.`);
+  }
+}
+
 function getBrokerHash(brokerId: string): string {
   return ethers.keccak256(ethers.toUtf8Bytes(brokerId));
 }
@@ -36,6 +162,59 @@ function getRpcUrlForChain(chainName: string): string {
   return chainConfig.rpcUrl;
 }
 
+function getManagerRoleHash(managerRole: string): string {
+  return solidityPackedKeccak256(["string"], [managerRole]);
+}
+
+function getSolanaBrokerHash(brokerId: string): string {
+  return solidityPackedKeccak256(["string"], [brokerId]);
+}
+
+function getSolanaBrokerPda(
+  programId: anchor.web3.PublicKey,
+  brokerHash: string
+): anchor.web3.PublicKey {
+  const hash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("Broker", "utf8"), Buffer.from(hash)],
+    programId
+  )[0];
+}
+
+function getSolanaVaultProgram(
+  environment?: Environment
+): anchor.Program<SolanaVault> {
+  const env = environment || getCurrentEnvironment();
+  const config = ENVIRONMENT_CONFIGS[env];
+
+  const solanaChainName =
+    env === "mainnet" ? "solana-mainnet-beta" : "solana-devnet";
+  const solanaConfig = config[
+    solanaChainName as keyof typeof config
+  ] as EnvironmentChainConfig;
+
+  if (!solanaConfig?.vaultAddress) {
+    throw new Error(
+      `No Solana vault address configured for environment: ${env}`
+    );
+  }
+
+  const programId = new anchor.web3.PublicKey(solanaConfig.vaultAddress);
+  const connection = getSolanaConnection(env);
+  const keypair = getSolanaKeypair();
+
+  const provider = new anchor.AnchorProvider(
+    connection,
+    new anchor.Wallet(keypair),
+    {
+      commitment: "confirmed",
+      preflightCommitment: "confirmed",
+    }
+  );
+
+  return new anchor.Program(IDL, programId, provider);
+}
+
 interface SimulationResult {
   success: boolean;
   error?: string;
@@ -45,7 +224,7 @@ interface SimulationResult {
 interface BrokerCreationResult {
   success: boolean;
   brokerId?: string;
-  transactionHashes?: Record<number, string>; // chainId -> txHash
+  transactionHashes?: Record<number, string>;
   errors?: string[];
 }
 
@@ -61,35 +240,66 @@ export async function createAutomatedBrokerId(
       throw new Error(`No configuration found for environment: ${env}`);
     }
 
-    const privateKey = process.env.BROKER_CREATION_PRIVATE_KEY;
-    if (!privateKey) {
-      throw new Error(
-        "BROKER_CREATION_PRIVATE_KEY environment variable is required"
-      );
+    if (!isInitialized) {
+      initializeBrokerCreation();
     }
 
     console.log(
-      `Simulating broker creation for ID: ${brokerId} on environment: ${env}`
+      `🚀 Starting broker creation for broker ID: ${brokerId} on environment: ${env}`
     );
 
-    const simulationPromises: Promise<SimulationResult>[] = [];
+    const evmChains: Array<[string, EnvironmentChainConfig]> = [];
+    const solanaChains: Array<[string, EnvironmentChainConfig]> = [];
 
     for (const [chainName, chainConfig] of Object.entries(config)) {
+      const chainInfo = ALL_CHAINS[chainName as ChainName];
+      if (!chainInfo) {
+        console.warn(`⚠️ No chain info found for: ${chainName}`);
+        continue;
+      }
+
+      if (chainInfo.chainType === "EVM") {
+        evmChains.push([chainName, chainConfig]);
+      } else if (chainInfo.chainType === "SOL") {
+        solanaChains.push([chainName, chainConfig]);
+      }
+    }
+
+    console.log(
+      `📊 Found ${evmChains.length} EVM chains and ${solanaChains.length} Solana chains`
+    );
+
+    const simulationPromises: Array<
+      Promise<{ chainName: string; result: SimulationResult }>
+    > = [];
+
+    for (const [chainName, chainConfig] of evmChains) {
       if (chainConfig.vaultAddress) {
         simulationPromises.push(
-          simulateL1Transaction(chainConfig, brokerId, privateKey, chainName)
+          simulateVaultTransaction(chainConfig, brokerId, chainName).then(
+            result => ({ chainName, result })
+          )
         );
       }
     }
 
-    for (const [chainName, chainConfig] of Object.entries(config)) {
+    for (const [chainName, chainConfig] of evmChains) {
       if (chainConfig.vaultManagerAddress) {
         simulationPromises.push(
-          simulateOrderlyTransaction(
+          simulateVaultManagerTransaction(
             chainConfig,
             brokerId,
-            privateKey,
             chainName
+          ).then(result => ({ chainName, result }))
+        );
+      }
+    }
+
+    for (const [chainName, chainConfig] of solanaChains) {
+      if (chainConfig.vaultAddress) {
+        simulationPromises.push(
+          simulateSolanaVaultTransaction(chainConfig, brokerId, chainName).then(
+            result => ({ chainName, result })
           )
         );
       }
@@ -98,56 +308,50 @@ export async function createAutomatedBrokerId(
     const simulationResults = await Promise.all(simulationPromises);
 
     const failedSimulations = simulationResults.filter(
-      result => !result.success
+      ({ result }) => !result.success
     );
+
     if (failedSimulations.length > 0) {
-      const errors = failedSimulations
-        .map(result => result.error)
-        .filter(Boolean);
-      console.error("Broker creation simulation failed:", errors);
+      const errors = failedSimulations.map(
+        ({ chainName, result }) => `${chainName}: ${result.error}`
+      );
+      console.error("❌ Some simulations failed:", errors);
       return {
         success: false,
-        errors: errors as string[],
+        errors,
       };
     }
 
-    console.log(
-      "All simulations passed. Proceeding with actual transactions..."
-    );
+    console.log("✅ All simulations passed, executing transactions...");
 
-    const executionPromises: Promise<{ chainId: number; txHash: string }>[] =
-      [];
+    const executionPromises: Array<
+      Promise<{ chainId: number; txHash: string }>
+    > = [];
 
-    for (const [chainName, chainConfig] of Object.entries(config)) {
+    for (const [chainName, chainConfig] of evmChains) {
+      const chainId = ALL_CHAINS[chainName as ChainName].chainId;
       if (chainConfig.vaultAddress) {
-        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
         executionPromises.push(
-          executeL1Transaction(
-            chainConfig,
-            brokerId,
-            privateKey,
-            chainName
-          ).then(txHash => ({
-            chainId,
-            txHash,
-          }))
+          executeVaultTransaction(chainConfig, brokerId, chainName).then(
+            txHash => ({ chainId, txHash })
+          )
+        );
+      } else if (chainConfig.vaultManagerAddress) {
+        executionPromises.push(
+          executeVaultManagerTransaction(chainConfig, brokerId, chainName).then(
+            txHash => ({ chainId, txHash })
+          )
         );
       }
     }
 
-    for (const [chainName, chainConfig] of Object.entries(config)) {
-      if (chainConfig.vaultManagerAddress) {
-        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+    for (const [chainName, chainConfig] of solanaChains) {
+      const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+      if (chainConfig.vaultAddress) {
         executionPromises.push(
-          executeOrderlyTransaction(
-            chainConfig,
-            brokerId,
-            privateKey,
-            chainName
-          ).then(txHash => ({
-            chainId,
-            txHash,
-          }))
+          executeSolanaVaultTransaction(chainConfig, brokerId, chainName).then(
+            txHash => ({ chainId, txHash })
+          )
         );
       }
     }
@@ -189,13 +393,6 @@ export async function setBrokerAccountId(
       throw new Error(`No configuration found for environment: ${env}`);
     }
 
-    const privateKey = process.env.BROKER_CREATION_PRIVATE_KEY;
-    if (!privateKey) {
-      throw new Error(
-        "BROKER_CREATION_PRIVATE_KEY environment variable is required"
-      );
-    }
-
     const orderlyConfig = Object.values(config).find(
       chainConfig =>
         chainConfig.feeManagerAddress && chainConfig.vaultManagerAddress
@@ -210,10 +407,21 @@ export async function setBrokerAccountId(
     );
 
     const orderlyChainName = env === "mainnet" ? "orderlyL2" : "orderlyTestnet";
-    const orderlyChainConfig = ALL_CHAINS[orderlyChainName];
 
+    const simulationResult = await simulateFeeManagerTransaction(
+      orderlyConfig,
+      brokerId,
+      accountId,
+      orderlyChainName
+    );
+
+    if (!simulationResult.success) {
+      throw new Error(`Simulation failed: ${simulationResult.error}`);
+    }
+
+    const orderlyChainConfig = ALL_CHAINS[orderlyChainName];
     const provider = new ethers.JsonRpcProvider(orderlyChainConfig.rpcUrl);
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
 
     const feeManager = FeeManager__factory.connect(
       orderlyConfig.feeManagerAddress,
@@ -221,27 +429,6 @@ export async function setBrokerAccountId(
     );
 
     const brokerHash = getBrokerHash(brokerId);
-
-    try {
-      const gasEstimate = await feeManager.setBrokerAccountId.estimateGas(
-        brokerHash,
-        accountId
-      );
-      const balance = await provider.getBalance(wallet.address);
-      const gasPrice = await provider.getFeeData();
-      const estimatedCost = gasEstimate * (gasPrice.gasPrice || BigInt(0));
-
-      if (balance < estimatedCost) {
-        throw new Error(
-          `Insufficient balance. Required: ${ethers.formatEther(estimatedCost)} ETH, Available: ${ethers.formatEther(balance)} ETH`
-        );
-      }
-    } catch (error) {
-      throw new Error(
-        `Simulation failed: ${error instanceof Error ? error.message : "Unknown error"}`
-      );
-    }
-
     const tx = await feeManager.setBrokerAccountId(brokerHash, accountId);
     await tx.wait();
 
@@ -263,10 +450,9 @@ export async function setBrokerAccountId(
   }
 }
 
-async function simulateL1Transaction(
+async function simulateVaultTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<SimulationResult> {
   try {
@@ -275,11 +461,10 @@ async function simulateL1Transaction(
     }
 
     const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
     const brokerHash = getBrokerHash(brokerId);
-
     const isAllowed = await vault.getAllowedBroker(brokerHash);
     if (isAllowed) {
       throw new Error(`Broker ${brokerId} already exists on ${chainName}`);
@@ -310,10 +495,9 @@ async function simulateL1Transaction(
   }
 }
 
-async function simulateOrderlyTransaction(
+async function simulateVaultManagerTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<SimulationResult> {
   try {
@@ -322,17 +506,16 @@ async function simulateOrderlyTransaction(
     }
 
     const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
       wallet
     );
 
     const brokerHash = getBrokerHash(brokerId);
-
     const isAllowed = await vaultManager.getAllowedBroker(brokerHash);
     if (isAllowed) {
-      throw new Error(`Broker ${brokerId} already exists on Orderly L2`);
+      throw new Error(`Broker ${brokerId} already exists on ${chainName}`);
     }
 
     const gasEstimate = await vaultManager.setAllowedBroker.estimateGas(
@@ -360,10 +543,142 @@ async function simulateOrderlyTransaction(
   }
 }
 
-async function executeL1Transaction(
+async function simulateFeeManagerTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
+  accountId: string,
+  chainName: string
+): Promise<SimulationResult> {
+  try {
+    if (!chainConfig.feeManagerAddress) {
+      throw new Error("FeeManager address not configured for Orderly L2");
+    }
+
+    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const feeManager = FeeManager__factory.connect(
+      chainConfig.feeManagerAddress,
+      wallet
+    );
+
+    const brokerHash = getBrokerHash(brokerId);
+    const gasEstimate = await feeManager.setBrokerAccountId.estimateGas(
+      brokerHash,
+      accountId
+    );
+
+    const balance = await provider.getBalance(wallet.address);
+    const gasPrice = await provider.getFeeData();
+    const estimatedCost = gasEstimate * (gasPrice.gasPrice || BigInt(0));
+
+    if (balance < estimatedCost) {
+      throw new Error(
+        `Insufficient balance. Required: ${ethers.formatEther(estimatedCost)} ETH, Available: ${ethers.formatEther(balance)} ETH`
+      );
+    }
+
+    return { success: true, gasEstimate };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown simulation error",
+    };
+  }
+}
+
+async function simulateSolanaVaultTransaction(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  chainName: string
+): Promise<SimulationResult> {
+  try {
+    if (!chainConfig.vaultAddress) {
+      throw new Error("Vault address not configured for this chain");
+    }
+
+    const env = getCurrentEnvironment();
+    const program = getSolanaVaultProgram(env);
+    const keypair = getSolanaKeypair();
+
+    const brokerHash = getSolanaBrokerHash(brokerId);
+    const brokerPda = getSolanaBrokerPda(program.programId, brokerHash);
+
+    const brokerAccount =
+      await program.provider.connection.getAccountInfo(brokerPda);
+    if (brokerAccount) {
+      const allowedBrokerData =
+        await program.account.allowedBroker.fetch(brokerPda);
+      if (allowedBrokerData.allowed) {
+        throw new Error(
+          `Broker ${brokerId} already exists and is allowed on ${chainName}`
+        );
+      }
+    }
+
+    const balance = await program.provider.connection.getBalance(
+      keypair.publicKey
+    );
+    const estimatedFee = 5000;
+
+    if (balance < estimatedFee) {
+      throw new Error(
+        `Insufficient balance. Required: ${estimatedFee} lamports, Available: ${balance} lamports`
+      );
+    }
+
+    const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
+    console.log("brokerManagerRoleHash", brokerManagerRoleHash);
+    const codedBrokerManagerRoleHash = Array.from(
+      Buffer.from(brokerManagerRoleHash.slice(2), "hex")
+    );
+    console.log("codedBrokerManagerRoleHash", codedBrokerManagerRoleHash);
+    const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
+        Buffer.from(codedBrokerManagerRoleHash),
+        keypair.publicKey.toBuffer(),
+      ],
+      program.programId
+    )[0];
+    console.log("keypair.publicKey", keypair.publicKey);
+    console.log("program.programId", program.programId);
+    console.log("brokerManagerRolePda", brokerManagerRolePda);
+
+    const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
+    console.log("codedBrokerHash", codedBrokerHash);
+
+    await program.methods
+      .setBroker({
+        brokerManagerRole: codedBrokerManagerRoleHash,
+        brokerHash: codedBrokerHash,
+        allowed: true,
+      })
+      .accounts({
+        brokerManager: keypair.publicKey,
+        allowedBroker: brokerPda,
+        managerRole: brokerManagerRolePda,
+        systemProgram: SystemProgram.programId,
+      })
+      .simulate();
+
+    console.log(
+      `🔍 Solana simulation successful for broker ${brokerId} on ${chainName}`
+    );
+    return { success: true };
+  } catch (error) {
+    console.log("error", error);
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown simulation error",
+    };
+  }
+}
+
+async function executeVaultTransaction(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
   chainName: string
 ): Promise<string> {
   if (!chainConfig.vaultAddress) {
@@ -371,7 +686,7 @@ async function executeL1Transaction(
   }
 
   const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-  const wallet = new ethers.Wallet(privateKey, provider);
+  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
   const brokerHash = getBrokerHash(brokerId);
@@ -381,18 +696,17 @@ async function executeL1Transaction(
   return tx.hash;
 }
 
-async function executeOrderlyTransaction(
+async function executeVaultManagerTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<string> {
   if (!chainConfig.vaultManagerAddress) {
     throw new Error("VaultManager address not configured for Orderly L2");
   }
 
-  const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-  const wallet = new ethers.Wallet(privateKey, provider);
+  const provider = getEvmProvider(chainName);
+  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vaultManager = VaultManager__factory.connect(
     chainConfig.vaultManagerAddress,
     wallet
@@ -433,18 +747,7 @@ export async function checkBrokerCreationPermissions(
       throw new Error(`No configuration found for environment: ${env}`);
     }
 
-    const privateKey = process.env.BROKER_CREATION_PRIVATE_KEY;
-    if (!privateKey) {
-      return {
-        hasPermissions: false,
-        errors: [
-          "BROKER_CREATION_PRIVATE_KEY environment variable is required",
-        ],
-        permissionDetails,
-      };
-    }
-
-    const wallet = new ethers.Wallet(privateKey);
+    const wallet = new ethers.Wallet(getEvmPrivateKey());
     const walletAddress = wallet.address;
 
     console.log(
@@ -518,61 +821,108 @@ async function checkChainPermissions(
   contractType: string;
   error?: string;
 }> {
-  if (chainConfig.vaultAddress) {
-    try {
-      const hasPermission = await checkL1Permissions(
-        chainConfig,
-        walletAddress,
-        chainName
-      );
-      return {
-        chain: chainName,
-        hasPermission,
-        contractType: "Vault",
-        error: hasPermission
-          ? undefined
-          : "Missing BROKER_MANAGER_ROLE on Vault contract",
-      };
-    } catch (error) {
-      return {
-        chain: chainName,
-        hasPermission: false,
-        contractType: "Vault",
-        error: `Error checking permissions: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
-    }
+  const chainInfo = ALL_CHAINS[chainName as ChainName];
+  if (!chainInfo) {
+    return {
+      chain: chainName,
+      hasPermission: false,
+      contractType: "Unknown",
+      error: "Chain not found in configuration",
+    };
   }
 
-  if (chainConfig.vaultManagerAddress) {
-    try {
-      const hasPermission = await checkOrderlyPermissions(
-        chainConfig,
-        walletAddress,
-        chainName
-      );
-      return {
-        chain: chainName,
-        hasPermission,
-        contractType: "VaultManager",
-        error: hasPermission
-          ? undefined
-          : "Missing BROKER_MANAGER_ROLE on VaultManager contract",
-      };
-    } catch (error) {
-      return {
-        chain: chainName,
-        hasPermission: false,
-        contractType: "VaultManager",
-        error: `Error checking permissions: ${error instanceof Error ? error.message : "Unknown error"}`,
-      };
+  if (chainInfo.chainType === "EVM") {
+    if (chainConfig.vaultAddress) {
+      try {
+        const hasPermission = await checkL1Permissions(
+          chainConfig,
+          walletAddress,
+          chainName
+        );
+        return {
+          chain: chainName,
+          hasPermission,
+          contractType: "Vault",
+          error: hasPermission
+            ? undefined
+            : "Missing BROKER_MANAGER_ROLE on Vault contract",
+        };
+      } catch (error) {
+        return {
+          chain: chainName,
+          hasPermission: false,
+          contractType: "Vault",
+          error: `Error checking permissions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        };
+      }
     }
+
+    if (chainConfig.vaultManagerAddress) {
+      try {
+        const hasPermission = await checkOrderlyPermissions(
+          chainConfig,
+          walletAddress,
+          chainName
+        );
+        return {
+          chain: chainName,
+          hasPermission,
+          contractType: "VaultManager",
+          error: hasPermission
+            ? undefined
+            : "Missing BROKER_MANAGER_ROLE on VaultManager contract",
+        };
+      } catch (error) {
+        return {
+          chain: chainName,
+          hasPermission: false,
+          contractType: "VaultManager",
+          error: `Error checking permissions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        };
+      }
+    }
+
+    return {
+      chain: chainName,
+      hasPermission: true,
+      contractType: "None",
+      error: "No broker creation contracts on this chain",
+    };
+  } else if (chainInfo.chainType === "SOL") {
+    if (chainConfig.vaultAddress) {
+      try {
+        const hasPermission = await checkSolanaPermissions(chainConfig);
+        return {
+          chain: chainName,
+          hasPermission,
+          contractType: "SolanaVault",
+          error: hasPermission
+            ? undefined
+            : "Missing BROKER_MANAGER_ROLE on Solana Vault program",
+        };
+      } catch (error) {
+        return {
+          chain: chainName,
+          hasPermission: false,
+          contractType: "SolanaVault",
+          error: `Error checking permissions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        };
+      }
+    }
+
+    return {
+      chain: chainName,
+      hasPermission: true,
+      contractType: "None",
+      error: "No broker creation contracts on this Solana chain",
+    };
   }
 
   return {
     chain: chainName,
-    hasPermission: true,
-    contractType: "None",
-    error: "No broker creation contracts on this chain",
+    hasPermission: false,
+    contractType: "Unknown",
+    error: "Unsupported chain type",
   };
 }
 
@@ -584,7 +934,7 @@ async function checkL1Permissions(
   try {
     if (!chainConfig.vaultAddress) return false;
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const provider = getEvmProvider(chainName);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, provider);
 
     const BROKER_MANAGER_ROLE = await vault.BROKER_MANAGER_ROLE();
@@ -603,16 +953,61 @@ async function checkOrderlyPermissions(
   try {
     if (!chainConfig.vaultManagerAddress) return false;
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const provider = getEvmProvider(chainName);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
       provider
     );
 
     const BROKER_MANAGER_ROLE = await vaultManager.BROKER_MANAGER_ROLE();
-    return await vaultManager.hasRole(BROKER_MANAGER_ROLE, walletAddress);
+    return vaultManager.hasRole(BROKER_MANAGER_ROLE, walletAddress);
   } catch (error) {
     console.error("Error checking Orderly permissions:", error);
+    return false;
+  }
+}
+
+async function checkSolanaPermissions(
+  chainConfig: EnvironmentChainConfig
+): Promise<boolean> {
+  try {
+    if (!chainConfig.vaultAddress) return false;
+
+    const env = getCurrentEnvironment();
+    const program = getSolanaVaultProgram(env);
+    const keypair = getSolanaKeypair();
+
+    const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
+    const codedBrokerManagerRoleHash = Array.from(
+      Buffer.from(brokerManagerRoleHash.slice(2), "hex")
+    );
+    const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
+        Buffer.from(codedBrokerManagerRoleHash),
+        keypair.publicKey.toBuffer(),
+      ],
+      program.programId
+    )[0];
+
+    const managerRoleAccount =
+      await program.account.managerRole.fetch(brokerManagerRolePda);
+    if (managerRoleAccount && managerRoleAccount.allowed) {
+      return true;
+    }
+
+    const balance = await program.provider.connection.getBalance(
+      keypair.publicKey
+    );
+    const estimatedFee = 5000;
+
+    if (balance < estimatedFee) {
+      return false;
+    }
+
+    return true;
+  } catch (error) {
+    console.error("Error checking Solana permissions:", error);
     return false;
   }
 }
@@ -643,24 +1038,40 @@ export async function checkGasBalances(environment?: Environment): Promise<{
       throw new Error(`No configuration found for environment: ${env}`);
     }
 
-    const privateKey = process.env.BROKER_CREATION_PRIVATE_KEY;
-    if (!privateKey) {
-      warnings.push(
-        "BROKER_CREATION_PRIVATE_KEY environment variable is required"
-      );
-      return { success: false, warnings, balanceDetails };
-    }
-
-    const wallet = new ethers.Wallet(privateKey);
-    const walletAddress = wallet.address;
-
-    console.log(
-      `🔍 Checking gas balances for wallet: ${walletAddress} on environment: ${env}`
-    );
-
     const balanceCheckPromises = Object.entries(config).map(
-      ([chainName, chainConfig]) =>
-        checkChainBalance(chainName, chainConfig, walletAddress)
+      ([chainName, chainConfig]) => {
+        const chainInfo = ALL_CHAINS[chainName as ChainName];
+        if (!chainInfo) {
+          return Promise.resolve({
+            chain: chainName,
+            balance: "0.0",
+            estimatedCost: "unknown",
+            sufficient: false,
+          });
+        }
+
+        if (chainInfo.chainType === "EVM") {
+          const evmWallet = new ethers.Wallet(getEvmPrivateKey());
+          return checkChainBalance(chainName, chainConfig, evmWallet.address);
+        } else if (chainInfo.chainType === "SOL") {
+          if (!solanaKeypair) {
+            return Promise.resolve({
+              chain: chainName,
+              balance: "0.0",
+              estimatedCost: "unknown",
+              sufficient: false,
+            });
+          }
+          return checkChainBalance(chainName, chainConfig, "");
+        }
+
+        return Promise.resolve({
+          chain: chainName,
+          balance: "0.0",
+          estimatedCost: "unknown",
+          sufficient: false,
+        });
+      }
     );
 
     const results = await Promise.all(balanceCheckPromises);
@@ -668,13 +1079,16 @@ export async function checkGasBalances(environment?: Environment): Promise<{
     for (const result of results) {
       balanceDetails.push(result);
 
+      const chainInfo = ALL_CHAINS[result.chain as ChainName];
+      const currency = chainInfo?.chainType === "SOL" ? "SOL" : "ETH";
+
       if (!result.sufficient) {
         warnings.push(
-          `⚠️ ${result.chain}: Insufficient balance (${result.balance} ETH) for estimated gas cost (${result.estimatedCost} ETH)`
+          `⚠️ ${result.chain}: Insufficient balance (${result.balance} ${currency}) for estimated gas cost (${result.estimatedCost} ${currency})`
         );
       } else {
         console.log(
-          `✅ ${result.chain}: Sufficient balance (${result.balance} ETH)`
+          `✅ ${result.chain}: Sufficient balance (${result.balance} ${currency})`
         );
       }
     }
@@ -702,62 +1116,8 @@ async function checkChainBalance(
   estimatedCost: string;
   sufficient: boolean;
 }> {
-  try {
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-    const balance = await provider.getBalance(walletAddress);
-    const gasPrice = await provider.getFeeData();
-
-    let estimatedGas = BigInt(21000);
-    let contractAddress = "";
-
-    if (chainConfig.vaultAddress) {
-      contractAddress = chainConfig.vaultAddress;
-      try {
-        const vault = Vault__factory.connect(contractAddress, provider);
-        const testBrokerHash = ethers.keccak256(
-          ethers.toUtf8Bytes("test_broker")
-        );
-        estimatedGas = await vault.setAllowedBroker.estimateGas(
-          testBrokerHash,
-          true
-        );
-      } catch {
-        estimatedGas = BigInt(100000);
-      }
-    } else if (chainConfig.vaultManagerAddress) {
-      contractAddress = chainConfig.vaultManagerAddress;
-      try {
-        const vaultManager = VaultManager__factory.connect(
-          contractAddress,
-          provider
-        );
-        const testBrokerHash = ethers.keccak256(
-          ethers.toUtf8Bytes("test_broker")
-        );
-        estimatedGas = await vaultManager.setAllowedBroker.estimateGas(
-          testBrokerHash,
-          true
-        );
-      } catch {
-        estimatedGas = BigInt(100000);
-      }
-    }
-
-    const baseEstimatedCost =
-      estimatedGas * (gasPrice.gasPrice || BigInt("20000000000")); // 20 gwei fallback
-    const estimatedCostWithBuffer =
-      baseEstimatedCost + (baseEstimatedCost * BigInt(20)) / BigInt(100);
-
-    const sufficient = balance >= estimatedCostWithBuffer;
-
-    return {
-      chain: chainName,
-      balance: ethers.formatEther(balance),
-      estimatedCost: ethers.formatEther(estimatedCostWithBuffer),
-      sufficient,
-    };
-  } catch (error) {
-    console.error(`Error checking balance for ${chainName}:`, error);
+  const chainInfo = ALL_CHAINS[chainName as ChainName];
+  if (!chainInfo) {
     return {
       chain: chainName,
       balance: "0.0",
@@ -765,6 +1125,109 @@ async function checkChainBalance(
       sufficient: false,
     };
   }
+
+  if (chainInfo.chainType === "EVM") {
+    try {
+      const provider = getEvmProvider(chainName);
+      const balance = await provider.getBalance(walletAddress);
+      const gasPrice = await provider.getFeeData();
+
+      let estimatedGas = BigInt(21000);
+      let contractAddress = "";
+
+      if (chainConfig.vaultAddress) {
+        contractAddress = chainConfig.vaultAddress;
+        try {
+          const vault = Vault__factory.connect(contractAddress, provider);
+          const testBrokerHash = ethers.keccak256(
+            ethers.toUtf8Bytes("test_broker")
+          );
+          estimatedGas = await vault.setAllowedBroker.estimateGas(
+            testBrokerHash,
+            true
+          );
+        } catch {
+          estimatedGas = BigInt(100000);
+        }
+      } else if (chainConfig.vaultManagerAddress) {
+        contractAddress = chainConfig.vaultManagerAddress;
+        try {
+          const vaultManager = VaultManager__factory.connect(
+            contractAddress,
+            provider
+          );
+          const testBrokerHash = ethers.keccak256(
+            ethers.toUtf8Bytes("test_broker")
+          );
+          estimatedGas = await vaultManager.setAllowedBroker.estimateGas(
+            testBrokerHash,
+            true
+          );
+        } catch {
+          estimatedGas = BigInt(100000);
+        }
+      }
+
+      const baseEstimatedCost =
+        estimatedGas * (gasPrice.gasPrice || BigInt("20000000000")); // 20 gwei fallback
+      const estimatedCostWithBuffer =
+        baseEstimatedCost + (baseEstimatedCost * BigInt(20)) / BigInt(100);
+
+      const sufficient = balance >= estimatedCostWithBuffer;
+
+      return {
+        chain: chainName,
+        balance: ethers.formatEther(balance),
+        estimatedCost: ethers.formatEther(estimatedCostWithBuffer),
+        sufficient,
+      };
+    } catch (error) {
+      console.error(`Error checking EVM balance for ${chainName}:`, error);
+      return {
+        chain: chainName,
+        balance: "0.0",
+        estimatedCost: "unknown",
+        sufficient: false,
+      };
+    }
+  } else if (chainInfo.chainType === "SOL") {
+    try {
+      const env = getCurrentEnvironment();
+      const connection = getSolanaConnection(env);
+
+      const keypair = getSolanaKeypair();
+
+      const balanceLamports = await connection.getBalance(keypair.publicKey);
+      const balanceSOL = balanceLamports / 1e9;
+
+      const estimatedFeeLamports = 5000;
+      const estimatedFeeSOL = estimatedFeeLamports / 1e9;
+
+      const sufficient = balanceLamports >= estimatedFeeLamports;
+
+      return {
+        chain: chainName,
+        balance: balanceSOL.toFixed(6),
+        estimatedCost: estimatedFeeSOL.toFixed(6),
+        sufficient,
+      };
+    } catch (error) {
+      console.error(`Error checking Solana balance for ${chainName}:`, error);
+      return {
+        chain: chainName,
+        balance: "0.0",
+        estimatedCost: "unknown",
+        sufficient: false,
+      };
+    }
+  }
+
+  return {
+    chain: chainName,
+    balance: "0.0",
+    estimatedCost: "unknown",
+    sufficient: false,
+  };
 }
 
 export async function deleteBrokerId(
@@ -787,95 +1250,174 @@ export async function deleteBrokerId(
     }
 
     console.log(
-      `Simulating broker deletion for ID: ${brokerId} on environment: ${env}`
+      `🗑️ Starting broker deletion for broker ID: ${brokerId} on environment: ${env}`
     );
 
-    const simulationPromises: Promise<SimulationResult>[] = [];
+    const evmChains: Array<[string, EnvironmentChainConfig]> = [];
+    const solanaChains: Array<[string, EnvironmentChainConfig]> = [];
 
     for (const [chainName, chainConfig] of Object.entries(config)) {
+      const chainInfo = ALL_CHAINS[chainName as ChainName];
+      if (!chainInfo) {
+        console.warn(`⚠️ No chain info found for: ${chainName}`);
+        continue;
+      }
+
+      if (chainInfo.chainType === "EVM") {
+        evmChains.push([chainName, chainConfig]);
+      } else if (chainInfo.chainType === "SOL") {
+        solanaChains.push([chainName, chainConfig]);
+      }
+    }
+
+    console.log(
+      `📊 Found ${evmChains.length} EVM chains and ${solanaChains.length} Solana chains for deletion`
+    );
+
+    const simulationPromises: Array<
+      Promise<{ chainName: string; result: SimulationResult }>
+    > = [];
+
+    for (const [chainName, chainConfig] of evmChains) {
       if (chainConfig.vaultAddress) {
         simulationPromises.push(
-          simulateL1Deletion(chainConfig, brokerId, privateKey, chainName)
+          simulateL1Deletion(chainConfig, brokerId, chainName).then(result => ({
+            chainName,
+            result,
+          }))
         );
       }
     }
 
-    for (const [chainName, chainConfig] of Object.entries(config)) {
+    for (const [chainName, chainConfig] of evmChains) {
       if (chainConfig.vaultManagerAddress) {
         simulationPromises.push(
-          simulateOrderlyDeletion(chainConfig, brokerId, privateKey, chainName)
+          simulateOrderlyDeletion(chainConfig, brokerId, chainName).then(
+            result => ({ chainName, result })
+          )
+        );
+      }
+    }
+
+    for (const [chainName, chainConfig] of solanaChains) {
+      if (chainConfig.vaultAddress) {
+        simulationPromises.push(
+          simulateSolanaDeletion(chainConfig, brokerId, chainName).then(
+            result => ({ chainName, result })
+          )
         );
       }
     }
 
     const simulationResults = await Promise.all(simulationPromises);
 
-    const failedSimulations = simulationResults.filter(
-      result => !result.success
+    const successfulSimulations = simulationResults.filter(
+      ({ result }) => result.success
     );
+    const failedSimulations = simulationResults.filter(
+      ({ result }) => !result.success
+    );
+
     if (failedSimulations.length > 0) {
-      const errors = failedSimulations
-        .map(result => result.error)
-        .filter(Boolean);
-      console.error("Broker deletion simulation failed:", errors);
+      console.warn(
+        "⚠️ Some deletion simulations failed:",
+        failedSimulations.map(
+          ({ chainName, result }) => `${chainName}: ${result.error}`
+        )
+      );
+    }
+
+    if (successfulSimulations.length === 0) {
+      const errors = failedSimulations.map(
+        ({ chainName, result }) => `${chainName}: ${result.error}`
+      );
+      console.error("❌ All deletion simulations failed:", errors);
       return {
         success: false,
-        errors: errors as string[],
+        errors,
       };
     }
 
     console.log(
-      "All deletion simulations passed. Proceeding with actual transactions..."
+      `✅ ${successfulSimulations.length} deletion simulations passed, executing transactions...`
     );
 
-    const executionPromises: Promise<{ chainId: number; txHash: string }>[] =
-      [];
+    const executionPromises: Array<
+      Promise<{ chainId: number; txHash: string; chainName: string }>
+    > = [];
 
-    for (const [chainName, chainConfig] of Object.entries(config)) {
+    for (const { chainName } of successfulSimulations) {
+      const chainConfig = config[
+        chainName as keyof typeof config
+      ] as EnvironmentChainConfig;
+      const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+
       if (chainConfig.vaultAddress) {
-        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
         executionPromises.push(
-          executeL1Deletion(chainConfig, brokerId, privateKey, chainName).then(
-            txHash => ({
-              chainId,
-              txHash,
-            })
+          executeL1Deletion(chainConfig, brokerId, chainName).then(txHash => ({
+            chainId,
+            txHash,
+            chainName,
+          }))
+        );
+      } else if (chainConfig.vaultManagerAddress) {
+        executionPromises.push(
+          executeOrderlyDeletion(chainConfig, brokerId, chainName).then(
+            txHash => ({ chainId, txHash, chainName })
           )
         );
       }
     }
 
-    for (const [chainName, chainConfig] of Object.entries(config)) {
-      if (chainConfig.vaultManagerAddress) {
-        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+    for (const { chainName } of successfulSimulations) {
+      const chainConfig = config[
+        chainName as keyof typeof config
+      ] as EnvironmentChainConfig;
+      const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+
+      if (
+        chainConfig.vaultAddress &&
+        ALL_CHAINS[chainName as ChainName].chainType === "SOL"
+      ) {
         executionPromises.push(
-          executeOrderlyDeletion(
-            chainConfig,
-            brokerId,
-            privateKey,
-            chainName
-          ).then(txHash => ({
-            chainId,
-            txHash,
-          }))
+          executeSolanaDeletion(chainConfig, brokerId, chainName).then(
+            txHash => ({ chainId, txHash, chainName })
+          )
         );
       }
     }
 
-    const results = await Promise.all(executionPromises);
+    const results = await Promise.allSettled(executionPromises);
     const transactionHashes: Record<number, string> = {};
+    const errors: string[] = [];
 
-    for (const { chainId, txHash } of results) {
-      transactionHashes[chainId] = txHash;
+    for (const result of results) {
+      if (result.status === "fulfilled") {
+        const { chainId, txHash, chainName } = result.value;
+        transactionHashes[chainId] = txHash;
+        console.log(`✅ Successfully deleted from ${chainName}: ${txHash}`);
+      } else {
+        errors.push(`Execution failed: ${result.reason}`);
+      }
     }
 
-    console.log(`Successfully deleted broker ID ${brokerId} from all chains`);
+    const successCount = Object.keys(transactionHashes).length;
+    const totalChains = simulationResults.length;
+
+    console.log(
+      `🗑️ Deletion completed: ${successCount}/${totalChains} chains successful`
+    );
     console.log(`Transaction hashes:`, transactionHashes);
 
+    if (errors.length > 0) {
+      console.warn("⚠️ Some executions failed:", errors);
+    }
+
     return {
-      success: true,
+      success: successCount > 0,
       brokerId,
       transactionHashes,
+      errors: errors.length > 0 ? errors : undefined,
     };
   } catch (error) {
     console.error("Broker deletion failed:", error);
@@ -889,7 +1431,6 @@ export async function deleteBrokerId(
 async function simulateL1Deletion(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<SimulationResult> {
   try {
@@ -898,12 +1439,10 @@ async function simulateL1Deletion(
     }
 
     const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
     const brokerHash = getBrokerHash(brokerId);
-
-    // Check if broker exists
     const isAllowed = await vault.getAllowedBroker(brokerHash);
     if (!isAllowed) {
       throw new Error(`Broker ${brokerId} does not exist on ${chainName}`);
@@ -937,7 +1476,6 @@ async function simulateL1Deletion(
 async function simulateOrderlyDeletion(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<SimulationResult> {
   try {
@@ -946,14 +1484,13 @@ async function simulateOrderlyDeletion(
     }
 
     const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-    const wallet = new ethers.Wallet(privateKey, provider);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
       wallet
     );
 
     const brokerHash = getBrokerHash(brokerId);
-
     const isAllowed = await vaultManager.getAllowedBroker(brokerHash);
     if (!isAllowed) {
       throw new Error(`Broker ${brokerId} does not exist on ${chainName}`);
@@ -984,10 +1521,85 @@ async function simulateOrderlyDeletion(
   }
 }
 
+async function simulateSolanaDeletion(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  chainName: string
+): Promise<SimulationResult> {
+  try {
+    if (!chainConfig.vaultAddress) {
+      throw new Error("Vault address not configured for this chain");
+    }
+
+    const env = getCurrentEnvironment();
+    const program = getSolanaVaultProgram(env);
+    const keypair = getSolanaKeypair();
+
+    const brokerHash = getSolanaBrokerHash(brokerId);
+    const brokerPda = getSolanaBrokerPda(program.programId, brokerHash);
+
+    const brokerAccount =
+      await program.provider.connection.getAccountInfo(brokerPda);
+    if (!brokerAccount) {
+      throw new Error(`Broker ${brokerId} does not exist on ${chainName}`);
+    }
+
+    const balance = await program.provider.connection.getBalance(
+      keypair.publicKey
+    );
+    const estimatedFee = 5000;
+
+    if (balance < estimatedFee) {
+      throw new Error(
+        `Insufficient balance. Required: ${estimatedFee} lamports, Available: ${balance} lamports`
+      );
+    }
+
+    const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
+    const codedBrokerManagerRoleHash = Array.from(
+      Buffer.from(brokerManagerRoleHash.slice(2), "hex")
+    );
+    const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
+      [
+        Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
+        Buffer.from(codedBrokerManagerRoleHash),
+        keypair.publicKey.toBuffer(),
+      ],
+      program.programId
+    )[0];
+
+    const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
+
+    await program.methods
+      .setBroker({
+        brokerManagerRole: codedBrokerManagerRoleHash,
+        brokerHash: codedBrokerHash,
+        allowed: false,
+      })
+      .accounts({
+        brokerManager: keypair.publicKey,
+        allowedBroker: brokerPda,
+        managerRole: brokerManagerRolePda,
+        systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .simulate();
+
+    console.log(
+      `🔍 Solana deletion simulation successful for broker ${brokerId} on ${chainName}`
+    );
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown simulation error",
+    };
+  }
+}
+
 async function executeL1Deletion(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<string> {
   if (!chainConfig.vaultAddress) {
@@ -995,7 +1607,7 @@ async function executeL1Deletion(
   }
 
   const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-  const wallet = new ethers.Wallet(privateKey, provider);
+  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
   const brokerHash = getBrokerHash(brokerId);
@@ -1008,15 +1620,14 @@ async function executeL1Deletion(
 async function executeOrderlyDeletion(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  privateKey: string,
   chainName: string
 ): Promise<string> {
   if (!chainConfig.vaultManagerAddress) {
     throw new Error("VaultManager address not configured for Orderly L2");
   }
 
-  const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
-  const wallet = new ethers.Wallet(privateKey, provider);
+  const provider = getEvmProvider(chainName);
+  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vaultManager = VaultManager__factory.connect(
     chainConfig.vaultManagerAddress,
     wallet
@@ -1027,4 +1638,129 @@ async function executeOrderlyDeletion(
   await tx.wait();
 
   return tx.hash;
+}
+
+async function executeSolanaDeletion(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  chainName: string
+): Promise<string> {
+  if (!chainConfig.vaultAddress) {
+    throw new Error("Vault address not configured for this chain");
+  }
+
+  const env = getCurrentEnvironment();
+  const program = getSolanaVaultProgram(env);
+  const keypair = getSolanaKeypair();
+
+  const brokerHash = getSolanaBrokerHash(brokerId);
+  const brokerPda = getSolanaBrokerPda(program.programId, brokerHash);
+
+  const brokerAccount =
+    await program.provider.connection.getAccountInfo(brokerPda);
+  if (!brokerAccount) {
+    throw new Error(`Broker ${brokerId} does not exist on ${chainName}`);
+  }
+
+  const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
+  const codedBrokerManagerRoleHash = Array.from(
+    Buffer.from(brokerManagerRoleHash.slice(2), "hex")
+  );
+  const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
+      Buffer.from(codedBrokerManagerRoleHash),
+      keypair.publicKey.toBuffer(),
+    ],
+    program.programId
+  )[0];
+
+  const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
+
+  const tx = await program.methods
+    .setBroker({
+      brokerManagerRole: codedBrokerManagerRoleHash,
+      brokerHash: codedBrokerHash,
+      allowed: false,
+    })
+    .accounts({
+      brokerManager: keypair.publicKey,
+      allowedBroker: brokerPda,
+      managerRole: brokerManagerRolePda,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  console.log(
+    `🗑️ Solana deletion transaction executed for broker ${brokerId} on ${chainName}`
+  );
+  console.log(`📝 Transaction signature: ${tx}`);
+
+  return tx;
+}
+
+async function executeSolanaVaultTransaction(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  chainName: string
+): Promise<string> {
+  if (!chainConfig.vaultAddress) {
+    throw new Error("Vault address not configured for this chain");
+  }
+
+  const env = getCurrentEnvironment();
+  const program = getSolanaVaultProgram(env);
+  const programId = program.programId;
+  const keypair = getSolanaKeypair();
+
+  const brokerHash = getSolanaBrokerHash(brokerId);
+  const brokerPda = getSolanaBrokerPda(programId, brokerHash);
+
+  const brokerAccount =
+    await program.provider.connection.getAccountInfo(brokerPda);
+  if (brokerAccount) {
+    const allowedBrokerData =
+      await program.account.allowedBroker.fetch(brokerPda);
+    if (allowedBrokerData.allowed) {
+      throw new Error(
+        `Broker ${brokerId} already exists and is allowed on ${chainName}`
+      );
+    }
+  }
+
+  const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
+  const codedBrokerManagerRoleHash = Array.from(
+    Buffer.from(brokerManagerRoleHash.slice(2), "hex")
+  );
+  const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
+    [
+      Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
+      Buffer.from(codedBrokerManagerRoleHash),
+      keypair.publicKey.toBuffer(),
+    ],
+    programId
+  )[0];
+
+  const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
+
+  const tx = await program.methods
+    .setBroker({
+      brokerManagerRole: codedBrokerManagerRoleHash,
+      brokerHash: codedBrokerHash,
+      allowed: true,
+    })
+    .accounts({
+      brokerManager: keypair.publicKey,
+      allowedBroker: brokerPda,
+      managerRole: brokerManagerRolePda,
+      systemProgram: anchor.web3.SystemProgram.programId,
+    })
+    .rpc();
+
+  console.log(
+    `🚀 Solana transaction executed for broker ${brokerId} on ${chainName}`
+  );
+  console.log(`📝 Transaction signature: ${tx}`);
+
+  return tx;
 }

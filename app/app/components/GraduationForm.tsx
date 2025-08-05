@@ -105,9 +105,13 @@ interface BrokerIdResponse {
 
 interface GraduationFormProps {
   onNoDexSetup?: () => void;
+  onGraduationSuccess?: () => void;
 }
 
-export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
+export function GraduationForm({
+  onNoDexSetup,
+  onGraduationSuccess,
+}: GraduationFormProps) {
   const { token } = useAuth();
   const { address } = useAccount();
   const [txHash, setTxHash] = useState("");
@@ -367,15 +371,13 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
 
     setIsFinalizingAdminWallet(true);
     try {
-      // Create a signer from the wallet client
       const provider = new BrowserProvider(walletClient);
       const signer = await provider.getSigner();
 
-      // Register the account with Orderly Network
       const accountId = await registerAccount(
         signer,
         address,
-        connectedChainId || 1, // Default to Ethereum mainnet if no chain ID
+        connectedChainId || 1,
         graduationStatus.brokerId
       );
 
@@ -383,7 +385,6 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         `Account registered successfully! Account ID: ${accountId}`
       );
 
-      // Now call the backend to finalize the admin wallet setup
       const response = await post<{
         success: boolean;
         message: string;
@@ -394,12 +395,15 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         toast.success(
           "Admin wallet setup completed! Your DEX has graduated successfully."
         );
-        // Reload graduation status
         const statusResponse = await get<NewGraduationStatusResponse>(
           "api/graduation/graduation-status",
           token
         );
         setGraduationStatus(statusResponse);
+
+        if (onGraduationSuccess) {
+          onGraduationSuccess();
+        }
       } else {
         toast.error(response.message);
       }
@@ -557,6 +561,10 @@ export function GraduationForm({ onNoDexSetup }: GraduationFormProps) {
         loadFeeConfiguration();
         setTxHash("");
         window.scrollTo({ top: 0, behavior: "smooth" });
+
+        if (onGraduationSuccess) {
+          onGraduationSuccess();
+        }
       } else {
         toast.error(response.message || "Verification failed");
       }

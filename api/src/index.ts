@@ -104,15 +104,6 @@ prisma
           "This may affect broker creation functionality. Consider adding ETH to the wallet."
         );
       }
-
-      // Log detailed balance information
-      console.log("📊 Balance details:");
-      gasBalanceData.balanceDetails.forEach(detail => {
-        const status = detail.sufficient ? "✅" : "❌";
-        console.log(
-          `  ${status} ${detail.chain}: ${detail.balance} ETH (needs ~${detail.estimatedCost} ETH)`
-        );
-      });
     } catch (error) {
       console.warn("⚠️ Gas balance check failed:", error);
       console.warn(

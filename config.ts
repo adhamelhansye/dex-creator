@@ -10,8 +10,14 @@ export type Environment = "mainnet" | "staging" | "qa" | "dev";
 export type ChainNameTestnet =
   | "sepolia"
   | "arbitrum-sepolia"
-  | "orderlyTestnet";
-export type ChainNameMainnet = "ethereum" | "arbitrum" | "orderlyL2";
+  | "orderlyTestnet"
+  | "solana-devnet";
+
+export type ChainNameMainnet =
+  | "ethereum"
+  | "arbitrum"
+  | "orderlyL2"
+  | "solana-mainnet-beta";
 
 export type ChainName = ChainNameTestnet | ChainNameMainnet;
 
@@ -19,13 +25,18 @@ export type OrderTokenChainName =
   | "ethereum"
   | "arbitrum"
   | "sepolia"
-  | "arbitrum-sepolia";
+  | "arbitrum-sepolia"
+  | "solana-mainnet-beta"
+  | "solana-devnet";
+
+export type ChainType = "EVM" | "SOL";
 
 export interface ChainConfig {
   id: ChainName;
   name: string;
   chainId: number;
   isTestnet: boolean;
+  chainType: ChainType;
   rpcUrl: string;
   blockExplorerUrl: string;
 }
@@ -36,6 +47,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     name: "Ethereum",
     chainId: 1,
     isTestnet: false,
+    chainType: "EVM",
     rpcUrl: "https://eth.llamarpc.com",
     blockExplorerUrl: "https://etherscan.io",
   },
@@ -44,6 +56,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     name: "Arbitrum",
     chainId: 42161,
     isTestnet: false,
+    chainType: "EVM",
     rpcUrl: "https://arb1.arbitrum.io/rpc",
     blockExplorerUrl: "https://arbiscan.io",
   },
@@ -52,6 +65,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     name: "Sepolia",
     chainId: 11155111,
     isTestnet: true,
+    chainType: "EVM",
     rpcUrl: "https://eth-sepolia.public.blastapi.io",
     blockExplorerUrl: "https://sepolia.etherscan.io",
   },
@@ -60,6 +74,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     name: "Arbitrum Sepolia",
     chainId: 421614,
     isTestnet: true,
+    chainType: "EVM",
     rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc",
     blockExplorerUrl: "https://sepolia.arbiscan.io",
   },
@@ -68,6 +83,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     name: "Orderly L2",
     chainId: 291,
     isTestnet: false,
+    chainType: "EVM",
     rpcUrl: "https://rpc.orderly.org",
     blockExplorerUrl: "https://explorer.orderly.network",
   },
@@ -76,8 +92,30 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     name: "Orderly Testnet",
     chainId: 4460,
     isTestnet: true,
+    chainType: "EVM",
     rpcUrl: "https://testnet-rpc.orderly.org",
     blockExplorerUrl: "https://testnet-explorer.orderly.org",
+  },
+  "solana-mainnet-beta": {
+    id: "solana-mainnet-beta",
+    name: "Solana",
+    chainId: 900_900_900,
+    isTestnet: false,
+    chainType: "SOL",
+    rpcUrl:
+      process.env.SOLANA_MAINNET_RPC_URL ||
+      "https://api.mainnet-beta.solana.com",
+    blockExplorerUrl: "https://solscan.io",
+  },
+  "solana-devnet": {
+    id: "solana-devnet",
+    name: "Solana Devnet",
+    chainId: 901_901_901,
+    isTestnet: true,
+    chainType: "SOL",
+    rpcUrl:
+      process.env.SOLANA_DEVNET_RPC_URL || "https://api.devnet.solana.com",
+    blockExplorerUrl: "https://solscan.io",
   },
 };
 
@@ -86,6 +124,8 @@ export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
   arbitrum: "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8",
   sepolia: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   "arbitrum-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+  "solana-mainnet-beta": "ABt79MkRXUsoHuV2CVQT32YMXQhTparKFjmidQxgiQ6E",
+  "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
 
 export type ChainId = (typeof ALL_CHAINS)[ChainName]["chainId"];
@@ -110,6 +150,11 @@ export function getBlockExplorerUrlByChainId(
   if (!chain) {
     return null;
   }
+
+  if (chain.chainType === "SOL" && chain.isTestnet) {
+    return `${chain.blockExplorerUrl}/tx/${txHash}?cluster=devnet`;
+  }
+
   return `${chain.blockExplorerUrl}/tx/${txHash}`;
 }
 
@@ -132,6 +177,9 @@ export const ENVIRONMENT_CONFIGS: {
     arbitrum: {
       vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     },
+    "solana-mainnet-beta": {
+      vaultAddress: "ErBmAD61mGFKvrFNaTJuxoPwqrS8GgtwtqJTJVjFWx9Q",
+    },
     orderlyL2: {
       vaultManagerAddress: "0x14a6342A8C1Ef9856898F510FcCE377e46668F33",
       feeManagerAddress: "0x343Ca787e960cB2cCA0ce8cfB2f38c3739E28a1E",
@@ -142,7 +190,10 @@ export const ENVIRONMENT_CONFIGS: {
       vaultAddress: "0x0EaC556c0C2321BA25b9DC01e4e3c95aD5CDCd2f",
     },
     "arbitrum-sepolia": {
-      vaultAddress: "0x0D070F4Ac4de26d8e5Da3e4e7c45b0e93Bf6e84d",
+      vaultAddress: "0xB15a3a4D451311e03e34d9331C695078Ad5Cf5F1",
+    },
+    "solana-devnet": {
+      vaultAddress: "9shwxWDUNhtwkHocsUAmrNAQfBH2DHh4njdAEdHZZkF2",
     },
     orderlyTestnet: {
       vaultManagerAddress: "0x873c120b42C80D528389d85cEA9d4dC0197974aD",
@@ -156,6 +207,9 @@ export const ENVIRONMENT_CONFIGS: {
     "arbitrum-sepolia": {
       vaultAddress: "0xB15a3a4D451311e03e34d9331C695078Ad5Cf5F1",
     },
+    "solana-devnet": {
+      vaultAddress: "5zBjLor7vEraAt4zp2H82sy9MSqFoDnNa1Lx6EYKTYRZ",
+    },
     orderlyTestnet: {
       vaultManagerAddress: "0x3B092aEe40Cb99174E8C73eF90935F9F35943B22",
       feeManagerAddress: "0x8A929891DE9a648B6A3D05d21362418f756cf728",
@@ -167,6 +221,9 @@ export const ENVIRONMENT_CONFIGS: {
     },
     "arbitrum-sepolia": {
       vaultAddress: "0x3ac2ba11ca2f9f109d50fb1a46d4c23fcadbbef6",
+    },
+    "solana-devnet": {
+      vaultAddress: "EYJq9eU4GMRUriUJBgGoZ8YLQBXcWaciXuSsEXE7ieQS",
     },
     orderlyTestnet: {
       vaultManagerAddress: "0x4922872C26Befa37AdcA287fF68106013C82FeeD",

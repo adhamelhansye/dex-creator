@@ -1,5 +1,6 @@
 import { GraduationForm } from "../components/GraduationForm";
 import { useAuth } from "../context/AuthContext";
+import { useDex } from "../context/DexContext";
 import { Card } from "../components/Card";
 import WalletConnect from "../components/WalletConnect";
 import { useState } from "react";
@@ -9,6 +10,7 @@ import { Link } from "@remix-run/react";
 
 export default function GraduationRoute() {
   const { isAuthenticated, isLoading } = useAuth();
+  const { refreshDexData } = useDex();
   const [noDexSetup, setNoDexSetup] = useState(false);
 
   if (isLoading) {
@@ -113,7 +115,10 @@ export default function GraduationRoute() {
         </div>
       ) : (
         <>
-          <GraduationForm onNoDexSetup={() => setNoDexSetup(true)} />
+          <GraduationForm
+            onNoDexSetup={() => setNoDexSetup(true)}
+            onGraduationSuccess={refreshDexData}
+          />
 
           <div className="mt-16 max-w-2xl mx-auto bg-light/5 rounded-xl p-6">
             <h2 className="text-xl font-bold mb-4">Benefits of Graduating</h2>

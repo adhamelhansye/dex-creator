@@ -107,8 +107,13 @@ export function getOrderTokenSupportedChains(): ChainConfig[] {
     deploymentEnv === "staging" ||
     deploymentEnv === "qa" ||
     deploymentEnv === "dev";
-  return Object.values(ALL_CHAINS).filter(
-    chain => chain.isTestnet === isTestnet && !chain.id.includes("orderly")
+
+  const supportedChainIds = isTestnet
+    ? ["sepolia", "arbitrum-sepolia"]
+    : ["ethereum", "arbitrum"];
+
+  return Object.values(ALL_CHAINS).filter(chain =>
+    supportedChainIds.includes(chain.id)
   );
 }
 
@@ -127,6 +132,8 @@ export function getPreferredChain(selectedChain: ChainName): ChainName {
       sepolia: "sepolia",
       orderlyL2: "orderlyTestnet",
       orderlyTestnet: "orderlyTestnet",
+      "solana-devnet": "solana-devnet",
+      "solana-mainnet-beta": "solana-devnet",
     };
     return testnetMap[selectedChain] || selectedChain;
   } else {
@@ -137,6 +144,8 @@ export function getPreferredChain(selectedChain: ChainName): ChainName {
       ethereum: "ethereum",
       orderlyTestnet: "orderlyL2",
       orderlyL2: "orderlyL2",
+      "solana-devnet": "solana-mainnet-beta",
+      "solana-mainnet-beta": "solana-mainnet-beta",
     };
     return mainnetMap[selectedChain] || selectedChain;
   }

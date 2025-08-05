@@ -211,6 +211,13 @@ The application requires several environment variables for proper operation. Bel
 | `ORDER_RECEIVER_ADDRESS` | Wallet address to receive ORDER tokens (used for all chains) | Yes |
 | `REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
 
+#### Solana Configuration
+
+| Variable | Description | Default | Required |
+|----------|-------------|---------|----------|
+| `SOLANA_MAINNET_RPC_URL` | Solana mainnet-beta RPC URL | https://api.mainnet-beta.solana.com | No |
+| `SOLANA_DEVNET_RPC_URL` | Solana devnet RPC URL | https://api.devnet.solana.com | No |
+
 ### Frontend Environment (.env in app/ directory)
 
 #### Core Configuration
