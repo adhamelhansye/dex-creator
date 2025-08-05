@@ -21,9 +21,7 @@ export default function AdminLoginModal({
 
   if (!isOpen) return null;
 
-  const privateKeyHex = Array.from(orderlyKey)
-    .map(b => b.toString(16).padStart(2, "0"))
-    .join("");
+  const privateKeyHex = `ed25519:${encodeBase58(orderlyKey)}`;
 
   const getPublicKey = async () => {
     try {

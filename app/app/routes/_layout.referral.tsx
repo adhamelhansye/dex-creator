@@ -8,13 +8,21 @@ import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import WalletConnect from "../components/WalletConnect";
 import { Link, useNavigate } from "@remix-run/react";
-import { useAccount } from "wagmi";
+import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import {
   getAutoReferralInfo,
   updateAutoReferral,
   type AutoReferralSettings,
   type AutoReferralInfo,
 } from "../utils/orderly";
+import {
+  getSupportedChains,
+  getPreferredChain,
+  getCurrentEnvironment,
+} from "../utils/config";
+import { ChainName } from "../../../config";
+
+const SUPPORTED_CHAINS = getSupportedChains();
 
 export default function ReferralRoute() {
   const { isAuthenticated, isLoading } = useAuth();
@@ -23,6 +31,16 @@ export default function ReferralRoute() {
   const { openModal } = useModal();
   const { address } = useAccount();
   const navigate = useNavigate();
+
+  const connectedChainId = useChainId();
+  const { switchChain } = useSwitchChain();
+
+  const defaultChain =
+    getCurrentEnvironment() === "mainnet" ? "arbitrum" : "arbitrum-sepolia";
+  const preferredChain = getPreferredChain(defaultChain as ChainName);
+  const currentChainId =
+    SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 42161;
+  const isCorrectChain = connectedChainId === currentChainId;
 
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const [isLoadingReferralInfo, setIsLoadingReferralInfo] = useState(false);
@@ -56,6 +74,15 @@ export default function ReferralRoute() {
     setMaxRebate(value);
     const error = validateMaxRebate(value);
     setMaxRebateError(error);
+  };
+
+  const handleSwitchChain = async () => {
+    try {
+      await switchChain({ chainId: currentChainId });
+    } catch (error) {
+      console.error("Failed to switch chain:", error);
+      toast.error("Please switch to the correct network in your wallet");
+    }
   };
 
   useEffect(() => {
@@ -95,6 +122,11 @@ export default function ReferralRoute() {
   const handleCreateOrderlyKey = async () => {
     if (!address || !brokerId || !accountId) {
       toast.error("Missing required information for key creation");
+      return;
+    }
+
+    if (!isCorrectChain) {
+      toast.error("Please switch to the correct network first");
       return;
     }
 
@@ -426,9 +458,19 @@ export default function ReferralRoute() {
                   that allows secure API access to the Orderly Network. This key
                   will be stored locally and used for managing your referral
                   program.
+                  {!isCorrectChain && (
+                    <span className="block mt-2 text-warning">
+                      Please switch to{" "}
+                      {SUPPORTED_CHAINS.find(c => c.id === preferredChain)
+                        ?.name || preferredChain}{" "}
+                      to continue.
+                    </span>
+                  )}
                 </p>
                 <Button
-                  onClick={handleCreateOrderlyKey}
+                  onClick={
+                    isCorrectChain ? handleCreateOrderlyKey : handleSwitchChain
+                  }
                   disabled={isCreatingKey}
                   className="flex items-center gap-2"
                 >
@@ -437,10 +479,15 @@ export default function ReferralRoute() {
                       <div className="i-svg-spinners:pulse-rings-multiple w-4 h-4"></div>
                       Creating Key...
                     </>
-                  ) : (
+                  ) : isCorrectChain ? (
                     <>
                       <div className="i-mdi:key-plus w-4 h-4"></div>
                       Create Orderly Key
+                    </>
+                  ) : (
+                    <>
+                      <div className="i-mdi:swap-horizontal w-4 h-4"></div>
+                      Switch Chain
                     </>
                   )}
                 </Button>
