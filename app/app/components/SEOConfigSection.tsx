@@ -1,5 +1,6 @@
 import FormInput from "./FormInput";
 import { Card } from "./Card";
+import ColorSwatch from "./ColorSwatch";
 
 interface SEOConfigSectionProps {
   seoSiteName: string;
@@ -12,6 +13,7 @@ interface SEOConfigSectionProps {
   handleInputChange: (
     field: string
   ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  updateCssColor?: (variableName: string, newColorHex: string) => void;
 }
 
 export default function SEOConfigSection({
@@ -23,6 +25,7 @@ export default function SEOConfigSection({
   seoThemeColor,
   seoKeywords,
   handleInputChange,
+  updateCssColor,
 }: SEOConfigSectionProps) {
   return (
     <div className="space-y-4">
@@ -116,14 +119,90 @@ export default function SEOConfigSection({
           helpText="Your Twitter handle for Twitter Card metadata (include @)"
         />
 
-        <FormInput
-          label="Theme Color"
-          id="seoThemeColor"
-          value={seoThemeColor}
-          onChange={handleInputChange("seoThemeColor")}
-          placeholder="#1a1b23"
-          helpText="Hex color for mobile browser theme (e.g., #1a1b23)"
-        />
+        <div className="space-y-2">
+          <label
+            htmlFor="seoThemeColor"
+            className="block text-sm font-medium text-gray-300"
+          >
+            Theme Color
+          </label>
+          <div className="flex items-center gap-3">
+            {updateCssColor ? (
+              <div className="flex items-center gap-2">
+                <ColorSwatch
+                  name="theme-color"
+                  displayName="Theme"
+                  storedValue={
+                    seoThemeColor && /^#[0-9A-Fa-f]{6}$/.test(seoThemeColor)
+                      ? seoThemeColor
+                          .replace("#", "")
+                          .match(/.{2}/g)
+                          ?.map(hex => parseInt(hex, 16).toString())
+                          .join(" ") || null
+                      : null
+                  }
+                  isValid={/^#[0-9A-Fa-f]{6}$/.test(seoThemeColor)}
+                  commaRgb={
+                    seoThemeColor && /^#[0-9A-Fa-f]{6}$/.test(seoThemeColor)
+                      ? seoThemeColor
+                          .replace("#", "")
+                          .match(/.{2}/g)
+                          ?.map(hex => parseInt(hex, 16).toString())
+                          .join(" ") || "0,0,0"
+                      : "0,0,0"
+                  }
+                  textColor="white"
+                  needsShadow={true}
+                  selectedColors={[]}
+                  handleCheckboxChange={() => {}}
+                  handleSwatchClick={e => {
+                    e.preventDefault();
+                    // Create a temporary color input to trigger the color picker
+                    const input = document.createElement("input");
+                    input.type = "color";
+                    input.value = seoThemeColor || "#1a1b23";
+                    input.onchange = e => {
+                      const target = e.target as HTMLInputElement;
+                      const syntheticEvent = {
+                        target: { value: target.value },
+                      } as React.ChangeEvent<HTMLInputElement>;
+                      handleInputChange("seoThemeColor")(syntheticEvent);
+                    };
+                    input.click();
+                  }}
+                  onSelectionChange={undefined}
+                />
+                {seoThemeColor && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const syntheticEvent = {
+                        target: { value: "" },
+                      } as React.ChangeEvent<HTMLInputElement>;
+                      handleInputChange("seoThemeColor")(syntheticEvent);
+                    }}
+                    className="px-2 py-1 text-xs text-gray-400 hover:text-gray-300 transition-colors"
+                    title="Clear theme color"
+                  >
+                    Clear
+                  </button>
+                )}
+              </div>
+            ) : (
+              <input
+                type="text"
+                id="seoThemeColor"
+                value={seoThemeColor}
+                onChange={handleInputChange("seoThemeColor")}
+                placeholder="#1a1b23"
+                className="w-full px-3 py-2 bg-background-dark/50 border border-light/10 rounded-md text-sm text-gray-300 placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-transparent"
+              />
+            )}
+          </div>
+          <p className="text-xs text-gray-400">
+            Hex color for mobile browser theme (e.g., #1a1b23)
+          </p>
+        </div>
       </div>
 
       <FormInput

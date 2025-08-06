@@ -235,6 +235,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       seoThemeColor: props.seoThemeColor,
       seoKeywords: props.seoKeywords,
       handleInputChange: props.handleInputChange,
+      updateCssColor: props.updateCssColor,
     }),
   },
   {

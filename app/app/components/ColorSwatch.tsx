@@ -32,13 +32,19 @@ export default function ColorSwatch({
       <div
         className={`h-16 w-full rounded-md flex items-center justify-between px-3 py-2 border ${!isValid ? "border-error/50" : "border-light/10"} cursor-pointer hover:ring-2 hover:ring-primary transition-all ${selectedColors.includes(name) ? "ring-2 ring-primary/50" : ""}`}
         style={{
-          backgroundColor: isValid ? `rgb(${commaRgb})` : "rgba(255,0,0,0.15)",
+          backgroundColor: isValid
+            ? `rgb(${commaRgb})`
+            : storedValue === null
+              ? "rgba(255,255,255,0.05)"
+              : "rgba(255,0,0,0.15)",
         }}
         onClick={handleSwatchClick}
         title={
           isValid
             ? `Click to edit ${displayName} Color, use checkbox to select`
-            : `Invalid CSS format for ${displayName}`
+            : storedValue === null
+              ? `Click to set ${displayName} Color`
+              : `Invalid CSS format for ${displayName}`
         }
       >
         {/* Left side: Color name and RGB value */}
@@ -63,7 +69,9 @@ export default function ColorSwatch({
           >
             {isValid
               ? `RGB(${storedValue?.replace(/\s+/g, ", ")})`
-              : "Invalid format"}
+              : storedValue === null
+                ? "Not set"
+                : "Invalid format"}
           </span>
         </div>
 
@@ -84,7 +92,7 @@ export default function ColorSwatch({
         )}
 
         {/* Error indicator */}
-        {!isValid && (
+        {!isValid && storedValue != null && (
           <div className="absolute -right-3 -top-3 text-error bg-background-dark/90 rounded-full p-0.5 h-5 w-5 flex items-center justify-center">
             <span className="i-mdi:alert-circle text-xs"></span>
           </div>
