@@ -194,7 +194,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
           </div>
         )}
         <div className="border-b border-light/10 mt-4">
-          <div className="flex">
+          <div className="flex overflow-x-auto">
             <ThemeTabButton tab="colors" label="Color Palette" />
             <ThemeTabButton tab="rounded" label="Border Radius" />
             <ThemeTabButton tab="spacing" label="Spacing" />
