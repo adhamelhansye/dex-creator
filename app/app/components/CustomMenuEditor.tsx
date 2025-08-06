@@ -19,6 +19,8 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
   className = "",
 }) => {
   const [menuItems, setMenuItems] = useState<MenuItemData[]>([]);
+  const [draggedItem, setDraggedItem] = useState<number | null>(null);
+  const [draggedOverItem, setDraggedOverItem] = useState<number | null>(null);
 
   const parseMenuItems = (value: string): MenuItemData[] => {
     if (!value.trim()) return [];
@@ -71,6 +73,41 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
     const newItems = [...menuItems];
     newItems[index] = { ...newItems[index], [field]: value };
     updateMenuItems(newItems);
+  };
+
+  const handleDragStart = (e: React.DragEvent, index: number) => {
+    e.dataTransfer.effectAllowed = "move";
+    setDraggedItem(index);
+  };
+
+  const handleDragOver = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+
+    if (draggedItem === null || draggedItem === index) return;
+    setDraggedOverItem(index);
+  };
+
+  const handleDrop = (e: React.DragEvent, index: number) => {
+    e.preventDefault();
+    if (draggedItem === null || draggedItem === index) return;
+
+    const newItems = [...menuItems];
+    const draggedItemData = newItems[draggedItem];
+    newItems.splice(draggedItem, 1);
+    newItems.splice(index, 0, draggedItemData);
+
+    updateMenuItems(newItems);
+    setDraggedOverItem(null);
+  };
+
+  const handleDragLeave = () => {
+    setDraggedOverItem(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedItem(null);
+    setDraggedOverItem(null);
   };
 
   const validateMenuItem = (item: MenuItemData) => {
@@ -166,6 +203,14 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
         ) : (
           /* Menu Items List */
           <div className="space-y-3">
+            {/* Menu Order Header */}
+            <div className="flex items-center justify-between">
+              <div className="text-sm font-medium text-gray-300">
+                Menu Order
+              </div>
+              <div className="text-xs text-gray-400">Drag items to reorder</div>
+            </div>
+
             {menuItems.map((item, index) => {
               const itemErrors = validateMenuItem(item);
               const hasError =
@@ -176,12 +221,22 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
               return (
                 <div
                   key={index}
-                  className={`staggered-item bg-gray-800/40 border rounded-xl p-4 transition-all duration-200 ${
-                    hasError
-                      ? "border-red-400/40 bg-red-500/5"
-                      : isComplete
-                        ? "border-green-400/40 bg-green-500/5"
-                        : "border-gray-600/50 hover:border-gray-500/50"
+                  draggable
+                  onDragStart={e => handleDragStart(e, index)}
+                  onDragOver={e => handleDragOver(e, index)}
+                  onDragLeave={handleDragLeave}
+                  onDrop={e => handleDrop(e, index)}
+                  onDragEnd={handleDragEnd}
+                  className={`staggered-item bg-gray-800/40 border rounded-xl p-4 transition-all duration-200 cursor-move ${
+                    draggedItem === index ? "opacity-50" : "opacity-100"
+                  } ${
+                    draggedOverItem === index
+                      ? "border-primary border-dashed bg-primary/10"
+                      : hasError
+                        ? "border-red-400/40 bg-red-500/5"
+                        : isComplete
+                          ? "border-green-400/40 bg-green-500/5"
+                          : "border-gray-600/50 hover:border-gray-500/50"
                   }`}
                   style={{
                     animation: `slideFadeIn 0.25s ease ${0.05 + index * 0.05}s forwards`,
@@ -249,15 +304,20 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
                       )}
                     </div>
 
-                    {/* Remove Button */}
-                    <button
-                      type="button"
-                      onClick={() => removeMenuItem(index)}
-                      className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors mt-6"
-                      title="Remove menu item"
-                    >
-                      <Icon icon="heroicons:trash" className="w-4 h-4" />
-                    </button>
+                    {/* Drag Handle and Remove Button */}
+                    <div className="flex flex-col gap-2 mt-6">
+                      <div className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-gray-300 rounded-lg transition-colors">
+                        <Icon icon="mdi:drag" className="w-4 h-4" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeMenuItem(index)}
+                        className="w-8 h-8 flex items-center justify-center text-gray-400 hover:text-red-400 hover:bg-red-500/10 rounded-lg transition-colors"
+                        title="Remove menu item"
+                      >
+                        <Icon icon="heroicons:trash" className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               );
