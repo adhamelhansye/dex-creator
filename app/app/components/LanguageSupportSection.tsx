@@ -40,11 +40,23 @@ export default function LanguageSupportSection({
     }
   };
 
+  const handleToggleAll = () => {
+    const allSelected = selectedCount === AVAILABLE_LANGUAGES.length;
+
+    if (allSelected) {
+      onAvailableLanguagesChange([]);
+    } else {
+      const allLanguageCodes = AVAILABLE_LANGUAGES.map(lang => lang.code);
+      onAvailableLanguagesChange(allLanguageCodes);
+    }
+  };
+
   const selectedCount = availableLanguages.length;
+  const allSelected = selectedCount === AVAILABLE_LANGUAGES.length;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <div>
           <h4 className="text-sm font-medium mb-1">Available Languages</h4>
           <p className="text-xs text-gray-400">
@@ -56,6 +68,13 @@ export default function LanguageSupportSection({
             )}
           </p>
         </div>
+        <button
+          type="button"
+          onClick={handleToggleAll}
+          className="px-3 py-1 text-xs rounded-md transition-all bg-primary/20 text-primary-light hover:bg-primary/30 border border-primary/30"
+        >
+          {allSelected ? "Unselect All" : "Select All"}
+        </button>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
