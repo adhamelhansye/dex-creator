@@ -52,6 +52,8 @@ export interface DexSectionAllProps {
   toggleThemeEditor: () => void;
   handleResetTheme: () => void;
   handleResetToDefault: () => void;
+  handleResetSelectedColors?: (selectedColors: string[]) => void;
+  handleResetSelectedColorsToDefault?: (selectedColors: string[]) => void;
   handleThemeEditorChange: (value: string) => void;
   setViewCssCode: (value: boolean) => void;
   ThemeTabButton: React.FC<{
@@ -174,6 +176,9 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       toggleThemeEditor: props.toggleThemeEditor,
       handleResetTheme: props.handleResetTheme,
       handleResetToDefault: props.handleResetToDefault,
+      handleResetSelectedColors: props.handleResetSelectedColors,
+      handleResetSelectedColorsToDefault:
+        props.handleResetSelectedColorsToDefault,
       handleThemeEditorChange: props.handleThemeEditorChange,
       setViewCssCode: props.setViewCssCode,
       ThemeTabButton: props.ThemeTabButton,

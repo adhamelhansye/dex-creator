@@ -3,11 +3,15 @@ import React, { useState, useRef, useEffect } from "react";
 interface ThemeColorSwatchesProps {
   css: string;
   onColorChange: (variableName: string, newColorHex: string) => void;
+  selectedColors?: string[];
+  onSelectionChange?: (selectedColors: string[]) => void;
 }
 
 export default function ThemeColorSwatches({
   css,
   onColorChange,
+  selectedColors = [],
+  onSelectionChange,
 }: ThemeColorSwatchesProps) {
   const [selectedVariable, setSelectedVariable] = useState<string | null>(null);
   const [inputPosition, setInputPosition] = useState({ top: 0, left: 0 });
@@ -127,6 +131,18 @@ export default function ThemeColorSwatches({
     if (endRgb) {
       onColorChange("gradient-brand-end", rgbToHex(endRgb));
     }
+  };
+
+  const handleCheckboxChange = (colorName: string, checked: boolean) => {
+    if (!onSelectionChange) return;
+
+    let newSelection: string[];
+    if (checked) {
+      newSelection = [...selectedColors, colorName];
+    } else {
+      newSelection = selectedColors.filter(color => color !== colorName);
+    }
+    onSelectionChange(newSelection);
   };
 
   const rgbColors = extractRgbValues(css);
@@ -253,30 +269,35 @@ export default function ThemeColorSwatches({
       }
     };
 
+    const handleSwatchClick = (e: React.MouseEvent<HTMLDivElement>) => {
+      if (
+        e.target === e.currentTarget ||
+        !(e.target as HTMLElement).closest('input[type="checkbox"]')
+      ) {
+        handleClick(e);
+      }
+    };
+
     return (
       <div key={name} className="relative">
         <div
-          className={`h-16 w-full rounded-md flex flex-col items-center justify-center py-2 border ${!isValid ? "border-error/50" : "border-light/10"} cursor-pointer hover:ring-2 hover:ring-primary transition-all`}
+          className={`h-16 w-full rounded-md flex items-center justify-between px-3 py-2 border ${!isValid ? "border-error/50" : "border-light/10"} cursor-pointer hover:ring-2 hover:ring-primary transition-all ${selectedColors.includes(name) ? "ring-2 ring-primary/50" : ""}`}
           style={{
             backgroundColor: isValid
               ? `rgb(${commaRgb})`
               : "rgba(255,0,0,0.15)",
           }}
-          onClick={handleClick}
+          onClick={handleSwatchClick}
           title={
             isValid
-              ? `Edit ${displayName} Color`
+              ? `Click to edit ${displayName} Color, use checkbox to select`
               : `Invalid CSS format for ${displayName}`
           }
         >
-          <div className="relative flex">
-            {!isValid && (
-              <div className="absolute -right-3 -top-3 text-error bg-background-dark/90 rounded-full p-0.5 h-5 w-5 flex items-center justify-center">
-                <span className="i-mdi:alert-circle text-xs"></span>
-              </div>
-            )}
+          {/* Left side: Color name and RGB value */}
+          <div className="flex flex-col items-start">
             <span
-              className="font-medium mb-1 text-center"
+              className="font-medium text-[0.8rem]"
               style={{
                 color: isValid ? textColor : "white",
                 textShadow:
@@ -285,19 +306,42 @@ export default function ThemeColorSwatches({
             >
               {displayName}
             </span>
+            <span
+              className="text-[0.65rem] opacity-80"
+              style={{
+                color: isValid ? textColor : "white",
+                textShadow:
+                  needsShadow || !isValid ? "0 0 2px rgba(0,0,0,0.8)" : "none",
+              }}
+            >
+              {isValid
+                ? `RGB(${storedValue?.replace(/\s+/g, ", ")})`
+                : "Invalid format"}
+            </span>
           </div>
-          <span
-            className="text-xs opacity-80"
-            style={{
-              color: isValid ? textColor : "white",
-              textShadow:
-                needsShadow || !isValid ? "0 0 2px rgba(0,0,0,0.8)" : "none",
-            }}
-          >
-            {isValid
-              ? `RGB(${storedValue?.replace(/\s+/g, ", ")})`
-              : "Invalid format"}
-          </span>
+
+          {/* Right side: Checkbox */}
+          {onSelectionChange && (
+            <div className="flex items-center ml-1">
+              <input
+                type="checkbox"
+                checked={selectedColors.includes(name)}
+                onChange={e => {
+                  e.stopPropagation();
+                  handleCheckboxChange(name, e.target.checked);
+                }}
+                className="w-5 h-5 rounded border-2 border-white bg-black/70 checked:bg-primary checked:border-primary focus:ring-2 focus:ring-primary/50 focus:ring-offset-0 shadow-lg"
+                onClick={e => e.stopPropagation()}
+              />
+            </div>
+          )}
+
+          {/* Error indicator */}
+          {!isValid && (
+            <div className="absolute -right-3 -top-3 text-error bg-background-dark/90 rounded-full p-0.5 h-5 w-5 flex items-center justify-center">
+              <span className="i-mdi:alert-circle text-xs"></span>
+            </div>
+          )}
         </div>
       </div>
     );
@@ -373,6 +417,35 @@ export default function ThemeColorSwatches({
         aria-hidden="true"
         onClick={e => e.stopPropagation()}
       />
+
+      {/* Selection Info */}
+      {onSelectionChange && (
+        <div className="bg-background-dark/30 p-3 rounded-lg border border-light/10">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <div className="i-mdi:information-outline h-4 w-4 text-primary"></div>
+              <span className="text-sm text-gray-300">
+                {selectedColors.length > 0
+                  ? `${selectedColors.length} color${selectedColors.length > 1 ? "s" : ""} selected`
+                  : "No colors selected"}
+              </span>
+            </div>
+            {selectedColors.length > 0 && (
+              <button
+                onClick={() => onSelectionChange([])}
+                className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
+                type="button"
+              >
+                Clear selection
+              </button>
+            )}
+          </div>
+          <div className="text-xs text-gray-400 mt-1">
+            <span className="font-medium">Tips:</span> Click to edit colors, use
+            checkboxes to select colors
+          </div>
+        </div>
+      )}
 
       {/* Brand Gradient Preview */}
       {renderGradientPreview()}
