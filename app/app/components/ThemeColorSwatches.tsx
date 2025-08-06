@@ -18,7 +18,6 @@ export default function ThemeColorSwatches({
   const colorInputRef = useRef<HTMLInputElement>(null);
   const [syncBrandWithPrimary, setSyncBrandWithPrimary] = useState(true);
 
-  // Reset the color picker when clicking outside
   useEffect(() => {
     const handleClickOutside = () => {
       setSelectedVariable(null);
@@ -30,26 +29,21 @@ export default function ThemeColorSwatches({
     };
   }, []);
 
-  // Extract all colors from the CSS - capturing ALL color variables even if format is invalid
   const extractRgbValues = (cssText: string) => {
     const colorVariables: Record<string, string | null> = {};
 
-    // First, capture all --oui-color variable declarations
     const variableRegex = /--oui-color-([a-zA-Z0-9-]+):\s*([^;]+)/g;
     let variableMatch;
 
     while ((variableMatch = variableRegex.exec(cssText)) !== null) {
       const [, colorName, valueStr] = variableMatch;
 
-      // Check if the value matches valid RGB format (3 numbers with spaces)
       const rgbRegex = /^\s*(\d+)\s+(\d+)\s+(\d+)\s*$/;
       const rgbMatch = valueStr.match(rgbRegex);
 
       if (rgbMatch) {
-        // Valid RGB format
         colorVariables[colorName] = valueStr.trim().replace(/\s+/g, " ");
       } else {
-        // Invalid format - store null but keep the variable
         colorVariables[colorName] = null;
       }
     }
@@ -57,7 +51,6 @@ export default function ThemeColorSwatches({
     return colorVariables;
   };
 
-  // Extract gradient values from CSS
   const extractGradientValues = (cssText: string) => {
     const gradientVariables: Record<string, string | null> = {};
     const gradientRegex = /--oui-gradient-([a-zA-Z0-9-]+):\s*([^;]+);/g;
@@ -71,21 +64,15 @@ export default function ThemeColorSwatches({
     return gradientVariables;
   };
 
-  // Convert rgb string to hex color
   const rgbToHex = (rgb: string) => {
-    // Split the RGB string into individual values (handling both comma and space-separated)
     const [r, g, b] = rgb.replace(/,/g, " ").split(/\s+/).map(Number);
 
-    // Convert to hex
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
   };
 
-  // Convert hex to RGB space-separated format
   const hexToRgbSpaceSeparated = (hex: string) => {
-    // Remove the # if present
     hex = hex.replace("#", "");
 
-    // Parse the hex values
     const r = parseInt(hex.slice(0, 2), 16);
     const g = parseInt(hex.slice(2, 4), 16);
     const b = parseInt(hex.slice(4, 6), 16);
@@ -93,31 +80,24 @@ export default function ThemeColorSwatches({
     return `${r} ${g} ${b}`;
   };
 
-  // Handle color picker change
   const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!selectedVariable) return;
 
     const newColorHex = e.target.value;
 
-    // Update the selected color
     onColorChange(`oui-color-${selectedVariable}`, newColorHex);
 
-    // If the selected variable is a primary color and sync is enabled, update brand gradient too
     if (syncBrandWithPrimary && selectedVariable.includes("primary")) {
       const rgbValue = hexToRgbSpaceSeparated(newColorHex);
 
-      // Update brand gradient based on which primary color was changed
       if (selectedVariable === "primary") {
-        // Update brand gradient end with primary
         updateBrandGradient(null, rgbValue);
       } else if (selectedVariable === "primary-light") {
-        // Update brand gradient start with primary-light
         updateBrandGradient(rgbValue, null);
       }
     }
   };
 
-  // Update brand gradient
   const updateBrandGradient = (
     startRgb: string | null,
     endRgb: string | null
@@ -149,7 +129,6 @@ export default function ThemeColorSwatches({
   const gradientColors = extractGradientValues(css);
   const allColorKeys = Object.keys(rgbColors);
 
-  // Define color categories for better organization with dynamic inclusion
   const colorCategories = [
     {
       title: "Primary Colors",
@@ -209,12 +188,10 @@ export default function ThemeColorSwatches({
     },
   ];
 
-  // Filter out empty categories
   const nonEmptyCategories = colorCategories.filter(
     category => category.colors.length > 0
   );
 
-  // Helper function to format the display name
   function formatDisplayName(name: string): string {
     return name
       .split("-")
@@ -222,47 +199,35 @@ export default function ThemeColorSwatches({
       .join(" ");
   }
 
-  // Helper function to determine if a color is dark (for text contrast)
   const isColorDark = (rgbStr: string) => {
     const [r, g, b] = rgbStr.split(",").map(Number);
-    // Calculate relative luminance using the formula
-    // 0.299*R + 0.587*G + 0.114*B
     const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
     return luminance < 0.5;
   };
 
   const renderSwatch = (name: string) => {
     const displayName = formatDisplayName(name);
-    // Get the stored RGB value (which might be null if invalid)
     const storedValue = rgbColors[name];
     const isValid = storedValue !== null;
-    const commaRgb = isValid ? storedValue?.replace(/\s+/g, ",") : "255,0,0"; // Use red as fallback for invalid colors
+    const commaRgb = isValid ? storedValue?.replace(/\s+/g, ",") : "255,0,0";
 
-    // Determine text color based on background brightness
     const isDark = isColorDark(commaRgb);
     const textColor = isDark ? "white" : "black";
     const needsShadow = isDark;
 
     const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      // Prevent the event from bubbling to window which would close the picker
       e.stopPropagation();
 
-      // Get the position of the clicked element
       const rect = e.currentTarget.getBoundingClientRect();
       setInputPosition({
         top: rect.top + window.scrollY,
         left: rect.left + window.scrollX,
       });
 
-      // Set the selected variable for the color picker
       setSelectedVariable(name);
 
-      // Set the current color value on the hidden input and open color picker
-      // Allow color picker to open for both valid and invalid colors
       if (colorInputRef.current) {
-        // Use fallback color #FF0000 for invalid colors
         colorInputRef.current.value = isValid ? rgbToHex(commaRgb) : "#FF0000";
-        // Trigger the color picker
         setTimeout(() => {
           colorInputRef.current?.click();
         }, 10);
@@ -279,7 +244,7 @@ export default function ThemeColorSwatches({
     };
 
     return (
-      <div key={name} className="relative">
+      <div key={name} className="relative flex-[0_1_200px]">
         <div
           className={`h-16 w-full rounded-md flex items-center justify-between px-3 py-2 border ${!isValid ? "border-error/50" : "border-light/10"} cursor-pointer hover:ring-2 hover:ring-primary transition-all ${selectedColors.includes(name) ? "ring-2 ring-primary/50" : ""}`}
           style={{
@@ -455,7 +420,7 @@ export default function ThemeColorSwatches({
           <h5 className="text-sm font-medium text-gray-300">
             {category.title} ({category.colors.length})
           </h5>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 mt-4">
+          <div className="flex flex-wrap gap-3 mt-4">
             {category.colors.map(name => renderSwatch(name))}
           </div>
         </div>
