@@ -17,7 +17,6 @@ interface ImageCropModalProps {
   enforce16by9?: boolean;
 }
 
-// Define drag handle positions
 type HandlePosition =
   | "top-left"
   | "top"
@@ -47,12 +46,10 @@ export default function ImageCropModal({
     height: initialCrop.height,
   });
 
-  // Mouse interaction states
   const [isDragging, setIsDragging] = useState(false);
   const [activeHandle, setActiveHandle] = useState<HandlePosition | null>(null);
   const [scale, setScale] = useState(1);
 
-  // Use refs to store values that need to be accessed in event handlers
   const cropDimensionsRef = useRef<CropParams>(cropDimensions);
   const dragStartPosRef = useRef({ x: 0, y: 0 });
   const dragStartCropRef = useRef<CropParams | null>(null);
@@ -88,10 +85,9 @@ export default function ImageCropModal({
     [targetDimensions]
   );
 
-  // Define handleApply here using useCallback to avoid unnecessary re-creation
   const handleApply = useCallback(async () => {
     if (cropDimensions.width <= 0 || cropDimensions.height <= 0) {
-      return; // Invalid crop, don't proceed
+      return;
     }
 
     setIsLoading(true);
@@ -134,14 +130,12 @@ export default function ImageCropModal({
     );
   }, [calculateFinalDimensions, cropDimensions.width, cropDimensions.height]);
 
-  // Update crop preview whenever crop dimensions change
   useEffect(() => {
     if (isOpen && imageSource && cropCanvasRef.current && originalDimensions) {
       updateCropPreview();
     }
   }, [isOpen, cropDimensions, imageSource]);
 
-  // Handle keyboard events for the modal
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === "Enter" && !isLoading) {
@@ -159,7 +153,6 @@ export default function ImageCropModal({
     };
   }, [isOpen, isLoading, handleApply]);
 
-  // Set up mouse event handlers
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
       if (
@@ -174,17 +167,13 @@ export default function ImageCropModal({
       const mouseX = e.clientX - rect.left;
       const mouseY = e.clientY - rect.top;
 
-      // Calculate the delta from the start position
       const deltaX = (mouseX - dragStartPosRef.current.x) / scaleRef.current;
       const deltaY = (mouseY - dragStartPosRef.current.y) / scaleRef.current;
 
-      // Clone the starting crop dimensions for modification
       let newCrop = { ...dragStartCropRef.current };
 
-      // Apply changes based on which handle is active
       switch (activeHandleRef.current) {
         case "center":
-          // Move the entire crop area
           newCrop.x = Math.max(
             0,
             Math.min(
@@ -203,7 +192,6 @@ export default function ImageCropModal({
 
         case "top-left":
           if (enforceSquare) {
-            // Keep aspect ratio square - use the larger delta
             const delta = Math.max(deltaX, deltaY);
             newCrop.x = Math.max(
               0,
@@ -219,7 +207,6 @@ export default function ImageCropModal({
               newCrop.x;
             newCrop.height = newCrop.width;
           } else if (enforce16by9) {
-            // Keep 16:9 aspect ratio
             newCrop.x = Math.max(
               0,
               Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
@@ -234,7 +221,6 @@ export default function ImageCropModal({
               newCrop.x;
             newCrop.height = newCrop.width / (16 / 9);
           } else {
-            // Resize from top-left corner
             newCrop.x = Math.max(
               0,
               Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
@@ -254,10 +240,8 @@ export default function ImageCropModal({
           }
           break;
 
-        // Other cases remain the same, just replace dragStartCrop with dragStartCropRef.current
         case "top-right":
           if (enforceSquare) {
-            // Keep aspect ratio square - adjust height to match width
             newCrop.y = Math.max(
               0,
               Math.min(newCrop.y + newCrop.height - 10, newCrop.y + deltaY)
@@ -271,7 +255,6 @@ export default function ImageCropModal({
             );
             newCrop.height = newCrop.width;
           } else if (enforce16by9) {
-            // Keep 16:9 aspect ratio
             newCrop.y = Math.max(
               0,
               Math.min(newCrop.y + newCrop.height - 10, newCrop.y + deltaY)
@@ -285,7 +268,6 @@ export default function ImageCropModal({
             );
             newCrop.height = newCrop.width / (16 / 9);
           } else {
-            // Resize from top-right corner
             newCrop.y = Math.max(
               0,
               Math.min(newCrop.y + newCrop.height - 10, newCrop.y + deltaY)
@@ -306,7 +288,6 @@ export default function ImageCropModal({
 
         case "bottom-left":
           if (enforceSquare) {
-            // Keep aspect ratio square
             newCrop.x = Math.max(
               0,
               Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
@@ -317,7 +298,6 @@ export default function ImageCropModal({
               newCrop.x;
             newCrop.height = newCrop.width;
           } else if (enforce16by9) {
-            // Keep 16:9 aspect ratio
             newCrop.x = Math.max(
               0,
               Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
@@ -328,7 +308,6 @@ export default function ImageCropModal({
               newCrop.x;
             newCrop.height = newCrop.width / (16 / 9);
           } else {
-            // Resize from bottom-left corner
             newCrop.x = Math.max(
               0,
               Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
@@ -349,7 +328,6 @@ export default function ImageCropModal({
 
         case "bottom-right":
           if (enforceSquare) {
-            // Keep aspect ratio square - use the larger delta
             const delta = Math.max(deltaX, deltaY);
             newCrop.width = Math.max(
               10,
@@ -360,7 +338,6 @@ export default function ImageCropModal({
             );
             newCrop.height = newCrop.width;
           } else if (enforce16by9) {
-            // Keep 16:9 aspect ratio
             newCrop.width = Math.max(
               10,
               Math.min(
@@ -370,7 +347,6 @@ export default function ImageCropModal({
             );
             newCrop.height = newCrop.width / (16 / 9);
           } else {
-            // Resize from bottom-right corner
             newCrop.width = Math.max(
               10,
               Math.min(
@@ -389,7 +365,6 @@ export default function ImageCropModal({
           break;
 
         case "top":
-          // Resize from top edge
           newCrop.y = Math.max(
             0,
             Math.min(newCrop.y + newCrop.height - 10, newCrop.y + deltaY)
@@ -406,7 +381,6 @@ export default function ImageCropModal({
           break;
 
         case "bottom":
-          // Resize from bottom edge
           newCrop.height = Math.max(
             10,
             Math.min(
@@ -422,7 +396,6 @@ export default function ImageCropModal({
           break;
 
         case "left":
-          // Resize from left edge
           newCrop.x = Math.max(
             0,
             Math.min(newCrop.x + newCrop.width - 10, newCrop.x + deltaX)
@@ -439,7 +412,6 @@ export default function ImageCropModal({
           break;
 
         case "right":
-          // Resize from right edge
           newCrop.width = Math.max(
             10,
             Math.min(
@@ -455,14 +427,19 @@ export default function ImageCropModal({
           break;
       }
 
-      // Ensure width and height are at least 10 pixels
       newCrop.width = Math.max(10, newCrop.width);
       newCrop.height = Math.max(10, newCrop.height);
 
-      // Update crop dimensions and final dimensions
-      setCropDimensions(newCrop);
+      const roundedCrop = {
+        x: Math.round(newCrop.x),
+        y: Math.round(newCrop.y),
+        width: Math.round(newCrop.width),
+        height: Math.round(newCrop.height),
+      };
+
+      setCropDimensions(roundedCrop);
       setFinalDimensions(
-        calculateFinalDimensions(newCrop.width, newCrop.height)
+        calculateFinalDimensions(roundedCrop.width, roundedCrop.height)
       );
     };
 
@@ -472,17 +449,14 @@ export default function ImageCropModal({
       isDraggingRef.current = false;
       activeHandleRef.current = null;
 
-      // Remove window-level event listeners
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
 
-    // Only attach event listeners if we're actually dragging
     if (isDragging) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
 
-      // Clean up when component unmounts or isDragging changes
       return () => {
         window.removeEventListener("mousemove", handleMouseMove);
         window.removeEventListener("mouseup", handleMouseUp);
@@ -507,51 +481,38 @@ export default function ImageCropModal({
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    // Clear canvas
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Load the original image
     const img = new Image();
     img.onload = () => {
-      // Calculate scale factor for the preview
       const maxPreviewSize = 300;
       const calculatedScale = Math.min(
         maxPreviewSize / img.width,
         maxPreviewSize / img.height
       );
 
-      // Store scale for mouse interaction conversions
       setScale(calculatedScale);
 
-      // Set canvas dimensions to match the scaled image
       canvas.width = img.width * calculatedScale;
       canvas.height = img.height * calculatedScale;
 
-      // Draw the image
       ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
 
-      // Calculate scaled crop dimensions
       const scaledX = cropDimensions.x * calculatedScale;
       const scaledY = cropDimensions.y * calculatedScale;
       const scaledWidth = cropDimensions.width * calculatedScale;
       const scaledHeight = cropDimensions.height * calculatedScale;
 
-      // Style for the dark overlay
       ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
 
-      // Draw dark overlay in 4 sections around the crop area:
-      // Top section
       ctx.fillRect(0, 0, canvas.width, scaledY);
-      // Left section
       ctx.fillRect(0, scaledY, scaledX, scaledHeight);
-      // Right section
       ctx.fillRect(
         scaledX + scaledWidth,
         scaledY,
         canvas.width - (scaledX + scaledWidth),
         scaledHeight
       );
-      // Bottom section
       ctx.fillRect(
         0,
         scaledY + scaledHeight,
@@ -559,78 +520,73 @@ export default function ImageCropModal({
         canvas.height - (scaledY + scaledHeight)
       );
 
-      // Draw border around crop area
-      ctx.strokeStyle = "rgb(89, 91, 255)"; // primary color
+      ctx.strokeStyle = "rgb(89, 91, 255)";
       ctx.lineWidth = 2;
       ctx.strokeRect(scaledX, scaledY, scaledWidth, scaledHeight);
 
-      // Draw resize handles on the corners and edges
       const handleSize = 8;
 
-      // Corner handles (larger for easier targeting)
       drawHandle(
         ctx,
         scaledX - handleSize / 2,
         scaledY - handleSize / 2,
         handleSize,
         handleSize
-      ); // top-left
+      );
       drawHandle(
         ctx,
         scaledX + scaledWidth - handleSize / 2,
         scaledY - handleSize / 2,
         handleSize,
         handleSize
-      ); // top-right
+      );
       drawHandle(
         ctx,
         scaledX - handleSize / 2,
         scaledY + scaledHeight - handleSize / 2,
         handleSize,
         handleSize
-      ); // bottom-left
+      );
       drawHandle(
         ctx,
         scaledX + scaledWidth - handleSize / 2,
         scaledY + scaledHeight - handleSize / 2,
         handleSize,
         handleSize
-      ); // bottom-right
+      );
 
-      // Edge handles
       drawHandle(
         ctx,
         scaledX + scaledWidth / 2 - handleSize / 2,
         scaledY - handleSize / 2,
         handleSize,
         handleSize
-      ); // top
+      );
       drawHandle(
         ctx,
         scaledX + scaledWidth / 2 - handleSize / 2,
         scaledY + scaledHeight - handleSize / 2,
         handleSize,
         handleSize
-      ); // bottom
+      );
       drawHandle(
         ctx,
         scaledX - handleSize / 2,
         scaledY + scaledHeight / 2 - handleSize / 2,
         handleSize,
         handleSize
-      ); // left
+      );
       drawHandle(
         ctx,
         scaledX + scaledWidth - handleSize / 2,
         scaledY + scaledHeight / 2 - handleSize / 2,
         handleSize,
         handleSize
-      ); // right
+      );
     };
     img.src = imageSource;
   };
 
-  // Draw a resize handle
   const drawHandle = (
     ctx: CanvasRenderingContext2D,
     x: number,
@@ -645,12 +601,9 @@ export default function ImageCropModal({
     ctx.strokeRect(x, y, width, height);
   };
 
-  // Handle crop dimension changes through numeric inputs
   const handleCropChange = (key: keyof CropParams, value: number) => {
-    // Ensure dimensions stay within the image bounds
-    let newValue = Math.max(0, value);
+    let newValue = Math.max(0, Math.round(value));
 
-    // Additional constraints based on dimension type
     if (key === "x") {
       newValue = Math.min(
         newValue,
@@ -667,7 +620,6 @@ export default function ImageCropModal({
         originalDimensions.width - cropDimensions.x
       );
 
-      // For square images, update height to match width
       if (enforceSquare) {
         setCropDimensions(prev => ({
           ...prev,
@@ -677,7 +629,6 @@ export default function ImageCropModal({
         return;
       }
 
-      // For 16:9 images, update height to maintain aspect ratio
       if (enforce16by9) {
         const newHeight = newValue / (16 / 9);
         setCropDimensions(prev => ({
@@ -694,7 +645,6 @@ export default function ImageCropModal({
         originalDimensions.height - cropDimensions.y
       );
 
-      // For square images, update width to match height
       if (enforceSquare) {
         setCropDimensions(prev => ({
           ...prev,
@@ -704,7 +654,6 @@ export default function ImageCropModal({
         return;
       }
 
-      // For 16:9 images, update width to maintain aspect ratio
       if (enforce16by9) {
         const newWidth = newValue * (16 / 9);
         setCropDimensions(prev => ({
@@ -717,13 +666,11 @@ export default function ImageCropModal({
       }
     }
 
-    // Update the specific dimension
     setCropDimensions(prev => ({
       ...prev,
       [key]: newValue,
     }));
 
-    // Update final dimensions using smart resizing logic
     if (key === "width" || key === "height") {
       const updatedCrop = { ...cropDimensions, [key]: newValue };
       setFinalDimensions(
@@ -732,28 +679,23 @@ export default function ImageCropModal({
     }
   };
 
-  // Handle mouse down to start dragging
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     if (!cropCanvasRef.current) return;
 
-    // Get canvas position and calculate the mouse position within the canvas
     const canvas = cropCanvasRef.current;
     const rect = canvas.getBoundingClientRect();
     const mouseX = e.clientX - rect.left;
     const mouseY = e.clientY - rect.top;
 
-    // Store starting position
     dragStartPosRef.current = { x: mouseX, y: mouseY };
     dragStartCropRef.current = { ...cropDimensions };
 
-    // Determine if we're clicking on a handle, edge, or the center
     const scaledX = cropDimensions.x * scale;
     const scaledY = cropDimensions.y * scale;
     const scaledWidth = cropDimensions.width * scale;
     const scaledHeight = cropDimensions.height * scale;
-    const handleSize = 10; // slightly larger than visible for easier interaction
+    const handleSize = 10;
 
-    // Check corners first (they take precedence)
     if (isNear(mouseX, mouseY, scaledX, scaledY, handleSize)) {
       setActiveHandle("top-left");
       activeHandleRef.current = "top-left";
@@ -778,9 +720,7 @@ export default function ImageCropModal({
     ) {
       setActiveHandle("bottom-right");
       activeHandleRef.current = "bottom-right";
-    }
-    // Then check edges
-    else if (
+    } else if (
       isNear(
         mouseX,
         mouseY,
@@ -828,9 +768,7 @@ export default function ImageCropModal({
     ) {
       setActiveHandle("right");
       activeHandleRef.current = "right";
-    }
-    // Finally, check if we're in the middle of the crop area
-    else if (
+    } else if (
       mouseX >= scaledX &&
       mouseX <= scaledX + scaledWidth &&
       mouseY >= scaledY &&
@@ -839,16 +777,13 @@ export default function ImageCropModal({
       setActiveHandle("center");
       activeHandleRef.current = "center";
     } else {
-      // Clicked outside crop area
       return;
     }
 
-    // Start dragging
     setIsDragging(true);
     isDraggingRef.current = true;
   };
 
-  // Helper to check if mouse is near a point
   const isNear = (
     mouseX: number,
     mouseY: number,
@@ -858,7 +793,6 @@ export default function ImageCropModal({
     isEdge = false
   ) => {
     if (isEdge) {
-      // For edges, we need to be more lenient in one dimension
       return (
         Math.abs(mouseX - pointX) <= threshold &&
         Math.abs(mouseY - pointY) <= threshold
@@ -870,7 +804,6 @@ export default function ImageCropModal({
     );
   };
 
-  // Set cursor style based on active handle
   const getCursor = () => {
     if (!activeHandle) return "default";
 
