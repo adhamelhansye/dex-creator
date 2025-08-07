@@ -11,7 +11,6 @@ function parseJwt(authHeader: string | undefined): string | null {
     return null;
   }
 
-  // Extract the token part after "Bearer "
   const token = authHeader.split(" ")[1];
   return token || null;
 }
@@ -23,12 +22,10 @@ function parseJwt(authHeader: string | undefined): string | null {
  */
 async function verifyAuthToken(token: string): Promise<string | null> {
   try {
-    // Find the token in the database
     const tokenRecord = await prisma.token.findUnique({
       where: { token },
     });
 
-    // Check if token exists and is not expired
     if (!tokenRecord || tokenRecord.expiresAt < new Date()) {
       return null;
     }
@@ -86,7 +83,6 @@ export async function adminMiddleware(c: Context, next: () => Promise<void>) {
       return c.json({ error: "Unauthorized: Invalid or expired token" }, 401);
     }
 
-    // Check if user is admin
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { isAdmin: true },

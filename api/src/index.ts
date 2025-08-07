@@ -33,9 +33,9 @@ app.use("/api/graduation/*", authMiddleware);
 
 app.use("/api/admin/*", async (c, next) => {
   if (c.req.path === "/api/admin/check") {
-    await authMiddleware(c, next);
+    return authMiddleware(c, next);
   } else {
-    await adminMiddleware(c, next);
+    return adminMiddleware(c, next);
   }
 });
 
@@ -116,7 +116,6 @@ prisma
     process.exit(1);
   });
 
-// Clean up database connection on shutdown
 process.on("SIGINT", async () => {
   await prisma.$disconnect();
   process.exit(0);

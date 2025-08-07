@@ -86,6 +86,11 @@ interface Dex {
 
 interface DexesResponse {
   dexes: Dex[];
+  pagination: {
+    total: number;
+    limit: number;
+    offset: number;
+  };
 }
 
 interface ApproveBrokerIdResponse {
@@ -118,7 +123,13 @@ const getChainName = (chainId: number): string => {
 export default function AdminRoute() {
   const [allDexes, setAllDexes] = useState<Dex[]>([]);
   const [loadingDexes, setLoadingDexes] = useState(false);
+  const [searchLoading, setSearchLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(20);
+  const [totalDexes, setTotalDexes] = useState(0);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const [dexToDeleteId, setDexToDeleteId] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -196,7 +207,6 @@ export default function AdminRoute() {
     }
   };
 
-  // Check if the current user is an admin
   useEffect(() => {
     async function checkAdmin() {
       if (!isAuthenticated) {
@@ -212,10 +222,9 @@ export default function AdminRoute() {
         );
         setIsAdmin(response.isAdmin);
 
-        // If admin, load admin users and DEXes
         if (response.isAdmin) {
           loadAdminUsers();
-          loadAllDexes();
+          loadAllDexes(1, 20, "");
         }
       } catch (error) {
         console.error("Error checking admin status:", error);
@@ -228,12 +237,41 @@ export default function AdminRoute() {
     checkAdmin();
   }, [isAuthenticated, token]);
 
-  // Load all DEXes
-  const loadAllDexes = async () => {
-    setLoadingDexes(true);
+  const loadAllDexes = async (
+    page?: number,
+    size?: number,
+    search?: string
+  ) => {
+    if (!isAuthenticated || !token) {
+      return;
+    }
+
+    const targetPage = page ?? currentPage;
+    const targetSize = size ?? pageSize;
+    const targetSearch = search ?? searchTerm;
+    const isSearch = !!targetSearch;
+    const isInitialLoad = targetPage === 1 && targetSearch === "";
+
+    if (isSearch && !isInitialLoad) {
+      setSearchLoading(true);
+    } else {
+      setLoadingDexes(true);
+    }
+
     try {
-      const response = await get<DexesResponse>("api/admin/dexes", token);
+      const offset = (targetPage - 1) * targetSize;
+      const searchParam = targetSearch
+        ? `&search=${encodeURIComponent(targetSearch)}`
+        : "";
+      const response = await get<DexesResponse>(
+        `api/admin/dexes?limit=${targetSize}&offset=${offset}${searchParam}`,
+        token
+      );
       setAllDexes(response.dexes);
+      setTotalDexes(response.pagination.total);
+      setCurrentPage(targetPage);
+      setPageSize(targetSize);
+      setSearchTerm(targetSearch);
 
       const pending = response.dexes.filter(
         dex => dex.brokerId && dex.brokerId !== dex.brokerId
@@ -243,11 +281,14 @@ export default function AdminRoute() {
       console.error("Error loading DEXes:", error);
       toast.error("Failed to load DEXes");
     } finally {
-      setLoadingDexes(false);
+      if (isSearch) {
+        setSearchLoading(false);
+      } else {
+        setLoadingDexes(false);
+      }
     }
   };
 
-  // Load admin users
   const loadAdminUsers = async () => {
     setIsLoadingAdmins(true);
     try {
@@ -260,6 +301,22 @@ export default function AdminRoute() {
       setIsLoadingAdmins(false);
     }
   };
+
+  const handleSearch = (query: string) => {
+    setSearchTerm(query);
+  };
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      return;
+    }
+
+    const timeoutId = setTimeout(() => {
+      loadAllDexes(1, pageSize, searchTerm);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchTerm, pageSize, isAuthenticated, token]);
 
   const handleDeleteDexSearch = (query: string) => {
     setSearchQuery(query);
@@ -278,7 +335,6 @@ export default function AdminRoute() {
     setFilteredDeleteDexes(filtered);
   };
 
-  // Handle broker ID search
   const handleBrokerSearch = (query: string) => {
     setBrokerSearchQuery(query);
     if (!query) {
@@ -296,7 +352,6 @@ export default function AdminRoute() {
     setFilteredBrokerDexes(filtered);
   };
 
-  // Handle repository search
   const handleRepoSearch = (query: string) => {
     setRepoSearchQuery(query);
     if (!query) {
@@ -305,7 +360,6 @@ export default function AdminRoute() {
     }
 
     const queryLower = query.toLowerCase();
-    // Only filter DEXes that have a repository URL
     const filtered = allDexes.filter(
       dex =>
         dex.repoUrl &&
@@ -322,18 +376,15 @@ export default function AdminRoute() {
     setSearchQuery("");
   };
 
-  // Handle selecting a DEX for broker ID update
   const handleSelectBrokerDex = (dex: Dex) => {
     setDexId(dex.id);
-    setBrokerId(dex.brokerId); // Pre-fill with current broker ID
+    setBrokerId(dex.brokerId);
     setFilteredBrokerDexes([]);
     setBrokerSearchQuery("");
   };
 
-  // Handle selecting a DEX for repository rename
   const handleSelectRepoDex = (dex: Dex) => {
     setRepoDexId(dex.id);
-    // Extract current repo name for pre-filling
     if (dex.repoUrl) {
       const match = dex.repoUrl.match(/github\.com\/[^/]+\/([^/]+)/);
       if (match && match[1]) {
@@ -364,7 +415,7 @@ export default function AdminRoute() {
 
       toast.success("DEX deleted successfully");
 
-      loadAllDexes();
+      loadAllDexes(currentPage, pageSize, searchTerm);
       setDexToDeleteId("");
     } catch (error) {
       console.error("Error in admin component:", error);
@@ -379,7 +430,6 @@ export default function AdminRoute() {
     }
   };
 
-  // Handle updating broker ID
   const handleUpdateBrokerId = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -405,8 +455,7 @@ export default function AdminRoute() {
 
       toast.success("Broker ID updated successfully");
 
-      // Refresh DEX list after successful update
-      loadAllDexes();
+      loadAllDexes(currentPage, pageSize, searchTerm);
     } catch (error) {
       console.error("Error updating broker ID:", error);
 
@@ -420,7 +469,6 @@ export default function AdminRoute() {
     }
   };
 
-  // Handle repository rename
   const handleRenameRepo = async (e: FormEvent) => {
     e.preventDefault();
 
@@ -446,8 +494,7 @@ export default function AdminRoute() {
 
       toast.success("Repository renamed successfully");
 
-      // Refresh DEX list after successful rename
-      loadAllDexes();
+      loadAllDexes(currentPage, pageSize, searchTerm);
     } catch (error) {
       console.error("Error renaming repository:", error);
 
@@ -477,7 +524,7 @@ export default function AdminRoute() {
 
       toast.success(response.message);
 
-      loadAllDexes();
+      loadAllDexes(currentPage, pageSize, searchTerm);
 
       setCustomBrokerId("");
       setSelectedDexForApproval(null);
@@ -517,7 +564,7 @@ export default function AdminRoute() {
 
       toast.success(response.message);
       setDeleteBrokerIdResult(response);
-      loadAllDexes();
+      loadAllDexes(currentPage, pageSize, searchTerm);
       setBrokerIdToDelete("");
     } catch (error) {
       setDeleteBrokerIdResult(null);
@@ -633,7 +680,7 @@ export default function AdminRoute() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-medium">Broker ID Management</h2>
             <button
-              onClick={loadAllDexes}
+              onClick={() => loadAllDexes(currentPage, pageSize, searchTerm)}
               disabled={loadingDexes}
               className="p-1 rounded hover:bg-dark/50"
               title="Refresh DEX list"
@@ -806,7 +853,6 @@ export default function AdminRoute() {
               <div className="grid grid-cols-1 gap-2 mt-4">
                 <button
                   onClick={() => {
-                    // Scroll to update broker section
                     document
                       .getElementById("update-broker-id")
                       ?.scrollIntoView({
@@ -1430,7 +1476,7 @@ export default function AdminRoute() {
           <div className="flex justify-between items-center mb-4">
             <h2 className="text-xl font-medium">Browse All DEXes</h2>
             <button
-              onClick={loadAllDexes}
+              onClick={() => loadAllDexes(currentPage, pageSize, searchTerm)}
               disabled={loadingDexes}
               className="p-1 rounded hover:bg-dark/50"
               title="Refresh DEX list"
@@ -1444,6 +1490,28 @@ export default function AdminRoute() {
             A comprehensive list of all DEXes and their database values.
           </p>
 
+          {/* Search Input */}
+          <div className="mb-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search by broker name or broker ID..."
+                value={searchTerm}
+                onChange={e => handleSearch(e.target.value)}
+                className="w-full bg-dark border border-light/20 rounded px-4 py-2 text-sm focus:border-primary-light outline-none placeholder:text-gray-500"
+              />
+              {searchTerm && (
+                <button
+                  onClick={() => handleSearch("")}
+                  className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 p-1"
+                  title="Clear search"
+                >
+                  <div className="i-mdi:close h-4 w-4"></div>
+                </button>
+              )}
+            </div>
+          </div>
+
           {loadingDexes ? (
             <div className="text-center py-4">
               <div className="i-svg-spinners:pulse-rings h-8 w-8 mx-auto text-primary-light mb-2"></div>
@@ -1452,7 +1520,16 @@ export default function AdminRoute() {
           ) : allDexes.length === 0 ? (
             <p className="text-gray-400 text-sm italic">No DEXes found.</p>
           ) : (
-            <div className="space-y-4 max-h-[600px] overflow-y-auto">
+            <div className="relative space-y-4 max-h-[600px]">
+              {/* Search Loading Overlay */}
+              {searchLoading && (
+                <div className="absolute inset-0 bg-dark/50 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center min-h-[200px]">
+                  <div className="text-center p-4">
+                    <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-primary-light mb-2"></div>
+                    <p className="text-xs text-gray-300">Searching...</p>
+                  </div>
+                </div>
+              )}
               {allDexes.map(dex => (
                 <div
                   key={dex.id}
@@ -1658,6 +1735,92 @@ export default function AdminRoute() {
                   )}
                 </div>
               ))}
+            </div>
+          )}
+
+          {/* Pagination Controls */}
+          {!loadingDexes && allDexes.length > 0 && (
+            <div className="mt-6 pt-4 border-t border-light/10">
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
+                {/* Page Size Selector */}
+                <div className="flex items-center gap-2">
+                  <label className="text-sm text-gray-400">Show:</label>
+                  <select
+                    value={pageSize}
+                    onChange={e => {
+                      const newSize = parseInt(e.target.value);
+                      setPageSize(newSize);
+                      loadAllDexes(1, newSize, searchTerm);
+                    }}
+                    className="bg-dark border border-light/20 rounded px-2 py-1 text-sm focus:border-primary-light outline-none"
+                  >
+                    <option value={10}>10</option>
+                    <option value={20}>20</option>
+                    <option value={50}>50</option>
+                    <option value={100}>100</option>
+                  </select>
+                  <span className="text-sm text-gray-400">per page</span>
+                </div>
+
+                {/* Pagination Info */}
+                <div className="text-sm text-gray-400">
+                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
+                  {Math.min(currentPage * pageSize, totalDexes)} of {totalDexes}{" "}
+                  DEXes
+                </div>
+
+                {/* Pagination Navigation */}
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() =>
+                      loadAllDexes(currentPage - 1, pageSize, searchTerm)
+                    }
+                    disabled={currentPage <= 1}
+                    className="px-3 py-1 rounded border border-light/20 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-light/10 disabled:hover:bg-transparent"
+                  >
+                    Previous
+                  </button>
+
+                  {/* Page Numbers */}
+                  <div className="flex items-center gap-1">
+                    {Array.from(
+                      { length: Math.min(5, Math.ceil(totalDexes / pageSize)) },
+                      (_, i) => {
+                        const pageNum = i + 1;
+                        return (
+                          <button
+                            key={pageNum}
+                            onClick={() =>
+                              loadAllDexes(pageNum, pageSize, searchTerm)
+                            }
+                            className={`px-2 py-1 rounded text-sm min-w-[32px] ${
+                              currentPage === pageNum
+                                ? "bg-primary-light text-dark"
+                                : "border border-light/20 hover:bg-light/10"
+                            }`}
+                          >
+                            {pageNum}
+                          </button>
+                        );
+                      }
+                    )}
+
+                    {Math.ceil(totalDexes / pageSize) > 5 && (
+                      <span className="text-sm text-gray-400 px-2">...</span>
+                    )}
+                  </div>
+
+                  <button
+                    onClick={() =>
+                      loadAllDexes(currentPage + 1, pageSize, searchTerm)
+                    }
+                    disabled={currentPage >= Math.ceil(totalDexes / pageSize)}
+                    className="px-3 py-1 rounded border border-light/20 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-light/10 disabled:hover:bg-transparent"
+                  >
+                    Next
+                  </button>
+                </div>
+              </div>
             </div>
           )}
         </div>

@@ -1,5 +1,6 @@
 import { Context, Hono } from "hono";
 import { z } from "zod";
+import { zValidator } from "@hono/zod-validator";
 import { getAllAdmins, isUserAdmin } from "../models/admin";
 import {
   getDexById,
@@ -41,7 +42,6 @@ adminRoutes.get("/users", async (c: AdminContext) => {
 
 adminRoutes.get("/check", async c => {
   const userId = c.get("userId") as string | undefined;
-  console.log("userId", userId);
 
   if (!userId) {
     return c.json({ isAdmin: false }, 200);
@@ -51,15 +51,21 @@ adminRoutes.get("/check", async c => {
   return c.json({ isAdmin }, 200);
 });
 
-adminRoutes.get("/dexes", async (c: AdminContext) => {
-  try {
-    const dexes = await getAllDexes();
-    return c.json({ dexes });
-  } catch (error) {
-    console.error("Error fetching all DEXes:", error);
-    return c.json({ error: "Failed to fetch DEXes" }, 500);
-  }
+const paginationQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).default(20),
+  offset: z.coerce.number().int().min(0).default(0),
+  search: z.string().optional(),
 });
+
+adminRoutes.get(
+  "/dexes",
+  zValidator("query", paginationQuerySchema),
+  async c => {
+    const query = c.req.valid("query");
+    const result = await getAllDexes(query.limit, query.offset, query.search);
+    return c.json(result);
+  }
+);
 
 function extractRepoInfoFromUrl(
   repoUrl: string

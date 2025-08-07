@@ -667,18 +667,59 @@ export async function deleteDexByWalletAddress(
   });
 }
 
-export async function getAllDexes() {
-  return prisma.dex.findMany({
-    include: {
-      user: {
-        select: {
-          address: true,
+export async function getAllDexes(
+  limit: number,
+  offset: number,
+  search?: string
+) {
+  const whereClause = search
+    ? {
+        OR: [
+          {
+            brokerName: {
+              contains: search,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            brokerId: {
+              contains: search,
+              mode: "insensitive" as const,
+            },
+          },
+        ],
+      }
+    : {};
+
+  return await prisma.$transaction(async tx => {
+    const total = await tx.dex.count({
+      where: whereClause,
+    });
+
+    const dexes = await tx.dex.findMany({
+      where: whereClause,
+      include: {
+        user: {
+          select: {
+            address: true,
+          },
         },
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: limit,
+      skip: offset,
+    });
+
+    return {
+      dexes,
+      pagination: {
+        total,
+        limit,
+        offset,
+      },
+    };
   });
 }
 

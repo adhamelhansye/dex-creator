@@ -10,7 +10,6 @@ import {
 
 const app = new Hono();
 
-// Generate a nonce for the user to sign
 app.post("/nonce", zValidator("json", authRequestSchema), async c => {
   const { address } = c.req.valid("json");
 
@@ -28,7 +27,6 @@ app.post("/nonce", zValidator("json", authRequestSchema), async c => {
   }
 });
 
-// Verify signature and authenticate user
 app.post("/verify", zValidator("json", authVerifySchema), async c => {
   const { address, signature } = c.req.valid("json");
 
@@ -66,7 +64,6 @@ app.post("/verify", zValidator("json", authVerifySchema), async c => {
   }
 });
 
-// Verify if a token is still valid
 app.post("/validate", zValidator("json", tokenValidationSchema), async c => {
   const { address, token } = c.req.valid("json");
 
@@ -102,7 +99,6 @@ app.post("/validate", zValidator("json", tokenValidationSchema), async c => {
   }
 });
 
-// Add a periodic token cleanup endpoint (could be called via cron job)
 app.post("/cleanup-tokens", async c => {
   try {
     const count = await userStore.cleanupExpiredTokens();
