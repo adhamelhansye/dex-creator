@@ -67,6 +67,37 @@ adminRoutes.get(
   }
 );
 
+adminRoutes.get("/dexes/stats", async c => {
+  try {
+    const stats = await prisma.$transaction(async tx => {
+      const totalDexes = await tx.dex.count();
+      const graduatedDexes = await tx.dex.count({
+        where: {
+          brokerId: {
+            not: "demo",
+          },
+        },
+      });
+      const demoDexes = await tx.dex.count({
+        where: {
+          brokerId: "demo",
+        },
+      });
+
+      return {
+        total: totalDexes,
+        graduated: graduatedDexes,
+        demo: demoDexes,
+      };
+    });
+
+    return c.json(stats);
+  } catch (error) {
+    console.error("Error getting DEX statistics:", error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
 function extractRepoInfoFromUrl(
   repoUrl: string
 ): { owner: string; repo: string } | null {
@@ -288,64 +319,6 @@ adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
     return c.json(
       { message: "Error renaming repository", error: String(error) },
       500
-    );
-  }
-});
-
-adminRoutes.post("/graduation/approve", async (c: AdminContext) => {
-  try {
-    const approveBrokerIdSchema = z.object({
-      dexId: z.string().uuid(),
-      customBrokerId: z.string().optional(),
-    });
-
-    const result = approveBrokerIdSchema.safeParse(await c.req.json());
-    if (!result.success) {
-      return c.json(
-        { error: "Invalid request", details: result.error },
-        { status: 400 }
-      );
-    }
-
-    const { dexId, customBrokerId } = result.data;
-
-    const dex = await prisma.dex.findUnique({
-      where: { id: dexId },
-    });
-
-    if (!dex) {
-      return c.json(
-        { success: false, message: "DEX not found" },
-        { status: 404 }
-      );
-    }
-
-    const brokerId = customBrokerId || dex.brokerId;
-
-    const updatedDex = await prisma.dex.update({
-      where: { id: dexId },
-      data: {
-        brokerId,
-      },
-    });
-
-    return c.json({
-      success: true,
-      message: "Broker ID approved successfully",
-      dex: {
-        id: updatedDex.id,
-        brokerName: updatedDex.brokerName,
-        brokerId: updatedDex.brokerId,
-      },
-    });
-  } catch (error) {
-    console.error("Error approving broker ID:", error);
-    return c.json(
-      {
-        success: false,
-        message: `Error approving broker ID: ${error instanceof Error ? error.message : String(error)}`,
-      },
-      { status: 500 }
     );
   }
 });
