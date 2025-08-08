@@ -11,6 +11,9 @@ import { getUserDex } from "../models/dex";
 import { prisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
 
+let orderPriceCache: { price: number; timestamp: number } | null = null;
+const CACHE_TTL = 60 * 1000;
+
 const verifyTxSchema = z.object({
   txHash: z.string().min(10).max(100),
   chain: z.string().min(1).max(50),
@@ -24,6 +27,7 @@ const verifyTxSchema = z.object({
     ),
   makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
   takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
+  paymentType: z.enum(["usdc", "order"]).default("order"),
 });
 
 const updateFeesSchema = z.object({
@@ -40,7 +44,7 @@ graduationRoutes.post(
     try {
       const userId = c.get("userId");
 
-      const { txHash, chain, brokerId, makerFee, takerFee } =
+      const { txHash, chain, brokerId, makerFee, takerFee, paymentType } =
         c.req.valid("json");
 
       const dex = await getUserDex(userId);
@@ -65,7 +69,8 @@ graduationRoutes.post(
       const verificationResult = await verifyOrderTransaction(
         txHash,
         chain,
-        user.address
+        user.address,
+        paymentType
       );
 
       if (!verificationResult.success) {
@@ -361,6 +366,91 @@ graduationRoutes.get("/graduation-status", async c => {
       {
         success: false,
         message: `Error getting graduation status: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+graduationRoutes.get("/fee-options", async c => {
+  try {
+    const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
+    const orderRequiredPrice = process.env.GRADUATION_ORDER_REQUIRED_PRICE;
+    const orderMinimumPrice = process.env.GRADUATION_ORDER_MINIMUM_PRICE;
+    if (!usdcAmount || !orderRequiredPrice || !orderMinimumPrice) {
+      return c.json(
+        {
+          success: false,
+          message: "Graduation fee configuration is incomplete",
+        },
+        { status: 500 }
+      );
+    }
+
+    const now = Date.now();
+    if (!orderPriceCache || now - orderPriceCache.timestamp >= CACHE_TTL) {
+      const coingeckoResponse = await fetch(
+        "https://api.coingecko.com/api/v3/simple/price?ids=orderly-network&vs_currencies=usd"
+      );
+
+      if (!coingeckoResponse.ok) {
+        return c.json(
+          {
+            success: false,
+            message: "Failed to fetch ORDER token price",
+          },
+          { status: 500 }
+        );
+      }
+
+      const priceData = await coingeckoResponse.json();
+      const currentOrderPrice = priceData["orderly-network"]?.usd;
+
+      if (!currentOrderPrice) {
+        return c.json(
+          {
+            success: false,
+            message: "ORDER token price not available",
+          },
+          { status: 500 }
+        );
+      }
+
+      orderPriceCache = {
+        price: currentOrderPrice,
+        timestamp: now,
+      };
+    }
+
+    const currentOrderPrice = orderPriceCache!.price;
+
+    const requiredPrice = parseFloat(orderRequiredPrice);
+    const minimumPrice = parseFloat(orderMinimumPrice);
+
+    const orderAmount = requiredPrice / currentOrderPrice;
+
+    return c.json({
+      usdc: {
+        amount: parseFloat(usdcAmount),
+        currency: "USDC",
+        stable: true,
+      },
+      order: {
+        amount: orderAmount,
+        currentPrice: currentOrderPrice,
+        requiredPrice: requiredPrice,
+        minimumPrice: minimumPrice,
+        currency: "ORDER",
+        stable: false,
+      },
+      receiverAddress: process.env.ORDER_RECEIVER_ADDRESS,
+    });
+  } catch (error) {
+    console.error("Error getting graduation fee options:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error getting graduation fee options: ${error instanceof Error ? error.message : String(error)}`,
       },
       { status: 500 }
     );

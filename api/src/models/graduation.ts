@@ -2,39 +2,32 @@ import { prisma } from "../lib/prisma";
 import { ethers } from "ethers";
 import { createAutomatedBrokerId as createBrokerOnAllChains } from "../lib/brokerCreation.js";
 import { getCurrentEnvironment } from "./dex.js";
-import { ALL_CHAINS, type ChainName } from "../../../config";
+import {
+  ALL_CHAINS,
+  ORDER_ADDRESSES,
+  USDC_ADDRESSES,
+  type ChainName,
+} from "../../../config";
+
+async function withRPCTimeout<T>(
+  promise: Promise<T>,
+  timeoutMs: number = 30000,
+  errorMessage: string = "RPC timeout"
+): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error(errorMessage)), timeoutMs)
+    ),
+  ]);
+}
 
 export interface BrokerCreationData {
   brokerId: string;
   transactionHashes: Record<number, string>; // chainId -> txHash
 }
 
-const DEFAULT_ETH_ORDER_ADDRESS = "0xABD4C63d2616A5201454168269031355f4764337";
-const DEFAULT_ARB_ORDER_ADDRESS = "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8";
-const DEFAULT_ETH_SEPOLIA_ORDER_ADDRESS =
-  "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238";
-const DEFAULT_ARB_SEPOLIA_ORDER_ADDRESS =
-  "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d";
-
-const ORDER_TOKEN_ADDRESSES: Record<string, string> = {
-  ethereum: process.env.ETH_ORDER_ADDRESS || DEFAULT_ETH_ORDER_ADDRESS,
-  arbitrum: process.env.ARB_ORDER_ADDRESS || DEFAULT_ARB_ORDER_ADDRESS,
-  sepolia:
-    process.env.SEPOLIA_ORDER_ADDRESS || DEFAULT_ETH_SEPOLIA_ORDER_ADDRESS,
-  "arbitrum-sepolia":
-    process.env.ARB_SEPOLIA_ORDER_ADDRESS || DEFAULT_ARB_SEPOLIA_ORDER_ADDRESS,
-};
-
-const DEFAULT_RECEIVER = "0x7E301E34Ee1A0524225a91BD445344d11a1B4869";
-const ORDER_RECEIVER_ADDRESSES: Record<string, string> = {
-  ethereum: process.env.ETH_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
-  arbitrum: process.env.ARB_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
-  sepolia: process.env.SEPOLIA_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
-  "arbitrum-sepolia":
-    process.env.ARB_SEPOLIA_RECEIVER_ADDRESS || DEFAULT_RECEIVER,
-};
-
-const REQUIRED_ORDER_AMOUNT = process.env.REQUIRED_ORDER_AMOUNT || "1000";
+const ORDER_RECEIVER_ADDRESS = process.env.ORDER_RECEIVER_ADDRESS!;
 
 const DEFAULT_MAKER_FEE = 30; // Default maker fee (3 bps = 30 units)
 const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
@@ -50,12 +43,13 @@ const ERC20_TRANSFER_EVENT_ABI = [
 ];
 
 /**
- * Verify if a transaction sent ORDER tokens to our address
+ * Verify if a transaction sent the required payment (ORDER tokens or USDC) to our address
  */
 export async function verifyOrderTransaction(
   txHash: string,
   chain: string,
-  userWalletAddress: string
+  userWalletAddress: string,
+  paymentType: "usdc" | "order" = "order"
 ): Promise<{ success: boolean; message: string; amount?: string }> {
   if (!ACCEPTED_CHAINS.includes(chain)) {
     return {
@@ -64,21 +58,19 @@ export async function verifyOrderTransaction(
     };
   }
 
-  const tokenAddress = ORDER_TOKEN_ADDRESSES[chain];
+  const tokenAddress =
+    paymentType === "usdc"
+      ? USDC_ADDRESSES[chain as keyof typeof USDC_ADDRESSES]
+      : ORDER_ADDRESSES[chain as keyof typeof ORDER_ADDRESSES];
+
   if (!tokenAddress) {
     return {
       success: false,
-      message: `No ORDER token address configured for chain: ${chain}`,
+      message: `No ${paymentType.toUpperCase()} token address configured for chain: ${chain}`,
     };
   }
 
-  const receiverAddress = ORDER_RECEIVER_ADDRESSES[chain];
-  if (!receiverAddress) {
-    return {
-      success: false,
-      message: `No receiver address configured for chain: ${chain}`,
-    };
-  }
+  const receiverAddress = ORDER_RECEIVER_ADDRESS;
 
   try {
     const rpcUrl = ALL_CHAINS[chain as ChainName].rpcUrl;
@@ -91,7 +83,11 @@ export async function verifyOrderTransaction(
 
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
-    const receipt = await provider.getTransactionReceipt(txHash);
+    const receipt = await withRPCTimeout(
+      provider.getTransactionReceipt(txHash),
+      30000,
+      "Transaction receipt timeout"
+    );
     if (!receipt) {
       return { success: false, message: "Transaction not found" };
     }
@@ -100,7 +96,11 @@ export async function verifyOrderTransaction(
       return { success: false, message: "Transaction failed" };
     }
 
-    const transaction = await provider.getTransaction(txHash);
+    const transaction = await withRPCTimeout(
+      provider.getTransaction(txHash),
+      30000,
+      "Transaction details timeout"
+    );
     if (!transaction) {
       return { success: false, message: "Transaction details not found" };
     }
@@ -140,8 +140,7 @@ export async function verifyOrderTransaction(
     if (validTransfers.length === 0) {
       return {
         success: false,
-        message:
-          "No ORDER token transfers to the required address found in this transaction",
+        message: `No ${paymentType.toUpperCase()} token transfers to the required address found in this transaction`,
       };
     }
 
@@ -151,14 +150,18 @@ export async function verifyOrderTransaction(
       return sum + amount;
     }, ethers.getBigInt(0));
 
-    let tokenDecimals = 18;
+    let tokenDecimals = paymentType === "usdc" ? 6 : 18;
     try {
       const tokenContract = new ethers.Contract(
         tokenAddress,
         ["function decimals() view returns (uint8)"],
         provider
       );
-      tokenDecimals = await tokenContract.decimals();
+      tokenDecimals = await withRPCTimeout(
+        tokenContract.decimals(),
+        15000,
+        "Token decimals timeout"
+      );
     } catch (error) {
       console.warn(
         `Could not read decimals for token ${tokenAddress}, using default 18:`,
@@ -170,19 +173,38 @@ export async function verifyOrderTransaction(
       totalTransferred,
       tokenDecimals
     );
-    const requiredAmount = parseFloat(REQUIRED_ORDER_AMOUNT);
 
-    if (parseFloat(totalTransferredDecimal) < requiredAmount) {
+    const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
+    const orderRequiredPrice = process.env.GRADUATION_ORDER_REQUIRED_PRICE;
+
+    if (!usdcAmount || !orderRequiredPrice) {
       return {
         success: false,
-        message: `Insufficient ORDER tokens transferred. Required: ${requiredAmount}, Found: ${totalTransferredDecimal} (${tokenDecimals} decimals)`,
+        message: "Graduation fee configuration is incomplete",
+      };
+    }
+
+    let requiredAmount: string;
+    if (paymentType === "usdc") {
+      requiredAmount = usdcAmount;
+    } else {
+      requiredAmount = orderRequiredPrice;
+    }
+
+    const transferredAmount = parseFloat(totalTransferredDecimal);
+    const requiredAmountFloat = parseFloat(requiredAmount);
+
+    if (transferredAmount < requiredAmountFloat) {
+      return {
+        success: false,
+        message: `Insufficient amount transferred. Required: ${requiredAmount} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
         amount: totalTransferredDecimal,
       };
     }
 
     return {
       success: true,
-      message: `Successfully verified ORDER transfer of ${totalTransferredDecimal}`,
+      message: `Successfully verified ${paymentType.toUpperCase()} transfer of ${totalTransferredDecimal}`,
       amount: totalTransferredDecimal,
     };
   } catch (error) {

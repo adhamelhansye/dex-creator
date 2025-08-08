@@ -23,13 +23,6 @@ export type OrderlyConfig = {
   };
 };
 
-export const ORDER_RECEIVER_ADDRESS =
-  import.meta.env.VITE_ORDER_RECEIVER_ADDRESS || "";
-
-export const REQUIRED_ORDER_AMOUNT = parseInt(
-  import.meta.env.VITE_REQUIRED_ORDER_AMOUNT || "8000"
-);
-
 export const previewConfig: OrderlyConfig = {
   scaffold: {
     mainNavProps: {

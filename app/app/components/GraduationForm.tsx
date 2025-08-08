@@ -34,12 +34,11 @@ import {
   getOrderTokenSupportedChains,
   getPreferredChain,
   getCurrentEnvironment,
-  ORDER_RECEIVER_ADDRESS,
-  REQUIRED_ORDER_AMOUNT,
 } from "../utils/config";
 import {
   ChainName,
   ORDER_ADDRESSES,
+  USDC_ADDRESSES,
   OrderTokenChainName,
 } from "../../../config";
 
@@ -103,6 +102,23 @@ interface BrokerIdResponse {
   timestamp: number;
 }
 
+interface FeeOptionsResponse {
+  usdc: {
+    amount: number;
+    currency: string;
+    stable: boolean;
+  };
+  order: {
+    amount: number;
+    currentPrice: number;
+    requiredPrice: number;
+    minimumPrice: number;
+    currency: string;
+    stable: boolean;
+  };
+  receiverAddress: string;
+}
+
 interface GraduationFormProps {
   onNoDexSetup?: () => void;
   onGraduationSuccess?: () => void;
@@ -136,6 +152,9 @@ export function GraduationForm({
     useState<NewGraduationStatusResponse | null>(null);
   const [isFinalizingAdminWallet, setIsFinalizingAdminWallet] = useState(false);
   const [dexData, setDexData] = useState<{ repoUrl?: string } | null>(null);
+  const [feeOptions, setFeeOptions] = useState<FeeOptionsResponse | null>(null);
+  const [paymentType, setPaymentType] = useState<"usdc" | "order">("order");
+  const [isLoadingFeeOptions, setIsLoadingFeeOptions] = useState(false);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -148,9 +167,10 @@ export function GraduationForm({
   };
 
   const preferredChain = getPreferredChain(chain);
-  const currentReceiverAddress = ORDER_RECEIVER_ADDRESS;
   const currentTokenAddress =
-    ORDER_ADDRESSES[preferredChain as OrderTokenChainName];
+    paymentType === "usdc"
+      ? USDC_ADDRESSES[preferredChain as OrderTokenChainName]
+      : ORDER_ADDRESSES[preferredChain as OrderTokenChainName];
 
   const currentChainId =
     SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
@@ -162,12 +182,6 @@ export function GraduationForm({
   const { switchChain } = useSwitchChain();
 
   useEffect(() => {
-    if (!ORDER_RECEIVER_ADDRESS) {
-      console.log("Missing receiver address");
-    } else if (!validateAddress(ORDER_RECEIVER_ADDRESS)) {
-      console.log("Invalid receiver address format");
-    }
-
     Object.entries(ORDER_ADDRESSES).forEach(([chain, address]) => {
       if (!address) {
         console.log(`Missing ORDER token address for ${chain}`);
@@ -295,10 +309,26 @@ export function GraduationForm({
     }
   }, [token, setMakerFee, setTakerFee]);
 
+  const loadFeeOptions = useCallback(async () => {
+    setIsLoadingFeeOptions(true);
+    try {
+      const response = await get<FeeOptionsResponse>(
+        "api/graduation/fee-options",
+        token
+      );
+      setFeeOptions(response);
+    } catch (error) {
+      console.error("Error loading fee options:", error);
+      toast.error("Failed to load graduation fee options");
+    } finally {
+      setIsLoadingFeeOptions(false);
+    }
+  }, [token]);
+
   useEffect(() => {
     async function loadStatus() {
       try {
-        await loadFeeConfiguration();
+        await Promise.all([loadFeeConfiguration(), loadFeeOptions()]);
       } catch (error) {
         console.error("Error loading graduation status:", error);
 
@@ -313,7 +343,7 @@ export function GraduationForm({
     }
 
     loadStatus();
-  }, [token, hasSubmitted, loadFeeConfiguration, onNoDexSetup]);
+  }, [token, hasSubmitted, loadFeeConfiguration, loadFeeOptions, onNoDexSetup]);
 
   useEffect(() => {
     async function loadGraduationStatus() {
@@ -476,8 +506,8 @@ export function GraduationForm({
         return;
       }
 
-      if (!currentReceiverAddress) {
-        console.log(`Missing receiver address for ${chain}`);
+      if (!feeOptions?.receiverAddress) {
+        console.log("Missing receiver address from fee options");
         toast.error("Missing receiver address configuration");
         return;
       }
@@ -487,8 +517,8 @@ export function GraduationForm({
         return;
       }
 
-      if (!validateAddress(currentReceiverAddress)) {
-        console.log(`Invalid receiver address format for ${chain}`);
+      if (!validateAddress(feeOptions.receiverAddress)) {
+        console.log("Invalid receiver address format");
         toast.error("Invalid receiver address configuration");
         return;
       }
@@ -503,24 +533,32 @@ export function GraduationForm({
         return;
       }
 
-      const decimals = tokenDecimals ?? 18; // fallback to 18 if not available
-      const amount = parseUnits(REQUIRED_ORDER_AMOUNT.toString(), decimals);
+      if (!feeOptions) {
+        toast.error("Fee options not loaded. Please try again.");
+        return;
+      }
+
+      const selectedOption =
+        paymentType === "usdc" ? feeOptions.usdc : feeOptions.order;
+
+      const decimals = tokenDecimals ?? (paymentType === "usdc" ? 6 : 18);
+      const amount = parseUnits(selectedOption.amount.toString(), decimals);
 
       console.log({
         chain: preferredChain,
         decimals,
-        requiredAmount: REQUIRED_ORDER_AMOUNT,
+        requiredAmount: selectedOption.amount,
         calculatedAmount: amount.toString(),
         address: currentTokenAddress as `0x${string}`,
         functionName: "transfer",
-        args: [currentReceiverAddress, amount],
+        args: [feeOptions.receiverAddress, amount],
         chainId: currentChainId,
       });
       writeContract({
         abi: ERC20_ABI,
         address: currentTokenAddress as `0x${string}`,
         functionName: "transfer",
-        args: [currentReceiverAddress, amount],
+        args: [feeOptions.receiverAddress, amount],
         chainId: currentChainId,
       });
     } catch (error) {
@@ -548,6 +586,7 @@ export function GraduationForm({
           brokerId,
           makerFee,
           takerFee,
+          paymentType,
         },
         token,
         { showToastOnError: false }
@@ -828,28 +867,21 @@ export function GraduationForm({
           </li>
         </ul>
         <p className="text-gray-300 text-sm">
-          <span className="font-medium">
-            Why {REQUIRED_ORDER_AMOUNT} ORDER tokens?
-          </span>{" "}
+          <span className="font-medium">Why send tokens for graduation?</span>{" "}
           This requirement ensures DEX creators are committed to the Orderly
           ecosystem and helps maintain quality standards.
         </p>
       </div>
 
-      <p className="text-gray-300 mb-4">
-        To graduate your DEX to the next tier, please send at least{" "}
-        {REQUIRED_ORDER_AMOUNT.toLocaleString()} ORDER tokens to the address
-        below and submit the transaction hash.
-        <a
-          href={getSwapUrl(preferredChain)}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="ml-1 text-primary-light hover:underline inline-flex items-center"
-        >
-          Need ORDER tokens? Buy here
-          <span className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></span>
-        </a>
-      </p>
+      {isLoadingFeeOptions ? (
+        <div className="flex items-center justify-center py-4">
+          <div className="i-svg-spinners:three-dots text-2xl text-primary"></div>
+        </div>
+      ) : feeOptions ? (
+        <p className="text-gray-300 mb-4">Loading graduation options...</p>
+      ) : (
+        <p className="text-gray-300 mb-4">Loading graduation options...</p>
+      )}
 
       {/* Base Fee Explanation - Add here */}
       <BaseFeeExplanation />
@@ -949,16 +981,92 @@ export function GraduationForm({
           </div>
         )}
 
+        {feeOptions && (
+          <div className="mb-6 mt-8">
+            <p className="text-gray-300 mb-4">
+              Choose your graduation payment method:
+            </p>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+              {/* USDC Option */}
+              <div
+                className={`border rounded-xl p-4 cursor-pointer transition-colors ${
+                  paymentType === "usdc"
+                    ? "border-primary bg-primary/10"
+                    : "border-light/10 bg-background-card hover:border-light/20"
+                }`}
+                onClick={() => setPaymentType("usdc")}
+              >
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="font-medium">USDC</h3>
+                  <div className="bg-success/20 text-success px-2 py-1 rounded-full text-xs">
+                    Stable
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-success">
+                  ${feeOptions.usdc.amount.toLocaleString()}
+                </p>
+                <p className="text-sm text-gray-400">Fixed USD amount</p>
+              </div>
+
+              {/* ORDER Option */}
+              <div
+                className={`border rounded-xl p-4 cursor-pointer transition-colors ${
+                  paymentType === "order"
+                    ? "border-primary bg-primary/10"
+                    : "border-light/10 bg-background-card hover:border-light/20"
+                }`}
+                onClick={() => setPaymentType("order")}
+              >
+                <div className="flex items-center justify-between gap-1 mb-2">
+                  <h3 className="font-medium">ORDER</h3>
+                  <div className="bg-warning/20 text-warning px-2 py-1 rounded-full text-xs">
+                    25% Off
+                  </div>
+                </div>
+                <p className="text-2xl font-bold text-warning">
+                  {feeOptions.order.amount.toLocaleString()} ORDER
+                </p>
+                <p className="text-sm text-gray-400">
+                  ~$
+                  {(
+                    feeOptions.order.amount * feeOptions.order.currentPrice
+                  ).toFixed(2)}{" "}
+                  <span className="text-warning font-medium">
+                    (25% off USD)
+                  </span>
+                </p>
+              </div>
+            </div>
+
+            <p className="text-gray-300 text-sm">
+              Send the selected amount to the address below and submit the
+              transaction hash.
+              {paymentType === "order" && (
+                <a
+                  href={getSwapUrl(preferredChain)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="ml-1 text-primary-light hover:underline inline-flex items-center"
+                >
+                  Need ORDER tokens? Buy here
+                  <span className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></span>
+                </a>
+              )}
+            </p>
+          </div>
+        )}
+
         <div className="space-y-4 mt-6">
           {/* Direct transfer button */}
           <div className="border rounded-xl p-4 bg-primary/10 border-primary/20">
             <h3 className="text-md font-medium mb-2 flex items-center">
               <div className="w-5 h-5 mr-2 i-mdi:rocket-launch text-primary"></div>
-              Send ORDER Tokens
+              Send {paymentType === "usdc" ? "USDC" : "ORDER"} Tokens
             </h3>
             <p className="text-sm text-gray-300 mb-4">
-              Send ORDER tokens and verify in one step directly from your
-              wallet.
+              Send {paymentType === "usdc" ? "USDC" : "ORDER"} tokens and verify
+              in one step directly from your wallet.
             </p>
 
             <div className="mb-4">
@@ -969,7 +1077,7 @@ export function GraduationForm({
                   <span>
                     {SUPPORTED_CHAINS.find(c => c.id === preferredChain)
                       ?.name || preferredChain}{" "}
-                    ORDER
+                    {paymentType === "usdc" ? "USDC" : "ORDER"}
                   </span>
                 </div>
               </div>
@@ -979,23 +1087,28 @@ export function GraduationForm({
                   <span className="text-info">Your balance:</span>{" "}
                   <span className="font-medium ml-1">
                     {parseFloat(tokenBalance?.formatted || "0").toFixed(2)}{" "}
-                    ORDER
+                    {paymentType === "usdc" ? "USDC" : "ORDER"}
                   </span>
-                  {parseFloat(tokenBalance?.formatted || "0") <
-                    REQUIRED_ORDER_AMOUNT && (
-                    <div className="ml-2 text-warning flex items-center">
-                      (Insufficient for graduation)
-                      <a
-                        href={getSwapUrl(preferredChain)}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ml-2 text-primary-light hover:underline inline-flex items-center"
-                      >
-                        Buy ORDER
-                        <span className="i-mdi:open-in-new w-3 h-3 ml-0.5"></span>
-                      </a>
-                    </div>
-                  )}
+                  {feeOptions &&
+                    parseFloat(tokenBalance?.formatted || "0") <
+                      (paymentType === "usdc"
+                        ? feeOptions.usdc.amount
+                        : feeOptions.order.amount) && (
+                      <div className="ml-2 text-warning flex items-center">
+                        (Insufficient for graduation)
+                        {paymentType === "order" && (
+                          <a
+                            href={getSwapUrl(preferredChain)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="ml-2 text-primary-light hover:underline inline-flex items-center"
+                          >
+                            Buy ORDER
+                            <span className="i-mdi:open-in-new w-3 h-3 ml-0.5"></span>
+                          </a>
+                        )}
+                      </div>
+                    )}
                 </div>
               )}
             </div>
@@ -1003,7 +1116,11 @@ export function GraduationForm({
             <div className="flex items-center gap-2 mb-4">
               <div className="text-sm">Amount:</div>
               <div className="font-medium">
-                {REQUIRED_ORDER_AMOUNT.toLocaleString()} ORDER
+                {feeOptions
+                  ? paymentType === "usdc"
+                    ? `${feeOptions.usdc.amount.toLocaleString()} USDC`
+                    : `${feeOptions.order.amount.toLocaleString()} ORDER`
+                  : "Loading..."}
               </div>
             </div>
 
@@ -1014,9 +1131,13 @@ export function GraduationForm({
               disabled={
                 !!brokerIdError ||
                 !brokerId ||
+                !feeOptions ||
+                isLoading ||
                 (tokenBalance
                   ? parseFloat(tokenBalance?.formatted || "0") <
-                    REQUIRED_ORDER_AMOUNT
+                    (paymentType === "usdc"
+                      ? feeOptions.usdc.amount
+                      : feeOptions.order.amount)
                   : false)
               }
               variant="primary"
@@ -1026,9 +1147,11 @@ export function GraduationForm({
                 ? isPending
                   ? "Confirm in wallet..."
                   : "Confirming..."
-                : isCorrectChain
-                  ? "Transfer ORDER Tokens"
-                  : "Switch Chain"}
+                : isLoading
+                  ? "Verifying..."
+                  : isCorrectChain
+                    ? `Transfer ${paymentType === "usdc" ? "USDC" : "ORDER"} Tokens`
+                    : "Switch Chain"}
             </Button>
 
             {isConfirmed && hash && !result && (
@@ -1068,7 +1191,7 @@ export function GraduationForm({
               </div>
               {showManualInput
                 ? "Hide manual option"
-                : "I already sent ORDER tokens"}
+                : `I already sent ${paymentType === "usdc" ? "USDC" : "ORDER"} tokens`}
             </button>
           </div>
 
@@ -1080,8 +1203,9 @@ export function GraduationForm({
                 Manual Transaction Verification
               </h3>
               <p className="text-sm text-gray-300 mb-4">
-                If you've already sent ORDER tokens, enter the transaction hash
-                to verify and complete your graduation.
+                If you've already sent{" "}
+                {paymentType === "usdc" ? "USDC" : "ORDER"} tokens, enter the
+                transaction hash to verify and complete your graduation.
               </p>
 
               <div className="mb-4">
@@ -1090,7 +1214,7 @@ export function GraduationForm({
                   <button
                     onClick={() =>
                       copyToClipboard(
-                        currentReceiverAddress,
+                        feeOptions?.receiverAddress || "",
                         "Recipient Address"
                       )
                     }
@@ -1102,14 +1226,16 @@ export function GraduationForm({
                 </div>
                 <div className="bg-background-dark/70 p-2 rounded overflow-hidden">
                   <code className="text-xs font-mono break-all w-full block">
-                    {currentReceiverAddress}
+                    {feeOptions?.receiverAddress || "Loading..."}
                   </code>
                 </div>
               </div>
 
               <div className="mt-3">
                 <div className="flex justify-between items-center mb-1">
-                  <p className="text-xs text-gray-400">ORDER Token Address:</p>
+                  <p className="text-xs text-gray-400">
+                    {paymentType === "usdc" ? "USDC" : "ORDER"} Token Address:
+                  </p>
                   <a
                     href={getSwapUrl(preferredChain)}
                     target="_blank"
@@ -1117,7 +1243,7 @@ export function GraduationForm({
                     className="text-primary-light hover:text-primary text-xs flex items-center"
                   >
                     <div className="i-mdi:cart w-3 h-3 mr-1"></div>
-                    Buy ORDER
+                    Buy {paymentType === "usdc" ? "USDC" : "ORDER"}
                   </a>
                 </div>
                 <div className="bg-background-dark/70 p-2 rounded overflow-hidden">
@@ -1138,7 +1264,7 @@ export function GraduationForm({
                   }
                   placeholder="0x..."
                   required
-                  helpText="The transaction hash of your ORDER token transfer"
+                  helpText={`The transaction hash of your ${paymentType === "usdc" ? "USDC" : "ORDER"} token transfer`}
                 />
 
                 <Button
@@ -1166,7 +1292,8 @@ export function GraduationForm({
           </p>
           {result.success && result.amount && (
             <p className="text-gray-300 text-sm mt-2">
-              Verified transfer of {result.amount} ORDER tokens
+              Verified transfer of {result.amount}{" "}
+              {paymentType === "usdc" ? "USDC" : "ORDER"} tokens
             </p>
           )}
         </div>

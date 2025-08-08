@@ -208,8 +208,10 @@ The application requires several environment variables for proper operation. Bel
 
 | Variable | Description | Required |
 |----------|-------------|----------|
-| `ORDER_RECEIVER_ADDRESS` | Wallet address to receive ORDER tokens (used for all chains) | Yes |
-| `REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
+| `ORDER_RECEIVER_ADDRESS` | Wallet address to receive graduation payments (used for all chains) | Yes |
+| `GRADUATION_USDC_AMOUNT` | Fixed USDC amount required for graduation (e.g., "50") | Yes |
+| `GRADUATION_ORDER_REQUIRED_PRICE` | Required USD amount for ORDER token graduation (e.g., "50") | Yes |
+| `GRADUATION_ORDER_MINIMUM_PRICE` | Minimum USD amount for ORDER token graduation (e.g., "45") | Yes |
 
 #### Solana Configuration
 
@@ -228,36 +230,36 @@ The application requires several environment variables for proper operation. Bel
 | `NODE_ENV` | Environment (development/production) | development | No |
 | `VITE_DEPLOYMENT_ENV` | Deployment environment (mainnet/staging/qa/dev) | dev | Yes |
 
-#### DEX Graduation System
-
-| Variable | Description | Required |
-|----------|-------------|----------|
-| `VITE_ORDER_RECEIVER_ADDRESS` | Wallet address to receive ORDER tokens (used for all chains) | Yes |
-| `VITE_REQUIRED_ORDER_AMOUNT` | Amount of ORDER tokens required for graduation | Yes |
-
-**Important**: The ORDER token required amount must match between frontend and backend environments.
-
 ## DEX Graduation System
 
 Orderly One includes a graduation system that allows DEX owners to upgrade their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
 
-1. Users sending a specified amount of ORDER tokens (set by `REQUIRED_ORDER_AMOUNT`)
-2. Choosing a unique broker ID for their DEX
-3. Configuring custom maker and taker fees
-4. Admin approval of the broker ID
+1. Users choosing between USDC or ORDER token payment
+2. Sending the required amount based on their choice
+3. Choosing a unique broker ID for their DEX
+4. Configuring custom maker and taker fees
+
+### Payment Options
+
+The graduation system supports two payment methods:
+
+- **USDC Payment**: Fixed amount set by `GRADUATION_USDC_AMOUNT` (e.g., $50 USDC)
+- **ORDER Payment**: Dynamic amount calculated based on current ORDER token price to match `GRADUATION_ORDER_REQUIRED_PRICE` (e.g., ~454 ORDER tokens worth $50)
 
 ### Setting Up the Graduation System
 
 For the graduation system to work properly, you need to:
 
 1. Set a valid address for `ORDER_RECEIVER_ADDRESS` in the API environment
-2. Set the same address in `VITE_ORDER_RECEIVER_ADDRESS` in the frontend environment
-3. Set the same `REQUIRED_ORDER_AMOUNT` in both environments
-4. Configure `VITE_DEPLOYMENT_ENV` to match your deployment environment (mainnet/staging/qa/dev)
+2. Configure graduation amounts:
+   - `GRADUATION_USDC_AMOUNT`: Fixed USDC amount (e.g., "50")
+   - `GRADUATION_ORDER_REQUIRED_PRICE`: Target USD amount for ORDER payments (e.g., "50")
+   - `GRADUATION_ORDER_MINIMUM_PRICE`: Minimum USD amount for price validation (e.g., "45")
+3. Configure `VITE_DEPLOYMENT_ENV` to match your deployment environment (mainnet/staging/qa/dev)
 
-The ORDER token addresses are automatically configured based on the deployment environment:
-- **Mainnet**: Uses mainnet ORDER token addresses for Ethereum and Arbitrum
-- **Testnet environments**: Uses testnet USDC token addresses for Sepolia and Arbitrum Sepolia
+The token addresses are automatically configured based on the deployment environment:
+- **Mainnet**: Uses mainnet ORDER and USDC token addresses for Ethereum and Arbitrum
+- **Testnet environments**: Uses testnet ORDER and USDC token addresses for Sepolia and Arbitrum Sepolia
 
 ## Deployment
 
@@ -291,7 +293,9 @@ docker run -d \
   -e CEREBRAS_API_KEY=your-cerebras-api-key \
   -e CEREBRAS_API_URL=https://api.cerebras.ai/v1 \
   -e ORDER_RECEIVER_ADDRESS=0xyourReceiverAddress \
-  -e REQUIRED_ORDER_AMOUNT=8000 \
+  -e GRADUATION_USDC_AMOUNT=1000 \
+  -e GRADUATION_ORDER_REQUIRED_PRICE=750 \
+  -e GRADUATION_ORDER_MINIMUM_PRICE=725 \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```

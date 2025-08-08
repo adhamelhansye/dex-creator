@@ -30,8 +30,6 @@ jobs:
           yarn app build
         env:
           VITE_API_URL: ${{ vars.VITE_API_URL }}
-          VITE_ORDER_RECEIVER_ADDRESS: ${{ vars.VITE_ORDER_RECEIVER_ADDRESS }}
-          VITE_REQUIRED_ORDER_AMOUNT: ${{ vars.VITE_REQUIRED_ORDER_AMOUNT }}
           VITE_DEPLOYMENT_ENV: ${{ vars.VITE_DEPLOYMENT_ENV }}
 
       - name: Setup Git for GitHub Pages deployment

@@ -67,6 +67,13 @@ app.onError((err, c) => {
   );
 });
 
+if (!process.env.ORDER_RECEIVER_ADDRESS) {
+  console.error(
+    "❌ Missing required environment variable: ORDER_RECEIVER_ADDRESS"
+  );
+  process.exit(1);
+}
+
 const port = process.env.PORT || 3001;
 console.log(`Server is running on port ${port}`);
 

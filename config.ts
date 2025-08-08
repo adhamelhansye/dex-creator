@@ -122,9 +122,18 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
 export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
   ethereum: "0xABD4C63d2616A5201454168269031355f4764337",
   arbitrum: "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8",
+  sepolia: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+  "arbitrum-sepolia": "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
+  "solana-mainnet-beta": "ABt79MkRXUsoHuV2CVQT32YMXQhTparKFjmidQxgiQ6E",
+  "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
+};
+
+export const USDC_ADDRESSES: Record<OrderTokenChainName, string> = {
+  ethereum: "0xA0b86a33E6441b8C4C8C8C8C8C8C8C8C8C8C8C8C",
+  arbitrum: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   sepolia: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   "arbitrum-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
-  "solana-mainnet-beta": "ABt79MkRXUsoHuV2CVQT32YMXQhTparKFjmidQxgiQ6E",
+  "solana-mainnet-beta": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
 
