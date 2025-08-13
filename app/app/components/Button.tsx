@@ -49,20 +49,20 @@ export function Button({
   ...props
 }: ButtonProps) {
   const baseClasses =
-    "rounded-full py-2 font-medium transition-all duration-200 cursor-pointer border-none";
+    "rounded-full font-medium transition-all duration-200 cursor-pointer flex items-center gap-2";
 
   const sizeClasses = {
-    xs: "text-xs py-1 px-3",
-    sm: "text-sm py-1.5 px-4",
-    md: "py-2 px-6",
-    lg: "text-lg py-2.5 px-8",
+    xs: "text-xs py-1.5 px-2.5",
+    sm: "text-sm py-2 px-3.5",
+    md: "py-2.5 px-4.5",
+    lg: "text-lg py-3 px-5.5",
   };
 
   const variantClasses = {
     primary:
-      "bg-gradient-to-r from-primary to-secondary text-white shadow-glow hover:from-primary-light hover:to-secondary-light hover:shadow-glow-hover hover:transform hover:-translate-y-0.5",
+      "bg-gradient-to-r from-purple-500 via-blue-500 to-cyan-400 text-white font-semibold hover:from-orange-400 hover:via-pink-500 hover:to-purple-600 hover:bg-gradient-to-r hover:bg-[length:200%_100%] hover:bg-[position:100%_50%] transition-all duration-300",
     secondary:
-      "bg-primary/10 text-white border-2 border-primary/50 hover:border-primary/80 hover:bg-primary/20 shadow-sm hover:shadow",
+      "bg-black/80 text-white border border-white/60 hover:bg-purple-400 hover:text-black hover:border-purple-500 font-semibold transition-all duration-300",
     danger: "bg-red-500 text-white hover:bg-red-600",
     ghost: "bg-transparent text-white hover:bg-white/10",
     success: "bg-success text-white hover:bg-success-light",

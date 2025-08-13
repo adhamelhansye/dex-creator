@@ -22,7 +22,7 @@ export default function GraduationRoute() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="container mx-auto p-4 max-w-3xl mt-26">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <Link

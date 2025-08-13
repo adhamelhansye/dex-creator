@@ -10,6 +10,7 @@ import MobileNavigation from "../components/MobileNavigation";
 import { ToastContainer } from "react-toastify";
 import { useState } from "react";
 import { useEffect } from "react";
+import Footer from "../components/Footer";
 
 /**
  * This is a minimal layout route for preview content.
@@ -40,30 +41,28 @@ export default function Layout() {
           <OrderlyKeyProvider>
             <ModalProvider>
               <div className="flex flex-col h-full">
-                {/* Fixed header - uses the header styles from global.css */}
-                <header>
+                <header className="fixed top-0 left-0 right-0 z-100 bg-gradient-to-b from-purple-900/80 to-transparent backdrop-blur-[1px]">
                   <div className="flex justify-between items-center py-4 px-4 md:py-6 md:px-8">
-                    <div className="flex items-center">
-                      <h1 className="text-xl md:text-2xl lg:text-3xl font-bold gradient-text">
-                        Orderly One
-                      </h1>
-                      {/* Desktop navigation - hidden on mobile */}
+                    <div className="flex items-center justify-between w-full mr-8">
+                      <img
+                        src="/orderly-one.min.svg"
+                        alt="Orderly One"
+                        className="h-7 md:h-9 lg:h-10"
+                      />
                       <div className="hidden md:block ml-8">
                         <Navigation />
                       </div>
                     </div>
-                    {/* Wallet connect and mobile navigation */}
                     <div className="flex items-center gap-3">
                       <WalletConnect />
-                      {/* Mobile navigation - visible only on mobile */}
                       {isMobile && <MobileNavigation />}
                     </div>
                   </div>
                 </header>
 
-                {/* Scrollable content area */}
                 <main>
                   <Outlet />
+                  <Footer />
                 </main>
               </div>
 

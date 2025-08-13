@@ -21,7 +21,7 @@ import {
   maxLength,
   composeValidators,
 } from "../utils/validation";
-import { useNavigate, Link } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
 import DexSectionRenderer, {
   DEX_SECTIONS,
 } from "../components/DexSectionRenderer";
@@ -1300,7 +1300,7 @@ export default function DexRoute() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl">
+    <div className="container mx-auto p-4 max-w-3xl mt-26">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <h1 className="text-2xl md:text-3xl font-bold gradient-text">
           {dexData ? "Manage Your DEX" : "Create Your DEX"}
@@ -1434,21 +1434,22 @@ export default function DexRoute() {
                     </p>
                   </div>
                 </div>
-                <Link
-                  to="/graduation"
-                  className={`px-4 py-2 font-medium rounded-full transition-colors whitespace-nowrap flex-shrink-0 flex items-center gap-2 ${
-                    isGraduated
-                      ? "bg-success/20 hover:bg-success/30 text-success"
-                      : "bg-warning/20 hover:bg-warning/30 text-warning"
-                  }`}
+                <Button
+                  as="a"
+                  href="/graduation"
+                  variant={isGraduated ? "success" : "primary"}
+                  leftIcon={
+                    <div
+                      className={`h-4 w-4 ${
+                        isGraduated
+                          ? "i-mdi:cash-multiple"
+                          : "i-mdi:account-plus"
+                      }`}
+                    ></div>
+                  }
                 >
-                  <div
-                    className={`h-4 w-4 ${
-                      isGraduated ? "i-mdi:cash-multiple" : "i-mdi:account-plus"
-                    }`}
-                  ></div>
                   {isGraduated ? "View Benefits" : "Complete Registration"}
-                </Link>
+                </Button>
               </div>
             </Card>
           )}
