@@ -682,7 +682,7 @@ export function GraduationForm({
               isLoading={isFinalizingAdminWallet}
               loadingText="Registering with Orderly..."
               variant="primary"
-              className="w-full"
+              className="mxa"
             >
               Register with Orderly & Start Earning
             </Button>
@@ -786,19 +786,6 @@ export function GraduationForm({
                   <p className="text-sm text-gray-400 mt-0.5">
                     You now earn a percentage of all trading fees generated
                     through your DEX.
-                  </p>
-                </div>
-              </li>
-
-              <li className="flex items-start gap-3">
-                <div className="bg-primary/20 p-1.5 rounded-full mt-0.5">
-                  <div className="i-mdi:gift text-primary-light h-4 w-4"></div>
-                </div>
-                <div>
-                  <span className="font-medium">Trader Rewards</span>
-                  <p className="text-sm text-gray-400 mt-0.5">
-                    Your traders are now eligible to receive ORDER token rewards
-                    based on their trading volume.
                   </p>
                 </div>
               </li>

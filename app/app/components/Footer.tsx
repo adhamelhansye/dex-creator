@@ -15,7 +15,7 @@ export default function Footer() {
   };
 
   return (
-    <div>
+    <div className="mt-52">
       <div className="pt-[20px] border-t-[1px] border-gray-300 md:hidden">
         <div className="px-[20px]">
           <div className="flex justify-between items-center">

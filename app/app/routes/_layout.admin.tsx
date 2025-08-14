@@ -550,7 +550,7 @@ export default function AdminRoute() {
 
   if (isLoading) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 text-center">
+      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 text-center mt-26">
         <div className="i-svg-spinners:pulse-rings-multiple h-12 w-12 mx-auto text-primary-light mb-4"></div>
         <p>Checking admin status...</p>
       </div>
@@ -559,7 +559,7 @@ export default function AdminRoute() {
 
   if (!isAdmin) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10">
+      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 mt-26">
         <h1 className="text-2xl md:text-3xl font-bold mb-6">Admin Tools</h1>
         <div className="bg-error/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-error/20">
           <p className="text-error font-medium mb-2">⚠️ Access Denied</p>

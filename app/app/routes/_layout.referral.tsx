@@ -204,7 +204,7 @@ export default function ReferralRoute() {
 
   if (isLoading) {
     return (
-      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4">
+      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4 mt-26">
         <div className="text-center">
           <div className="i-svg-spinners:pulse-rings-multiple h-12 w-12 mx-auto text-primary-light mb-4"></div>
           <div className="text-base md:text-lg mb-2">
@@ -220,7 +220,7 @@ export default function ReferralRoute() {
 
   if (!isAuthenticated) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10">
+      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 mt-26">
         <div className="text-center">
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">
             Referral Settings
@@ -243,7 +243,7 @@ export default function ReferralRoute() {
 
   if (!dexData) {
     return (
-      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10">
+      <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 mt-26">
         <div className="text-center">
           <Link
             to="/dex"
@@ -275,7 +275,7 @@ export default function ReferralRoute() {
 
   if (!isGraduated) {
     return (
-      <div className="container mx-auto p-4 max-w-3xl">
+      <div className="container mx-auto p-4 max-w-3xl mt-26">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
             <Link
