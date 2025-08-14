@@ -3,11 +3,8 @@ import { Link, useLocation } from "@remix-run/react";
 export default function Navigation() {
   const location = useLocation();
 
-  // Determine if a link is active
   const isActive = (path: string) => {
-    // Special case for root path
     if (path === "/" && location.pathname === "/") return true;
-    // For non-root paths
     if (path !== "/" && location.pathname.startsWith(path)) return true;
     return false;
   };
