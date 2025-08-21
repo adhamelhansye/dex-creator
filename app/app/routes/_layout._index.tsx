@@ -53,7 +53,7 @@ export default function Index() {
             <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-5xl leading-tight text-white">
               No-Code Perp Dex Launcher by Orderly
             </h1>
-            <p className="text-xl text-white/80 max-w-3xl mb-12 leading-relaxed">
+            <p className="text-xl text-white/80 max-w-3xl mb-12 leading-relaxed mxa">
               Unified liquidity, omnichain integration, 130+ assets and
               liquidity included. Launch your DEX in minutes.
             </p>

@@ -21,7 +21,7 @@
   --header-height: 5rem; /* Default header height */
   
   /* Orderly UI variables */
-  --oui-font-family: 'Manrope', sans-serif;
+  --oui-font-family: 'Atyp Text', sans-serif;
 
   /* colors */
   --oui-color-primary: 176 132 233;
@@ -115,6 +115,12 @@
   --oui-spacing-xl: 33.75rem;
 }
 
+html {
+  font-family: "'Atyp Text', sans-serif";
+  font-feature-settings: '"ss02" on, "ss03" on, "ss05" on, "ss06" on';
+  font-weight: 400;
+}
+
 html, body {
   height: 100%;
   overflow: hidden;
@@ -123,7 +129,6 @@ html, body {
 body {
   background-color: rgba(var(--color-background), 1);
   color: #fff;
-  font-family: "Inter", sans-serif;
   display: flex;
   flex-direction: column;
 }
@@ -358,4 +363,53 @@ appkit-modal {
   .mobile-nav-height {
     height: -webkit-fill-available;
   }
+}
+
+@font-face {
+  font-family: "Atyp Text";
+  src: url("/fonts/Atyp/AtypBLText-Light.otf") format("opentype");
+  font-weight: 333;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atyp Text";
+  src: url("/fonts/Atyp/AtypBLText-Regular.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atyp Text";
+  src: url("/fonts/Atyp/AtypBLText-Medium.otf") format("opentype");
+  font-weight: 507;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atyp Text";
+  src: url("/fonts/Atyp/AtypBLText-Semibold.otf") format("opentype");
+  font-weight: 612;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atyp Text";
+  src: url("/fonts/Atyp/AtypBLText-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atyp Display";
+  src: url("/fonts/Atyp/AtypBLDisplay-Semibold.otf") format("opentype");
+  font-weight: 612;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "Atyp Display";
+  src: url("/fonts/Atyp/AtypBLDisplay-Bold.otf") format("opentype");
+  font-weight: 700;
+  font-style: normal;
 }
