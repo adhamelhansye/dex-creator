@@ -16,6 +16,7 @@ const ignores = globalIgnores([
   ".specstory/",
   "app/public/tradingview/",
   "api/types/",
+  "api/src/lib/generated/",
 ]);
 
 export default defineConfig([

@@ -19,6 +19,11 @@
     "dev:api": "cd api && yarn dev",
     "build:app": "cd app && yarn build",
     "build:api": "cd api && yarn build",
+    "orderly:start": "./scripts/orderly-db.sh start",
+    "orderly:stop": "./scripts/orderly-db.sh stop",
+    "orderly:restart": "./scripts/orderly-db.sh restart",
+    "orderly:connect": "./scripts/orderly-db.sh connect",
+    "orderly:reset": "./scripts/orderly-db.sh reset",
     "commitlint": "commitlint --config commitlint.config.js",
     "prepare": "husky",
     "test": "echo \"No tests specified yet\" && exit 0"

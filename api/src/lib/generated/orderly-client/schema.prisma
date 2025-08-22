@@ -1,0 +1,33 @@
+// This is your Prisma schema file for the Orderly MySQL database
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/lib/generated/orderly-client"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("ORDERLY_DATABASE_URL")
+}
+
+// Orderly broker model for the Orderly database
+model OrderlyBroker {
+  id                     BigInt   @id @default(autoincrement()) @db.BigInt
+  brokerId               String   @unique @db.VarChar(64)
+  createdTime            DateTime @default(now()) @db.Timestamp(3)
+  updatedTime            DateTime @default(now()) @updatedAt @db.Timestamp(3)
+  brokerName             String   @db.VarChar(64)
+  brokerHash             String   @unique @default("") @db.VarChar(256)
+  baseMakerFeeRate       Decimal  @default(0.00000000) @db.Decimal(28, 8)
+  baseTakerFeeRate       Decimal  @default(0.00000000) @db.Decimal(28, 8)
+  defaultMakerFeeRate    Decimal  @default(0.00000000) @db.Decimal(28, 8)
+  defaultTakerFeeRate    Decimal  @default(0.00000000) @db.Decimal(28, 8)
+  adminAccountId         String?  @db.VarChar(128)
+  rebateCap              Decimal  @default(1.00) @db.Decimal(4, 2)
+  grossFeeEnable         Boolean  @default(false) @db.TinyInt
+  lockedRebateAllocation Boolean  @default(false) @db.TinyInt
+  isAllSubsideTakerFee   Boolean  @default(false) @db.TinyInt
+
+  @@map("broker")
+}

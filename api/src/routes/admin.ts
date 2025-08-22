@@ -12,6 +12,7 @@ import {
 import { getCurrentEnvironment } from "../models/dex.js";
 import { deleteBrokerId } from "../lib/brokerCreation.js";
 import { PrismaClient } from "@prisma/client";
+import { deleteBrokerFromOrderlyDb } from "../lib/orderlyDb.js";
 import {
   setupRepositoryWithSingleCommit,
   renameRepository,
@@ -357,6 +358,28 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
           message: `Failed to delete broker ID from blockchain: ${deletionResult.errors?.join(", ")}`,
         },
         { status: 500 }
+      );
+    }
+
+    try {
+      console.log(
+        `🗑️ Attempting to delete broker ${brokerId} from Orderly database...`
+      );
+      const orderlyDeletionResult = await deleteBrokerFromOrderlyDb(brokerId);
+
+      if (orderlyDeletionResult.success) {
+        console.log(
+          `✅ Successfully deleted broker ${brokerId} from Orderly database`
+        );
+      } else {
+        console.warn(
+          `⚠️ Failed to delete broker ${brokerId} from Orderly database: ${orderlyDeletionResult.message}`
+        );
+      }
+    } catch (orderlyDbError) {
+      console.error(
+        `❌ Error deleting broker ${brokerId} from Orderly database:`,
+        orderlyDbError
       );
     }
 

@@ -14,7 +14,10 @@
     "db:migrate:deploy": "prisma migrate deploy",
     "db:studio": "prisma studio",
     "db:generate": "prisma generate",
-    "db:push": "prisma db push"
+    "db:push": "prisma db push",
+    "orderly:generate": "prisma generate --schema=./prisma/orderly.schema.prisma",
+    "orderly:studio": "prisma studio --schema=./prisma/orderly.schema.prisma",
+    "orderly:push": "prisma db push --schema=./prisma/orderly.schema.prisma"
   },
   "license": "MIT",
   "author": "Mario Reder <mario@orderly.network>",

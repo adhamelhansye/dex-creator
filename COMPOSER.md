@@ -247,8 +247,9 @@ Key files:
 
 ### Database Architecture
 
-The application uses PostgreSQL as the database with Prisma ORM for database operations:
+The application uses PostgreSQL as the primary database with Prisma ORM for database operations, and also connects to the Orderly MySQL database for broker management:
 
+### Primary Database (PostgreSQL)
 1. **Schema Definition**: Located at `api/prisma/schema.prisma`
 2. **Models**:
    - `User`: Stores user information and authentication details
@@ -261,6 +262,14 @@ The database is configured with proper indexes and relations to ensure efficient
 - The `User` model has an index on the `address` field for quick lookups
 - The `Token` model has indexes on both `token` and `userId` fields
 - Cascading deletes ensure that when a user is deleted, their tokens are automatically removed
+
+### Orderly Database (MySQL)
+1. **Connection**: Direct MySQL connection using mysql2 in `api/src/lib/orderlyDb.ts`
+2. **Purpose**: Stores broker information for the Orderly ecosystem
+3. **Configuration**: Uses `ORDERLY_DATABASE_URL` environment variable
+4. **Integration**: Automatically adds new brokers after successful graduation
+
+The Orderly database integration ensures that graduated DEXes are properly registered in the Orderly ecosystem with the correct fee structure and broker configuration.
 
 ### Authentication Flow
 
@@ -872,6 +881,7 @@ Alternative individual commands:
 | POST   | /api/auth/validate | Validate authentication token     | Implemented |
 | POST   | /api/auth/cleanup-tokens | Clean up expired tokens     | Implemented |
 | POST   | /api/theme/modify  | Generate theme based on AI        | Implemented |
+| POST   | /api/graduation/verify-tx | Verify transaction and graduate DEX | Implemented |
 
 ### Authentication API Endpoints
 

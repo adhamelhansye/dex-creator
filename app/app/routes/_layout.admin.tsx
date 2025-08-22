@@ -572,7 +572,7 @@ export default function AdminRoute() {
   }
 
   return (
-    <div className="w-full max-w-4xl mx-auto px-4 py-6 md:py-10">
+    <div className="w-full max-w-4xl mx-auto px-4 py-6 md:py-10 mt-26">
       <h1 className="text-2xl md:text-3xl font-bold mb-6">Admin Tools</h1>
       <div className="bg-warning/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-warning/20 mb-6">
         <p className="text-warning font-medium mb-2">
@@ -839,7 +839,7 @@ export default function AdminRoute() {
               variant="danger"
               isLoading={isDeleting}
               loadingText="Deleting..."
-              className="mt-2"
+              className="mt-2 font-semibold"
             >
               Delete DEX
             </Button>
@@ -1107,7 +1107,7 @@ export default function AdminRoute() {
               variant="danger"
               isLoading={isDeletingBrokerId}
               loadingText="Deleting..."
-              className="w-full rounded-lg mt-2 text-base font-semibold py-3"
+              className="mt-2 text-base font-semibold py-3"
             >
               Delete Broker ID
             </Button>

@@ -81,7 +81,11 @@ Edit both `.env` files with your specific configuration. See the [Environment Va
 
 ### Database Setup
 
-The application uses PostgreSQL for data storage. You can run it using Docker:
+The application uses PostgreSQL for data storage and MySQL for the Orderly database integration.
+
+#### PostgreSQL Database (Primary)
+
+You can run PostgreSQL using Docker:
 
 ```bash
 # Start a PostgreSQL container
@@ -113,6 +117,28 @@ cd api && yarn db:generate
 # Create initial database migration and apply it
 yarn db:migrate:dev --name initial_migration
 ```
+
+#### Orderly MySQL Database (For Graduation Testing)
+
+For testing the DEX graduation system with Orderly database integration:
+
+```bash
+# Start the Orderly MySQL database
+yarn orderly:start
+
+# Set the environment variable in your api/.env file:
+# ORDERLY_DATABASE_URL=mysql://orderly_user:orderly_password@localhost:3307/orderly_test
+```
+
+**Orderly Database Management Commands:**
+
+- `yarn orderly:start` - Start the MySQL database
+- `yarn orderly:stop` - Stop the database
+- `yarn orderly:restart` - Restart the database
+- `yarn orderly:connect` - Connect to the database via MySQL client
+- `yarn orderly:reset` - Reset the database (removes all data)
+
+The Orderly database runs on port 3307 to avoid conflicts with PostgreSQL on port 5432.
 
 ### Development
 
@@ -212,6 +238,7 @@ The application requires several environment variables for proper operation. Bel
 | `GRADUATION_USDC_AMOUNT` | Fixed USDC amount required for graduation (e.g., "50") | Yes |
 | `GRADUATION_ORDER_REQUIRED_PRICE` | Required USD amount for ORDER token graduation (e.g., "50") | Yes |
 | `GRADUATION_ORDER_MINIMUM_PRICE` | Minimum USD amount for ORDER token graduation (e.g., "45") | Yes |
+| `ORDERLY_DATABASE_URL` | MySQL connection string for Orderly database (e.g., "mysql://user:pass@localhost:3307/db") | Yes |
 
 #### Solana Configuration
 
@@ -283,7 +310,7 @@ The backend API can be deployed using Docker:
 # Build the API Docker image
 docker build -t dex-creator-api .
 
-# Run the API container with host networking
+# Run the API container
 docker run -d \
   --name dex-creator-api \
   -e DATABASE_URL=postgresql://postgres:postgres@localhost:5432/dex_creator?schema=public \
@@ -293,6 +320,9 @@ docker run -d \
   -e CEREBRAS_API_KEY=your-cerebras-api-key \
   -e CEREBRAS_API_URL=https://api.cerebras.ai/v1 \
   -e ORDER_RECEIVER_ADDRESS=0xyourReceiverAddress \
+  -e DEPLOYMENT_ENV=qa \
+  -e BROKER_CREATION_PRIVATE_KEY=-x<broker-creation-private-key> \
+  -e BROKER_CREATION_PRIVATE_KEY_SOL=broker-creation-private-key-sol \
   -e GRADUATION_USDC_AMOUNT=1000 \
   -e GRADUATION_ORDER_REQUIRED_PRICE=750 \
   -e GRADUATION_ORDER_MINIMUM_PRICE=725 \

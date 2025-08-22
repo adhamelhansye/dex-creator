@@ -1128,7 +1128,7 @@ export function GraduationForm({
                   : false)
               }
               variant="primary"
-              className="w-full"
+              className="w-full justify-center"
             >
               {isPending || isConfirming
                 ? isPending
@@ -1259,7 +1259,7 @@ export function GraduationForm({
                   variant="secondary"
                   isLoading={isLoading}
                   loadingText="Verifying..."
-                  className="w-full"
+                  className="w-full justify-center"
                   disabled={!txHash || !!brokerIdError || !brokerId}
                 >
                   Verify Transaction

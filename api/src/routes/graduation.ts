@@ -10,6 +10,7 @@ import {
 import { getUserDex } from "../models/dex";
 import { prisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
+import { addBrokerToOrderlyDb } from "../lib/orderlyDb.js";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -91,6 +92,33 @@ graduationRoutes.post(
 
       if (!brokerCreationResult.success) {
         return c.json(brokerCreationResult, { status: 400 });
+      }
+
+      try {
+        console.log(`🔄 Adding broker ${brokerId} to Orderly database...`);
+
+        const orderlyDbResult = await addBrokerToOrderlyDb({
+          brokerId: brokerId,
+          brokerName: dex.brokerName,
+          makerFee: makerFee,
+          takerFee: takerFee,
+        });
+
+        if (!orderlyDbResult.success) {
+          console.error(
+            "❌ Failed to add broker to Orderly database:",
+            orderlyDbResult.message
+          );
+        } else {
+          console.log(
+            `✅ Successfully added broker ${brokerId} to Orderly database`
+          );
+        }
+      } catch (orderlyDbError) {
+        console.error(
+          "❌ Error adding broker to Orderly database:",
+          orderlyDbError
+        );
       }
 
       try {

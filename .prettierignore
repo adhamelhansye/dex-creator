@@ -17,3 +17,4 @@ node_modules/
 *.json
 
 /app/public/tradingview/
+/api/src/lib/generated
