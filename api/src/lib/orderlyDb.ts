@@ -1,6 +1,7 @@
 import { ethers } from "ethers";
 import { PrismaClient } from "../lib/generated/orderly-client";
 import { Decimal } from "../lib/generated/orderly-client/runtime/library";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 interface OrderlyBrokerData {
   brokerId: string;
@@ -9,7 +10,97 @@ interface OrderlyBrokerData {
   takerFee: number;
 }
 
-const orderlyPrisma = new PrismaClient();
+interface DatabaseConfig {
+  url: string;
+  username: string;
+  pwd: string;
+}
+
+async function getOrderlyDatabaseUrl(): Promise<string> {
+  const envUrl = process.env.ORDERLY_DATABASE_URL;
+  if (envUrl) {
+    console.log("Using ORDERLY_DATABASE_URL from environment");
+    return envUrl;
+  }
+
+  const deploymentEnv = process.env.DEPLOYMENT_ENV;
+  console.log(
+    `ORDERLY_DATABASE_URL not found, using Google Secret Manager for env: ${deploymentEnv}`
+  );
+
+  let secretName: string;
+  switch (deploymentEnv) {
+    case "mainnet":
+      secretName =
+        "projects/964694002890/secrets/dex-creator-woo-db-prod-evm/versions/latest";
+      break;
+    case "staging":
+      secretName =
+        "projects/964694002890/secrets/dex-creator-woo-db-staging-evm/versions/latest";
+      break;
+    case "qa":
+    case "dev":
+      throw new Error(
+        `No Google Secret Manager configured for ${deploymentEnv} environment. Please set ORDERLY_DATABASE_URL environment variable.`
+      );
+    default:
+      throw new Error(
+        `Unknown deployment environment: ${deploymentEnv}. Please set ORDERLY_DATABASE_URL environment variable.`
+      );
+  }
+
+  try {
+    const client = new SecretManagerServiceClient();
+    console.log(`Fetching secret: ${secretName}`);
+
+    const [version] = await client.accessSecretVersion({
+      name: secretName,
+    });
+
+    const payload = version.payload?.data?.toString() || "";
+    console.log("Fetched secret payload length:", payload.length);
+
+    const config: DatabaseConfig = JSON.parse(payload);
+
+    if (!config.url.startsWith("jdbc:mysql://")) {
+      throw new Error(`Unsupported URL format: ${config.url}`);
+    }
+
+    const core = config.url.substring("jdbc:mysql://".length);
+    const [hostPortDb, params] = core.split("?", 2);
+    const [hostPort, db] = hostPortDb.split("/", 2);
+    const [host, port] = hostPort.includes(":")
+      ? hostPort.split(":", 2)
+      : [hostPort, "3306"];
+
+    let mysqlUrl = `mysql://${config.username}:${config.pwd}@${host}:${port}/${db}`;
+    if (params) {
+      mysqlUrl += `?${params}`;
+    }
+
+    console.log(`Converted JDBC URL to MySQL URL: ${host}:${port}/${db}`);
+    return mysqlUrl;
+  } catch (error) {
+    console.error(
+      "Failed to get database URL from Google Secret Manager:",
+      error
+    );
+    throw new Error(
+      `Database connection failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+async function getOrderlyPrismaClient(): Promise<PrismaClient> {
+  const databaseUrl = await getOrderlyDatabaseUrl();
+  return new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
+  });
+}
 
 function generateBrokerHash(brokerId: string): string {
   const encoder = new TextEncoder();
@@ -25,6 +116,8 @@ function convertBasisPointsToDecimal(basisPoints: number): Decimal {
 export async function addBrokerToOrderlyDb(
   data: OrderlyBrokerData
 ): Promise<{ success: boolean; message: string }> {
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
   try {
     const brokerHash = generateBrokerHash(data.brokerId);
     const baseMakerFee = convertBasisPointsToDecimal(0);
@@ -71,6 +164,8 @@ export async function addBrokerToOrderlyDb(
       success: false,
       message: `Failed to add broker to Orderly database: ${error instanceof Error ? error.message : String(error)}`,
     };
+  } finally {
+    await orderlyPrisma.$disconnect();
   }
 }
 
@@ -78,6 +173,8 @@ export async function updateBrokerAdminAccountId(
   brokerId: string,
   adminAccountId: string
 ): Promise<{ success: boolean; message: string }> {
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
   try {
     await orderlyPrisma.orderlyBroker.update({
       where: {
@@ -113,12 +210,16 @@ export async function updateBrokerAdminAccountId(
       success: false,
       message: `Failed to update admin account ID: ${error instanceof Error ? error.message : String(error)}`,
     };
+  } finally {
+    await orderlyPrisma.$disconnect();
   }
 }
 
 export async function deleteBrokerFromOrderlyDb(
   brokerId: string
 ): Promise<{ success: boolean; message: string }> {
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
   try {
     await orderlyPrisma.orderlyBroker.delete({
       where: {
@@ -151,5 +252,7 @@ export async function deleteBrokerFromOrderlyDb(
       success: false,
       message: `Failed to delete broker from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
     };
+  } finally {
+    await orderlyPrisma.$disconnect();
   }
 }
