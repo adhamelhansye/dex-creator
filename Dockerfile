@@ -20,6 +20,8 @@ COPY tsconfig.json ./
 COPY api/tsconfig.json ./api/
 COPY api/src/ ./api/src/
 COPY api/prisma/ ./api/prisma/
+COPY config.ts ./
+COPY api/types/ ./api/types/
 
 # Generate Prisma client and build with tsup
 WORKDIR /app/api

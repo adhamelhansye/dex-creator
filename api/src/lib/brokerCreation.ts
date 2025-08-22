@@ -17,7 +17,6 @@ import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
 import { IDL, type SolanaVault } from "../interface/types/solana_vault.js";
 
-// Constants matching the other repository
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
 
