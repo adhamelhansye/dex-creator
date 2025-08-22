@@ -10,7 +10,10 @@ import {
 import { getUserDex } from "../models/dex";
 import { prisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
-import { addBrokerToOrderlyDb } from "../lib/orderlyDb.js";
+import {
+  addBrokerToOrderlyDb,
+  updateBrokerAdminAccountId,
+} from "../lib/orderlyDb.js";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -346,8 +349,33 @@ graduationRoutes.post("/finalize-admin-wallet", async c => {
       );
     }
 
-    // TODO: Implement actual admin wallet setup logic here
-    // For now, just mark as graduated
+    try {
+      const adminAccountId = orderlyData.data.account_id;
+      console.log(
+        `🔄 Updating admin account ID for broker ${dex.brokerId} to ${adminAccountId}`
+      );
+
+      const updateResult = await updateBrokerAdminAccountId(
+        dex.brokerId,
+        adminAccountId
+      );
+
+      if (updateResult.success) {
+        console.log(
+          `✅ Successfully updated admin account ID for broker ${dex.brokerId}`
+        );
+      } else {
+        console.warn(
+          `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.message}`
+        );
+      }
+    } catch (orderlyDbError) {
+      console.error(
+        `❌ Error updating admin account ID for broker ${dex.brokerId}:`,
+        orderlyDbError
+      );
+    }
+
     await prisma.dex.update({
       where: { userId },
       data: { isGraduated: true },

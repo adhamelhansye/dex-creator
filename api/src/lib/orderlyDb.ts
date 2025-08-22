@@ -74,6 +74,48 @@ export async function addBrokerToOrderlyDb(
   }
 }
 
+export async function updateBrokerAdminAccountId(
+  brokerId: string,
+  adminAccountId: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    await orderlyPrisma.orderlyBroker.update({
+      where: {
+        brokerId: brokerId,
+      },
+      data: {
+        adminAccountId: adminAccountId,
+      },
+    });
+
+    console.log(
+      `✅ Successfully updated admin account ID for broker ${brokerId} to ${adminAccountId}`
+    );
+
+    return {
+      success: true,
+      message: `Admin account ID updated successfully for broker ${brokerId}`,
+    };
+  } catch (error) {
+    console.error("❌ Error updating admin account ID:", error);
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Record to update not found")
+    ) {
+      return {
+        success: false,
+        message: `Broker ID ${brokerId} not found in Orderly database`,
+      };
+    }
+
+    return {
+      success: false,
+      message: `Failed to update admin account ID: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
 export async function deleteBrokerFromOrderlyDb(
   brokerId: string
 ): Promise<{ success: boolean; message: string }> {
