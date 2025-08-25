@@ -30,14 +30,14 @@ export default function DexCreationStatus({
   if (dexData.repoUrl) {
     return (
       <Card variant="success" className="mb-6" id="dex-creation-status">
-        <h3 className="text-lg font-semibold mb-2">DEX Creation Status</h3>
+        <h3 className="text-lg font-bold mb-2">DEX Creation Status</h3>
         <p className="text-sm text-gray-300 mb-4">
           We've created the source code for your DEX! Here's what's happening
           now:
         </p>
 
         <div className="mb-4 p-3 bg-primary/10 rounded-lg border border-primary/20">
-          <h4 className="text-md font-medium mb-2 flex items-center">
+          <h4 className="text-base font-bold mb-2 flex items-center">
             <div className="i-mdi:code-tags text-primary-light mr-2 h-5 w-5"></div>
             Step 1: Source Code Created
           </h4>
@@ -62,7 +62,7 @@ export default function DexCreationStatus({
 
         {deploymentUrl && deploymentConfirmed ? (
           <div className="mb-4 p-3 bg-success/10 rounded-lg border border-success/20 slide-fade-in">
-            <h4 className="text-md font-medium mb-2 flex items-center">
+            <h4 className="text-base font-bold mb-2 flex items-center">
               <div className="i-mdi:check-circle text-success mr-2 h-5 w-5"></div>
               Step 2: Your DEX is Live!
             </h4>
@@ -109,7 +109,7 @@ export default function DexCreationStatus({
             )}
 
             <div className="mt-4 pt-3 border-t border-light/10">
-              <h5 className="text-sm font-medium mb-2 flex items-center">
+              <h5 className="text-sm font-bold mb-2 flex items-center">
                 <div className="i-mdi:information-outline text-primary-light mr-2 h-4 w-4"></div>
                 Making Changes to Your DEX
               </h5>
@@ -137,7 +137,7 @@ export default function DexCreationStatus({
           </div>
         ) : (
           <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
-            <h4 className="text-md font-medium mb-2 flex items-center">
+            <h4 className="text-base font-bold mb-2 flex items-center">
               <div className="i-mdi:progress-clock text-warning mr-2 h-5 w-5"></div>
               Step 2: Building Your DEX Website
             </h4>
@@ -150,7 +150,7 @@ export default function DexCreationStatus({
             </p>
 
             <div className="mt-3 pt-3 border-t border-light/10">
-              <h5 className="text-sm font-medium mb-2 flex items-center">
+              <h5 className="text-sm font-bold mb-2 flex items-center">
                 <div className="i-mdi:information-outline text-warning mr-2 h-4 w-4"></div>
                 About Future Updates
               </h5>
@@ -165,7 +165,7 @@ export default function DexCreationStatus({
         )}
 
         <div className="mt-4 pt-4 border-t border-light/10">
-          <h4 className="text-md font-medium mb-3">
+          <h4 className="text-base font-bold mb-3">
             Updates & Deployment Status
           </h4>
           <p className="text-xs text-gray-400 mb-3">

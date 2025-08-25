@@ -33,6 +33,7 @@ interface DexData {
   walletConnectProjectId?: string | null;
   privyAppId?: string | null;
   privyTermsOfUse?: string | null;
+  privyLoginMethods?: string | null;
   enabledMenus?: string | null;
   customMenus?: string | null;
   enableAbstractWallet?: boolean;
@@ -170,6 +171,9 @@ export default function DexConfigRoute() {
   const [walletConnectProjectId, setWalletConnectProjectId] = useState("");
   const [privyAppId, setPrivyAppId] = useState("");
   const [privyTermsOfUse, setPrivyTermsOfUse] = useState("");
+  const [privyLoginMethods, setPrivyLoginMethods] = useState<string[]>([
+    "email",
+  ]);
   const [enabledMenus, setEnabledMenus] = useState("");
   const [customMenus, setCustomMenus] = useState("");
   const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
@@ -214,6 +218,7 @@ export default function DexConfigRoute() {
     walletConnectProjectId: "",
     privyAppId: "",
     privyTermsOfUse: "",
+    privyLoginMethods: null,
     enabledMenus: "",
     customMenus: "",
     enableAbstractWallet: false,
@@ -289,6 +294,11 @@ export default function DexConfigRoute() {
           setWalletConnectProjectId(response.walletConnectProjectId || "");
           setPrivyAppId(response.privyAppId || "");
           setPrivyTermsOfUse(response.privyTermsOfUse || "");
+          setPrivyLoginMethods(
+            response.privyLoginMethods
+              ? response.privyLoginMethods.split(",").filter(Boolean)
+              : ["email"]
+          );
           setEnabledMenus(response.enabledMenus || "");
           setCustomMenus(response.customMenus || "");
           setEnableAbstractWallet(response.enableAbstractWallet || false);
@@ -327,6 +337,7 @@ export default function DexConfigRoute() {
             disableEvmWallets: response.disableEvmWallets || false,
             disableSolanaWallets: response.disableSolanaWallets || false,
             availableLanguages: response.availableLanguages || [],
+            privyLoginMethods: response.privyLoginMethods || null,
             seoSiteName: response.seoSiteName || null,
             seoSiteDescription: response.seoSiteDescription || null,
             seoSiteLanguage: response.seoSiteLanguage || null,
@@ -626,6 +637,8 @@ export default function DexConfigRoute() {
           (originalValues.walletConnectProjectId || "") ||
         trimmedPrivyAppId !== (originalValues.privyAppId || "") ||
         trimmedPrivyTermsOfUse !== (originalValues.privyTermsOfUse || "") ||
+        JSON.stringify(privyLoginMethods) !==
+          JSON.stringify(originalValues.privyLoginMethods || ["email"]) ||
         enabledMenus !== (originalValues.enabledMenus || "") ||
         customMenus !== (originalValues.customMenus || "") ||
         primaryLogoBase64 !== (originalValues.primaryLogo || null) ||
@@ -687,6 +700,7 @@ export default function DexConfigRoute() {
         walletConnectProjectId: trimmedWalletConnectProjectId || null,
         privyAppId: trimmedPrivyAppId || null,
         privyTermsOfUse: trimmedPrivyTermsOfUse || null,
+        privyLoginMethods: privyLoginMethods.join(","),
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
         customMenus,
@@ -727,6 +741,7 @@ export default function DexConfigRoute() {
           walletConnectProjectId: trimmedWalletConnectProjectId,
           privyAppId: trimmedPrivyAppId,
           privyTermsOfUse: trimmedPrivyTermsOfUse,
+          privyLoginMethods: privyLoginMethods.join(","),
           enabledMenus: enabledMenus,
           customMenus,
           primaryLogo: primaryLogoBase64,
@@ -982,6 +997,8 @@ export default function DexConfigRoute() {
             walletConnectProjectId,
             privyAppId,
             privyTermsOfUse,
+            privyLoginMethods,
+            onPrivyLoginMethodsChange: setPrivyLoginMethods,
             enableAbstractWallet,
             onEnableAbstractWalletChange: setEnableAbstractWallet,
             disableEvmWallets,

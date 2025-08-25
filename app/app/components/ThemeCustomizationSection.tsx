@@ -263,7 +263,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
       </div>
       <div className="flex flex-col space-y-4 mt-6">
         <div className="flex flex-col gap-2">
-          <h4 className="text-sm font-medium mb-1">AI Theme Generator</h4>
+          <h4 className="text-base font-bold mb-1">AI Theme Generator</h4>
           <p className="text-xs text-gray-400 mb-2">
             Describe how you want your DEX theme to look and our AI will
             generate it for you.
@@ -314,7 +314,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
         </div>
       </div>
       <div className="mt-6 pt-4 border-light/10">
-        <h4 className="text-sm font-medium mb-2">Theme Preview</h4>
+        <h4 className="text-base font-bold mb-2">Theme Preview</h4>
         <p className="text-xs text-gray-400 mb-4">
           See a visual preview of how your DEX will look with the current theme
           configuration.

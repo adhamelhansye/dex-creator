@@ -245,7 +245,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         <div>
-          <h4 className="text-sm font-medium mb-1">Supported Blockchains</h4>
+          <h4 className="text-base font-bold mb-1">Supported Blockchains</h4>
           <p className="text-xs text-gray-400">
             Select which blockchains your DEX will support. Users will be able
             to trade on these networks.
@@ -411,7 +411,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
           <div className="slide-fade-in space-y-6">
             {/* Mainnet Layer 1 Chains */}
             <div>
-              <h5 className="text-sm font-medium mb-3 text-blue-300 flex items-center">
+              <h5 className="text-sm font-bold mb-3 text-blue-300 flex items-center">
                 <div className="i-mdi:layers h-4 w-4 mr-2"></div>
                 Layer 1 Networks
               </h5>
@@ -424,7 +424,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
 
             {/* Mainnet Layer 2 Chains */}
             <div>
-              <h5 className="text-sm font-medium mb-3 text-green-300 flex items-center">
+              <h5 className="text-sm font-bold mb-3 text-green-300 flex items-center">
                 <div className="i-mdi:layers-triple h-4 w-4 mr-2"></div>
                 Layer 2 Networks
               </h5>
@@ -461,7 +461,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
             {/* Testnet Layer 1 Chains */}
             {testnetL1.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium mb-3 text-blue-300 flex items-center">
+                <h5 className="text-sm font-bold mb-3 text-blue-300 flex items-center">
                   <div className="i-mdi:layers h-4 w-4 mr-2"></div>
                   Layer 1 Networks
                 </h5>
@@ -476,7 +476,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
             {/* Testnet Layer 2 Chains */}
             {testnetL2.length > 0 && (
               <div>
-                <h5 className="text-sm font-medium mb-3 text-green-300 flex items-center">
+                <h5 className="text-sm font-bold mb-3 text-green-300 flex items-center">
                   <div className="i-mdi:layers-triple h-4 w-4 mr-2"></div>
                   Layer 2 Networks
                 </h5>

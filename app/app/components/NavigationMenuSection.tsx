@@ -60,7 +60,7 @@ const NavigationMenuSection: React.FC<NavigationMenuProps> = ({
         <div className="flex items-start gap-3">
           <div className="i-mdi:information-outline h-5 w-5 text-blue-300 mt-0.5"></div>
           <div>
-            <h4 className="text-sm font-medium text-blue-300 mb-2">
+            <h4 className="text-base font-bold text-blue-300 mb-2">
               About ORDER Token Campaigns
             </h4>
             <div className="text-xs text-gray-300 space-y-2">

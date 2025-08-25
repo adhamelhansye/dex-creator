@@ -148,6 +148,7 @@ graduationRoutes.post(
               walletConnectProjectId: dex.walletConnectProjectId || undefined,
               privyAppId: dex.privyAppId || undefined,
               privyTermsOfUse: dex.privyTermsOfUse || undefined,
+              privyLoginMethods: dex.privyLoginMethods || undefined,
               enabledMenus: dex.enabledMenus || undefined,
               customMenus: dex.customMenus || undefined,
               enableAbstractWallet: dex.enableAbstractWallet || false,

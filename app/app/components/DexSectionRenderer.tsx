@@ -96,6 +96,8 @@ export interface DexSectionAllProps {
   disableSolanaWallets: boolean;
   onDisableEvmWalletsChange: (value: boolean) => void;
   onDisableSolanaWalletsChange: (value: boolean) => void;
+  privyLoginMethods: string[];
+  onPrivyLoginMethodsChange: (methods: string[]) => void;
 
   // Blockchain
   chainIds: number[];
@@ -270,6 +272,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       disableSolanaWallets: props.disableSolanaWallets,
       onDisableEvmWalletsChange: props.onDisableEvmWalletsChange,
       onDisableSolanaWalletsChange: props.onDisableSolanaWalletsChange,
+      privyLoginMethods: props.privyLoginMethods,
+      onPrivyLoginMethodsChange: props.onPrivyLoginMethodsChange,
     }),
     getValidationTest: props =>
       props.privyTermsOfUse.trim()
@@ -418,7 +422,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
         >
           {showSectionHeaders && (
             <>
-              <h3 className="text-md font-medium mb-3">
+              <h3 className="text-lg font-bold mb-3">
                 {section.title}{" "}
                 {section.isOptional && (
                   <span className="text-gray-400 text-sm font-normal">

@@ -43,6 +43,7 @@ interface DexData {
   walletConnectProjectId?: string | null;
   privyAppId?: string | null;
   privyTermsOfUse?: string | null;
+  privyLoginMethods?: string | null;
   enabledMenus?: string | null;
   customMenus?: string | null;
   enableAbstractWallet?: boolean;
@@ -193,6 +194,9 @@ export default function DexRoute() {
   const [walletConnectProjectId, setWalletConnectProjectId] = useState("");
   const [privyAppId, setPrivyAppId] = useState("");
   const [privyTermsOfUse, setPrivyTermsOfUse] = useState("");
+  const [privyLoginMethods, setPrivyLoginMethods] = useState<string[]>([
+    "email",
+  ]);
   const [enabledMenus, setEnabledMenus] = useState("");
   const [customMenus, setCustomMenus] = useState("");
   const [enableAbstractWallet, setEnableAbstractWallet] = useState(false);
@@ -248,6 +252,7 @@ export default function DexRoute() {
     walletConnectProjectId: "",
     privyAppId: "",
     privyTermsOfUse: "",
+    privyLoginMethods: null,
     enabledMenus: "",
     customMenus: "",
     enableAbstractWallet: false,
@@ -311,6 +316,11 @@ export default function DexRoute() {
       setWalletConnectProjectId(dexData.walletConnectProjectId || "");
       setPrivyAppId(dexData.privyAppId || "");
       setPrivyTermsOfUse(dexData.privyTermsOfUse || "");
+      setPrivyLoginMethods(
+        dexData.privyLoginMethods
+          ? dexData.privyLoginMethods.split(",").filter(Boolean)
+          : ["email"]
+      );
       setEnabledMenus(dexData.enabledMenus || "");
       setCustomMenus(dexData.customMenus || "");
       setEnableAbstractWallet(dexData.enableAbstractWallet || false);
@@ -349,6 +359,7 @@ export default function DexRoute() {
         disableEvmWallets: dexData.disableEvmWallets || false,
         disableSolanaWallets: dexData.disableSolanaWallets || false,
         availableLanguages: dexData.availableLanguages || [],
+        privyLoginMethods: dexData.privyLoginMethods || null,
         seoSiteName: dexData.seoSiteName || null,
         seoSiteDescription: dexData.seoSiteDescription || null,
         seoSiteLanguage: dexData.seoSiteLanguage || null,
@@ -714,6 +725,8 @@ export default function DexRoute() {
           (originalValues.walletConnectProjectId || "") ||
         trimmedPrivyAppId !== (originalValues.privyAppId || "") ||
         trimmedPrivyTermsOfUse !== (originalValues.privyTermsOfUse || "") ||
+        JSON.stringify(privyLoginMethods) !==
+          JSON.stringify(originalValues.privyLoginMethods || ["email"]) ||
         enabledMenus !== (originalValues.enabledMenus || "") ||
         customMenus !== (originalValues.customMenus || "") ||
         primaryLogoBase64 !== (originalValues.primaryLogo || null) ||
@@ -783,6 +796,7 @@ export default function DexRoute() {
         walletConnectProjectId: trimmedWalletConnectProjectId || null,
         privyAppId: trimmedPrivyAppId || null,
         privyTermsOfUse: trimmedPrivyTermsOfUse || null,
+        privyLoginMethods: privyLoginMethods.join(","),
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
         customMenus,
@@ -823,6 +837,7 @@ export default function DexRoute() {
           walletConnectProjectId: trimmedWalletConnectProjectId,
           privyAppId: trimmedPrivyAppId,
           privyTermsOfUse: trimmedPrivyTermsOfUse,
+          privyLoginMethods: privyLoginMethods.join(","),
           enabledMenus: enabledMenus,
           customMenus,
           primaryLogo: primaryLogoBase64,
@@ -1249,6 +1264,8 @@ export default function DexRoute() {
               walletConnectProjectId,
               privyAppId,
               privyTermsOfUse,
+              privyLoginMethods,
+              onPrivyLoginMethodsChange: setPrivyLoginMethods,
               enableAbstractWallet,
               onEnableAbstractWalletChange: setEnableAbstractWallet,
               disableEvmWallets,
@@ -1519,7 +1536,6 @@ export default function DexRoute() {
 
           {dexData && dexData.repoUrl && (
             <Card>
-              <h3 className="text-lg font-medium mb-4">Custom Domain</h3>
               <CustomDomainSection
                 dexData={dexData}
                 token={token}
@@ -1533,7 +1549,7 @@ export default function DexRoute() {
 
           {dexData && (
             <Card>
-              <h3 className="text-lg font-medium mb-4 text-red-400">
+              <h3 className="text-lg font-bold mb-4 text-red-400">
                 Danger Zone
               </h3>
               <div className="border border-red-500/20 rounded-lg p-4 bg-red-500/5">

@@ -185,7 +185,7 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
       {enabledMenus.length > 0 && (
         <>
           <div className="flex items-center justify-between">
-            <div className="text-sm font-medium">Menu Order</div>
+            <div className="text-base font-bold">Menu Order</div>
             <div className="text-xs text-gray-400">Drag items to reorder</div>
           </div>
           <div className="border border-light/10 rounded-lg p-2 bg-dark/30">

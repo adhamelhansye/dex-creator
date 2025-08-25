@@ -184,7 +184,7 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
             <div className="w-12 h-12 bg-gray-700/30 rounded-full flex items-center justify-center mx-auto mb-3">
               <Icon icon="mdi:link-variant" className="w-6 h-6 text-gray-400" />
             </div>
-            <h4 className="text-sm font-medium text-gray-300 mb-1">
+            <h4 className="text-base font-bold text-gray-300 mb-1">
               No custom menus yet
             </h4>
             <p className="text-xs text-gray-500 mb-4">
@@ -205,7 +205,7 @@ const CustomMenuEditor: React.FC<CustomMenuEditorProps> = ({
           <div className="space-y-3">
             {/* Menu Order Header */}
             <div className="flex items-center justify-between">
-              <div className="text-sm font-medium text-gray-300">
+              <div className="text-base font-bold text-gray-300">
                 Menu Order
               </div>
               <div className="text-xs text-gray-400">Drag items to reorder</div>

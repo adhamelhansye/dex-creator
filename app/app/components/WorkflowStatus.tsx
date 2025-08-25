@@ -464,7 +464,7 @@ export default function WorkflowStatus({
 
                     {selectedRun.jobs.length > 0 && (
                       <div className="mt-3 slide-fade-in-delayed">
-                        <h5 className="text-sm font-medium mb-2">Jobs</h5>
+                        <h5 className="text-sm font-bold mb-2">Jobs</h5>
                         <div className="space-y-2">
                           {selectedRun.jobs.map((job, index) => (
                             <div

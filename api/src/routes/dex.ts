@@ -129,6 +129,7 @@ dexRoutes.put("/:id", zValidator("form", dexFormSchema), async c => {
                 updatedDex.walletConnectProjectId || undefined,
               privyAppId: updatedDex.privyAppId || undefined,
               privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
+              privyLoginMethods: updatedDex.privyLoginMethods || undefined,
               enabledMenus: updatedDex.enabledMenus || undefined,
               customMenus: updatedDex.customMenus || undefined,
               enableAbstractWallet: updatedDex.enableAbstractWallet,

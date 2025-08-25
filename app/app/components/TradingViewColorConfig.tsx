@@ -96,7 +96,7 @@ export default function TradingViewColorConfig({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div>
-          <h4 className="text-sm font-medium text-gray-300">
+          <h4 className="text-base font-bold text-gray-300">
             TradingView Chart Colors
           </h4>
           <p className="text-xs text-gray-400 mt-1">

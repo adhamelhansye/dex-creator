@@ -58,7 +58,7 @@ export default function LanguageSupportSection({
     <div className="space-y-4">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h4 className="text-sm font-medium mb-1">Available Languages</h4>
+          <h4 className="text-base font-bold mb-1">Available Languages</h4>
           <p className="text-xs text-gray-400">
             Select the languages you want to support in your DEX interface.
             {selectedCount > 0 && (
@@ -113,7 +113,7 @@ export default function LanguageSupportSection({
       )}
 
       <Card>
-        <h5 className="text-sm font-medium mb-1 flex items-center">
+        <h5 className="text-sm font-bold mb-1 flex items-center">
           <div className="i-mdi:information-outline text-info mr-2 h-4 w-4"></div>
           Language Support Information
         </h5>

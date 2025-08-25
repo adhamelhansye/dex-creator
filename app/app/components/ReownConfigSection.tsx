@@ -33,7 +33,7 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
 
           <div className="space-y-3">
             <div>
-              <h4 className="text-sm font-medium text-secondary-light mb-1">
+              <h4 className="text-base font-bold text-secondary-light mb-1">
                 🚀 Key Benefits for Your DEX Users:
               </h4>
               <ul className="text-sm text-gray-300 list-disc pl-4 space-y-1">
@@ -63,7 +63,7 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
             </div>
 
             <div className="bg-background-dark/50 p-3 rounded-lg border border-secondary-light/10">
-              <h4 className="text-sm font-medium text-warning mb-1">
+              <h4 className="text-base font-bold text-warning mb-1">
                 💡 Why This Matters:
               </h4>
               <p className="text-sm text-gray-400">
@@ -80,12 +80,7 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
 
     <FormInput
       id={`${idPrefix}walletConnectProjectId`}
-      label={
-        <>
-          Reown Project ID{" "}
-          <span className="text-gray-400 text-sm font-normal">(optional)</span>
-        </>
-      }
+      label="Reown Project ID"
       value={walletConnectProjectId}
       onChange={handleInputChange("walletConnectProjectId")}
       placeholder="Enter your Reown Project ID"
@@ -121,7 +116,7 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
             </div>
 
             <div className="bg-background-dark/30 p-3 rounded-lg border border-primary-light/10">
-              <h4 className="text-sm font-medium text-primary-light mb-1">
+              <h4 className="text-base font-bold text-primary-light mb-1">
                 🔗 Integration Notes:
               </h4>
               <ul className="text-sm text-gray-400 space-y-1">

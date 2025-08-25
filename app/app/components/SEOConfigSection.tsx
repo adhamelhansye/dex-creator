@@ -122,7 +122,7 @@ export default function SEOConfigSection({
         <div className="space-y-2">
           <label
             htmlFor="seoThemeColor"
-            className="block text-sm font-medium text-gray-300"
+            className="block text-sm font-bold text-gray-300"
           >
             Theme Color
           </label>

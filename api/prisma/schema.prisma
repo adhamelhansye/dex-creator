@@ -87,6 +87,7 @@ model Dex {
   seoTwitterHandle     String?  // SEO Twitter Handle (e.g., "@orderly_network")
   seoThemeColor        String?  // SEO Theme Color (e.g., "#1a1b23")
   seoKeywords          String?  // SEO Keywords
+  privyLoginMethods    String?  // Comma-separated list of Privy login methods (email,passkey,twitter,google)
   isGraduated          Boolean  @default(false) // Whether the DEX has fully graduated
 
   // Relation to User

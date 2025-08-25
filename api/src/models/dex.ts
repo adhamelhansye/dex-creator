@@ -111,6 +111,7 @@ export const dexSchema = z.object({
   walletConnectProjectId: z.string().nullish(),
   privyAppId: z.string().nullish(),
   privyTermsOfUse: z.string().nullish(),
+  privyLoginMethods: z.string().nullish(),
   enabledMenus: z.string().nullish(),
   customMenus: z
     .string()
@@ -427,6 +428,7 @@ export async function createDex(
         walletConnectProjectId: validatedData.walletConnectProjectId,
         privyAppId: validatedData.privyAppId,
         privyTermsOfUse: validatedData.privyTermsOfUse,
+        privyLoginMethods: validatedData.privyLoginMethods,
         enabledMenus: validatedData.enabledMenus,
         customMenus: validatedData.customMenus,
         enableAbstractWallet: validatedData.enableAbstractWallet,
@@ -525,6 +527,8 @@ export async function updateDex(
     updateData.privyAppId = validatedData.privyAppId;
   if ("privyTermsOfUse" in validatedData)
     updateData.privyTermsOfUse = validatedData.privyTermsOfUse;
+  if ("privyLoginMethods" in validatedData)
+    updateData.privyLoginMethods = validatedData.privyLoginMethods;
   if ("enabledMenus" in validatedData)
     updateData.enabledMenus = validatedData.enabledMenus;
   if ("customMenus" in validatedData)

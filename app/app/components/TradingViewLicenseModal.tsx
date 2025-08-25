@@ -38,7 +38,7 @@ export default function TradingViewLicenseModal({
             <div className="flex items-start gap-3">
               <div className="i-mdi:check-circle text-success h-5 w-5 mt-0.5 flex-shrink-0"></div>
               <div>
-                <h4 className="text-sm font-medium mb-1 text-success">
+                <h4 className="text-base font-bold mb-1 text-success">
                   Good News: It's Completely Free!
                 </h4>
                 <p className="text-xs text-gray-300">
@@ -52,7 +52,7 @@ export default function TradingViewLicenseModal({
 
           {/* What You Need */}
           <div>
-            <h4 className="text-sm font-medium mb-3">What You Need to Do</h4>
+            <h4 className="text-base font-bold mb-3">What You Need to Do</h4>
             <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
               <li>
                 Visit the{" "}
@@ -73,7 +73,7 @@ export default function TradingViewLicenseModal({
 
           {/* Where to Click Image */}
           <div>
-            <h4 className="text-sm font-medium mb-3">Where to Click</h4>
+            <h4 className="text-base font-bold mb-3">Where to Click</h4>
             <div className="bg-background-dark/50 rounded-lg p-4 border border-light/10">
               <img
                 src="/advanced-charts.webp"
@@ -89,7 +89,7 @@ export default function TradingViewLicenseModal({
 
           {/* Application Details */}
           <div>
-            <h4 className="text-sm font-medium mb-3">
+            <h4 className="text-base font-bold mb-3">
               Application Form Details
             </h4>
             <div className="bg-background-dark/50 rounded-lg p-4 border border-light/10 space-y-3">
@@ -154,7 +154,7 @@ export default function TradingViewLicenseModal({
             <div className="flex items-start gap-3">
               <div className="i-mdi:information-outline text-warning h-5 w-5 mt-0.5 flex-shrink-0"></div>
               <div>
-                <h4 className="text-sm font-medium mb-2 text-warning">
+                <h4 className="text-base font-bold mb-2 text-warning">
                   Important Notes
                 </h4>
                 <ul className="text-xs text-gray-300 space-y-1 list-disc list-inside">

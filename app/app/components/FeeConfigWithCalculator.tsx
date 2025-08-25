@@ -318,7 +318,7 @@ export const FeeConfigWithCalculator: React.FC<
                 <div>
                   <label
                     htmlFor="makerFee"
-                    className="block text-sm font-medium mb-1"
+                    className="block text-sm font-bold mb-1"
                   >
                     Maker Fee (bps)
                   </label>
@@ -351,7 +351,7 @@ export const FeeConfigWithCalculator: React.FC<
                 <div>
                   <label
                     htmlFor="takerFee"
-                    className="block text-sm font-medium mb-1"
+                    className="block text-sm font-bold mb-1"
                   >
                     Taker Fee (bps)
                   </label>
@@ -491,7 +491,7 @@ export const FeeConfigWithCalculator: React.FC<
             <div className="mb-4">
               <label
                 htmlFor="tradingVolume"
-                className="block text-sm font-medium mb-1"
+                className="block text-sm font-bold mb-1"
               >
                 Monthly Trading Volume (USD)
               </label>

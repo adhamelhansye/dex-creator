@@ -24,6 +24,7 @@ interface DexData {
   walletConnectProjectId?: string | null;
   privyAppId?: string | null;
   privyTermsOfUse?: string | null;
+  privyLoginMethods?: string | null;
   enabledMenus?: string | null;
   customMenus?: string | null;
   enableAbstractWallet?: boolean;

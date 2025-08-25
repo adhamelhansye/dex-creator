@@ -483,6 +483,7 @@ function prepareDexConfigContent(
     walletConnectProjectId?: string;
     privyAppId?: string;
     privyTermsOfUse?: string;
+    privyLoginMethods?: string;
     enabledMenus?: string;
     customMenus?: string;
     enableAbstractWallet?: boolean;
@@ -594,6 +595,7 @@ function prepareDexConfigContent(
     VITE_WALLETCONNECT_PROJECT_ID: config.walletConnectProjectId || "",
     VITE_PRIVY_APP_ID: config.privyAppId || "",
     VITE_PRIVY_TERMS_OF_USE: config.privyTermsOfUse || "",
+    VITE_PRIVY_LOGIN_METHODS: config.privyLoginMethods || "",
     VITE_ENABLED_MENUS: config.enabledMenus || "",
     VITE_CUSTOM_MENUS: config.customMenus || "",
     VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
@@ -747,6 +749,7 @@ export async function updateDexConfig(
     walletConnectProjectId?: string;
     privyAppId?: string;
     privyTermsOfUse?: string;
+    privyLoginMethods?: string;
     enabledMenus?: string;
     customMenus?: string;
     enableAbstractWallet?: boolean;
@@ -866,6 +869,7 @@ export async function setupRepositoryWithSingleCommit(
     walletConnectProjectId?: string;
     privyAppId?: string;
     privyTermsOfUse?: string;
+    privyLoginMethods?: string;
     enabledMenus?: string;
     customMenus?: string;
     enableAbstractWallet?: boolean;
@@ -1404,6 +1408,7 @@ export async function triggerRedeployment(
     walletConnectProjectId?: string;
     privyAppId?: string;
     privyTermsOfUse?: string;
+    privyLoginMethods?: string;
     enabledMenus?: string;
     customMenus?: string;
     enableAbstractWallet?: boolean;
@@ -1462,6 +1467,7 @@ export interface DexConfig {
   walletConnectProjectId?: string;
   privyAppId?: string;
   privyTermsOfUse?: string;
+  privyLoginMethods?: string;
   enabledMenus?: string;
   customMenus?: string;
   enableAbstractWallet?: boolean;

@@ -365,7 +365,7 @@ export default function ImagePaste({
   return (
     <div className="space-y-3">
       <div className="flex justify-between items-center">
-        <label htmlFor={id} className="block text-sm font-medium text-gray-200">
+        <label htmlFor={id} className="block text-sm font-bold text-gray-200">
           {label}
         </label>
         {previewUrl && (
