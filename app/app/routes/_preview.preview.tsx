@@ -7,16 +7,13 @@ import { NetworkId } from "@orderly.network/types";
 
 import "@orderly.network/ui/dist/styles.css";
 
-// Constant key for localStorage - must match the one in PreviewButton
 const DEX_PREVIEW_CONFIG_KEY = "dex-preview-config";
 
-// Define Zod schema for the preview configuration
 const AppIconSchema = z
   .object({
     img: z.string().optional(),
     height: z.number().optional(),
     width: z.number().optional(),
-    // Allow any type for component since JSX can't be serialized
     component: z.any().optional(),
   })
   .refine(data => data.img || data.component, {
@@ -44,7 +41,6 @@ const PreviewConfigSchema = z.object({
   customStyles: z.string().optional(),
 });
 
-// Add metadata for the preview page
 export const meta: MetaFunction = () => {
   return [
     { title: "DEX Preview - Orderly Network" },
@@ -62,7 +58,6 @@ export default function PreviewRoute() {
 
   useEffect(() => {
     try {
-      // Get config from localStorage
       const storedConfig = localStorage.getItem(DEX_PREVIEW_CONFIG_KEY);
 
       if (!storedConfig) {
@@ -72,15 +67,11 @@ export default function PreviewRoute() {
         return;
       }
 
-      // Parse the config from localStorage
       const parsedConfig = JSON.parse(storedConfig);
 
-      // Validate with Zod
       try {
-        // Validate the configuration using our schema
         const validatedConfig = PreviewConfigSchema.parse(parsedConfig);
 
-        // Apply custom logos if available in the config
         if (validatedConfig.primaryLogo || validatedConfig.secondaryLogo) {
           const customAppIcons = { ...(validatedConfig.appIcons || {}) };
 
@@ -109,7 +100,6 @@ export default function PreviewRoute() {
         console.error("Validation error:", validationError);
 
         if (validationError instanceof z.ZodError) {
-          // Format the validation errors
           const errorMessages = validationError.errors
             .map(err => `${err.path.join(".")}: ${err.message}`)
             .join(", ");
@@ -125,9 +115,8 @@ export default function PreviewRoute() {
         "Invalid configuration format. Please try refreshing the preview."
       );
     }
-  }, []); // Run only once on component mount
+  }, []);
 
-  // Show loading state while parsing config
   if (!config && !error) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background-dark text-white">
@@ -139,7 +128,6 @@ export default function PreviewRoute() {
     );
   }
 
-  // Show error if parsing failed
   if (error || !config) {
     return (
       <div className="h-screen w-full flex items-center justify-center bg-background-dark text-white">
@@ -154,8 +142,16 @@ export default function PreviewRoute() {
     );
   }
 
-  // At this point, config is guaranteed to be non-null
-  // Render just the DexPreview component without any wrapper elements
+  const previewCustomStyles = `
+    ${config.customStyles || ""}
+    
+    /* Override font family for preview to use Inter */
+    html, body, * {
+      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
+      font-feature-settings: normal !important;
+    }
+  `;
+
   return (
     <DexPreview
       brokerId={config.brokerId}
@@ -167,7 +163,7 @@ export default function PreviewRoute() {
       tradingViewConfig={config.tradingViewConfig}
       sharePnLConfig={config.sharePnLConfig}
       appIcons={config.appIcons}
-      customStyles={config.customStyles}
+      customStyles={previewCustomStyles}
       className="h-screen w-full"
     />
   );
