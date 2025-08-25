@@ -115,12 +115,6 @@
   --oui-spacing-xl: 33.75rem;
 }
 
-html {
-  font-family: "'Atyp Text', sans-serif";
-  font-feature-settings: '"ss02" on, "ss03" on, "ss05" on, "ss06" on';
-  font-weight: 400;
-}
-
 html, body {
   height: 100%;
   overflow: hidden;

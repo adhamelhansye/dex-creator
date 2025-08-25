@@ -116,4 +116,21 @@ export default defineConfig({
       },
     },
   },
+  preflights: [
+    {
+      getCSS: () => `
+        html {
+          color: white;
+          background-color: #000;
+          font-family: 'Atyp Text', sans-serif;
+          font-feature-settings: "ss02" on, "ss03" on, "ss05" on, "ss06" on !important;
+          font-weight: 400;
+          margin: 0;
+        }
+        body {
+          margin: 0;
+        }
+      `,
+    },
+  ],
 });
