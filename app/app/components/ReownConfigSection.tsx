@@ -95,12 +95,12 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
                 <li>
                   Visit{" "}
                   <a
-                    href="https://cloud.reown.com"
+                    href="https://dashboard.reown.com"
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-primary-light hover:underline"
                   >
-                    Reown Cloud
+                    Reown Dashboard
                   </a>{" "}
                   and create a free account
                 </li>
@@ -137,6 +137,53 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
                   ID and you're done!
                 </li>
               </ul>
+            </div>
+
+            <div className="bg-warning/10 p-3 rounded-lg border border-warning/20">
+              <h4 className="text-base font-bold text-warning mb-1">
+                ⚠️ Important: Domain Allowlist Configuration Required
+              </h4>
+              <p className="text-sm text-gray-300 mb-2">
+                After creating your project, you <strong>MUST</strong> configure
+                the domain allowlist in your Reown dashboard for your DEX to
+                work properly.
+              </p>
+              <div className="space-y-2">
+                <p className="text-sm text-gray-400">
+                  <strong>How to configure domains:</strong>
+                </p>
+                <ol className="list-decimal pl-4 space-y-1 text-sm text-gray-400">
+                  <li>
+                    Go to your project dashboard at{" "}
+                    <a
+                      href="https://dashboard.reown.com"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-primary-light hover:underline"
+                    >
+                      dashboard.reown.com
+                    </a>
+                  </li>
+                  <li>Navigate to the "Domain" section</li>
+                  <li>Click "Domain" to add your DEX domain</li>
+                  <li>
+                    Add your domain (e.g.,{" "}
+                    <code className="bg-background-dark px-1 rounded">
+                      https://yourdex.com
+                    </code>
+                    )
+                  </li>
+                </ol>
+                <div className="mt-2 p-2 bg-background-dark/50 rounded border border-gray-600/30">
+                  <p className="text-xs text-gray-400">
+                    <strong>💡 Pro tip:</strong> You can use wildcards like{" "}
+                    <code className="bg-background-dark px-1 rounded">
+                      https://*.subdomain.com
+                    </code>{" "}
+                    to allow all subdomains.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
         </>
