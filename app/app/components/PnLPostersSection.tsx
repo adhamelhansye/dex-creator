@@ -110,7 +110,7 @@ export default function PnLPostersSection({
                 value={poster || undefined}
                 onChange={handlePosterChange(index)}
                 imageType={getPosterImageType()}
-                helpText="16:9 aspect ratio required (960x540px recommended)"
+                helpText="16:9 aspect ratio (960x540px). Include a dark area on the left side for text readability."
               />
             </div>
           ))}
@@ -133,18 +133,58 @@ export default function PnLPostersSection({
         </div>
       )}
 
-      <Card variant="default" className="p-3 text-xs text-gray-400">
-        <p>
-          <span className="font-medium text-primary-light">
-            About PnL Posters:
-          </span>{" "}
-          These custom background images will be available to users when sharing
-          their trading PnL (Profit and Loss) results on social media.
-        </p>
-        <p className="mt-1">
-          You can add up to 8 custom backgrounds. If none are provided, default
-          backgrounds will be used.
-        </p>
+      <Card variant="default" className="p-4 text-xs text-gray-400">
+        <div className="space-y-3">
+          <div>
+            <span className="font-medium text-primary-light">
+              About PnL Posters:
+            </span>{" "}
+            These custom background images will be available to users when
+            sharing their trading PnL (Profit and Loss) results on social media.
+          </div>
+
+          <div className="bg-background-light/30 rounded-lg p-3 border border-primary-light/20">
+            <div className="font-medium text-primary-light mb-2">
+              Design Guidelines:
+            </div>
+            <ul className="space-y-1.5 text-xs">
+              <li className="flex items-start gap-2">
+                <div className="i-mdi:check-circle text-green-400 h-3 w-3 mt-0.5 flex-shrink-0"></div>
+                <span>
+                  <strong>Dark Background Area:</strong> Include a dark section
+                  on the left side (about 40% of width) for text overlay
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="i-mdi:check-circle text-green-400 h-3 w-3 mt-0.5 flex-shrink-0"></div>
+                <span>
+                  <strong>Text Readability:</strong> The dark area ensures
+                  white/light text remains readable when trading data is
+                  overlaid
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="i-mdi:check-circle text-green-400 h-3 w-3 mt-0.5 flex-shrink-0"></div>
+                <span>
+                  <strong>Visual Balance:</strong> Right side can feature your
+                  branding, illustrations, or decorative elements
+                </span>
+              </li>
+              <li className="flex items-start gap-2">
+                <div className="i-mdi:check-circle text-green-400 h-3 w-3 mt-0.5 flex-shrink-0"></div>
+                <span>
+                  <strong>Format:</strong> 16:9 aspect ratio (960x540px
+                  recommended) for optimal display
+                </span>
+              </li>
+            </ul>
+          </div>
+
+          <div className="text-xs text-gray-500">
+            You can add up to 8 custom backgrounds. If none are provided,
+            default backgrounds will be used.
+          </div>
+        </div>
       </Card>
 
       {/* Preview button and widget */}
