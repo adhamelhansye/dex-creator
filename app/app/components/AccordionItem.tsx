@@ -53,7 +53,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
             <div className="i-mdi:check-circle text-success h-5 w-5 mr-3"></div>
           )}
           <h3
-            className={`text-lg font-medium ${isCompleted && !isActive ? "text-gray-400" : "text-white"}`}
+            className={`text-lg font-bold ${isCompleted && !isActive ? "text-gray-400" : "text-white"}`}
           >
             {title}{" "}
             {isOptional && (

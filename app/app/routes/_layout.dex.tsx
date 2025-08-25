@@ -1136,6 +1136,136 @@ export default function DexRoute() {
     }
   };
 
+  const handleQuickSetup = async () => {
+    if (!brokerName.trim()) {
+      toast.error("Broker name is required for quick setup.");
+      return;
+    }
+
+    setIsSaving(true);
+    setForkingStatus("Creating DEX with current settings...");
+
+    try {
+      // Convert blobs to base64 for storage
+      const [
+        primaryLogoBase64,
+        secondaryLogoBase64,
+        faviconBase64,
+        pnlPostersBase64,
+      ] = await Promise.all([
+        primaryLogo ? blobToBase64(primaryLogo) : Promise.resolve(null),
+        secondaryLogo ? blobToBase64(secondaryLogo) : Promise.resolve(null),
+        favicon ? blobToBase64(favicon) : Promise.resolve(null),
+        Promise.all(
+          pnlPosters.map(poster =>
+            poster ? blobToBase64(poster) : Promise.resolve(null)
+          )
+        ),
+      ]);
+
+      const imageBlobs: {
+        primaryLogo?: Blob | null;
+        secondaryLogo?: Blob | null;
+        favicon?: Blob | null;
+        pnlPosters?: (Blob | null)[];
+      } = {
+        primaryLogo,
+        secondaryLogo,
+        favicon,
+        pnlPosters,
+      };
+
+      const dexData_ToSend = {
+        brokerName: brokerName.trim(),
+        telegramLink: telegramLink.trim() || null,
+        discordLink: discordLink.trim() || null,
+        xLink: xLink.trim() || null,
+        walletConnectProjectId: walletConnectProjectId.trim() || null,
+        privyAppId: privyAppId.trim() || null,
+        privyTermsOfUse: privyTermsOfUse.trim() || null,
+        privyLoginMethods: privyLoginMethods.join(","),
+        themeCSS: themeApplied ? currentTheme : defaultTheme,
+        enabledMenus: enabledMenus,
+        customMenus: customMenus,
+        enableAbstractWallet: enableAbstractWallet,
+        enableCampaigns: enableCampaigns,
+        chainIds: chainIds,
+        defaultChain: defaultChain,
+        disableMainnet: disableMainnet,
+        disableTestnet: disableTestnet,
+        disableEvmWallets: disableEvmWallets,
+        disableSolanaWallets: disableSolanaWallets,
+        tradingViewColorConfig: tradingViewColorConfig,
+        availableLanguages: availableLanguages,
+        seoSiteName: seoSiteName.trim() || null,
+        seoSiteDescription: seoSiteDescription.trim() || null,
+        seoSiteLanguage: seoSiteLanguage.trim() || null,
+        seoSiteLocale: seoSiteLocale.trim() || null,
+        seoTwitterHandle: seoTwitterHandle.trim() || null,
+        seoThemeColor: seoThemeColor.trim() || null,
+        seoKeywords: seoKeywords.trim() || null,
+      };
+
+      const formData = createDexFormData(dexData_ToSend, imageBlobs);
+      const savedData = await postFormData<DexData>("api/dex", formData, token);
+
+      setOriginalValues({
+        ...savedData,
+        brokerName: brokerName.trim(),
+        telegramLink: telegramLink.trim(),
+        discordLink: discordLink.trim(),
+        xLink: xLink.trim(),
+        walletConnectProjectId: walletConnectProjectId.trim(),
+        privyAppId: privyAppId.trim(),
+        privyTermsOfUse: privyTermsOfUse.trim(),
+        privyLoginMethods: privyLoginMethods.join(","),
+        enabledMenus: enabledMenus,
+        customMenus: customMenus,
+        primaryLogo: primaryLogoBase64,
+        secondaryLogo: secondaryLogoBase64,
+        favicon: faviconBase64,
+        pnlPosters: pnlPostersBase64 as string[],
+        themeCSS: themeApplied ? currentTheme : defaultTheme,
+        enableAbstractWallet: enableAbstractWallet,
+        enableCampaigns: enableCampaigns,
+        chainIds: chainIds,
+        defaultChain: defaultChain,
+        disableMainnet: disableMainnet,
+        disableTestnet: disableTestnet,
+        disableEvmWallets: disableEvmWallets,
+        disableSolanaWallets: disableSolanaWallets,
+        tradingViewColorConfig: tradingViewColorConfig,
+        availableLanguages: availableLanguages,
+        seoSiteName: seoSiteName.trim() || null,
+        seoSiteDescription: seoSiteDescription.trim() || null,
+        seoSiteLanguage: seoSiteLanguage.trim() || null,
+        seoSiteLocale: seoSiteLocale.trim() || null,
+        seoTwitterHandle: seoTwitterHandle.trim() || null,
+        seoThemeColor: seoThemeColor.trim() || null,
+        seoKeywords: seoKeywords.trim() || null,
+      });
+
+      if (savedData.repoUrl) {
+        toast.success(
+          "DEX created with current settings! Repository is being set up."
+        );
+      } else {
+        toast.success("DEX created with current settings!");
+        toast.warning("Repository could not be forked. You can retry later.");
+      }
+      updateDexData(savedData);
+      await refreshDexData();
+    } catch (error) {
+      console.error("Error in quick setup:", error);
+      toast.error(
+        "Failed to create DEX with default settings. Please try again."
+      );
+    } finally {
+      setIsSaving(false);
+      setForkingStatus("");
+    }
+  };
+
   if (isLoading || isDexLoading) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4 mt-26">
@@ -1199,6 +1329,7 @@ export default function DexRoute() {
             Create Your DEX - Step-by-Step
           </h1>
         </div>
+
         <Form
           onSubmit={handleSubmit}
           className="flex flex-col gap-4"
@@ -1312,6 +1443,37 @@ export default function DexRoute() {
               </p>
             </div>
           )}
+
+        {/* Quick Setup at Bottom */}
+        {!dexData && brokerName.trim() && (
+          <div className="mt-8 p-6 bg-primary/5 border border-primary/20 rounded-lg text-center slide-fade-in">
+            <h3 className="text-lg font-semibold text-primary-light mb-2 flex items-center justify-center">
+              <div className="i-mdi:lightning-bolt h-5 w-5 mr-2"></div>
+              Quick Setup
+            </h3>
+            <p className="text-gray-300 mb-4">
+              Create your DEX with current settings. You can customize it later.
+            </p>
+            <Button
+              variant="primary"
+              onClick={handleQuickSetup}
+              disabled={isSaving || isForking}
+              className="shadow-lg hover:shadow-xl transition-all duration-200"
+            >
+              {isSaving || isForking ? (
+                <>
+                  <div className="i-svg-spinners:pulse-rings-multiple h-4 w-4 mr-2"></div>
+                  Creating DEX...
+                </>
+              ) : (
+                <>
+                  <div className="i-mdi:rocket-launch h-4 w-4 mr-2"></div>
+                  Create DEX Now
+                </>
+              )}
+            </Button>
+          </div>
+        )}
       </div>
     );
   }
