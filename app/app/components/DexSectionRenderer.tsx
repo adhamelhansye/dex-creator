@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useRef } from "react";
 import AccordionItem from "./AccordionItem";
 import BrokerDetailsSection from "./BrokerDetailsSection";
 import BrandingSection from "./BrandingSection";
@@ -11,6 +11,7 @@ import PrivyConfigSection from "./PrivyConfigSection";
 import BlockchainConfigSection from "./BlockchainConfigSection";
 import LanguageSupportSection from "./LanguageSupportSection";
 import NavigationMenuSection from "./NavigationMenuSection";
+import ProgressTracker from "./ProgressTracker";
 
 export interface DexSectionConfig {
   id: number;
@@ -342,6 +343,7 @@ interface DexSectionRendererProps {
   allRequiredPreviousStepsCompleted?: (stepNumber: number) => boolean;
   showSectionHeaders?: boolean;
   idPrefix?: string;
+  showProgressTracker?: boolean;
 }
 
 const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
@@ -355,7 +357,48 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
   allRequiredPreviousStepsCompleted,
   showSectionHeaders = true,
   idPrefix = "",
+  showProgressTracker = false,
 }) => {
+  const [currentSection, setCurrentSection] = useState(1);
+  const sectionRefsRef = useRef<Record<number, HTMLElement | null>>({});
+
+  useEffect(() => {
+    if (mode !== "direct" || !showProgressTracker) return;
+
+    const observer = new IntersectionObserver(
+      entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            const sectionId = parseInt(
+              entry.target.getAttribute("data-section-id") || "0"
+            );
+            setCurrentSection(sectionId);
+          }
+        });
+      },
+      {
+        rootMargin: "-30% 0px -30% 0px",
+        threshold: 0.1,
+      }
+    );
+
+    const timeoutId = setTimeout(() => {
+      Object.values(sectionRefsRef.current).forEach(ref => {
+        if (ref) {
+          observer.observe(ref);
+        }
+      });
+    }, 100);
+
+    return () => {
+      clearTimeout(timeoutId);
+      observer.disconnect();
+    };
+  }, [mode, showProgressTracker, sections.length]);
+
+  const handleSectionClick = (sectionId: number) => {
+    setCurrentSection(sectionId);
+  };
   const renderSection = (section: DexSectionConfig, index: number) => {
     const Component = section.component;
     const componentProps = {
@@ -418,6 +461,12 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
       return (
         <div
           key={section.key}
+          ref={el => {
+            if (el) {
+              sectionRefsRef.current[section.id] = el;
+            }
+          }}
+          data-section-id={section.id}
           className={index > 0 ? "mt-6 pt-4 border-t border-light/10" : ""}
         >
           {showSectionHeaders && (
@@ -440,6 +489,21 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
       );
     }
   };
+
+  if (mode === "direct" && showProgressTracker) {
+    return (
+      <div className="flex gap-6">
+        <ProgressTracker
+          sections={sections}
+          currentSection={currentSection}
+          onSectionClick={handleSectionClick}
+        />
+        <div className="flex-1 min-w-0">
+          {sections.map((section, index) => renderSection(section, index))}
+        </div>
+      </div>
+    );
+  }
 
   return <>{sections.map((section, index) => renderSection(section, index))}</>;
 };

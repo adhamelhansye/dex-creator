@@ -98,6 +98,11 @@
   --oui-gradient-neutral-start: 27 29 24;
   --oui-gradient-neutral-end: 38 41 46;
 
+  /* Custom scrollbar styles */
+  --scrollbar-track: rgb(43 38 56);
+  --scrollbar-thumb: rgb(93 83 123);
+  --scrollbar-thumb-hover: rgb(125 125 255);
+
   /* rounded */
   --oui-rounded-sm: 2px;
   --oui-rounded: 4px;
@@ -406,4 +411,30 @@ appkit-modal {
   src: url("/fonts/Atyp/AtypBLDisplay-Bold.otf") format("opentype");
   font-weight: 700;
   font-style: normal;
+}
+
+/* Custom scrollbar styles for progress tracker */
+.progress-tracker-scrollbar::-webkit-scrollbar {
+  width: 6px;
+}
+
+.progress-tracker-scrollbar::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+  border-radius: 3px;
+}
+
+.progress-tracker-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 3px;
+  transition: background-color 0.2s ease;
+}
+
+.progress-tracker-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--scrollbar-thumb-hover);
+}
+
+/* Firefox scrollbar styles */
+.progress-tracker-scrollbar {
+  scrollbar-width: thin;
+  scrollbar-color: var(--scrollbar-thumb) var(--scrollbar-track);
 }

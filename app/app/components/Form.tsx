@@ -109,6 +109,7 @@ export default function Form({
 
       {submitText && (
         <Button
+          className="w-full justify-center max-w-md mxa"
           type="submit"
           variant="primary"
           size="md"

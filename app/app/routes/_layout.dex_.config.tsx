@@ -925,7 +925,7 @@ export default function DexConfigRoute() {
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl mt-26">
+    <div className="container mx-auto p-4 max-w-7xl mt-26">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <Link
@@ -952,6 +952,7 @@ export default function DexConfigRoute() {
         <DexSectionRenderer
           mode="direct"
           sections={DEX_SECTIONS}
+          showProgressTracker={true}
           allProps={{
             brokerName,
             handleInputChange,
