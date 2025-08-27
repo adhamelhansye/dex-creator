@@ -71,6 +71,12 @@ export default defineConfig({
     "opacity-25",
     "opacity-75",
     "ml-2",
+    "from-purple-500/10",
+    "to-transparent",
+    "border-purple-500/30",
+    "from-primary/10",
+    "to-secondary/10",
+    "border-primary/30",
   ],
   theme: {
     colors: {
