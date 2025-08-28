@@ -25,8 +25,41 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 
   const deploymentEnv = process.env.DEPLOYMENT_ENV;
   console.log(
-    `ORDERLY_DATABASE_URL not found, using Google Secret Manager for env: ${deploymentEnv}`
+    `ORDERLY_DATABASE_URL not found, checking environment-specific configuration for: ${deploymentEnv}`
   );
+
+  if (deploymentEnv === "qa" || deploymentEnv === "dev") {
+    const dbUrl = process.env.ORDERLY_DATABASE_URL;
+    const dbUser = process.env.ORDERLY_DATABASE_USER;
+    const dbPassword = process.env.ORDERLY_DATABASE_PASSWORD;
+
+    if (!dbUrl || !dbUser || !dbPassword) {
+      throw new Error(
+        `Missing required database environment variables for QA environment. Please set ORDERLY_DATABASE_URL, ORDERLY_DATABASE_USER, and ORDERLY_DATABASE_PASSWORD.`
+      );
+    }
+
+    if (!dbUrl.startsWith("jdbc:mysql://")) {
+      throw new Error(`Unsupported URL format: ${dbUrl}`);
+    }
+
+    const core = dbUrl.substring("jdbc:mysql://".length);
+    const [hostPortDb, params] = core.split("?", 2);
+    const [hostPort, db] = hostPortDb.split("/", 2);
+    const [host, port] = hostPort.includes(":")
+      ? hostPort.split(":", 2)
+      : [hostPort, "3306"];
+
+    let mysqlUrl = `mysql://${dbUser}:${dbPassword}@${host}:${port}/${db}`;
+    if (params) {
+      mysqlUrl += `?${params}`;
+    }
+
+    console.log(
+      `Converted JDBC URL to MySQL URL for QA: ${host}:${port}/${db}`
+    );
+    return mysqlUrl;
+  }
 
   let secretName: string;
   switch (deploymentEnv) {
