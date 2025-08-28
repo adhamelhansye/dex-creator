@@ -1,0 +1,103 @@
+name: Sync fork
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  UPSTREAM: https://github.com/orderlynetwork/dex-creator.git
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Configure Git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream & fetch remotes (branches + tags)
+        shell: bash
+        run: |
+          if ! git remote | grep -qx upstream; then
+            git remote add upstream "$UPSTREAM"
+          fi
+          git fetch --prune --tags upstream
+          git fetch --prune --tags origin
+          # Ensure local main tracks origin/main
+          if git show-ref --verify --quiet refs/remotes/origin/main; then
+            git checkout -B main origin/main
+          else
+            # fallback if default branch isn't main
+            git checkout -B main
+          fi
+
+      - name: Check if main differs from upstream/main
+        id: check_main
+        shell: bash
+        run: |
+          set -euo pipefail
+          upstream_sha=$(git rev-parse refs/remotes/upstream/main)
+          local_sha=$(git rev-parse refs/heads/main)
+          if [[ "$upstream_sha" != "$local_sha" ]]; then
+            echo "update_main=true" >> "$GITHUB_OUTPUT"
+            echo "Main differs: $local_sha != $upstream_sha"
+          else
+            echo "update_main=false" >> "$GITHUB_OUTPUT"
+            echo "Main is up to date."
+          fi
+
+      - name: Check if tags differ (adds/updates/deletions)
+        id: check_tags
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Compare full refs list (covers add/update/delete/retag)
+          up_tags=$(git ls-remote --tags upstream | sort)
+          or_tags=$(git ls-remote --tags origin   | sort)
+
+          if diff -q <(printf "%s\n" "$up_tags") <(printf "%s\n" "$or_tags") >/dev/null; then
+            echo "tag_changes=false" >> "$GITHUB_OUTPUT"
+            echo "Tags are up to date."
+          else
+            echo "tag_changes=true" >> "$GITHUB_OUTPUT"
+            echo "Tag sets differ."
+          fi
+
+      - name: Sync main
+        if: steps.check_main.outputs.update_main == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          git merge upstream/main --no-edit
+          git push origin main
+
+      - name: Sync all tags (add/update + deletions)
+        if: steps.check_tags.outputs.tag_changes == 'true'
+        shell: bash
+        run: |
+          set -euo pipefail
+          # Add/update tags
+          git push origin --tags
+
+          # Delete tags that exist on origin but not on upstream
+          mapfile -t upstream_names < <(git ls-remote --tags upstream | awk '{print $2}' | sed 's@refs/tags/@@' | sed 's/\^{}$//' | sort -u)
+          mapfile -t origin_names   < <(git ls-remote --tags origin   | awk '{print $2}' | sed 's@refs/tags/@@' | sed 's/\^{}$//' | sort -u)
+
+          up_set=$(printf "%s\n" "${upstream_names[@]}")
+          for t in "${origin_names[@]}"; do
+            if ! grep -qx "$t" <<< "$up_set"; then
+              echo "Deleting remote tag not in upstream: $t"
+              git push origin :refs/tags/"$t" || true
+            fi
+          done

@@ -2,15 +2,19 @@ name: Deploy to GitHub Pages
 
 on:
   push:
-    tags:
-      - "*"
+    branches:
+      - main
   workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
   build:
     name: Build Application
     runs-on: ubuntu-latest
-    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
     outputs:
       build-artifact: ${{ steps.build.outputs.artifact-name }}
 
@@ -58,27 +62,14 @@ jobs:
           name: ${{ needs.build.outputs.build-artifact }}
           path: app/build/client/
 
-      - name: Setup Git for GitHub Pages deployment
-        run: |
-          git config --global user.name "GitHub Actions"
-          git config --global user.email "github-actions@github.com"
-          git config --global init.defaultBranch main
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
-      - name: Create GitHub Pages Repository
-        run: |
-          mkdir -p gh-pages-repo
-          cp -r app/build/client/* gh-pages-repo/
-          cp gh-pages-repo/index.html gh-pages-repo/404.html
-          echo "dex.orderly.network" > gh-pages-repo/CNAME
-          # Add .nojekyll file to disable Jekyll processing
-          touch gh-pages-repo/.nojekyll
+      - name: Upload site
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: app/build/client/
 
       - name: Deploy to GitHub Pages
-        run: |
-          cd gh-pages-repo
-          git init
-          git branch -m main
-          git remote add origin https://${{ secrets.GH_PAGES_DEPLOY_TOKEN }}@github.com/OrderlyNetworkDexCreator/orderlynetworkdexcreator.github.io.git
-          git add -A
-          git commit -m "Deploy: $(date +%Y-%m-%d_%H-%M-%S)"
-          git push -f origin main
+        id: deployment
+        uses: actions/deploy-pages@v4
