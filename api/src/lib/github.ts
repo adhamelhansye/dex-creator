@@ -22,9 +22,14 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-// Get current file's directory (ES module replacement for __dirname)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let __dirname: string;
+if (typeof import.meta !== "undefined" && import.meta.url) {
+  const __filename = fileURLToPath(import.meta.url);
+  __dirname = path.dirname(__filename);
+} else {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  __dirname = (global as any).__dirname || process.cwd();
+}
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // Simple in-memory cache for ETags
