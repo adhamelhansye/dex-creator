@@ -75,7 +75,6 @@ interface VerifyTxResponse {
   success: boolean;
   message: string;
   amount?: string;
-  preferredBrokerId?: string;
 }
 
 interface NewGraduationStatusResponse {

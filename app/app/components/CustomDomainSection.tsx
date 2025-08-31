@@ -8,7 +8,6 @@ interface DexData {
   id: string;
   brokerName: string;
   brokerId: string;
-  preferredBrokerId?: string | null;
   themeCSS?: string | null;
   primaryLogo?: string | null;
   secondaryLogo?: string | null;
