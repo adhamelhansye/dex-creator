@@ -65,4 +65,4 @@ EXPOSE 3001
 
 # Use entrypoint script
 ENTRYPOINT ["./docker-entrypoint.sh"]
-CMD ["node", "dist/index.js"]
+CMD ["node", "dist/index.cjs"]
