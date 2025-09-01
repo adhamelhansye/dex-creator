@@ -83,6 +83,7 @@ export async function verifyOrderTransaction(
 
     const provider = new ethers.JsonRpcProvider(rpcUrl);
 
+    await new Promise(resolve => setTimeout(resolve, 5_000));
     const receipt = await withRPCTimeout(
       provider.getTransactionReceipt(txHash),
       30000,
