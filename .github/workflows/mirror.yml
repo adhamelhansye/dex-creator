@@ -12,8 +12,31 @@ env:
   UPSTREAM: https://github.com/orderlynetwork/dex-creator.git
 
 jobs:
+  check-fork:
+    runs-on: ubuntu-latest
+    outputs:
+      is-fork: ${{ steps.check.outputs.is-fork }}
+    steps:
+      - name: Check if this is a fork
+        id: check
+        shell: bash
+        run: |
+          # Get the current repository URL
+          current_repo="https://github.com/${{ github.repository }}.git"
+          upstream_repo="${UPSTREAM}"
+
+          if [[ "$current_repo" == "$upstream_repo" ]]; then
+            echo "is-fork=false" >> "$GITHUB_OUTPUT"
+            echo "This is the upstream repository ($current_repo). Skipping sync."
+          else
+            echo "is-fork=true" >> "$GITHUB_OUTPUT"
+            echo "This is a fork ($current_repo). Upstream is ($upstream_repo)."
+          fi
+
   sync:
     runs-on: ubuntu-latest
+    needs: check-fork
+    if: needs.check-fork.outputs.is-fork == 'true'
 
     steps:
       - name: Checkout fork
