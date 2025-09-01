@@ -576,6 +576,10 @@ export function GraduationForm({
     setResult(null);
     setIsLoading(true);
 
+    toast.info(
+      "Verifying transaction... This may take up to 1-2 minutes. Please wait."
+    );
+
     try {
       const response = await post<VerifyTxResponse>(
         "api/graduation/verify-tx",
@@ -1112,8 +1116,14 @@ export function GraduationForm({
 
             <Button
               onClick={handleTransferOrder}
-              isLoading={isPending || isConfirming}
-              loadingText={isPending ? "Confirm in wallet..." : "Confirming..."}
+              isLoading={isPending || isConfirming || isLoading}
+              loadingText={
+                isPending
+                  ? "Confirm in wallet..."
+                  : isConfirming
+                    ? "Confirming..."
+                    : "Verifying transaction... This may take 1-2 minutes"
+              }
               disabled={
                 !!brokerIdError ||
                 !brokerId ||
@@ -1129,15 +1139,9 @@ export function GraduationForm({
               variant="primary"
               className="w-full justify-center"
             >
-              {isPending || isConfirming
-                ? isPending
-                  ? "Confirm in wallet..."
-                  : "Confirming..."
-                : isLoading
-                  ? "Verifying..."
-                  : isCorrectChain
-                    ? `Transfer ${paymentType === "usdc" ? "USDC" : "ORDER"} Tokens`
-                    : "Switch Chain"}
+              {isCorrectChain
+                ? `Transfer ${paymentType === "usdc" ? "USDC" : "ORDER"} Tokens`
+                : "Switch Chain"}
             </Button>
 
             {isConfirmed && hash && !result && (
@@ -1239,6 +1243,22 @@ export function GraduationForm({
                 </div>
               </div>
 
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+                <div className="flex items-start space-x-3">
+                  <div className="i-mdi:information-outline text-blue-400 mt-0.5 h-5 w-5 flex-shrink-0"></div>
+                  <div>
+                    <h4 className="text-sm font-medium text-blue-400 mb-1">
+                      Transaction Verification
+                    </h4>
+                    <p className="text-xs text-gray-300">
+                      Verification involves checking the blockchain transaction
+                      and may take 1-2 minutes to complete. Please be patient
+                      and do not refresh the page during this process.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <FormInput
                   id="txHash"
@@ -1257,7 +1277,7 @@ export function GraduationForm({
                   type="submit"
                   variant="secondary"
                   isLoading={isLoading}
-                  loadingText="Verifying..."
+                  loadingText="Verifying transaction... This may take 1-2 minutes"
                   className="w-full justify-center"
                   disabled={!txHash || !!brokerIdError || !brokerId}
                 >
