@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, ReactNode, useMemo } from "react";
 import LoginModal from "../components/LoginModal";
 import DeleteConfirmModal from "../components/DeleteConfirmModal";
+import ConfirmationModal from "../components/ConfirmationModal";
 import ImageCropModal from "../components/ImageCropModal";
 import ThemePreviewModal from "../components/ThemePreviewModal";
 import TradingViewLicenseModal from "../components/TradingViewLicenseModal";
@@ -11,6 +12,7 @@ import AdminLoginModal from "../components/AdminLoginModal";
 type ModalType =
   | "login"
   | "deleteConfirm"
+  | "confirmation"
   | "imageCrop"
   | "themePreview"
   | "tradingViewLicense"
@@ -114,6 +116,25 @@ function ModalManager() {
           onClose={closeModal}
           onConfirm={currentModalProps.onConfirm}
           entityName={currentModalProps.entityName || "Item"}
+        />
+      );
+    case "confirmation":
+      return (
+        <ConfirmationModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onConfirm={currentModalProps.onConfirm}
+          title={currentModalProps.title || "Confirm Action"}
+          message={
+            currentModalProps.message || "Are you sure you want to proceed?"
+          }
+          warningMessage={currentModalProps.warningMessage}
+          confirmButtonText={currentModalProps.confirmButtonText || "Confirm"}
+          confirmButtonVariant={
+            currentModalProps.confirmButtonVariant || "primary"
+          }
+          cancelButtonText={currentModalProps.cancelButtonText || "Cancel"}
+          isDestructive={currentModalProps.isDestructive || false}
         />
       );
     case "imageCrop":

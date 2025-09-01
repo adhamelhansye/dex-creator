@@ -2,6 +2,7 @@ import { useState, FormEvent, useEffect } from "react";
 import { toast } from "react-toastify";
 import { del, get, post } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
+import { useModal } from "../context/ModalContext";
 import { Button } from "../components/Button";
 import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
@@ -150,6 +151,7 @@ export default function AdminRoute() {
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const { isAuthenticated, token } = useAuth();
+  const { openModal } = useModal();
 
   const [expandedThemes, setExpandedThemes] = useState<Set<string>>(new Set());
 
@@ -176,25 +178,34 @@ export default function AdminRoute() {
   };
 
   const handleRedeployment = async (dexId: string, brokerName: string) => {
-    setRedeployingDexes(prev => new Set(prev).add(dexId));
-
-    try {
-      await post(`api/admin/dex/${dexId}/redeploy`, {}, token);
-      toast.success(`Redeployment triggered for ${brokerName}`);
-    } catch (error) {
-      console.error("Error triggering redeployment:", error);
-      if (error instanceof Error) {
-        toast.error(`Failed to trigger redeployment: ${error.message}`);
-      } else {
-        toast.error("Failed to trigger redeployment");
-      }
-    } finally {
-      setRedeployingDexes(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(dexId);
-        return newSet;
-      });
-    }
+    openModal("confirmation", {
+      title: "Redeploy DEX",
+      message: `Are you sure you want to trigger a redeployment for "${brokerName}"?`,
+      warningMessage:
+        "This will redeploy the DEX to GitHub Pages. The process may take several minutes to complete, but the current version will remain available during deployment.",
+      confirmButtonText: "Redeploy",
+      confirmButtonVariant: "primary",
+      onConfirm: async () => {
+        setRedeployingDexes(prev => new Set(prev).add(dexId));
+        try {
+          await post(`api/admin/dex/${dexId}/redeploy`, {}, token);
+          toast.success(`Redeployment triggered for ${brokerName}`);
+        } catch (error) {
+          console.error("Error triggering redeployment:", error);
+          if (error instanceof Error) {
+            toast.error(`Failed to trigger redeployment: ${error.message}`);
+          } else {
+            toast.error("Failed to trigger redeployment");
+          }
+        } finally {
+          setRedeployingDexes(prev => {
+            const newSet = new Set(prev);
+            newSet.delete(dexId);
+            return newSet;
+          });
+        }
+      },
+    });
   };
 
   useEffect(() => {
@@ -401,32 +412,43 @@ export default function AdminRoute() {
       return;
     }
 
-    setIsDeleting(true);
+    const selectedDex = allDexes.find(dex => dex.id === dexToDeleteId.trim());
+    const dexName = selectedDex?.brokerName || "Unnamed DEX";
 
-    try {
-      await del<DeleteDexResponse>(
-        `api/admin/dex/${dexToDeleteId.trim()}`,
-        null,
-        token,
-        { showToastOnError: false }
-      );
+    openModal("confirmation", {
+      title: "Delete DEX",
+      message: `Are you sure you want to delete "${dexName}"? This action cannot be undone.`,
+      warningMessage:
+        "Deleting this DEX will permanently remove all associated data from the system, including the GitHub repository. However, any deployed instances on GitHub Pages will remain active and must be manually disabled through GitHub.",
+      confirmButtonText: "Delete DEX",
+      confirmButtonVariant: "danger",
+      isDestructive: true,
+      onConfirm: async () => {
+        setIsDeleting(true);
+        try {
+          await del<DeleteDexResponse>(
+            `api/admin/dex/${dexToDeleteId.trim()}`,
+            null,
+            token,
+            { showToastOnError: false }
+          );
 
-      toast.success("DEX deleted successfully");
-
-      loadAllDexes(currentPage, pageSize, searchTerm);
-      loadDexStats();
-      setDexToDeleteId("");
-    } catch (error) {
-      console.error("Error in admin component:", error);
-
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred");
-      }
-    } finally {
-      setIsDeleting(false);
-    }
+          toast.success("DEX deleted successfully");
+          loadAllDexes(currentPage, pageSize, searchTerm);
+          loadDexStats();
+          setDexToDeleteId("");
+        } catch (error) {
+          console.error("Error in admin component:", error);
+          if (error instanceof Error) {
+            toast.error(error.message);
+          } else {
+            toast.error("An unknown error occurred");
+          }
+        } finally {
+          setIsDeleting(false);
+        }
+      },
+    });
   };
 
   const handleUpdateBrokerId = async (e: FormEvent) => {
@@ -442,31 +464,42 @@ export default function AdminRoute() {
       return;
     }
 
-    setIsUpdatingBrokerId(true);
+    const selectedDex = allDexes.find(dex => dex.id === dexId.trim());
+    const dexName = selectedDex?.brokerName || "Selected DEX";
+    const currentBrokerId = selectedDex?.brokerId || "Unknown";
 
-    try {
-      await post<UpdateBrokerIdResponse>(
-        `api/admin/dex/${dexId}/broker-id`,
-        { brokerId: brokerId.trim() },
-        token,
-        { showToastOnError: false }
-      );
+    openModal("confirmation", {
+      title: "Update Broker ID",
+      message: `Are you sure you want to update the broker ID for "${dexName}" from "${currentBrokerId}" to "${brokerId.trim()}"?`,
+      warningMessage:
+        "Updating the broker ID will affect the DEX's integration with the Orderly Network. This change will be immediate and may impact trading functionality.",
+      confirmButtonText: "Update Broker ID",
+      confirmButtonVariant: "warning",
+      onConfirm: async () => {
+        setIsUpdatingBrokerId(true);
+        try {
+          await post<UpdateBrokerIdResponse>(
+            `api/admin/dex/${dexId}/broker-id`,
+            { brokerId: brokerId.trim() },
+            token,
+            { showToastOnError: false }
+          );
 
-      toast.success("Broker ID updated successfully");
-
-      loadAllDexes(currentPage, pageSize, searchTerm);
-      loadDexStats();
-    } catch (error) {
-      console.error("Error updating broker ID:", error);
-
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred");
-      }
-    } finally {
-      setIsUpdatingBrokerId(false);
-    }
+          toast.success("Broker ID updated successfully");
+          loadAllDexes(currentPage, pageSize, searchTerm);
+          loadDexStats();
+        } catch (error) {
+          console.error("Error updating broker ID:", error);
+          if (error instanceof Error) {
+            toast.error(error.message);
+          } else {
+            toast.error("An unknown error occurred");
+          }
+        } finally {
+          setIsUpdatingBrokerId(false);
+        }
+      },
+    });
   };
 
   const handleRenameRepo = async (e: FormEvent) => {
@@ -482,31 +515,44 @@ export default function AdminRoute() {
       return;
     }
 
-    setIsRenamingRepo(true);
+    const selectedDex = allDexes.find(dex => dex.id === repoDexId.trim());
+    const dexName = selectedDex?.brokerName || "Selected DEX";
+    const currentRepoName = selectedDex?.repoUrl
+      ? selectedDex.repoUrl.split("/").pop()
+      : "Unknown";
 
-    try {
-      await post<RenameRepoResponse>(
-        `api/admin/dex/${repoDexId}/rename-repo`,
-        { newName: newRepoName.trim() },
-        token,
-        { showToastOnError: false }
-      );
+    openModal("confirmation", {
+      title: "Rename Repository",
+      message: `Are you sure you want to rename the repository for "${dexName}" from "${currentRepoName}" to "${newRepoName.trim()}"?`,
+      warningMessage:
+        "Renaming the repository will update all references including the deployment URL. This may cause temporary downtime during the transition.",
+      confirmButtonText: "Rename Repository",
+      confirmButtonVariant: "warning",
+      onConfirm: async () => {
+        setIsRenamingRepo(true);
+        try {
+          await post<RenameRepoResponse>(
+            `api/admin/dex/${repoDexId}/rename-repo`,
+            { newName: newRepoName.trim() },
+            token,
+            { showToastOnError: false }
+          );
 
-      toast.success("Repository renamed successfully");
-
-      loadAllDexes(currentPage, pageSize, searchTerm);
-      loadDexStats();
-    } catch (error) {
-      console.error("Error renaming repository:", error);
-
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred");
-      }
-    } finally {
-      setIsRenamingRepo(false);
-    }
+          toast.success("Repository renamed successfully");
+          loadAllDexes(currentPage, pageSize, searchTerm);
+          loadDexStats();
+        } catch (error) {
+          console.error("Error renaming repository:", error);
+          if (error instanceof Error) {
+            toast.error(error.message);
+          } else {
+            toast.error("An unknown error occurred");
+          }
+        } finally {
+          setIsRenamingRepo(false);
+        }
+      },
+    });
   };
 
   const handleDeleteBrokerId = async (e: FormEvent) => {
@@ -517,35 +563,44 @@ export default function AdminRoute() {
       return;
     }
 
-    setIsDeletingBrokerId(true);
-    setDeleteBrokerIdResult(null);
+    openModal("confirmation", {
+      title: "⚠️ Delete Broker ID",
+      message: `Are you absolutely sure you want to delete broker ID "${brokerIdToDelete.trim()}" on-chain? This is an extremely destructive action.`,
+      warningMessage: `This will permanently delete the broker ID on-chain and reset any DEX using it to demo mode. This action CANNOT be undone and will affect all trading functionality for associated DEXes. Current environment: ${currentEnvironment}`,
+      confirmButtonText: "Delete Broker ID",
+      confirmButtonVariant: "danger",
+      isDestructive: true,
+      onConfirm: async () => {
+        setIsDeletingBrokerId(true);
+        setDeleteBrokerIdResult(null);
+        try {
+          const response = await post<DeleteBrokerIdResponse>(
+            "api/admin/broker/delete",
+            {
+              brokerId: brokerIdToDelete.trim(),
+            },
+            token,
+            { showToastOnError: false }
+          );
 
-    try {
-      const response = await post<DeleteBrokerIdResponse>(
-        "api/admin/broker/delete",
-        {
-          brokerId: brokerIdToDelete.trim(),
-        },
-        token,
-        { showToastOnError: false }
-      );
-
-      toast.success(response.message);
-      setDeleteBrokerIdResult(response);
-      loadAllDexes(currentPage, pageSize, searchTerm);
-      loadDexStats();
-      setBrokerIdToDelete("");
-    } catch (error) {
-      setDeleteBrokerIdResult(null);
-      console.error("Error deleting broker ID:", error);
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("An unknown error occurred");
-      }
-    } finally {
-      setIsDeletingBrokerId(false);
-    }
+          toast.success(response.message);
+          setDeleteBrokerIdResult(response);
+          loadAllDexes(currentPage, pageSize, searchTerm);
+          loadDexStats();
+          setBrokerIdToDelete("");
+        } catch (error) {
+          setDeleteBrokerIdResult(null);
+          console.error("Error deleting broker ID:", error);
+          if (error instanceof Error) {
+            toast.error(error.message);
+          } else {
+            toast.error("An unknown error occurred");
+          }
+        } finally {
+          setIsDeletingBrokerId(false);
+        }
+      },
+    });
   };
 
   if (isLoading) {
@@ -754,98 +809,6 @@ export default function AdminRoute() {
           )}
         </div>
 
-        {/* Delete DEX Section */}
-        <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10">
-          <h2 className="text-xl font-medium mb-4">Delete DEX</h2>
-          <p className="text-gray-400 text-sm mb-4">
-            This tool allows you to delete a DEX. This action cannot be undone
-            and will remove all associated data.
-          </p>
-
-          <form onSubmit={handleDeleteDex}>
-            <div className="mb-4">
-              <label
-                htmlFor="dexSearch"
-                className="block text-sm font-medium mb-1"
-              >
-                Search DEX
-              </label>
-              <FuzzySearchInput
-                placeholder="Search by wallet address, broker name or DEX ID..."
-                onSearch={handleDeleteDexSearch}
-                initialValue={searchQuery}
-                className="mb-2"
-              />
-
-              {filteredDeleteDexes.length > 0 && (
-                <div className="mt-2 border border-light/10 rounded-lg overflow-hidden">
-                  <div className="max-h-48 overflow-y-auto">
-                    {filteredDeleteDexes.map(dex => (
-                      <div
-                        key={dex.id}
-                        className="p-2 hover:bg-primary-light/10 cursor-pointer flex justify-between items-center border-b border-light/5 last:border-b-0"
-                        onClick={() => handleSelectDexToDelete(dex)}
-                      >
-                        <div>
-                          <div className="font-medium">
-                            {dex.brokerName || "Unnamed DEX"}
-                          </div>
-                          <div className="text-xs font-mono text-gray-400">
-                            ID: {dex.id.substring(0, 8)}...
-                          </div>
-                          <div className="text-xs font-mono text-gray-400">
-                            Wallet: {dex.user.address.substring(0, 8)}...
-                            {dex.user.address.substring(
-                              dex.user.address.length - 6
-                            )}
-                          </div>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {new Date(dex.createdAt).toLocaleDateString()}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {searchQuery &&
-                filteredDeleteDexes.length === 0 &&
-                !loadingDexes && (
-                  <div className="text-sm text-gray-400 p-2">
-                    No DEXes found matching your search.
-                  </div>
-                )}
-
-              {loadingDexes && (
-                <div className="text-center py-2">
-                  <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-primary-light/80"></div>
-                </div>
-              )}
-            </div>
-
-            <FormInput
-              id="dexToDeleteId"
-              label="DEX ID"
-              value={dexToDeleteId}
-              onChange={e => setDexToDeleteId(e.target.value)}
-              placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-              helpText="Enter the DEX ID or use the search above to find a DEX"
-              required
-            />
-
-            <Button
-              type="submit"
-              variant="danger"
-              isLoading={isDeleting}
-              loadingText="Deleting..."
-              className="mt-2 font-semibold"
-            >
-              Delete DEX
-            </Button>
-          </form>
-        </div>
-
         {/* Update Broker ID Section */}
         <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10">
           <h2 className="text-xl font-medium mb-4" id="update-broker-id">
@@ -1050,6 +1013,115 @@ export default function AdminRoute() {
               className="mt-2"
             >
               Rename Repository
+            </Button>
+          </form>
+        </div>
+
+        {/* Delete DEX Section */}
+        <div className="bg-error/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-error/20">
+          <div className="flex items-center mb-4">
+            <div className="i-mdi:alert-octagon text-error mr-2 h-6 w-6" />
+            <h2 className="text-xl font-medium text-error">Delete DEX</h2>
+          </div>
+          <p className="text-gray-400 text-sm mb-6">
+            Danger zone! This tool will{" "}
+            <span className="text-error font-semibold">
+              permanently delete a DEX
+            </span>{" "}
+            and all associated data. This action{" "}
+            <span className="font-semibold">cannot be undone</span>.
+          </p>
+
+          <form onSubmit={handleDeleteDex}>
+            <div className="mb-4">
+              <label
+                htmlFor="dexSearch"
+                className="block text-sm font-medium mb-1 text-error"
+              >
+                Search DEX
+              </label>
+              <FuzzySearchInput
+                placeholder="Search by wallet address, broker name or DEX ID..."
+                onSearch={handleDeleteDexSearch}
+                initialValue={searchQuery}
+                className="mb-2"
+              />
+
+              {filteredDeleteDexes.length > 0 && (
+                <div className="mt-2 border border-error/30 rounded-lg overflow-hidden">
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredDeleteDexes.map(dex => (
+                      <div
+                        key={dex.id}
+                        className="p-2 hover:bg-error/10 cursor-pointer flex justify-between items-center border-b border-error/20 last:border-b-0"
+                        onClick={() => handleSelectDexToDelete(dex)}
+                      >
+                        <div>
+                          <div className="font-medium">
+                            {dex.brokerName || "Unnamed DEX"}
+                          </div>
+                          <div className="text-xs font-mono text-gray-400">
+                            ID: {dex.id.substring(0, 8)}...
+                          </div>
+                          <div className="text-xs font-mono text-gray-400">
+                            Wallet: {dex.user.address.substring(0, 8)}...
+                            {dex.user.address.substring(
+                              dex.user.address.length - 6
+                            )}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(dex.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {searchQuery &&
+                filteredDeleteDexes.length === 0 &&
+                !loadingDexes && (
+                  <div className="text-sm text-gray-400 p-2">
+                    No DEXes found matching your search.
+                  </div>
+                )}
+
+              {loadingDexes && (
+                <div className="text-center py-2">
+                  <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-primary-light/80"></div>
+                </div>
+              )}
+            </div>
+
+            <div>
+              <label
+                htmlFor="dexToDeleteId"
+                className="block text-sm font-medium mb-1 text-error"
+              >
+                DEX ID
+              </label>
+              <input
+                type="text"
+                id="dexToDeleteId"
+                value={dexToDeleteId}
+                onChange={e => setDexToDeleteId(e.target.value)}
+                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+                className="w-full bg-dark rounded px-4 py-3 text-base border border-error/30 focus:border-error outline-none placeholder:text-gray-500"
+              />
+              <div className="text-xs text-gray-400 mt-1">
+                Enter the DEX ID or use the search above to find a DEX
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              variant="danger"
+              isLoading={isDeleting}
+              loadingText="Deleting..."
+              className="mt-4 text-base font-semibold py-3"
+            >
+              Delete DEX
             </Button>
           </form>
         </div>

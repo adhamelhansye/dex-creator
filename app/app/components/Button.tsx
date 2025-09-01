@@ -6,6 +6,7 @@ export type ButtonVariant =
   | "primary"
   | "secondary"
   | "danger"
+  | "warning"
   | "ghost"
   | "success";
 export type ButtonSize = "xs" | "sm" | "md" | "lg";
@@ -64,6 +65,7 @@ export function Button({
     secondary:
       "bg-black/80 text-white border border-white/60 hover:bg-purple-400 hover:text-black hover:border-purple-500 font-semibold transition-all duration-300",
     danger: "bg-red-500 text-white hover:bg-red-600",
+    warning: "bg-warning text-white hover:bg-warning-light",
     ghost: "bg-transparent text-white hover:bg-white/10",
     success: "bg-success text-white hover:bg-success-light",
   };
