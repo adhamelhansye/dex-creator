@@ -846,7 +846,6 @@ export async function updateDexConfig(
 async function enableGitHubPages(owner: string, repo: string): Promise<void> {
   console.log(`Enabling GitHub Pages for ${owner}/${repo}...`);
 
-  // Configure GitHub Pages with GitHub Actions deployment
   await octokit.rest.repos.createPagesSite({
     owner,
     repo,
@@ -904,15 +903,12 @@ export async function setupRepositoryWithSingleCommit(
   console.log(`Setting up repository ${owner}/${repo} with a single commit...`);
 
   try {
-    // Path to workflow files
     const workflowsDir = path.resolve(__dirname, "../workflows");
 
-    // Check if workflows directory exists
     if (!fs.existsSync(workflowsDir)) {
       throw new Error(`Workflows directory not found at ${workflowsDir}`);
     }
 
-    // Read workflow files
     const deployYmlContent = fs.readFileSync(
       path.join(workflowsDir, "deploy.yml"),
       "utf-8"
