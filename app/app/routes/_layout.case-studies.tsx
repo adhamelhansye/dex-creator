@@ -2,7 +2,6 @@ import type { MetaFunction } from "@remix-run/node";
 import { useState } from "react";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
-import { Icon } from "@iconify/react";
 
 export const meta: MetaFunction = () => [
   { title: "Case Studies | Orderly One" },
