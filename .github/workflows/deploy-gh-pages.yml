@@ -62,6 +62,9 @@ jobs:
           name: ${{ needs.build.outputs.build-artifact }}
           path: app/build/client/
 
+      - name: Add fallback for SPA routing
+        run: cp app/build/client/index.html app/build/client/404.html
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
