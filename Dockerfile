@@ -10,6 +10,7 @@ RUN apk add --no-cache --virtual .build-deps build-base python3
 # Copy workspace files
 COPY package.json yarn.lock ./
 COPY api/package.json ./api/
+COPY api/prisma/ ./api/prisma/
 
 # Install dependencies 
 RUN yarn install --frozen-lockfile
@@ -19,7 +20,6 @@ COPY tsconfig.base.json ./
 COPY tsconfig.json ./
 COPY api/tsconfig.json ./api/
 COPY api/src/ ./api/src/
-COPY api/prisma/ ./api/prisma/
 COPY config.ts ./
 COPY api/types/ ./api/types/
 
