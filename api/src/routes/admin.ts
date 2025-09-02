@@ -383,10 +383,13 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
     if (dex) {
       updatedDex = await prisma.dex.update({
         where: { id: dex.id },
-        data: { brokerId: "demo" },
+        data: {
+          brokerId: "demo",
+          isGraduated: false,
+        },
       });
       console.log(
-        `Successfully deleted broker ID ${brokerId} and reset DEX ${dex.id} to demo status`
+        `Successfully deleted broker ID ${brokerId} and reset DEX ${dex.id} to demo status with isGraduated=false`
       );
     } else {
       console.log(
