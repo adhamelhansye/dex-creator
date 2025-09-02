@@ -437,7 +437,9 @@ export function GraduationForm({
         success: boolean;
         message: string;
         isGraduated: boolean;
-      }>("api/graduation/finalize-admin-wallet", {}, token);
+      }>("api/graduation/finalize-admin-wallet", {}, token, {
+        showToastOnError: false,
+      });
 
       if (response.success) {
         toast.success(
@@ -457,11 +459,11 @@ export function GraduationForm({
       }
     } catch (error) {
       console.error("Error finalizing admin wallet:", error);
-      if (error instanceof Error) {
-        toast.error(`Failed to finalize admin wallet setup: ${error.message}`);
-      } else {
-        toast.error("Failed to finalize admin wallet setup");
-      }
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Failed to finalize admin wallet setup"
+      );
     } finally {
       setIsFinalizingAdminWallet(false);
     }

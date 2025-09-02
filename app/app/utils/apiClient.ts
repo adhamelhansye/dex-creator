@@ -28,14 +28,12 @@ export async function apiClient<T = any>({
   showToastOnError = true,
 }: ApiClientOptions): Promise<T> {
   try {
-    // Prepare URL (handle both absolute and relative paths)
     const url = endpoint.startsWith("http")
       ? endpoint
       : `${API_BASE_URL}${
           endpoint.startsWith("/") ? endpoint : `/${endpoint}`
         }`;
 
-    // Prepare headers
     const headers: HeadersInit = {};
 
     if (contentType) {
@@ -46,30 +44,24 @@ export async function apiClient<T = any>({
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    // Prepare request options
     const options: RequestInit = {
       method,
       headers,
     };
 
-    // Add body if needed
     if (body && method !== "GET") {
       options.body = useJsonBody ? JSON.stringify(body) : body;
     }
 
-    // Make the request
     const response = await fetch(url, options);
 
-    // Handle authentication errors
     if (response.status === 401) {
       if (showToastOnError) {
         toast.error("Your session has expired. Please login again.");
       }
-      // You might want to trigger a logout here or redirect
       throw new Error("Unauthorized: Your session has expired");
     }
 
-    // Parse response
     let data;
     const contentTypeHeader = response.headers.get("content-type");
     if (contentTypeHeader && contentTypeHeader.includes("application/json")) {
@@ -78,27 +70,20 @@ export async function apiClient<T = any>({
       data = await response.text();
     }
 
-    // Check for error responses
     if (!response.ok) {
       const errorMessage =
         typeof data === "object" && data.message
           ? data.message
           : "An error occurred";
 
-      if (showToastOnError) {
-        toast.error(`API Error: ${errorMessage}`);
-      }
-
       throw new Error(errorMessage);
     }
 
     return data as T;
   } catch (error) {
-    // Handle network errors and other unexpected issues
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
 
-    // Only show toast if it's not already an auth error (which shows its own toast)
     if (
       showToastOnError &&
       !errorMessage.includes("Unauthorized: Your session has expired")
@@ -129,31 +114,26 @@ export async function apiClientFormData<T = any>({
   showToastOnError?: boolean;
 }): Promise<T> {
   try {
-    // Prepare URL (handle both absolute and relative paths)
     const url = endpoint.startsWith("http")
       ? endpoint
       : `${API_BASE_URL}${
           endpoint.startsWith("/") ? endpoint : `/${endpoint}`
         }`;
 
-    // Prepare headers (don't set Content-Type for FormData - browser will set it with boundary)
     const headers: HeadersInit = {};
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`;
     }
 
-    // Prepare request options
     const options: RequestInit = {
       method,
       headers,
       body: formData,
     };
 
-    // Make the request
     const response = await fetch(url, options);
 
-    // Handle authentication errors
     if (response.status === 401) {
       if (showToastOnError) {
         toast.error("Your session has expired. Please login again.");
@@ -161,7 +141,6 @@ export async function apiClientFormData<T = any>({
       throw new Error("Unauthorized: Your session has expired");
     }
 
-    // Parse response
     let data;
     const contentTypeHeader = response.headers.get("content-type");
     if (contentTypeHeader && contentTypeHeader.includes("application/json")) {
@@ -170,7 +149,6 @@ export async function apiClientFormData<T = any>({
       data = await response.text();
     }
 
-    // Check for error responses
     if (!response.ok) {
       const errorMessage =
         typeof data === "object" && data.message
@@ -186,11 +164,9 @@ export async function apiClientFormData<T = any>({
 
     return data as T;
   } catch (error) {
-    // Handle network errors and other unexpected issues
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
 
-    // Only show toast if it's not already an auth error (which shows its own toast)
     if (
       showToastOnError &&
       !errorMessage.includes("Unauthorized: Your session has expired")
@@ -287,7 +263,6 @@ export function createDexFormData(
 ): FormData {
   const formData = new FormData();
 
-  // Add regular fields
   Object.entries(data).forEach(([key, value]) => {
     if (value !== null && value !== undefined) {
       if (Array.isArray(value)) {
@@ -300,7 +275,6 @@ export function createDexFormData(
     }
   });
 
-  // Add image files
   if (images.primaryLogo) {
     formData.append("primaryLogo", images.primaryLogo, "primaryLogo.webp");
   }
