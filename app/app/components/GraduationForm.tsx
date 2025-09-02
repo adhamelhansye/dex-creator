@@ -421,8 +421,6 @@ export function GraduationForm({
           graduationStatus.brokerId
         );
 
-        toast.success("Registration submitted! Waiting for confirmation...");
-
         await pollAccountRegistration(
           address,
           graduationStatus.brokerId,
