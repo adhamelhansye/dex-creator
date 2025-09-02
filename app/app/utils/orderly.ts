@@ -90,12 +90,75 @@ const MESSAGE_TYPES = {
   ],
 };
 
+export async function checkAccountRegistration(
+  address: string,
+  brokerId: string
+): Promise<{ isRegistered: boolean; accountId?: string }> {
+  const response = await fetch(
+    `${getBaseUrl()}/v1/get_account?address=${address}&broker_id=${brokerId}`
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to check account registration status");
+  }
+
+  const json = await response.json();
+
+  if (json.success && json.data?.account_id) {
+    return {
+      isRegistered: true,
+      accountId: json.data.account_id,
+    };
+  }
+
+  return { isRegistered: false };
+}
+
+export async function pollAccountRegistration(
+  address: string,
+  brokerId: string,
+  maxAttempts: number = 20,
+  initialDelay: number = 1000
+): Promise<string> {
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      const result = await checkAccountRegistration(address, brokerId);
+
+      if (result.isRegistered && result.accountId) {
+        return result.accountId;
+      }
+
+      if (attempt < maxAttempts) {
+        const delay = initialDelay * attempt;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    } catch (error) {
+      console.warn(`Registration check attempt ${attempt} failed:`, error);
+
+      if (attempt < maxAttempts) {
+        const delay = initialDelay * attempt;
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw new Error(
+    "Account registration polling timed out. Please try again later."
+  );
+}
+
 export async function registerAccount(
   signer: JsonRpcSigner,
   address: string,
   chainId: number | string,
   brokerId: string
 ): Promise<string> {
+  const registrationCheck = await checkAccountRegistration(address, brokerId);
+
+  if (registrationCheck.isRegistered && registrationCheck.accountId) {
+    return registrationCheck.accountId;
+  }
+
   const nonceRes = await fetch(`${getBaseUrl()}/v1/registration_nonce`);
   const nonceJson = await nonceRes.json();
   const registrationNonce = nonceJson.data.registration_nonce as string;

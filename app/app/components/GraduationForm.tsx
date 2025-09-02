@@ -26,7 +26,11 @@ import { BrowserProvider } from "ethers";
 import clsx from "clsx";
 import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "./BaseFeeExplanation";
-import { getBaseUrl, registerAccount } from "../utils/orderly";
+import {
+  getBaseUrl,
+  registerAccount,
+  pollAccountRegistration,
+} from "../utils/orderly";
 import { getBlockExplorerUrlByChainId } from "../../../config";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 import {
@@ -403,11 +407,20 @@ export function GraduationForm({
       const provider = new BrowserProvider(walletClient);
       const signer = await provider.getSigner();
 
-      const accountId = await registerAccount(
+      await registerAccount(
         signer,
         address,
         connectedChainId || 1,
         graduationStatus.brokerId
+      );
+
+      toast.success("Registration submitted! Waiting for confirmation...");
+
+      const accountId = await pollAccountRegistration(
+        address,
+        graduationStatus.brokerId,
+        20,
+        1000
       );
 
       toast.success(
