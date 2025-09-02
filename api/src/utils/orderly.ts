@@ -7,7 +7,8 @@ export function getOrderlyApiBaseUrl(): string {
     case "staging":
       return "https://testnet-api.orderly.org";
     case "qa":
-      return "https://qa-api-aliyun.orderly.network";
+      return "http://orderly-gateway-rest";
+    // return "https://qa-api-aliyun.orderly.network";
     case "dev":
     default:
       return "https://dev-api-aliyun.orderly.network";
