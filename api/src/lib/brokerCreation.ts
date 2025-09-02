@@ -627,11 +627,9 @@ async function simulateSolanaVaultTransaction(
     }
 
     const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
-    console.log("brokerManagerRoleHash", brokerManagerRoleHash);
     const codedBrokerManagerRoleHash = Array.from(
       Buffer.from(brokerManagerRoleHash.slice(2), "hex")
     );
-    console.log("codedBrokerManagerRoleHash", codedBrokerManagerRoleHash);
     const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
@@ -640,12 +638,8 @@ async function simulateSolanaVaultTransaction(
       ],
       program.programId
     )[0];
-    console.log("keypair.publicKey", keypair.publicKey);
-    console.log("program.programId", program.programId);
-    console.log("brokerManagerRolePda", brokerManagerRolePda);
 
     const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
-    console.log("codedBrokerHash", codedBrokerHash);
 
     await program.methods
       .setBroker({

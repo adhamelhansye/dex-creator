@@ -16,17 +16,35 @@ interface DatabaseConfig {
   pwd: string;
 }
 
-async function getOrderlyDatabaseUrl(): Promise<string> {
-  const envUrl = process.env.ORDERLY_DATABASE_URL;
-  if (envUrl) {
-    console.log("Using ORDERLY_DATABASE_URL from environment");
-    return envUrl;
+function parseMysqlUrl(dbUrl: string): {
+  host: string;
+  port: string;
+  db: string;
+  params?: string;
+} {
+  let core: string;
+
+  if (dbUrl.startsWith("jdbc:mysql://")) {
+    core = dbUrl.substring("jdbc:mysql://".length);
+  } else if (dbUrl.startsWith("mysql://")) {
+    core = dbUrl.substring("mysql://".length);
+  } else {
+    throw new Error(
+      `Unsupported URL format: ${dbUrl}. Must start with 'jdbc:mysql://' or 'mysql://'`
+    );
   }
 
+  const [hostPortDb, params] = core.split("?", 2);
+  const [hostPort, db] = hostPortDb.split("/", 2);
+  const [host, port] = hostPort.includes(":")
+    ? hostPort.split(":", 2)
+    : [hostPort, "3306"];
+
+  return { host, port, db, params };
+}
+
+async function getOrderlyDatabaseUrl(): Promise<string> {
   const deploymentEnv = process.env.DEPLOYMENT_ENV;
-  console.log(
-    `ORDERLY_DATABASE_URL not found, checking environment-specific configuration for: ${deploymentEnv}`
-  );
 
   if (deploymentEnv === "qa" || deploymentEnv === "dev") {
     const dbUrl = process.env.ORDERLY_DATABASE_URL;
@@ -39,16 +57,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
       );
     }
 
-    if (!dbUrl.startsWith("jdbc:mysql://")) {
-      throw new Error(`Unsupported URL format: ${dbUrl}`);
-    }
-
-    const core = dbUrl.substring("jdbc:mysql://".length);
-    const [hostPortDb, params] = core.split("?", 2);
-    const [hostPort, db] = hostPortDb.split("/", 2);
-    const [host, port] = hostPort.includes(":")
-      ? hostPort.split(":", 2)
-      : [hostPort, "3306"];
+    const { host, port, db, params } = parseMysqlUrl(dbUrl);
 
     let mysqlUrl = `mysql://${dbUser}:${dbPassword}@${host}:${port}/${db}`;
     if (params) {
@@ -95,16 +104,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 
     const config: DatabaseConfig = JSON.parse(payload);
 
-    if (!config.url.startsWith("jdbc:mysql://")) {
-      throw new Error(`Unsupported URL format: ${config.url}`);
-    }
-
-    const core = config.url.substring("jdbc:mysql://".length);
-    const [hostPortDb, params] = core.split("?", 2);
-    const [hostPort, db] = hostPortDb.split("/", 2);
-    const [host, port] = hostPort.includes(":")
-      ? hostPort.split(":", 2)
-      : [hostPort, "3306"];
+    const { host, port, db, params } = parseMysqlUrl(config.url);
 
     let mysqlUrl = `mysql://${config.username}:${config.pwd}@${host}:${port}/${db}`;
     if (params) {
