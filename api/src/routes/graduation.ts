@@ -14,6 +14,7 @@ import {
   addBrokerToOrderlyDb,
   updateBrokerAdminAccountId,
 } from "../lib/orderlyDb.js";
+import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -325,7 +326,7 @@ graduationRoutes.post("/finalize-admin-wallet", async c => {
     }
 
     const orderlyResponse = await fetch(
-      `https://api.orderly.org/v1/get_account?address=${user.address}&broker_id=${dex.brokerId}`
+      `${getOrderlyApiBaseUrl()}/v1/get_account?address=${user.address}&broker_id=${dex.brokerId}`
     );
 
     if (!orderlyResponse.ok) {
