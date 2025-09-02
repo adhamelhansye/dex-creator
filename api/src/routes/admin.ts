@@ -367,11 +367,7 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
       );
       const orderlyDeletionResult = await deleteBrokerFromOrderlyDb(brokerId);
 
-      if (orderlyDeletionResult.success) {
-        console.log(
-          `✅ Successfully deleted broker ${brokerId} from Orderly database`
-        );
-      } else {
+      if (!orderlyDeletionResult.success) {
         console.warn(
           `⚠️ Failed to delete broker ${brokerId} from Orderly database: ${orderlyDeletionResult.message}`
         );
