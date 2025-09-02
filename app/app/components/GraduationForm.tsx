@@ -30,6 +30,7 @@ import {
   getBaseUrl,
   registerAccount,
   pollAccountRegistration,
+  checkAccountRegistration,
 } from "../utils/orderly";
 import { getBlockExplorerUrlByChainId } from "../../../config";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
@@ -404,28 +405,33 @@ export function GraduationForm({
 
     setIsFinalizingAdminWallet(true);
     try {
-      const provider = new BrowserProvider(walletClient);
-      const signer = await provider.getSigner();
-
-      await registerAccount(
-        signer,
+      const existingRegistration = await checkAccountRegistration(
         address,
-        connectedChainId || 1,
         graduationStatus.brokerId
       );
 
-      toast.success("Registration submitted! Waiting for confirmation...");
+      if (!existingRegistration.isRegistered) {
+        const provider = new BrowserProvider(walletClient);
+        const signer = await provider.getSigner();
 
-      const accountId = await pollAccountRegistration(
-        address,
-        graduationStatus.brokerId,
-        20,
-        1000
-      );
+        await registerAccount(
+          signer,
+          address,
+          connectedChainId || 1,
+          graduationStatus.brokerId
+        );
 
-      toast.success(
-        `Account registered successfully! Account ID: ${accountId}`
-      );
+        toast.success("Registration submitted! Waiting for confirmation...");
+
+        await pollAccountRegistration(
+          address,
+          graduationStatus.brokerId,
+          20,
+          1000
+        );
+
+        toast.success("Account registered successfully!");
+      }
 
       const response = await post<{
         success: boolean;
