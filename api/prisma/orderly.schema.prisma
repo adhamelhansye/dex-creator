@@ -9,7 +9,7 @@ generator client {
 
 datasource db {
   provider = "mysql"
-  url      = env("ORDERLY_DATABASE_URL")
+  url      = "mysql://dummy:dummy@localhost:3306/dummy"
 }
 
 // Orderly broker model for the Orderly database
