@@ -260,73 +260,160 @@ export default function CustomDomainSection({
         {/* Check if it's an apex domain or subdomain */}
         {dexData.customDomain &&
         dexData.customDomain.split(".").length === 2 ? (
-          // Apex domain - show A records
-          <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto mb-3">
-            <div className="mb-1 text-gray-400">
-              Add <span className="text-primary-light">A records</span> with the
-              following values:
+          // Apex domain - show A records and www CNAME
+          <div className="space-y-3">
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto">
+              <div className="mb-2 text-gray-400">
+                <span className="text-primary-light">Step 1:</span> Add{" "}
+                <span className="text-primary-light">A records</span> for your
+                apex domain:
+              </div>
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <span className="text-gray-400">Type:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">A</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("A", "Copied to clipboard")
+                      }
+                      aria-label="Copy record type to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">Name:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">@</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("@", "Copied to clipboard")
+                      }
+                      aria-label="Copy @ symbol to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="text-gray-400">
+                  Values (create 4 separate A records):
+                </div>
+                {[
+                  "185.199.108.153",
+                  "185.199.109.153",
+                  "185.199.110.153",
+                  "185.199.111.153",
+                ].map(ip => (
+                  <div key={ip} className="flex items-center ml-2">
+                    <span className="text-white">{ip}</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() => copyToClipboard(ip, "Copied to clipboard")}
+                      aria-label={`Copy IP address ${ip} to clipboard`}
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                ))}
+                <div className="flex items-center">
+                  <span className="text-gray-400">TTL:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">3600</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("3600", "Copied to clipboard")
+                      }
+                      aria-label="Copy TTL value to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>{" "}
+                    (or automatic)
+                  </div>
+                </div>
+              </div>
             </div>
-            <div className="space-y-1">
-              <div className="flex items-center">
-                <span className="text-gray-400">Type:</span>{" "}
-                <div className="flex items-center">
-                  <span className="text-white">A</span>
-                  <button
-                    className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                    onClick={() => copyToClipboard("A", "Copied to clipboard")}
-                    aria-label="Copy record type to clipboard"
-                  >
-                    <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
-                  </button>
-                </div>
+
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto">
+              <div className="mb-2 text-gray-400">
+                <span className="text-primary-light">Step 2:</span> Add a{" "}
+                <span className="text-primary-light">CNAME record</span> for www
+                subdomain{" "}
+                <span className="text-warning">
+                  (required for SSL certificate)
+                </span>
+                :
               </div>
-              <div className="flex items-center">
-                <span className="text-gray-400">Name:</span>{" "}
+              <div className="space-y-1">
                 <div className="flex items-center">
-                  <span className="text-white">@</span>
-                  <button
-                    className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                    onClick={() => copyToClipboard("@", "Copied to clipboard")}
-                    aria-label="Copy @ symbol to clipboard"
-                  >
-                    <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
-                  </button>
+                  <span className="text-gray-400">Type:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">CNAME</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("CNAME", "Copied to clipboard")
+                      }
+                      aria-label="Copy record type to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="text-gray-400">
-                Values (create 4 separate A records):
-              </div>
-              {[
-                "185.199.108.153",
-                "185.199.109.153",
-                "185.199.110.153",
-                "185.199.111.153",
-              ].map(ip => (
-                <div key={ip} className="flex items-center ml-2">
-                  <span className="text-white">{ip}</span>
-                  <button
-                    className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                    onClick={() => copyToClipboard(ip, "Copied to clipboard")}
-                    aria-label={`Copy IP address ${ip} to clipboard`}
-                  >
-                    <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
-                  </button>
-                </div>
-              ))}
-              <div className="flex items-center">
-                <span className="text-gray-400">TTL:</span>{" "}
                 <div className="flex items-center">
-                  <span className="text-white">3600</span>
-                  <button
-                    className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
-                    onClick={() =>
-                      copyToClipboard("3600", "Copied to clipboard")
-                    }
-                    aria-label="Copy TTL value to clipboard"
-                  >
-                    <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
-                  </button>{" "}
-                  (or automatic)
+                  <span className="text-gray-400">Name:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">www</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("www", "Copied to clipboard")
+                      }
+                      aria-label="Copy www to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">Value:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">
+                      orderlynetworkdexcreator.github.io
+                    </span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard(
+                          "orderlynetworkdexcreator.github.io",
+                          "Copied to clipboard"
+                        )
+                      }
+                      aria-label="Copy domain value to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">TTL:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white">3600</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("3600", "Copied to clipboard")
+                      }
+                      aria-label="Copy TTL value to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>{" "}
+                    (or automatic)
+                  </div>
                 </div>
               </div>
             </div>
@@ -405,18 +492,40 @@ export default function CustomDomainSection({
                 For apex domains (example.com):
               </div>
               <div className="ml-2 space-y-1">
-                <div>
-                  Type: <span className="text-white">A</span>
+                <div className="mb-2">
+                  <div className="text-warning text-xs mb-1">
+                    Step 1: A Records
+                  </div>
+                  <div>
+                    Type: <span className="text-white">A</span>
+                  </div>
+                  <div>
+                    Name: <span className="text-white">@</span>
+                  </div>
+                  <div>
+                    Values:{" "}
+                    <span className="text-white">
+                      185.199.108.153, 185.199.109.153, 185.199.110.153,
+                      185.199.111.153
+                    </span>
+                  </div>
                 </div>
                 <div>
-                  Name: <span className="text-white">@</span>
-                </div>
-                <div>
-                  Values:{" "}
-                  <span className="text-white">
-                    185.199.108.153, 185.199.109.153, 185.199.110.153,
-                    185.199.111.153
-                  </span>
+                  <div className="text-warning text-xs mb-1">
+                    Step 2: www CNAME (required for SSL)
+                  </div>
+                  <div>
+                    Type: <span className="text-white">CNAME</span>
+                  </div>
+                  <div>
+                    Name: <span className="text-white">www</span>
+                  </div>
+                  <div>
+                    Value:{" "}
+                    <span className="text-white">
+                      orderlynetworkdexcreator.github.io
+                    </span>
+                  </div>
                 </div>
               </div>
             </div>
