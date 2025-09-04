@@ -298,7 +298,7 @@ export async function updateAutoReferral(
 export async function getAutoReferralInfo(
   accountId: string,
   orderlyKey: Uint8Array
-): Promise<AutoReferralInfo> {
+): Promise<AutoReferralInfo | null> {
   const response = await signAndSendRequest(
     accountId,
     orderlyKey,
@@ -309,7 +309,7 @@ export async function getAutoReferralInfo(
   if (!json.success) {
     throw new Error(json.message || "Failed to get auto referral info");
   }
-  return json.data;
+  return json.data || null;
 }
 
 export function getAccountId(address: string, brokerId: string) {

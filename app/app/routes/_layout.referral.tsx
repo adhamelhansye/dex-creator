@@ -50,14 +50,15 @@ export default function ReferralRoute() {
   );
 
   const [requiredTradingVolume, setRequiredTradingVolume] = useState(10000);
-  const [maxRebate, setMaxRebate] = useState(1);
+  const [maxRebate, setMaxRebate] = useState(20);
   const [sliderPosition, setSliderPosition] = useState(50);
   const [description, setDescription] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
 
   const [maxRebateError, setMaxRebateError] = useState<string | null>(null);
 
-  const referrerRebate = (maxRebate * sliderPosition) / 100;
+  const stepSize = maxRebate > 0 ? 100 / maxRebate : 1;
+  const referrerRebate = Math.round((maxRebate * sliderPosition) / 100);
   const refereeRebate = maxRebate - referrerRebate;
 
   const validateMaxRebate = (value: number): string | null => {
@@ -97,8 +98,19 @@ export default function ReferralRoute() {
     setIsLoadingReferralInfo(true);
     try {
       const info = await getAutoReferralInfo(accountId, orderlyKey);
-      setReferralInfo(info);
 
+      if (!info) {
+        setReferralInfo(null);
+        setRequiredTradingVolume(10000);
+        setMaxRebate(20);
+        setMaxRebateError(null);
+        setSliderPosition(50);
+        setDescription("");
+        setIsEnabled(false);
+        return;
+      }
+
+      setReferralInfo(info);
       setRequiredTradingVolume(info.required_trading_volume);
       const maxRebateValue = info.max_rebate * 100;
       setMaxRebate(maxRebateValue);
@@ -606,17 +618,13 @@ export default function ReferralRoute() {
                           <h4 className="text-sm font-medium text-gray-300">
                             Default referrer rebate
                           </h4>
-                          <p className="text-lg font-bold">
-                            {referrerRebate.toFixed(1)}%
-                          </p>
+                          <p className="text-lg font-bold">{referrerRebate}%</p>
                         </div>
                         <div className="text-right">
                           <h4 className="text-sm font-medium text-gray-300">
                             Default referee rebate
                           </h4>
-                          <p className="text-lg font-bold">
-                            {refereeRebate.toFixed(1)}%
-                          </p>
+                          <p className="text-lg font-bold">{refereeRebate}%</p>
                         </div>
                       </div>
 
@@ -625,6 +633,7 @@ export default function ReferralRoute() {
                           type="range"
                           min="0"
                           max="100"
+                          step={stepSize}
                           value={sliderPosition}
                           onChange={e =>
                             setSliderPosition(Number(e.target.value))
@@ -657,7 +666,7 @@ export default function ReferralRoute() {
 
                       <p className="text-xs text-gray-400 text-center">
                         Adjust the split between referrer and referee rebates.
-                        Total rebate: {maxRebate.toFixed(1)}%
+                        Total rebate: {maxRebate}%
                       </p>
                     </div>
 
