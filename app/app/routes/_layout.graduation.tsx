@@ -161,11 +161,12 @@ export default function GraduationRoute() {
                     Builder Staking Programme
                   </h3>
                   <p className="text-gray-300">
-                    Access our tiered staking system to reduce base fees and
-                    unlock additional benefits. Stake 100,000+ ORDER for Silver
-                    tier (2.75 bps base fee) or 250,000+ ORDER for Gold tier
-                    (2.50 bps base fee). Alternatively, achieve the volume
-                    requirements.
+                    Access our 5-tier staking system to reduce base fees and
+                    unlock additional benefits. Achieve Silver tier (2.75 bps)
+                    with 100K ORDER or $30M volume, Gold tier (2.50 bps) with
+                    250K ORDER or $90M volume, Platinum tier (2.00 bps) with 2M
+                    ORDER or $1B volume, or Diamond tier (1.00 bps) with 7M
+                    ORDER or $10B volume.
                   </p>
                   <a
                     href="https://app.orderly.network/"
@@ -209,9 +210,10 @@ export default function GraduationRoute() {
                   <p className="text-gray-300">
                     As you progress through higher tiers, unlock additional
                     benefits including dedicated tech support, marketing
-                    assistance, and priority for new chain expansions. Gold tier
-                    members receive full marketing support and priority
-                    treatment.
+                    assistance, and priority for new chain expansions. Platinum
+                    and Diamond tier members receive enhanced marketing support,
+                    flagship partner program access, and dedicated customer
+                    service.
                   </p>
                 </div>
               </div>

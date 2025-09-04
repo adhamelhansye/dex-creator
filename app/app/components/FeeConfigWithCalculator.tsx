@@ -52,6 +52,9 @@ export const FeeConfigWithCalculator: React.FC<
 
   const [showCalculator, setShowCalculator] = useState(defaultOpenCalculator);
   const [tradingVolume, setTradingVolume] = useState(10000000);
+  const [selectedTier, setSelectedTier] = useState<
+    "public" | "silver" | "gold" | "platinum" | "diamond"
+  >("public");
 
   useEffect(() => {
     setMakerFee(initialMakerFee);
@@ -208,15 +211,49 @@ export const FeeConfigWithCalculator: React.FC<
     }
   };
 
+  // Tier definitions
+  const tierBaseFees = {
+    public: { maker: 0, taker: 3.0 },
+    silver: { maker: 0, taker: 2.75 },
+    gold: { maker: 0, taker: 2.5 },
+    platinum: { maker: 0, taker: 2.0 },
+    diamond: { maker: 0, taker: 1.0 },
+  };
+
+  const tierInfo = {
+    public: { name: "Public", requirement: "No requirement", fee: "3.00 bps" },
+    silver: {
+      name: "Silver",
+      requirement: "100K $ORDER or ≥$30M volume",
+      fee: "2.75 bps",
+    },
+    gold: {
+      name: "Gold",
+      requirement: "250K $ORDER or ≥$90M volume",
+      fee: "2.50 bps",
+    },
+    platinum: {
+      name: "Platinum",
+      requirement: "2M $ORDER or ≥$1B volume",
+      fee: "2.00 bps",
+    },
+    diamond: {
+      name: "Diamond",
+      requirement: "7M $ORDER or ≥$10B volume",
+      fee: "1.00 bps",
+    },
+  };
+
   // Revenue calculator functions
   const calculateRevenue = (
     volume: number,
     makerFee: number,
-    takerFee: number
+    takerFee: number,
+    tier: keyof typeof tierBaseFees = selectedTier
   ) => {
-    // Orderly base fees (retained by Orderly)
-    const BASE_MAKER_FEE = 0; // 0 bps maker fee
-    const BASE_TAKER_FEE = 3; // 3 bps taker fee for Public tier
+    // Orderly base fees (retained by Orderly) - varies by tier
+    const BASE_MAKER_FEE = tierBaseFees[tier].maker;
+    const BASE_TAKER_FEE = tierBaseFees[tier].taker;
 
     // Calculate actual revenue fees (custom fee - base fee)
     const actualMakerFee = Math.max(0, makerFee - BASE_MAKER_FEE);
@@ -261,8 +298,13 @@ export const FeeConfigWithCalculator: React.FC<
   const { makerRevenue, takerRevenue, totalRevenue } = calculateRevenue(
     tradingVolume,
     makerFee / 10,
-    takerFee / 10
+    takerFee / 10,
+    selectedTier
   );
+
+  const handleTierChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    setSelectedTier(e.target.value as keyof typeof tierBaseFees);
+  };
 
   return (
     <div className="space-y-6">
@@ -302,8 +344,8 @@ export const FeeConfigWithCalculator: React.FC<
                     </span>{" "}
                     The fees you configure here are the{" "}
                     <span className="underline">total fees</span> that traders
-                    will pay. This includes the Orderly base fee (currently 3.00
-                    bps taker, 0 bps maker for Public tier).
+                    will pay. This includes the Orderly base fee (varies by tier
+                    - see calculator below).
                     <br />
                     Your revenue will be:{" "}
                     <span className="font-medium">
@@ -444,9 +486,9 @@ export const FeeConfigWithCalculator: React.FC<
               <span className="text-gray-300">
                 <span className="font-medium">Note:</span> These are the total
                 fees that traders will pay on your DEX. The Orderly base fee
-                (3.00 bps taker for Public tier) is included in these amounts.
-                Your revenue = Your Custom Fee - Base Fee. Upgrade your tier
-                through the{" "}
+                varies by tier (Public: 3.00 bps taker, Diamond: 1.00 bps
+                taker). Your revenue = Your Custom Fee - Base Fee. Upgrade your
+                tier through the{" "}
                 <a
                   href="https://app.orderly.network/"
                   target="_blank"
@@ -488,31 +530,56 @@ export const FeeConfigWithCalculator: React.FC<
               and your current fee configuration.
             </p>
 
-            <div className="mb-4">
-              <label
-                htmlFor="tradingVolume"
-                className="block text-sm font-bold mb-1"
-              >
-                Monthly Trading Volume (USD)
-              </label>
-              <div className="flex items-center">
-                <span className="bg-background-dark border-r border-light/10 px-3 py-2 rounded-l-lg text-gray-400">
-                  $
-                </span>
-                <input
-                  type="number"
-                  id="tradingVolume"
-                  min="0"
-                  step="1000"
-                  value={tradingVolume}
-                  onChange={handleVolumeChange}
-                  className="w-full px-3 py-2 bg-background-dark border border-light/10 rounded-r-lg"
-                />
+            <div className="grid grid-cols-1 gap-4 mb-4">
+              <div>
+                <label
+                  htmlFor="tradingVolume"
+                  className="block text-sm font-bold mb-1"
+                >
+                  Monthly Trading Volume (USD)
+                </label>
+                <div className="flex items-center">
+                  <span className="bg-background-dark border-r border-light/10 px-3 py-2 rounded-l-lg text-gray-400">
+                    $
+                  </span>
+                  <input
+                    type="number"
+                    id="tradingVolume"
+                    min="0"
+                    step="1000"
+                    value={tradingVolume}
+                    onChange={handleVolumeChange}
+                    className="w-full px-3 py-2 bg-background-dark border border-light/10 rounded-r-lg"
+                  />
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Enter your expected monthly trading volume
+                </p>
               </div>
-              <p className="text-xs text-gray-400 mt-1">
-                Enter your expected monthly trading volume to see potential
-                revenue.
-              </p>
+
+              <div>
+                <label
+                  htmlFor="tierSelect"
+                  className="block text-sm font-bold mb-1"
+                >
+                  Builder Staking Tier
+                </label>
+                <select
+                  id="tierSelect"
+                  value={selectedTier}
+                  onChange={handleTierChange}
+                  className="w-full h-[42px] px-3 py-2 bg-background-dark border border-light/10 rounded-lg"
+                >
+                  {Object.entries(tierInfo).map(([key, info]) => (
+                    <option key={key} value={key}>
+                      {info.name} ({info.fee})
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-400 mt-1">
+                  {tierInfo[selectedTier].requirement}
+                </p>
+              </div>
             </div>
 
             <div className="bg-success/5 rounded-lg p-4 mb-4">
@@ -527,8 +594,14 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(makerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({formatNumber(Math.max(0, makerFee / 10 - 0))} bps after
-                    base fee)
+                    (
+                    {formatNumber(
+                      Math.max(
+                        0,
+                        makerFee / 10 - tierBaseFees[selectedTier].maker
+                      )
+                    )}{" "}
+                    bps after base fee)
                   </div>
                 </div>
 
@@ -538,8 +611,14 @@ export const FeeConfigWithCalculator: React.FC<
                     {formatCurrency(takerRevenue)}
                   </div>
                   <div className="text-xs text-gray-400">
-                    ({formatNumber(Math.max(0, takerFee / 10 - 3))} bps after
-                    base fee)
+                    (
+                    {formatNumber(
+                      Math.max(
+                        0,
+                        takerFee / 10 - tierBaseFees[selectedTier].taker
+                      )
+                    )}{" "}
+                    bps after base fee)
                   </div>
                 </div>
 
@@ -558,8 +637,11 @@ export const FeeConfigWithCalculator: React.FC<
                   This calculation assumes an equal split between maker and
                   taker volume. Actual revenue may vary based on market
                   conditions, trading patterns, and fee changes. Revenue shown
-                  represents your earnings after the Orderly base fee (0 bps
-                  maker, 3 bps taker) is deducted from your custom fees.
+                  represents your earnings after the Orderly base fee (
+                  {tierBaseFees[selectedTier].maker} bps maker,{" "}
+                  {tierBaseFees[selectedTier].taker} bps taker for{" "}
+                  {tierInfo[selectedTier].name} tier) is deducted from your
+                  custom fees.
                 </span>
               </div>
             </div>

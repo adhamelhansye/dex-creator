@@ -16,53 +16,78 @@ export const BaseFeeExplanation: FC = () => {
         </p>
 
         <div className="bg-background-dark/50 rounded-lg overflow-hidden mb-4">
-          <div className="grid grid-cols-3 text-center border-b border-light/10">
+          <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 font-medium bg-background-dark/70">Tier</div>
             <div className="p-2 font-medium bg-background-dark/70">
-              Requirement
+              Volume Requirement (30d)
             </div>
             <div className="p-2 font-medium bg-background-dark/70">
-              Base Fee
+              Staking Requirement
+            </div>
+            <div className="p-2 font-medium bg-background-dark/70">
+              Orderly Base Taker Fee (bps)
             </div>
           </div>
 
-          <div className="grid grid-cols-3 text-center border-b border-light/10">
+          <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
-              <span className="font-medium">Public</span>
-              <span className="text-xs text-gray-400">Default</span>
+              <span className="font-medium">PUBLIC</span>
             </div>
-            <div className="p-2">None</div>
-            <div className="p-2">3.00 bps taker</div>
+            <div className="p-2">No Requirement</div>
+            <div className="p-2">-</div>
+            <div className="p-2">3.00</div>
           </div>
 
-          <div className="grid grid-cols-3 text-center border-b border-light/10">
+          <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
-              <span className="font-medium text-gray-100">Silver</span>
-              <span className="text-xs text-gray-400">Intermediate</span>
+              <span className="font-medium text-gray-100">SILVER</span>
             </div>
-            <div className="p-2 text-xs">
-              ≥100,000 ORDER
+            <div className="p-2">
+              ≥ $30M
               <br />
               <span className="text-gray-400">OR</span>
-              <br />
-              30m monthly volume
             </div>
-            <div className="p-2">2.75 bps taker</div>
+            <div className="p-2">100K $ORDER</div>
+            <div className="p-2">2.75</div>
           </div>
 
-          <div className="grid grid-cols-3 text-center">
+          <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
-              <span className="font-medium text-warning">Gold</span>
-              <span className="text-xs text-gray-400">Premium</span>
+              <span className="font-medium text-warning">GOLD</span>
             </div>
-            <div className="p-2 text-xs">
-              ≥250,000 ORDER
+            <div className="p-2">
+              ≥ $90M
               <br />
               <span className="text-gray-400">OR</span>
-              <br />
-              90m monthly volume
             </div>
-            <div className="p-2">2.50 bps taker</div>
+            <div className="p-2">250K $ORDER</div>
+            <div className="p-2">2.50</div>
+          </div>
+
+          <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
+            <div className="p-2 flex flex-col justify-center">
+              <span className="font-medium text-blue-300">PLATINUM</span>
+            </div>
+            <div className="p-2">
+              ≥ $1B
+              <br />
+              <span className="text-gray-400">OR</span>
+            </div>
+            <div className="p-2">2M $ORDER</div>
+            <div className="p-2">2.00</div>
+          </div>
+
+          <div className="grid grid-cols-4 text-center text-xs md:text-sm">
+            <div className="p-2 flex flex-col justify-center">
+              <span className="font-medium text-cyan-300">DIAMOND</span>
+            </div>
+            <div className="p-2">
+              ≥ $10B
+              <br />
+              <span className="text-gray-400">OR</span>
+            </div>
+            <div className="p-2">7M $ORDER</div>
+            <div className="p-2">1.00</div>
           </div>
         </div>
 
@@ -87,8 +112,8 @@ export const BaseFeeExplanation: FC = () => {
 
         <ul className="pl-5 list-disc space-y-1 mb-3">
           <li>
-            Base Fee (retained by Orderly): Currently 3.00 bps taker for Public
-            tier - this is deducted from your custom fees
+            Base Fee (retained by Orderly): Ranges from 3.00 bps (Public tier)
+            to 1.00 bps (Diamond tier) - this is deducted from your custom fees
           </li>
           <li>Your Revenue: Your Custom Fee - Base Fee</li>
         </ul>
