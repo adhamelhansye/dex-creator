@@ -28,54 +28,55 @@ export default function Index() {
   };
 
   return (
-    <div className="bg-black min-h-screen">
-      <div className="relative z-10 mt-20 flex flex-col gap-20">
-        {/* Hero Section */}
-        <section className="section-container flex flex-col items-center text-center pt-20 pb-16 relative overflow-hidden">
-          {/* Background Video */}
-          <div className="absolute inset-0 w-full h-full">
-            <video
-              autoPlay
-              loop
-              muted
-              playsInline
-              className="w-full h-full object-cover"
-              style={{ objectPosition: "center" }}
+    <div className="bg-black min-h-screen pb-52">
+      {/* Hero Section */}
+      <section className="section-container flex flex-col items-center text-center pt-20 pb-16 relative overflow-hidden mt-20">
+        {/* Background Video */}
+        <div className="absolute inset-0 w-full h-full">
+          <video
+            autoPlay
+            loop
+            muted
+            playsInline
+            className="w-full h-full object-cover"
+            style={{ objectPosition: "center" }}
+          >
+            <source src="/banner.webm" type="video/webm" />
+          </video>
+          {/* Overlay to ensure text readability */}
+          <div className="absolute inset-0 bg-black/40"></div>
+        </div>
+
+        {/* Content */}
+        <div className="relative z-10">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 max-w-5xl leading-tight text-white">
+            The First No-Code Perp DEX Launcher
+          </h1>
+          <p className="text-xl text-white/80 max-w-3xl mb-12 leading-relaxed mxa">
+            Launch a fully-featured Omnichain perpetuals exchange in minutes.
+            Deep liquidity, 140+ assets, and support for 17+ major chains in
+            minutes.
+          </p>
+
+          <div className="flex gap-4 flex-wrap justify-center">
+            <Button variant="primary" size="lg" onClick={handleStartBuilding}>
+              Start Building
+            </Button>
+            <Button
+              variant="secondary"
+              size="lg"
+              as="a"
+              href="https://orderly.network/docs"
+              target="_blank"
+              rel="noopener noreferrer"
             >
-              <source src="/banner.webm" type="video/webm" />
-            </video>
-            {/* Overlay to ensure text readability */}
-            <div className="absolute inset-0 bg-black/40"></div>
+              Explore Docs
+            </Button>
           </div>
+        </div>
+      </section>
 
-          {/* Content */}
-          <div className="relative z-10">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold mb-6 max-w-5xl leading-tight text-white">
-              No-Code Perp Dex Launcher by Orderly
-            </h1>
-            <p className="text-xl text-white/80 max-w-3xl mb-12 leading-relaxed mxa">
-              Unified liquidity, omnichain integration, 130+ assets and
-              liquidity included. Launch your DEX in minutes.
-            </p>
-
-            <div className="flex gap-4 flex-wrap justify-center">
-              <Button variant="primary" size="lg" onClick={handleStartBuilding}>
-                Start Building
-              </Button>
-              <Button
-                variant="secondary"
-                size="lg"
-                as="a"
-                href="https://orderly.network/docs"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Explore Docs
-              </Button>
-            </div>
-          </div>
-        </section>
-
+      <div className="relative z-10 flex flex-col gap-50">
         {/* Video Section */}
         <section className="section-container text-center">
           <div className="max-w-4xl mx-auto">
@@ -94,7 +95,7 @@ export default function Index() {
         <section className="section-container px-4 md:px-8">
           <div className="flex flex-col justify-around md:flex-row items-center justify-center gap-6 max-w-6xl mx-auto">
             <div className="text-center">
-              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-t from-white to-purple-300 bg-clip-text text-transparent mb-2">
+              <div className="text-6xl md:text-7xl font-semibold bg-gradient-to-t from-white to-purple-300 bg-clip-text text-transparent mb-2">
                 700K+
               </div>
               <div className="text-xl text-white font-semibold">TRADERS</div>
@@ -104,7 +105,7 @@ export default function Index() {
             <div className="hidden md:block min-w-px h-32 bg-gray-400"></div>
 
             <div className="text-center">
-              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-t from-white to-purple-300 bg-clip-text text-transparent mb-2">
+              <div className="text-6xl md:text-7xl font-semibold bg-gradient-to-t from-white to-purple-300 bg-clip-text text-transparent mb-2">
                 55+
               </div>
               <div className="text-xl text-white font-semibold">
@@ -116,7 +117,7 @@ export default function Index() {
             <div className="hidden md:block min-w-px h-32 bg-gray-400"></div>
 
             <div className="text-center">
-              <div className="text-6xl md:text-7xl font-bold bg-gradient-to-t from-white to-purple-300 bg-clip-text text-transparent mb-2">
+              <div className="text-6xl md:text-7xl font-semibold bg-gradient-to-t from-white to-purple-300 bg-clip-text text-transparent mb-2">
                 $110B+
               </div>
               <div className="text-xl text-white font-semibold">
@@ -126,14 +127,13 @@ export default function Index() {
           </div>
         </section>
 
-        {/* The Orderly Advantage Section */}
         <section className="section-container mt-20 relative overflow-hidden">
           {/* Purple glow on the left */}
           <div className="absolute top-0 left--70 w-200 h-full bg-gradient-radial from-purple-600/50 via-purple-600/20 to-transparent pointer-events-none blur-sm"></div>
 
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
-              The Orderly Advantage
+            <h2 className="text-4xl md:text-5xl font-semibold mb-6 text-white">
+              Own the exchange
             </h2>
             <p className="text-lg text-white/80 max-w-2xl mx-auto leading-relaxed">
               Welcome to Orderly One, your no-code AI builder to launch a perp
@@ -152,11 +152,11 @@ export default function Index() {
                 />
               </div>
               <h3 className="text-2xl font-semibold text-white mb-4">
-                Scale Your Business with Perps
+                New Revenue Streams
               </h3>
               <p className="text-white/80">
-                For anyone looking to build out your perp DEX, widen your
-                product offering, or provide a new revenue stream.
+                Trading fees can be earned or shared with your community,
+                instead of making the exchanges rich.
               </p>
             </Card>
 
@@ -169,7 +169,7 @@ export default function Index() {
                 />
               </div>
               <h3 className="text-2xl font-semibold text-white mb-4">
-                Customize Assets and Components
+                Showcase Your Brand
               </h3>
               <p className="text-white/80">
                 AI agents generate a custom theme for you, use your own logos,
@@ -186,26 +186,25 @@ export default function Index() {
                 />
               </div>
               <h3 className="text-2xl font-semibold text-white mb-4">
-                Best-in-Class Omnichain Liquidity
+                Any Wallet, Any Chain
               </h3>
               <p className="text-white/80">
-                Omnichain orderbook. Unified liquidity across 15+ blockchains.
-                Deep liquidity driven by top market makers.
+                An omnichain shared order book lets users access the way your
+                community prefers.
               </p>
             </Card>
           </div>
         </section>
 
-        {/* Launch a Perp DEX Section */}
         <section className="section-container px-4 md:px-8">
           <div className="grid lg:grid-cols-2 gap-16 items-start max-w-6xl mx-auto">
             <div>
-              <h2 className="text-4xl md:text-5xl font-bold mb-6 text-white">
-                Launch a Perp DEX in Just a Few Clicks
+              <h2 className="text-4xl md:text-5xl font-semibold mb-6 text-white">
+                Built on Battle-Tested Infra
               </h2>
               <p className="text-lg text-white/80 mb-8 leading-relaxed">
-                Choose logos, colour schemes, chains of choice, fee structure,
-                and your custom URL. Let the agent deploy your DEX in minutes.
+                Orderly’s SDK powers the DEXes deployed by WOO, Raydium,
+                Quickswap, and other established DeFi powerhouses.
               </p>
               <Button
                 variant="secondary"
@@ -220,18 +219,18 @@ export default function Index() {
               <div className="flex items-start gap-4">
                 <div className="size-8 bg-black rounded-full flex items-center justify-center">
                   <img
-                    src="/rocket.svg"
+                    src="/currency.svg"
                     alt="Revenue Split"
                     className="min-w-6 min-h-6"
                   />
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent mb-2 w-fit">
-                    Revenue Split
+                    Best-In-Class Liquidity
                   </h3>
                   <p className="text-white/80">
-                    No integration fees. Orderly charges 3bps taker, 0bps maker.
-                    Anything you charge on top is 100% yours.
+                    Shared orderbooks are maintained by top institutional market
+                    makers, traders, and retail users all over the globe.
                   </p>
                 </div>
               </div>
@@ -239,18 +238,18 @@ export default function Index() {
               <div className="flex items-start gap-4">
                 <div className="size-8 bg-black rounded-full flex items-center justify-center">
                   <img
-                    src="/rocket.svg"
+                    src="/security.svg"
                     alt="Security"
                     className="min-w-6 min-h-6"
                   />
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent mb-2 w-fit">
-                    Security
+                    Professional-Grade Security
                   </h3>
                   <p className="text-white/80">
-                    Put security on auto-pilot as you inherit Orderly's secure
-                    trading infrastructure, affirmed by renowned auditing firms.
+                    We work with renowned auditing and cybersecurity firms to
+                    protect smart contracts with 24/7 monitoring.
                   </p>
                 </div>
               </div>
@@ -258,19 +257,19 @@ export default function Index() {
               <div className="flex items-start gap-4">
                 <div className="size-8 bg-black rounded-full flex items-center justify-center">
                   <img
-                    src="/rocket.svg"
+                    src="/finance.svg"
                     alt="CEX Level Performance"
                     className="min-w-6 min-h-6"
                   />
                 </div>
                 <div>
                   <h3 className="text-2xl font-semibold bg-gradient-to-r from-white to-purple-400 bg-clip-text text-transparent mb-2 w-fit">
-                    CEX Level Performance
+                    CeFi-Grade Performance
                   </h3>
                   <p className="text-white/80">
-                    &lt;200ms latency for high-frequency trading — with the
-                    benefits of DeFi: self-custody, on-chain orders, and full
-                    transparency.
+                    &lt;200ms latency for high-frequency trading, with
+                    self-custody, onchain orders, full transparency, and all the
+                    other benefits of DeFi.
                   </p>
                 </div>
               </div>
@@ -280,14 +279,22 @@ export default function Index() {
 
         {/* Orderly One is for... Section */}
         <section className="section-container relative">
-          <h2 className="text-4xl md:text-5xl font-bold text-center mb-16 text-white">
+          <h2 className="text-4xl md:text-5xl font-semibold text-center mb-16 text-white">
             Orderly One is for...
           </h2>
-          <div className="absolute bottom--50 right--70 w-200 h-full bg-gradient-radial from-purple-600/50 via-violet-300/20 to-transparent pointer-events-none blur-sm"></div>
+          <div
+            className="absolute w-200 h-230 top--2 pointer-events-none blur-sm"
+            style={{
+              backgroundImage: "url(/bg-gradient.svg)",
+              backgroundSize: "cover",
+              backgroundPosition: "center",
+              backgroundRepeat: "no-repeat",
+            }}
+          ></div>
 
           <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
             <Card className="p-8 b-2 relative overflow-hidden">
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-purple-500/20 pointer-events-none blur-sm"></div>
+              <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
               <div className="flex items-start gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
@@ -301,17 +308,16 @@ export default function Index() {
                     Trading Communities
                   </h3>
                   <p className="text-white/80">
-                    Stop giving your trading volume to CEXs for a small rebate.
-                    It's time to monetize your community. Launch your own DEX,
-                    keep 100% of the fees your traders generate, or offer near
-                    zero-fee trading—you decide.
+                    Stop shilling ref-links: Launch your own DEX and capture
+                    100% of your community's trading fees. Set your own fee
+                    structure—premium rates for profit or zero fees for loyalty.
                   </p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 b-2 relative overflow-hidden">
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-purple-500/20 pointer-events-none blur-sm"></div>
+              <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
               <div className="flex items-start gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
@@ -325,17 +331,16 @@ export default function Index() {
                     Meme Projects
                   </h3>
                   <p className="text-white/80">
-                    Who said meme tokens can't have utility? Launch a Perp DEX
-                    for your community, use fees to buy back your token, reward
-                    loyal users, or offer better trading terms. Turn memes into
-                    market makers.
+                    Give your meme token real utility. Launch a community perp
+                    dex, use trading fees for token buybacks, and reward your
+                    holders with better trading terms. Turn hype into revenue.
                   </p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 b-2 relative overflow-hidden">
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-purple-500/20 pointer-events-none blur-sm"></div>
+              <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
               <div className="flex items-start gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
@@ -349,16 +354,16 @@ export default function Index() {
                     DeFi Protocols
                   </h3>
                   <p className="text-white/80">
-                    Want to add Perps to your product? Skip the heavy
-                    lifting—just set your branding, define fees, and go live in
-                    minutes with the best trading experience for your users.
+                    Add perpetuals to your protocol without months of
+                    development. White-label deployment in minutes—your brand,
+                    your fees, institutional-grade trading infrastructure.
                   </p>
                 </div>
               </div>
             </Card>
 
             <Card className="p-8 b-2 relative overflow-hidden">
-              <div className="absolute bottom-0 right-0 w-32 h-32 bg-gradient-to-br from-transparent to-purple-500/20 pointer-events-none blur-sm"></div>
+              <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
               <div className="flex items-start gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
@@ -372,9 +377,9 @@ export default function Index() {
                     Everyone
                   </h3>
                   <p className="text-white/80">
-                    Even as a trader, you can create your own perp DEX.
-                    Customize the UI, set your fees, and trade without limits. A
-                    few clicks, and you own your own exchange.
+                    Why trade on someone else's exchange? Launch your own DEX in
+                    minutes. Set your fees, customize the experience, trade
+                    without limits. Your exchange, your rules.
                   </p>
                 </div>
               </div>

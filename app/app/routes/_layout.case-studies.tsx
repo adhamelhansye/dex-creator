@@ -107,7 +107,7 @@ export default function CaseStudies() {
   const activeCaseStudy = caseStudies.find(study => study.id === activeTab);
 
   return (
-    <div className="bg-black min-h-screen">
+    <div className="bg-black min-h-screen pb-52">
       <div className="relative z-10 mt-20 flex flex-col gap-8">
         {/* Header Section */}
         <section className="section-container flex flex-col items-center text-center pt-20 pb-16 relative overflow-hidden">
@@ -255,6 +255,7 @@ export default function CaseStudies() {
                     </p>
                     <p className="text-white/80 leading-relaxed text-lg">
                       {
+                        // eslint-disable-next-line @typescript-eslint/no-explicit-any
                         (activeCaseStudy.treasuryFeatures[0] as any)
                           .description2
                       }

@@ -15,14 +15,14 @@ export default function GraduationRoute() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[60vh] mt-26">
+      <div className="flex items-center justify-center min-h-[60vh] mt-26 pb-52">
         <div className="i-svg-spinners:three-dots text-4xl text-primary"></div>
       </div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl mt-26">
+    <div className="container mx-auto p-4 max-w-3xl mt-26 pb-52">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
           <Link
