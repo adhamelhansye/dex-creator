@@ -283,7 +283,7 @@ export default function Index() {
             Orderly One is for...
           </h2>
           <div
-            className="absolute w-200 h-230 top--2 pointer-events-none blur-sm"
+            className="absolute w-200 h-230 top--2 right-0 pointer-events-none blur-sm"
             style={{
               backgroundImage: "url(/bg-gradient.svg)",
               backgroundSize: "cover",
