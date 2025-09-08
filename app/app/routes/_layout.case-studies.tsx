@@ -9,6 +9,30 @@ export const meta: MetaFunction = () => [
 
 const caseStudies = [
   {
+    id: "aden",
+    name: "ADEN",
+    description:
+      "Aden, created by INBUM, the biggest Korean streamer with throusands of followers, saw a huge opportunity to keep his trading community’s activity within his own ecosystem. His community already generates over $50B in monthly trading volume on Gate and Bitget, so instead of directing that volume to third-party platforms, INBUM launched Aden, a fully branded perp DEX built with Orderly One’s no-code solution.",
+    image: "/aden.webp",
+    dexUrl: "https://aden.io",
+    socialUrl: "https://x.com/aden",
+    stats: [
+      { value: "$6.5B+", label: "TOTAL TRADING VOLUME" },
+      { value: "2K+", label: "DAILY ACTIVE USERS" },
+      { value: "#2", label: "RANKING ON CMC" },
+    ],
+    treasuryFeatures: [
+      {
+        type: "paragraph",
+        title: "How Aden Turns Trading into Community Value",
+        description:
+          "With Aden, INBUM set his own fees, branding, and user experience while eliminating the middleman. This move also gave his BGCS token new utility, as revenue from the DEX will be used for buybacks and burns, directly benefiting token holders.",
+        description2:
+          "Through this DEX, Aden is building a self-sustaining ecosystem while giving his community a familiar trading environment they can trust, all under his own brand, Aden. Aden currently plays a key role within the Orderly ecosystem, responsible for the highest trading volume.",
+      },
+    ],
+  },
+  {
     id: "noot",
     name: "NOOT",
     description:
@@ -39,30 +63,6 @@ const caseStudies = [
         title: "Funding for Future CEX Listings",
         description:
           "Allocating resources to secure listings on major centralized exchanges, expanding market access and improving token liquidity.",
-      },
-    ],
-  },
-  {
-    id: "aden",
-    name: "ADEN",
-    description:
-      "Aden, created by INBUM, the biggest Korean streamer with throusands of followers, saw a huge opportunity to keep his trading community’s activity within his own ecosystem. His community already generates over $50B in monthly trading volume on Gate and Bitget, so instead of directing that volume to third-party platforms, INBUM launched Aden, a fully branded perp DEX built with Orderly One’s no-code solution.",
-    image: "/aden.webp",
-    dexUrl: "https://aden.io",
-    socialUrl: "https://x.com/aden",
-    stats: [
-      { value: "$6.5B+", label: "TOTAL TRADING VOLUME" },
-      { value: "2K+", label: "DAILY ACTIVE USERS" },
-      { value: "#2", label: "RANKING ON CMC" },
-    ],
-    treasuryFeatures: [
-      {
-        type: "paragraph",
-        title: "How Aden Turns Trading into Community Value",
-        description:
-          "With Aden, INBUM set his own fees, branding, and user experience while eliminating the middleman. This move also gave his BGCS token new utility, as revenue from the DEX will be used for buybacks and burns, directly benefiting token holders.",
-        description2:
-          "Through this DEX, Aden is building a self-sustaining ecosystem while giving his community a familiar trading environment they can trust, all under his own brand, Aden. Aden currently plays a key role within the Orderly ecosystem, responsible for the highest trading volume.",
       },
     ],
   },
@@ -102,7 +102,7 @@ const caseStudies = [
 ];
 
 export default function CaseStudies() {
-  const [activeTab, setActiveTab] = useState("noot");
+  const [activeTab, setActiveTab] = useState("aden");
 
   const activeCaseStudy = caseStudies.find(study => study.id === activeTab);
 
