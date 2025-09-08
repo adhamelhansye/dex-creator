@@ -19,6 +19,7 @@ import Footer from "../components/Footer";
  */
 export default function Layout() {
   const [isMobile, setIsMobile] = useState(false);
+  const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
   // Check if we're on mobile screen size
   useEffect(() => {
@@ -51,7 +52,7 @@ export default function Layout() {
                           className="h-9 lg:h-10 hidden md:block"
                         />
                         <img
-                          src="/orderly-one-small.min.svg"
+                          src="/orderly-one-small.svg"
                           alt="Orderly One"
                           className="h-9 md:hidden"
                         />
@@ -62,7 +63,12 @@ export default function Layout() {
                     </div>
                     <div className="flex items-center gap-3">
                       <WalletConnect />
-                      {isMobile && <MobileNavigation />}
+                      {isMobile && (
+                        <MobileNavigation
+                          isOpen={isMobileNavOpen}
+                          setIsOpen={setIsMobileNavOpen}
+                        />
+                      )}
                     </div>
                   </div>
                 </header>
@@ -71,6 +77,18 @@ export default function Layout() {
                   <Outlet />
                   <Footer />
                 </main>
+
+                {/* Mobile Navigation Overlay - Outside header for full-screen coverage */}
+                {isMobile && isMobileNavOpen && (
+                  <div
+                    className="fixed inset-0 bg-background-dark/80 backdrop-blur-sm z-[120]"
+                    style={{
+                      clipPath:
+                        "polygon(0 0, calc(100% - 256px) 0, calc(100% - 256px) 100%, 0 100%)",
+                    }}
+                    onClick={() => setIsMobileNavOpen(false)}
+                  ></div>
+                )}
               </div>
 
               <ToastContainer

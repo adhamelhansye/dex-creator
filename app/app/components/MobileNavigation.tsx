@@ -1,9 +1,16 @@
-import { useState } from "react";
+// Removed unused useState import
 import { Link, useLocation } from "@remix-run/react";
 import { Icon } from "@iconify/react";
 
-export default function MobileNavigation() {
-  const [isOpen, setIsOpen] = useState(false);
+interface MobileNavigationProps {
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+}
+
+export default function MobileNavigation({
+  isOpen,
+  setIsOpen,
+}: MobileNavigationProps) {
   const location = useLocation();
 
   // Determine if a link is active
@@ -37,23 +44,16 @@ export default function MobileNavigation() {
         />
       </button>
 
-      {/* Overlay */}
-      {isOpen && (
-        <div
-          className="fixed inset-0 bg-background-dark/80 backdrop-blur-sm z-20"
-          onClick={closeMenu}
-        ></div>
-      )}
-
       {/* Mobile menu */}
       <div
         className={`
           fixed right-0 top-0 h-[100vh] mobile-nav-height w-64 bg-background-light border-l border-light/10
-          transform transition-transform duration-300 ease-in-out z-30 flex flex-col
+          transform transition-transform duration-300 ease-in-out z-[200] flex flex-col
           ${isOpen ? "translate-x-0" : "translate-x-full"}
         `}
       >
-        <div className="flex justify-end p-4">
+        <div className="flex justify-between items-center p-4">
+          <img src="/orderly-one.min.svg" alt="Orderly One" className="h-8" />
           <button
             className="p-1 rounded-full bg-background-dark/50 border border-light/10"
             onClick={closeMenu}
