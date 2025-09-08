@@ -8,6 +8,7 @@ import React, {
 } from "react";
 import { Button } from "./Button";
 import FormInput from "./FormInput";
+import { useRateLimitCountdown } from "../hooks/useRateLimitCountdown";
 
 export type FormErrors = Record<string, string | null>;
 
@@ -19,6 +20,7 @@ interface FormProps {
   loadingText?: string;
   disabled?: boolean;
   className?: string;
+  enableRateLimit?: boolean;
 }
 
 /**
@@ -33,11 +35,13 @@ export default function Form({
   loadingText = "Submitting",
   disabled = false,
   className = "",
+  enableRateLimit = false,
 }: FormProps) {
   const [errors, setErrors] = useState<FormErrors>({});
 
-  // Function to register validation errors from child components
-  // Using useCallback to prevent recreation on every render
+  const rateLimit = useRateLimitCountdown(enableRateLimit);
+  const shouldShowRateLimit = rateLimit.isRateLimited;
+
   const registerError = useCallback(
     (fieldName: string, error: string | null) => {
       setErrors(prev => ({
@@ -48,13 +52,10 @@ export default function Form({
     []
   );
 
-  // Handle form submission
   const handleSubmit = useCallback(
     (e: FormEvent) => {
       e.preventDefault();
 
-      // Prevent auto-submissions during hot-reloading in development
-      // by checking if the event has an isTrusted property set to true (actual user action)
       // @ts-ignore - isTrusted exists on native events but might not be in the FormEvent type
       if (
         process.env.NODE_ENV === "development" &&
@@ -64,7 +65,6 @@ export default function Form({
         return;
       }
 
-      // Call the parent onSubmit handler with the current errors
       onSubmit(e, errors);
     },
     [onSubmit, errors]
@@ -76,17 +76,12 @@ export default function Form({
     }
   };
 
-  // Add the error registration function to each child FormInput
   const childrenWithProps = useMemo(() => {
     return React.Children.map(children, child => {
-      // Check if the child is a React element
       if (React.isValidElement(child)) {
-        // Check if it's a FormInput by comparing with the imported component
         if (child.type === FormInput) {
-          // Safely cast to known component props
           const inputProps = child.props as { id: string };
 
-          // Only clone with onError if we can get the id
           if (inputProps.id) {
             return React.cloneElement(child, {
               onError: (error: string | null) =>
@@ -108,17 +103,39 @@ export default function Form({
       {childrenWithProps}
 
       {submitText && (
-        <Button
-          className="w-full justify-center max-w-md mxa"
-          type="submit"
-          variant="primary"
-          size="md"
-          disabled={disabled || isLoading}
-          isLoading={isLoading}
-          loadingText={loadingText}
-        >
-          {submitText}
-        </Button>
+        <>
+          {shouldShowRateLimit && (
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 mb-4">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="i-mdi:clock-alert text-warning h-5 w-5"></div>
+                <span className="text-warning font-medium">Please Wait</span>
+              </div>
+              <p className="text-sm text-gray-300 mb-2">
+                You can only update your DEX once every 5 minutes.
+              </p>
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-gray-400">Time remaining:</span>
+                <span className="font-mono text-warning font-bold">
+                  {rateLimit.formattedTime}
+                </span>
+              </div>
+            </div>
+          )}
+
+          <Button
+            className="w-full justify-center max-w-md mxa"
+            type="submit"
+            variant="primary"
+            size="md"
+            disabled={disabled || isLoading || shouldShowRateLimit}
+            isLoading={isLoading}
+            loadingText={loadingText}
+          >
+            {shouldShowRateLimit
+              ? `Wait ${rateLimit.formattedTime}`
+              : submitText}
+          </Button>
+        </>
       )}
     </form>
   );

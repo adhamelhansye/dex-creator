@@ -516,6 +516,7 @@ function prepareDexConfigContent(
   customDomain?: string,
   repoUrl?: string
 ): {
+  configJsContent: string;
   envContent: string;
   themeCSS?: string;
   faviconData?: Buffer;
@@ -588,50 +589,75 @@ function prepareDexConfigContent(
     testnetChainIds.includes(id)
   );
 
-  const envVars = {
+  const runtimeConfig = {
+    // Broker settings
     VITE_ORDERLY_BROKER_ID: config.brokerId,
     VITE_ORDERLY_BROKER_NAME: config.brokerName,
+
+    // Network settings
+    VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
+    VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
     VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains.join(","),
     VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains.join(","),
     VITE_DEFAULT_CHAIN: config.defaultChain ? String(config.defaultChain) : "",
+
+    // Wallet settings
+    VITE_PRIVY_APP_ID: config.privyAppId || "",
+    VITE_PRIVY_LOGIN_METHODS: config.privyLoginMethods || "email",
+    VITE_PRIVY_TERMS_OF_USE: config.privyTermsOfUse || "",
+    VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
+    VITE_DISABLE_EVM_WALLETS: String(config.disableEvmWallets ?? false),
+    VITE_DISABLE_SOLANA_WALLETS: String(config.disableSolanaWallets ?? false),
+    VITE_WALLETCONNECT_PROJECT_ID: config.walletConnectProjectId || "",
+
+    // UI/Branding settings
+    VITE_APP_NAME: config.brokerName || "Orderly App",
+    VITE_APP_DESCRIPTION:
+      config.seoSiteDescription || "Orderly Trading Application",
+    VITE_HAS_PRIMARY_LOGO: primaryLogoData ? "true" : "false",
+    VITE_HAS_SECONDARY_LOGO: secondaryLogoData ? "true" : "false",
+
+    // Navigation
+    VITE_ENABLED_MENUS:
+      config.enabledMenus || "Trading,Portfolio,Markets,Leaderboard",
+    VITE_CUSTOM_MENUS: config.customMenus || "",
+    VITE_ENABLE_CAMPAIGNS: String(config.enableCampaigns ?? false),
+
+    // Social links
     VITE_TELEGRAM_URL: config.telegramLink || "",
     VITE_DISCORD_URL: config.discordLink || "",
     VITE_TWITTER_URL: config.xLink || "",
-    VITE_WALLETCONNECT_PROJECT_ID: config.walletConnectProjectId || "",
-    VITE_PRIVY_APP_ID: config.privyAppId || "",
-    VITE_PRIVY_TERMS_OF_USE: config.privyTermsOfUse || "",
-    VITE_PRIVY_LOGIN_METHODS: config.privyLoginMethods || "",
-    VITE_ENABLED_MENUS: config.enabledMenus || "",
-    VITE_CUSTOM_MENUS: config.customMenus || "",
-    VITE_ENABLE_ABSTRACT_WALLET: String(config.enableAbstractWallet ?? false),
-    VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
-    VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
-    VITE_DISABLE_EVM_WALLETS: String(config.disableEvmWallets ?? false),
-    VITE_DISABLE_SOLANA_WALLETS: String(config.disableSolanaWallets ?? false),
-    VITE_ENABLE_CAMPAIGNS: String(config.enableCampaigns ?? false),
-    VITE_HAS_PRIMARY_LOGO: primaryLogoData ? "true" : "false",
-    VITE_HAS_SECONDARY_LOGO: secondaryLogoData ? "true" : "false",
-    VITE_USE_CUSTOM_PNL_POSTERS: pnlPostersData.length > 0 ? "true" : "false",
-    VITE_CUSTOM_PNL_POSTER_COUNT: String(pnlPostersData.length),
-    VITE_TRADING_VIEW_COLOR_CONFIG: config.tradingViewColorConfig
-      ? `'${config.tradingViewColorConfig}'`
-      : "",
-    VITE_AVAILABLE_LANGUAGES: (config.availableLanguages || []).join(","),
+
+    // SEO settings
     VITE_SEO_SITE_NAME: config.seoSiteName || "",
     VITE_SEO_SITE_DESCRIPTION: config.seoSiteDescription || "",
     VITE_SEO_SITE_URL: generateSiteUrl(),
-    VITE_SEO_SITE_LANGUAGE: config.seoSiteLanguage || "",
-    VITE_SEO_SITE_LOCALE: config.seoSiteLocale || "",
+    VITE_SEO_SITE_LANGUAGE: config.seoSiteLanguage || "en",
+    VITE_SEO_SITE_LOCALE: config.seoSiteLocale || "en_US",
     VITE_SEO_TWITTER_HANDLE: config.seoTwitterHandle || "",
-    VITE_SEO_THEME_COLOR: config.seoThemeColor || "",
+    VITE_SEO_THEME_COLOR: config.seoThemeColor || "#000000",
     VITE_SEO_KEYWORDS: config.seoKeywords || "",
+
+    // Language settings
+    VITE_AVAILABLE_LANGUAGES: (config.availableLanguages || ["en"]).join(","),
+
+    // PnL/Trading View
+    VITE_USE_CUSTOM_PNL_POSTERS: pnlPostersData.length > 0 ? "true" : "false",
+    VITE_CUSTOM_PNL_POSTER_COUNT: String(pnlPostersData.length),
+    VITE_TRADING_VIEW_COLOR_CONFIG: config.tradingViewColorConfig || "",
   };
 
-  const envContent = Object.entries(envVars)
-    .map(([key, value]) => `${key}=${value}`)
-    .join("\n");
+  const configJsContent = `window.__RUNTIME_CONFIG__ = ${JSON.stringify(
+    runtimeConfig,
+    null,
+    2
+  )};`;
+
+  const envContent =
+    "# Build-time environment variables only\n# Runtime configuration is in /public/config.js";
 
   return {
+    configJsContent,
     envContent,
     themeCSS: config.themeCSS,
     faviconData: faviconData || undefined,
@@ -783,6 +809,7 @@ export async function updateDexConfig(
 ): Promise<void> {
   try {
     const {
+      configJsContent,
       envContent,
       themeCSS,
       faviconData,
@@ -797,6 +824,7 @@ export async function updateDexConfig(
     );
 
     const fileContents = new Map<string, string>();
+    fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
     if (themeCSS) {
@@ -919,6 +947,7 @@ export async function setupRepositoryWithSingleCommit(
     );
 
     const {
+      configJsContent,
       envContent,
       themeCSS,
       faviconData,
@@ -935,6 +964,7 @@ export async function setupRepositoryWithSingleCommit(
     const fileContents = new Map<string, string>();
     fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
     fileContents.set(".github/workflows/sync-fork.yml", syncForkYmlContent);
+    fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
     if (themeCSS) {

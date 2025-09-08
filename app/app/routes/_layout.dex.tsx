@@ -1346,6 +1346,7 @@ export default function DexRoute() {
             isSaving ||
             !(currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS])
           }
+          enableRateLimit={false}
         >
           <DexSectionRenderer
             mode="accordion"

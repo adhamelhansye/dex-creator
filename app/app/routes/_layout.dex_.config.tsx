@@ -948,6 +948,7 @@ export default function DexConfigRoute() {
         isLoading={isSaving}
         loadingText="Saving"
         disabled={false}
+        enableRateLimit={true}
       >
         <DexSectionRenderer
           mode="direct"

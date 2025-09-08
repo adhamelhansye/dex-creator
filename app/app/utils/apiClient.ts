@@ -76,6 +76,13 @@ export async function apiClient<T = any>({
           ? data.message
           : "An error occurred";
 
+      if (response.status === 429) {
+        const rateLimitError = new Error(errorMessage);
+        (rateLimitError as any).status = 429;
+        (rateLimitError as any).data = data;
+        throw rateLimitError;
+      }
+
       throw new Error(errorMessage);
     }
 
@@ -84,9 +91,12 @@ export async function apiClient<T = any>({
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
 
+    const isRateLimitError = (error as any)?.status === 429;
+
     if (
       showToastOnError &&
-      !errorMessage.includes("Unauthorized: Your session has expired")
+      !errorMessage.includes("Unauthorized: Your session has expired") &&
+      !isRateLimitError
     ) {
       toast.error(`Request failed: ${errorMessage}`);
     }
@@ -167,9 +177,12 @@ export async function apiClientFormData<T = any>({
     const errorMessage =
       error instanceof Error ? error.message : "Unknown error occurred";
 
+    const isRateLimitError = (error as any)?.status === 429;
+
     if (
       showToastOnError &&
-      !errorMessage.includes("Unauthorized: Your session has expired")
+      !errorMessage.includes("Unauthorized: Your session has expired") &&
+      !isRateLimitError
     ) {
       toast.error(`Request failed: ${errorMessage}`);
     }
