@@ -6089,6 +6089,13 @@
   dependencies:
     "@types/node" "*"
 
+"@types/bs58@^5.0.0":
+  version "5.0.0"
+  resolved "https://registry.yarnpkg.com/@types/bs58/-/bs58-5.0.0.tgz#a5f849d47263b2dfb09846306256c56610d40cb0"
+  integrity sha512-cAw/jKBzo98m6Xz1X5ETqymWfIMbXbu6nK15W4LQYjeHJkVqSmM5PO8Bd9KVHQJ/F4rHcSso9LcjtgCW6TGu2w==
+  dependencies:
+    bs58 "*"
+
 "@types/cacheable-request@^6.0.1":
   version "6.0.3"
   resolved "https://registry.yarnpkg.com/@types/cacheable-request/-/cacheable-request-6.0.3.tgz#a430b3260466ca7b5ca5bfd735693b36e7a9d183"
@@ -7887,7 +7894,7 @@ browserslist@^4.24.0:
     node-releases "^2.0.19"
     update-browserslist-db "^1.1.1"
 
-bs58@6.0.0, bs58@^6.0.0:
+bs58@*, bs58@6.0.0, bs58@^6.0.0:
   version "6.0.0"
   resolved "https://registry.yarnpkg.com/bs58/-/bs58-6.0.0.tgz#a2cda0130558535dd281a2f8697df79caaf425d8"
   integrity sha512-PD0wEnEYg6ijszw/u8s+iI3H17cTymlrwkKhDhPZq+Sokl3AU4htyBFTjAeNAlCCmg0f53g6ih3jATyCKftTfw==

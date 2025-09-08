@@ -16,6 +16,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
 import { IDL, type SolanaVault } from "../interface/types/solana_vault.js";
+import { default as bs58 } from "bs58";
 
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
@@ -46,13 +47,7 @@ export function initializeBrokerCreation(): void {
     );
   } else {
     try {
-      const privateKeyArray = JSON.parse(solanaPrivateKey);
-      if (!Array.isArray(privateKeyArray)) {
-        throw new Error("Solana private key must be a JSON array");
-      }
-      solanaKeypair = anchor.web3.Keypair.fromSecretKey(
-        new Uint8Array(privateKeyArray)
-      );
+      solanaKeypair = parseSolanaPrivateKey(solanaPrivateKey);
       console.log("✅ Solana private key loaded");
       console.log(
         `📍 Solana wallet address: ${solanaKeypair.publicKey.toString()}`
@@ -60,7 +55,7 @@ export function initializeBrokerCreation(): void {
     } catch (error) {
       console.error("❌ Failed to parse Solana private key:", error);
       console.error(
-        "   Expected format: [1,2,3,4,...] (JSON array of numbers)"
+        "   Expected format: base58 string or [1,2,3,4,...] (JSON array of numbers)"
       );
       solanaKeypair = null;
     }
@@ -89,6 +84,43 @@ function getEvmPrivateKey(): string {
   }
 
   return evmPrivateKey;
+}
+
+function parseSolanaPrivateKey(privateKeyInput: string): anchor.web3.Keypair {
+  const trimmedInput = privateKeyInput.trim();
+
+  if (!trimmedInput.startsWith("[") && !trimmedInput.startsWith("{")) {
+    try {
+      const secretKeyBytes = bs58.decode(trimmedInput);
+      if (secretKeyBytes.length === 64) {
+        return anchor.web3.Keypair.fromSecretKey(secretKeyBytes);
+      }
+      throw new Error(
+        `Invalid base58 private key length: ${secretKeyBytes.length} bytes, expected 64`
+      );
+    } catch {
+      console.warn("⚠️ Failed to parse as base58, trying JSON array format...");
+    }
+  }
+
+  try {
+    const privateKeyArray = JSON.parse(trimmedInput);
+    if (!Array.isArray(privateKeyArray)) {
+      throw new Error("JSON format must be an array of numbers");
+    }
+    if (privateKeyArray.length !== 64) {
+      throw new Error(
+        `Invalid JSON array length: ${privateKeyArray.length}, expected 64`
+      );
+    }
+    return anchor.web3.Keypair.fromSecretKey(new Uint8Array(privateKeyArray));
+  } catch (jsonError) {
+    throw new Error(
+      `Failed to parse Solana private key in both base58 and JSON formats. ` +
+        `Expected: base58 string (e.g., "5Kk...xyz") or JSON array (e.g., [1,2,3,...,64]). ` +
+        `Base58 error: ${jsonError instanceof Error ? jsonError.message : "Invalid format"}`
+    );
+  }
 }
 
 function getSolanaKeypair(): anchor.web3.Keypair {

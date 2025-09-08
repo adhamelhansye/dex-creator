@@ -718,6 +718,8 @@ The API can be deployed using Docker with a simple approach:
   - `TEMPLATE_PAT`: For GitHub Pages deployments and updating the repository
   - `CEREBRAS_API_KEY`: API key for Cerebras AI theme generation
   - `CEREBRAS_API_URL`: Cerebras API endpoint (default: "https://api.cerebras.ai/v1")
+  - `BROKER_CREATION_PRIVATE_KEY`: EVM private key for broker creation operations
+  - `BROKER_CREATION_PRIVATE_KEY_SOL`: Solana private key for broker creation (supports base58 or JSON array format)
 
 ### Quick Deployment
 
