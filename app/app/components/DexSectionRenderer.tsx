@@ -129,7 +129,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     key: "brokerDetails",
     title: "Broker Details",
     description:
-      "Configure your DEX's basic information and trading broker details.",
+      "Configure your DEX's basic information and trading broker details. Broker name can only contain letters, numbers, spaces, dots, hyphens, and underscores.",
     isOptional: false,
     component: BrokerDetailsSection,
     getProps: props => ({

@@ -61,6 +61,20 @@ export const maxLength =
   };
 
 /**
+ * Creates an alphanumeric validator with allowed special characters
+ * @param fieldName Name of the field to use in error message
+ * @returns A validation function
+ */
+export const alphanumericWithSpecialChars =
+  (fieldName: string): ValidationFunction =>
+  (value: string) => {
+    const regex = /^[a-zA-Z0-9 .\-_]*$/;
+    return !regex.test(value.trim())
+      ? `${fieldName} can only contain letters, numbers, spaces, dots, hyphens, and underscores`
+      : null;
+  };
+
+/**
  * Combines multiple validators into one
  * @param validators Array of validation functions
  * @returns A validation function that runs all validators and returns the first error

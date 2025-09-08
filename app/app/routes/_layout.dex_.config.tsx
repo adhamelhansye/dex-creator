@@ -12,6 +12,7 @@ import {
   minLength,
   maxLength,
   composeValidators,
+  alphanumericWithSpecialChars,
 } from "../utils/validation";
 import { useNavigate, Link } from "@remix-run/react";
 import DexSectionRenderer, {
@@ -588,8 +589,111 @@ export default function DexConfigRoute() {
     setPnlPosters(newPosters);
   };
 
+  const validateAllSections = () => {
+    const allProps = {
+      brokerName,
+      handleInputChange,
+      brokerNameValidator,
+      primaryLogo,
+      secondaryLogo,
+      favicon,
+      handleImageChange,
+      currentTheme,
+      defaultTheme,
+      showThemeEditor,
+      viewCssCode,
+      activeThemeTab,
+      themePrompt,
+      isGeneratingTheme,
+      themeApplied,
+      tradingViewColorConfig,
+      toggleThemeEditor,
+      handleResetTheme,
+      handleResetToDefault,
+      handleResetSelectedColors,
+      handleResetSelectedColorsToDefault,
+      handleThemeEditorChange,
+      setViewCssCode,
+      ThemeTabButton,
+      updateCssColor,
+      updateCssValue,
+      handleGenerateTheme,
+      setTradingViewColorConfig,
+      pnlPosters,
+      handlePnLPosterChange,
+      telegramLink,
+      discordLink,
+      xLink,
+      urlValidator,
+      seoSiteName,
+      seoSiteDescription,
+      seoSiteLanguage,
+      seoSiteLocale,
+      seoTwitterHandle,
+      seoThemeColor,
+      seoKeywords,
+      walletConnectProjectId,
+      privyAppId,
+      privyTermsOfUse,
+      enableAbstractWallet,
+      onEnableAbstractWalletChange: setEnableAbstractWallet,
+      disableEvmWallets,
+      disableSolanaWallets,
+      onDisableEvmWalletsChange: setDisableEvmWallets,
+      onDisableSolanaWalletsChange: setDisableSolanaWallets,
+      privyLoginMethods,
+      onPrivyLoginMethodsChange: setPrivyLoginMethods,
+      chainIds,
+      onChainIdsChange: setChainIds,
+      defaultChain,
+      onDefaultChainChange: setDefaultChain,
+      disableMainnet,
+      disableTestnet,
+      onDisableMainnetChange: setDisableMainnet,
+      onDisableTestnetChange: setDisableTestnet,
+      availableLanguages,
+      onAvailableLanguagesChange: setAvailableLanguages,
+      enabledMenus,
+      setEnabledMenus,
+      customMenus,
+      setCustomMenus,
+      enableCampaigns,
+      setEnableCampaigns,
+    };
+
+    const validationErrors: string[] = [];
+
+    for (const section of DEX_SECTIONS) {
+      if (section.getValidationTest) {
+        const isValid = section.getValidationTest(allProps);
+        if (!isValid) {
+          if (section.key === "brokerDetails") {
+            const error = brokerNameValidator(brokerName.trim());
+            validationErrors.push(
+              error || `${section.title}: validation failed`
+            );
+          } else if (section.key === "privyConfiguration") {
+            validationErrors.push(
+              `${section.title}: Please enter a valid Terms of Use URL`
+            );
+          } else {
+            validationErrors.push(`${section.title}: validation failed`);
+          }
+        }
+      }
+    }
+
+    return validationErrors;
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+
+    const validationErrors = validateAllSections();
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
 
     const trimmedBrokerName = brokerName.trim();
     const trimmedTelegramLink = telegramLink.trim();
@@ -605,11 +709,6 @@ export default function DexConfigRoute() {
     const trimmedSeoTwitterHandle = seoTwitterHandle.trim();
     const trimmedSeoThemeColor = seoThemeColor.trim();
     const trimmedSeoKeywords = seoKeywords.trim();
-
-    if (!trimmedBrokerName) {
-      toast.error("Broker name is required");
-      return;
-    }
 
     const [
       primaryLogoBase64,
@@ -729,7 +828,8 @@ export default function DexConfigRoute() {
         const savedData = await putFormData<DexData>(
           `api/dex/${dexData.id}`,
           formData,
-          token
+          token,
+          { showToastOnError: false }
         );
 
         setOriginalValues({
@@ -837,7 +937,8 @@ export default function DexConfigRoute() {
   const brokerNameValidator = composeValidators(
     required("Broker name"),
     minLength(3, "Broker name"),
-    maxLength(50, "Broker name")
+    maxLength(50, "Broker name"),
+    alphanumericWithSpecialChars("Broker name")
   );
 
   const ThemeTabButton = ({

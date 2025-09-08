@@ -20,6 +20,7 @@ import {
   minLength,
   maxLength,
   composeValidators,
+  alphanumericWithSpecialChars,
 } from "../utils/validation";
 import { useNavigate } from "@remix-run/react";
 import DexSectionRenderer, {
@@ -599,7 +600,8 @@ export default function DexRoute() {
   const brokerNameValidator = composeValidators(
     required("Broker name"),
     minLength(3, "Broker name"),
-    maxLength(50, "Broker name")
+    maxLength(50, "Broker name"),
+    alphanumericWithSpecialChars("Broker name")
   );
 
   const urlValidator = validateUrl();
@@ -675,8 +677,111 @@ export default function DexRoute() {
     setPnlPosters(newPosters);
   };
 
+  const validateAllSections = () => {
+    const allProps = {
+      brokerName,
+      handleInputChange,
+      brokerNameValidator,
+      primaryLogo,
+      secondaryLogo,
+      favicon,
+      handleImageChange,
+      currentTheme,
+      defaultTheme,
+      showThemeEditor,
+      viewCssCode,
+      activeThemeTab,
+      themePrompt,
+      isGeneratingTheme,
+      themeApplied,
+      tradingViewColorConfig,
+      toggleThemeEditor,
+      handleResetTheme,
+      handleResetToDefault,
+      handleResetSelectedColors,
+      handleResetSelectedColorsToDefault,
+      handleThemeEditorChange,
+      setViewCssCode,
+      ThemeTabButton,
+      updateCssColor,
+      updateCssValue,
+      handleGenerateTheme,
+      setTradingViewColorConfig,
+      pnlPosters,
+      handlePnLPosterChange,
+      telegramLink,
+      discordLink,
+      xLink,
+      urlValidator,
+      seoSiteName,
+      seoSiteDescription,
+      seoSiteLanguage,
+      seoSiteLocale,
+      seoTwitterHandle,
+      seoThemeColor,
+      seoKeywords,
+      walletConnectProjectId,
+      privyAppId,
+      privyTermsOfUse,
+      enableAbstractWallet,
+      onEnableAbstractWalletChange: setEnableAbstractWallet,
+      disableEvmWallets,
+      disableSolanaWallets,
+      onDisableEvmWalletsChange: setDisableEvmWallets,
+      onDisableSolanaWalletsChange: setDisableSolanaWallets,
+      privyLoginMethods,
+      onPrivyLoginMethodsChange: setPrivyLoginMethods,
+      chainIds,
+      onChainIdsChange: setChainIds,
+      defaultChain,
+      onDefaultChainChange: setDefaultChain,
+      disableMainnet,
+      disableTestnet,
+      onDisableMainnetChange: setDisableMainnet,
+      onDisableTestnetChange: setDisableTestnet,
+      availableLanguages,
+      onAvailableLanguagesChange: setAvailableLanguages,
+      enabledMenus,
+      setEnabledMenus,
+      customMenus,
+      setCustomMenus,
+      enableCampaigns,
+      setEnableCampaigns,
+    };
+
+    const validationErrors: string[] = [];
+
+    for (const section of DEX_SECTIONS) {
+      if (section.getValidationTest) {
+        const isValid = section.getValidationTest(allProps);
+        if (!isValid) {
+          if (section.key === "brokerDetails") {
+            const error = brokerNameValidator(brokerName.trim());
+            validationErrors.push(
+              error || `${section.title}: validation failed`
+            );
+          } else if (section.key === "privyConfiguration") {
+            validationErrors.push(
+              `${section.title}: Please enter a valid Terms of Use URL`
+            );
+          } else {
+            validationErrors.push(`${section.title}: validation failed`);
+          }
+        }
+      }
+    }
+
+    return validationErrors;
+  };
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
+
+    const validationErrors = validateAllSections();
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
+      return;
+    }
 
     const trimmedBrokerName = brokerName.trim();
     const trimmedTelegramLink = telegramLink.trim();
@@ -693,12 +798,6 @@ export default function DexRoute() {
     const trimmedSeoThemeColor = seoThemeColor.trim();
     const trimmedSeoKeywords = seoKeywords.trim();
 
-    if (!trimmedBrokerName) {
-      toast.error("Broker name is required");
-      return;
-    }
-
-    // Convert blobs to base64 for comparison and originalValues storage
     const [
       primaryLogoBase64,
       secondaryLogoBase64,
@@ -767,7 +866,6 @@ export default function DexRoute() {
 
     setIsSaving(true);
 
-    // If we're creating the DEX for the first time, show a forking status
     if (!dexData || !dexData.id) {
       setForkingStatus("Creating DEX and forking repository...");
     }
@@ -787,7 +885,6 @@ export default function DexRoute() {
         pnlPosters,
       };
 
-      // Prepare the form data
       const dexData_ToSend = {
         brokerName: trimmedBrokerName,
         telegramLink: trimmedTelegramLink || null,
@@ -867,7 +964,9 @@ export default function DexRoute() {
 
         updateDexData(savedData);
       } else {
-        savedData = await postFormData<DexData>("api/dex", formData, token);
+        savedData = await postFormData<DexData>("api/dex", formData, token, {
+          showToastOnError: false,
+        });
 
         setOriginalValues({
           ...originalValues,
@@ -1137,8 +1236,9 @@ export default function DexRoute() {
   };
 
   const handleQuickSetup = async () => {
-    if (!brokerName.trim()) {
-      toast.error("Broker name is required for quick setup.");
+    const validationErrors = validateAllSections();
+    if (validationErrors.length > 0) {
+      toast.error(validationErrors[0]);
       return;
     }
 
@@ -1207,7 +1307,12 @@ export default function DexRoute() {
       };
 
       const formData = createDexFormData(dexData_ToSend, imageBlobs);
-      const savedData = await postFormData<DexData>("api/dex", formData, token);
+      const savedData = await postFormData<DexData>(
+        "api/dex",
+        formData,
+        token,
+        { showToastOnError: false }
+      );
 
       setOriginalValues({
         ...savedData,
