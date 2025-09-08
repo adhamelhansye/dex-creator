@@ -17,6 +17,7 @@ import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
 import { IDL, type SolanaVault } from "../interface/types/solana_vault.js";
 import { default as bs58 } from "bs58";
+import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
@@ -26,24 +27,98 @@ let solanaPrivateKey: string | null = null;
 let solanaKeypair: anchor.web3.Keypair | null = null;
 let isInitialized = false;
 
-export function initializeBrokerCreation(): void {
+interface WalletSecrets {
+  evmPrivateKey: string;
+  solanaPrivateKey: string;
+}
+
+async function getWalletPrivateKeys(): Promise<{
+  evmPrivateKey: string | null;
+  solanaPrivateKey: string | null;
+}> {
+  const deploymentEnv = process.env.DEPLOYMENT_ENV;
+
+  if (!deploymentEnv || deploymentEnv === "qa" || deploymentEnv === "dev") {
+    console.log("🔧 Using environment variables for wallet private keys");
+    return {
+      evmPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY || null,
+      solanaPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null,
+    };
+  }
+
+  let secretName: string;
+  switch (deploymentEnv) {
+    case "mainnet":
+      secretName =
+        "projects/964694002890/secrets/[PLACEHOLDER-wallet-keys-prod]/versions/latest";
+      break;
+    case "staging":
+      secretName =
+        "projects/964694002890/secrets/[PLACEHOLDER-wallet-keys-staging]/versions/latest";
+      break;
+    case "qa":
+    case "dev":
+      throw new Error(
+        `No Google Secret Manager configured for ${deploymentEnv} environment. Please set BROKER_CREATION_PRIVATE_KEY and BROKER_CREATION_PRIVATE_KEY_SOL environment variables.`
+      );
+    default:
+      throw new Error(
+        `Unknown deployment environment: ${deploymentEnv}. Please set BROKER_CREATION_PRIVATE_KEY and BROKER_CREATION_PRIVATE_KEY_SOL environment variables.`
+      );
+  }
+
+  try {
+    console.log(`🔑 Fetching wallet private keys from secret: ${secretName}`);
+    const client = new SecretManagerServiceClient();
+
+    const [version] = await client.accessSecretVersion({
+      name: secretName,
+    });
+
+    const payload = version.payload?.data?.toString() || "";
+    console.log("✅ Fetched wallet secrets payload");
+
+    const secrets: WalletSecrets = JSON.parse(payload);
+
+    return {
+      evmPrivateKey: secrets.evmPrivateKey || null,
+      solanaPrivateKey: secrets.solanaPrivateKey || null,
+    };
+  } catch (error) {
+    console.error(
+      "❌ Failed to get wallet private keys from Google Secret Manager:",
+      error
+    );
+    console.log("⚠️ Falling back to environment variables");
+    return {
+      evmPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY || null,
+      solanaPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null,
+    };
+  }
+}
+
+export async function initializeBrokerCreation(): Promise<void> {
+  if (isInitialized) {
+    return;
+  }
+
   console.log("🔧 Initializing broker creation system...");
 
-  evmPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY || null;
+  const walletKeys = await getWalletPrivateKeys();
+  evmPrivateKey = walletKeys.evmPrivateKey;
+  solanaPrivateKey = walletKeys.solanaPrivateKey;
+
   if (!evmPrivateKey) {
-    console.warn(
-      "⚠️  BROKER_CREATION_PRIVATE_KEY not found - EVM operations will fail"
-    );
+    console.warn("⚠️  EVM private key not found - EVM operations will fail");
   } else {
     const evmWallet = new ethers.Wallet(evmPrivateKey);
     console.log("✅ EVM private key loaded");
     console.log(`📍 EVM wallet address: ${evmWallet.address}`);
   }
 
-  solanaPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null;
   if (!solanaPrivateKey) {
     console.warn(
-      "⚠️  BROKER_CREATION_PRIVATE_KEY_SOL not found - Solana operations will fail"
+      "⚠️  Solana private key not found - Solana operations will fail"
     );
   } else {
     try {
@@ -61,25 +136,34 @@ export function initializeBrokerCreation(): void {
     }
   }
 
-  if (!evmPrivateKey && !solanaPrivateKey) {
-    console.error("❌ No private keys found! Broker creation will not work.");
+  if (!evmPrivateKey || !solanaPrivateKey) {
     console.error(
-      "   Please set either BROKER_CREATION_PRIVATE_KEY (for EVM) or BROKER_CREATION_PRIVATE_KEY_SOL (for Solana)"
+      "❌ Missing required private keys! Broker creation will not work."
     );
+    console.error(
+      "   Please configure both EVM and Solana wallet private keys via environment variables or Google Secret Manager"
+    );
+    process.exit(1);
   }
 
   isInitialized = true;
   console.log("🚀 Broker creation system initialized");
 }
 
-function getEvmPrivateKey(): string {
+function ensureInitialized(): void {
   if (!isInitialized) {
-    initializeBrokerCreation();
+    throw new Error(
+      "Broker creation system not initialized. Call initializeBrokerCreation() first."
+    );
   }
+}
+
+function getEvmPrivateKey(): string {
+  ensureInitialized();
 
   if (!evmPrivateKey) {
     throw new Error(
-      "BROKER_CREATION_PRIVATE_KEY environment variable is required for EVM operations"
+      "EVM private key is required for EVM operations but was not found in environment variables or Secret Manager"
     );
   }
 
@@ -124,9 +208,7 @@ function parseSolanaPrivateKey(privateKeyInput: string): anchor.web3.Keypair {
 }
 
 function getSolanaKeypair(): anchor.web3.Keypair {
-  if (!isInitialized) {
-    initializeBrokerCreation();
-  }
+  ensureInitialized();
 
   if (!solanaKeypair) {
     throw new Error("Solana keypair not initialized");
@@ -136,9 +218,7 @@ function getSolanaKeypair(): anchor.web3.Keypair {
 }
 
 function getEvmProvider(chainName: string): ethers.JsonRpcProvider {
-  if (!isInitialized) {
-    initializeBrokerCreation();
-  }
+  ensureInitialized();
 
   const provider = new ethers.JsonRpcProvider(
     ALL_CHAINS[chainName as ChainName].rpcUrl
@@ -149,9 +229,7 @@ function getEvmProvider(chainName: string): ethers.JsonRpcProvider {
 function getSolanaConnection(
   environment?: Environment
 ): anchor.web3.Connection {
-  if (!isInitialized) {
-    initializeBrokerCreation();
-  }
+  ensureInitialized();
 
   const env = environment || getCurrentEnvironment();
 
@@ -271,9 +349,7 @@ export async function createAutomatedBrokerId(
       throw new Error(`No configuration found for environment: ${env}`);
     }
 
-    if (!isInitialized) {
-      initializeBrokerCreation();
-    }
+    ensureInitialized();
 
     console.log(
       `🚀 Starting broker creation for broker ID: ${brokerId} on environment: ${env}`

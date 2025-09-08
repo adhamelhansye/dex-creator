@@ -10,6 +10,7 @@ import graduationRoutes from "./routes/graduation";
 import { prisma } from "./lib/prisma";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
 import {
+  initializeBrokerCreation,
   checkBrokerCreationPermissions,
   checkGasBalances,
 } from "./lib/brokerCreation";
@@ -83,6 +84,15 @@ prisma
     console.log("Connected to the database");
 
     try {
+      console.log("🚀 Initializing broker creation system...");
+      await initializeBrokerCreation();
+      console.log("✅ Broker creation system initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize broker creation system:", error);
+      process.exit(1);
+    }
+
+    try {
       console.log("🔍 Checking broker creation permissions on startup...");
       const environment = getCurrentEnvironment();
       const permissionData = await checkBrokerCreationPermissions(environment);
@@ -91,10 +101,8 @@ prisma
         permissionData
       );
     } catch (error) {
-      console.warn("⚠️ Broker creation permissions check failed:", error);
-      console.warn(
-        "This may affect broker creation functionality, but the server will continue to start."
-      );
+      console.error("⚠️ Broker creation permissions check failed:", error);
+      process.exit(1);
     }
 
     try {
@@ -112,10 +120,8 @@ prisma
         );
       }
     } catch (error) {
-      console.warn("⚠️ Gas balance check failed:", error);
-      console.warn(
-        "Unable to verify gas balances. Monitor wallet balances manually."
-      );
+      console.error("⚠️ Gas balance check failed:", error);
+      process.exit(1);
     }
   })
   .catch((err: Error) => {
