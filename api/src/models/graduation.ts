@@ -230,15 +230,6 @@ export async function createAutomatedBrokerId(
   brokerCreationData?: BrokerCreationData;
 }> {
   try {
-    if (!/^[a-z0-9_-]+$/.test(brokerId)) {
-      return {
-        success: false,
-        message:
-          "Invalid broker ID format. Use only lowercase letters, numbers, hyphens, and underscores.",
-      };
-    }
-
-    // Check if broker ID is already taken
     const existingDex = await prisma.dex.findFirst({
       where: {
         brokerId: brokerId,

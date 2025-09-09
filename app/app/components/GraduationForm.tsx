@@ -10,6 +10,7 @@ import { Button } from "./Button";
 import { toast } from "react-toastify";
 import { post, get } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
+import { validateBrokerId } from "../utils/validation";
 import { Card } from "./Card";
 import {
   useBalance,
@@ -963,8 +964,8 @@ export function GraduationForm({
           helpText={
             <>
               <span className="text-gray-400 mb-1 block">
-                Your preferred unique broker ID (lowercase letters, numbers,
-                hyphens, and underscores only)
+                Your preferred unique broker ID (5-15 characters, lowercase
+                letters, numbers, hyphens, and underscores only)
               </span>
               <span className="text-gray-400 mt-1 block">
                 This ID uniquely identifies your DEX in the Orderly ecosystem
@@ -972,15 +973,7 @@ export function GraduationForm({
               </span>
             </>
           }
-          validator={value => {
-            if (!new RegExp("^[a-z0-9_-]+$").test(value)) {
-              return "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores";
-            }
-            if (existingBrokerIds.includes(value)) {
-              return "This broker ID is already taken. Please choose another one.";
-            }
-            return null;
-          }}
+          validator={validateBrokerId(existingBrokerIds)}
           onError={error => setBrokerIdError(error)}
         />
         {!brokerIdError && brokerId && (

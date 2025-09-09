@@ -24,8 +24,8 @@ const verifyTxSchema = z.object({
   chain: z.string().min(1).max(50),
   brokerId: z
     .string()
-    .min(1)
-    .max(50)
+    .min(5, "Broker ID must be at least 5 characters")
+    .max(15, "Broker ID cannot exceed 15 characters")
     .regex(
       /^[a-z0-9_-]+$/,
       "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"

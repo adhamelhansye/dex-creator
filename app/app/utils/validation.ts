@@ -75,6 +75,35 @@ export const alphanumericWithSpecialChars =
   };
 
 /**
+ * Creates a broker ID validator with length and format constraints
+ * @param existingBrokerIds Array of existing broker IDs to check against
+ * @returns A validation function for broker IDs
+ */
+export const validateBrokerId =
+  (existingBrokerIds: string[] = []): ValidationFunction =>
+  (value: string) => {
+    const trimmedValue = value.trim();
+
+    if (trimmedValue.length < 5) {
+      return "Broker ID must be at least 5 characters";
+    }
+
+    if (trimmedValue.length > 15) {
+      return "Broker ID cannot exceed 15 characters";
+    }
+
+    if (!/^[a-z0-9_-]+$/.test(trimmedValue)) {
+      return "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores";
+    }
+
+    if (existingBrokerIds.includes(trimmedValue)) {
+      return "This broker ID is already taken. Please choose another one.";
+    }
+
+    return null;
+  };
+
+/**
  * Combines multiple validators into one
  * @param validators Array of validation functions
  * @returns A validation function that runs all validators and returns the first error

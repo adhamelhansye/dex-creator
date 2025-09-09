@@ -122,7 +122,14 @@ adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
   const id = c.req.param("id");
 
   const brokerIdSchema = z.object({
-    brokerId: z.string().min(1).max(50),
+    brokerId: z
+      .string()
+      .min(5, "Broker ID must be at least 5 characters")
+      .max(15, "Broker ID cannot exceed 15 characters")
+      .regex(
+        /^[a-z0-9_-]+$/,
+        "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
+      ),
   });
 
   let body;
