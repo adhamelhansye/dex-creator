@@ -1284,7 +1284,7 @@ export default function AdminRoute() {
           ) : allDexes.length === 0 ? (
             <p className="text-gray-400 text-sm italic">No DEXes found.</p>
           ) : (
-            <div className="relative space-y-4 max-h-[600px]">
+            <div className="relative space-y-4 max-h-[600px] overflow-y-auto">
               {/* Search Loading Overlay */}
               {searchLoading && (
                 <div className="absolute inset-0 bg-dark/50 backdrop-blur-sm rounded-lg z-10 flex items-center justify-center min-h-[200px]">
