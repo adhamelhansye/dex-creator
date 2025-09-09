@@ -88,7 +88,15 @@ async function fileToBase64(file: File): Promise<string> {
 }
 
 export const dexSchema = z.object({
-  brokerName: z.string().min(3).max(50).nullish(),
+  brokerName: z
+    .string()
+    .min(3, "Broker name must be at least 3 characters")
+    .max(30, "Broker name cannot exceed 30 characters")
+    .regex(
+      /^[a-zA-Z0-9 .\-_]*$/,
+      "Broker name can only contain letters, numbers, spaces, dots, hyphens, and underscores"
+    )
+    .nullish(),
   chainIds: z.array(z.number().positive().int()).optional(),
   defaultChain: z.number().positive().int().optional(),
   themeCSS: z.string().nullish(),
@@ -267,24 +275,6 @@ export function generateId() {
     Math.random().toString(36).substring(2, 15)
   );
 }
-
-export const CreateDexSchema = z.object({
-  name: z.string().min(1, "Name is required"),
-  description: z.string().optional(),
-  brokerName: z.string().optional(),
-  brokerPrivateKey: z.string().optional(),
-  tradingViewColorConfig: z.string().optional(),
-});
-
-export const UpdateDexSchema = z.object({
-  name: z.string().min(1, "Name is required").optional(),
-  description: z.string().optional(),
-  brokerName: z.string().optional(),
-  brokerPrivateKey: z.string().optional(),
-  repositoryUrl: z.string().optional(),
-  deploymentUrl: z.string().optional(),
-  tradingViewColorConfig: z.string().optional(),
-});
 
 export async function createDex(
   data: z.infer<typeof dexSchema>,

@@ -20,10 +20,10 @@ const BrokerDetailsSection: React.FC<BrokerDetailsProps> = ({
     value={brokerName}
     onChange={handleInputChange("brokerName")}
     placeholder="Enter your broker name"
-    helpText="This name will be used in the HTML metadata, environment configuration, and other places throughout your DEX. Must be 3-50 characters and can only contain letters, numbers, spaces, dots, hyphens, and underscores."
+    helpText="This name will be used in the HTML metadata, environment configuration, and other places throughout your DEX. Must be 3-30 characters and can only contain letters, numbers, spaces, dots, hyphens, and underscores."
     required={true}
     minLength={3}
-    maxLength={50}
+    maxLength={30}
     validator={brokerNameValidator}
   />
 );

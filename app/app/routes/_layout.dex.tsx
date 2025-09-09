@@ -600,7 +600,7 @@ export default function DexRoute() {
   const brokerNameValidator = composeValidators(
     required("Broker name"),
     minLength(3, "Broker name"),
-    maxLength(50, "Broker name"),
+    maxLength(30, "Broker name"),
     alphanumericWithSpecialChars("Broker name")
   );
 
