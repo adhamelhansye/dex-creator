@@ -26,24 +26,20 @@ export default function WalletConnect() {
     validateToken,
   } = useAuth();
 
-  // Validate token on component mount
   useEffect(() => {
     if (isConnected && user) {
-      // If we're connected and have user data, validate the token
       validateToken().catch(error => {
         console.error("Token validation failed:", error);
       });
     }
   }, [validateToken, isConnected, user]);
 
-  // Show toast for auth errors instead of displaying in UI
   useEffect(() => {
     if (authError) {
       console.error("Authentication error:", authError);
     }
   }, [authError]);
 
-  // Show toast for connection errors
   useEffect(() => {
     if (connectError) {
       toast.error(`Connection error: ${connectError}`);
@@ -51,14 +47,12 @@ export default function WalletConnect() {
     }
   }, [connectError]);
 
-  // Reset the dismissed state ONLY when authenticating
   useEffect(() => {
     if (isAuthenticated) {
       setHasUserDismissedModal(false);
     }
   }, [isAuthenticated]);
 
-  // Show login modal when wallet is connected but not authenticated
   useEffect(() => {
     if (isConnected && !isAuthenticated && !hasUserDismissedModal) {
       const timer = setTimeout(() => {
@@ -78,51 +72,40 @@ export default function WalletConnect() {
     openModal,
   ]);
 
-  // Clear any connection errors when connection state changes
   useEffect(() => {
     if (isConnected) {
       setConnectError(null);
     }
   }, [isConnected]);
 
-  // Format address to shortened form (0x1234...5678)
   const formatAddress = (addr: string) => {
-    // Even shorter format for very small screens
     if (window.innerWidth < 360) {
       return `${addr.substring(0, 3)}...${addr.substring(addr.length - 2)}`;
     }
-    // Shorter format for small screens
     if (window.innerWidth < 640) {
       return `${addr.substring(0, 4)}...${addr.substring(addr.length - 3)}`;
     }
     return `${addr.substring(0, 6)}...${addr.substring(addr.length - 4)}`;
   };
 
-  // Open the AppKit modal
   const openWalletModal = () => {
     appKit?.open();
   };
 
-  // Handle modal close (when "Later" is clicked)
   const handleModalClose = () => {
     setHasUserDismissedModal(true);
     closeModal();
   };
 
-  // Handle login
   const handleLogin = async () => {
     try {
       await login();
-      // Close the modal after successful login
       closeModal();
     } catch (error) {
-      // Error will be handled by the authError useEffect
       console.error("Login failed:", error);
-      // Don't close the modal on failure
     }
   };
 
-  // Handle showing the login modal
   const handleShowLoginModal = () => {
     openModal("login", {
       onLogin: handleLogin,
@@ -133,7 +116,6 @@ export default function WalletConnect() {
   return (
     <div className="relative z-20">
       {!isConnected ? (
-        /* Not connected state */
         <Button
           variant="primary"
           size="sm"
@@ -145,7 +127,6 @@ export default function WalletConnect() {
           <span className="xs:hidden">Connect</span>
         </Button>
       ) : !isAuthenticated ? (
-        /* Connected but not authenticated */
         <div className="flex items-center">
           <div className="flex items-center bg-background-light/30 rounded-full px-1 py-0.5 md:px-2 md:py-1 border border-secondary-light/20">
             <div className="flex items-center gap-0.5 md:gap-1 mr-0.5 md:mr-2">
@@ -167,7 +148,6 @@ export default function WalletConnect() {
               >
                 Login
               </Button>
-              {/* Disconnect button */}
               <Button
                 variant="ghost"
                 size="xs"
@@ -182,7 +162,6 @@ export default function WalletConnect() {
           </div>
         </div>
       ) : (
-        /* Authenticated state */
         <div className="flex items-center bg-background-light/30 rounded-full px-1 py-0.5 md:px-2 md:py-1 border border-primary-light/20">
           <div className="flex items-center gap-0.5 md:gap-1 mr-0.5 md:mr-2">
             <div className="w-1 h-1 md:w-1.5 md:h-1.5 rounded-full bg-teal-light mr-2 md:mr-3"></div>
