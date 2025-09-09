@@ -114,7 +114,6 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
     },
   ];
 
-  // Clear mainnet chains when mainnet is disabled
   useEffect(() => {
     if (disableMainnet) {
       const mainnetChainIds = supportedChains
@@ -129,7 +128,6 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
     }
   }, [disableMainnet]);
 
-  // Clear testnet chains when testnet is disabled
   useEffect(() => {
     if (disableTestnet) {
       const testnetChainIds = supportedChains
@@ -153,30 +151,52 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
   };
 
   const handleSelectAll = () => {
-    onChainIdsChange(supportedChains.map(chain => chain.id));
+    const activeChains = supportedChains.filter(chain => {
+      if (disableMainnet && chain.network === "mainnet") return false;
+      if (disableTestnet && chain.network === "testnet") return false;
+      return true;
+    });
+    onChainIdsChange(activeChains.map(chain => chain.id));
   };
 
   const handleClearAll = () => {
     onChainIdsChange([]);
   };
 
-  // Check if both mainnet and testnet are disabled (invalid state)
   const bothNetworksDisabled = disableMainnet && disableTestnet;
 
   const handleMainnetToggle = (checked: boolean) => {
-    // Prevent disabling mainnet if testnet is already disabled
     if (checked && disableTestnet) {
-      return; // Do nothing, this would create an invalid state
+      return;
     }
     onDisableMainnetChange?.(checked);
+
+    if (checked) {
+      const mainnetChainIds = supportedChains
+        .filter(chain => chain.network === "mainnet")
+        .map(chain => chain.id);
+      const filteredChainIds = chainIds.filter(
+        id => !mainnetChainIds.includes(id)
+      );
+      onChainIdsChange(filteredChainIds);
+    }
   };
 
   const handleTestnetToggle = (checked: boolean) => {
-    // Prevent disabling testnet if mainnet is already disabled
     if (checked && disableMainnet) {
-      return; // Do nothing, this would create an invalid state
+      return;
     }
     onDisableTestnetChange?.(checked);
+
+    if (checked) {
+      const testnetChainIds = supportedChains
+        .filter(chain => chain.network === "testnet")
+        .map(chain => chain.id);
+      const filteredChainIds = chainIds.filter(
+        id => !testnetChainIds.includes(id)
+      );
+      onChainIdsChange(filteredChainIds);
+    }
   };
 
   const mainnetChains = supportedChains.filter(
@@ -271,7 +291,7 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
 
       {/* All Chains Mode Explanation */}
       {chainIds.length === 0 && (
-        <div className="text-center py-4 text-sm bg-blue-500/10 border border-blue-500/20 rounded-lg slide-fade-in">
+        <div className="text-center py-4 px-2 text-sm bg-blue-500/10 border border-blue-500/20 rounded-lg slide-fade-in">
           <div className="text-blue-300 font-medium mb-1">
             🌐 All Chains Mode (Default)
           </div>
@@ -317,7 +337,6 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
             .filter(chainId => {
               const chain = supportedChains.find(c => c.id === chainId);
               if (!chain) return false;
-              // Only allow mainnet chains as default
               if (chain.network !== "mainnet") return false;
               if (disableMainnet) return false;
               return true;
