@@ -334,54 +334,56 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
   }
 });
 
+const customDomainSchema = z.object({
+  domain: z
+    .string()
+    .min(1, "Domain is required")
+    .max(253, "Domain cannot exceed 253 characters")
+    .regex(
+      /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
+      "Invalid domain format. Use a valid domain like 'example.com' or 'subdomain.example.com'"
+    )
+    .refine(domain => {
+      const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+      return !ipRegex.test(domain);
+    }, "IP addresses are not allowed. Please use a domain name")
+    .refine(domain => {
+      return domain.includes(".");
+    }, "Domain must include a top-level domain (e.g., '.com', '.org')")
+    .refine(domain => {
+      const labels = domain.split(".");
+      return labels.every(label => label.length <= 63);
+    }, "Each part of the domain cannot exceed 63 characters")
+    .refine(domain => {
+      const tld = domain.split(".").pop();
+      return tld && tld.length >= 2 && /^[a-zA-Z]+$/.test(tld);
+    }, "Domain must have a valid top-level domain (e.g., '.com', '.org')"),
+});
+
 // Set a custom domain for a DEX
-dexRoutes.post("/:id/custom-domain", async c => {
-  const id = c.req.param("id");
-  const userId = c.get("userId");
+dexRoutes.post(
+  "/:id/custom-domain",
+  zValidator("json", customDomainSchema),
+  async c => {
+    const id = c.req.param("id");
+    const userId = c.get("userId");
+    const { domain } = c.req.valid("json");
 
-  try {
-    const body = await c.req.json();
-    const customDomainSchema = z.object({
-      domain: z.string().min(1, "Domain is required"),
-    });
+    const result = await updateDexCustomDomain(id, domain, userId);
 
-    const { domain } = customDomainSchema.parse(body);
-
-    const updatedDex = await updateDexCustomDomain(id, domain, userId);
-    return c.json(
-      {
-        message: "Custom domain set successfully",
-        dex: updatedDex,
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("Error setting custom domain:", error);
-
-    if (error instanceof Error) {
-      if (error.message.includes("DEX not found")) {
-        return c.json({ message: "DEX not found" }, { status: 404 });
-      }
-      if (error.message.includes("User is not authorized")) {
-        return c.json({ message: error.message }, { status: 403 });
-      }
-      if (error.message.includes("Invalid domain format")) {
-        return c.json({ message: error.message }, { status: 400 });
-      }
-      if (error.message.includes("doesn't have a repository URL")) {
-        return c.json({ message: error.message }, { status: 400 });
-      }
+    if (!result.success) {
+      return c.json({ message: result.error.message }, result.error.status);
     }
 
     return c.json(
       {
-        message: "Failed to set custom domain",
-        error: error instanceof Error ? error.message : String(error),
+        message: "Custom domain set successfully",
+        dex: result.data,
       },
-      { status: 500 }
+      200
     );
   }
-});
+);
 
 // Remove custom domain from a DEX
 dexRoutes.delete("/:id/custom-domain", async c => {

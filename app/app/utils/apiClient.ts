@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "./wagmiConfig";
+import { parseZodError } from "./validation";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
@@ -71,10 +72,11 @@ export async function apiClient<T = any>({
     }
 
     if (!response.ok) {
-      const errorMessage =
-        typeof data === "object" && data.message
-          ? data.message
-          : "An error occurred";
+      let errorMessage = "An error occurred";
+
+      if (typeof data === "object") {
+        errorMessage = parseZodError(data);
+      }
 
       if (response.status === 429) {
         const rateLimitError = new Error(errorMessage);
@@ -160,10 +162,11 @@ export async function apiClientFormData<T = any>({
     }
 
     if (!response.ok) {
-      const errorMessage =
-        typeof data === "object" && data.message
-          ? data.message
-          : "An error occurred";
+      let errorMessage = "An error occurred";
+
+      if (typeof data === "object") {
+        errorMessage = parseZodError(data);
+      }
 
       if (showToastOnError) {
         toast.error(`API Error: ${errorMessage}`);

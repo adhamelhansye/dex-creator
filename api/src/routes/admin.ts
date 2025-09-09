@@ -118,103 +118,100 @@ function extractRepoInfoFromUrl(
   }
 }
 
-adminRoutes.post("/dex/:id/broker-id", async (c: AdminContext) => {
-  const id = c.req.param("id");
+const brokerIdSchema = z.object({
+  brokerId: z
+    .string()
+    .min(3, "Broker ID must be at least 3 characters")
+    .max(20, "Broker ID cannot exceed 20 characters")
+    .regex(
+      /^[a-z0-9_-]+$/,
+      "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
+    ),
+});
 
-  const brokerIdSchema = z.object({
-    brokerId: z
-      .string()
-      .min(5, "Broker ID must be at least 5 characters")
-      .max(15, "Broker ID cannot exceed 15 characters")
-      .regex(
-        /^[a-z0-9_-]+$/,
-        "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
-      ),
-  });
+adminRoutes.post(
+  "/dex/:id/broker-id",
+  zValidator("json", brokerIdSchema),
+  async c => {
+    const id = c.req.param("id");
+    const { brokerId } = c.req.valid("json");
 
-  let body;
-  try {
-    body = await c.req.json();
-    brokerIdSchema.parse(body);
-  } catch (e) {
-    return c.json({ message: "Invalid request body", error: String(e) }, 400);
-  }
+    try {
+      const dex = await getDexById(id);
+      if (!dex) {
+        return c.json({ message: "DEX not found" }, 404);
+      }
 
-  try {
-    const dex = await getDexById(id);
-    if (!dex) {
-      return c.json({ message: "DEX not found" }, 404);
-    }
+      const updatedDex = await updateBrokerId(id, brokerId);
 
-    const updatedDex = await updateBrokerId(id, body.brokerId);
+      if (updatedDex.repoUrl) {
+        const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
 
-    if (updatedDex.repoUrl) {
-      const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
+        if (repoInfo) {
+          try {
+            await setupRepositoryWithSingleCommit(
+              repoInfo.owner,
+              repoInfo.repo,
+              {
+                brokerId: brokerId,
+                brokerName: updatedDex.brokerName,
+                chainIds: updatedDex.chainIds,
+                defaultChain: updatedDex.defaultChain || undefined,
+                themeCSS: updatedDex.themeCSS?.toString(),
+                telegramLink: updatedDex.telegramLink || undefined,
+                discordLink: updatedDex.discordLink || undefined,
+                xLink: updatedDex.xLink || undefined,
+                walletConnectProjectId:
+                  updatedDex.walletConnectProjectId || undefined,
+                privyAppId: updatedDex.privyAppId || undefined,
+                privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
+                enabledMenus: updatedDex.enabledMenus || undefined,
+                customMenus: updatedDex.customMenus || undefined,
+                enableAbstractWallet: updatedDex.enableAbstractWallet || false,
+                disableMainnet: updatedDex.disableMainnet || false,
+                disableTestnet: updatedDex.disableTestnet || false,
+                disableEvmWallets: updatedDex.disableEvmWallets || false,
+                disableSolanaWallets: updatedDex.disableSolanaWallets || false,
+                enableCampaigns: updatedDex.enableCampaigns || false,
+                tradingViewColorConfig:
+                  updatedDex.tradingViewColorConfig || undefined,
+                availableLanguages: updatedDex.availableLanguages,
+                seoSiteName: updatedDex.seoSiteName || undefined,
+                seoSiteDescription: updatedDex.seoSiteDescription || undefined,
+                seoSiteLanguage: updatedDex.seoSiteLanguage || undefined,
+                seoSiteLocale: updatedDex.seoSiteLocale || undefined,
+                seoTwitterHandle: updatedDex.seoTwitterHandle || undefined,
+                seoThemeColor: updatedDex.seoThemeColor || undefined,
+                seoKeywords: updatedDex.seoKeywords || undefined,
+              },
+              {
+                primaryLogo: updatedDex.primaryLogo || undefined,
+                secondaryLogo: updatedDex.secondaryLogo || undefined,
+                favicon: updatedDex.favicon || undefined,
+                pnlPosters: updatedDex.pnlPosters || undefined,
+              },
+              updatedDex.customDomain || undefined
+            );
 
-      if (repoInfo) {
-        try {
-          await setupRepositoryWithSingleCommit(
-            repoInfo.owner,
-            repoInfo.repo,
-            {
-              brokerId: body.brokerId,
-              brokerName: updatedDex.brokerName,
-              chainIds: updatedDex.chainIds,
-              defaultChain: updatedDex.defaultChain || undefined,
-              themeCSS: updatedDex.themeCSS?.toString(),
-              telegramLink: updatedDex.telegramLink || undefined,
-              discordLink: updatedDex.discordLink || undefined,
-              xLink: updatedDex.xLink || undefined,
-              walletConnectProjectId:
-                updatedDex.walletConnectProjectId || undefined,
-              privyAppId: updatedDex.privyAppId || undefined,
-              privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
-              enabledMenus: updatedDex.enabledMenus || undefined,
-              customMenus: updatedDex.customMenus || undefined,
-              enableAbstractWallet: updatedDex.enableAbstractWallet || false,
-              disableMainnet: updatedDex.disableMainnet || false,
-              disableTestnet: updatedDex.disableTestnet || false,
-              disableEvmWallets: updatedDex.disableEvmWallets || false,
-              disableSolanaWallets: updatedDex.disableSolanaWallets || false,
-              enableCampaigns: updatedDex.enableCampaigns || false,
-              tradingViewColorConfig:
-                updatedDex.tradingViewColorConfig || undefined,
-              availableLanguages: updatedDex.availableLanguages,
-              seoSiteName: updatedDex.seoSiteName || undefined,
-              seoSiteDescription: updatedDex.seoSiteDescription || undefined,
-              seoSiteLanguage: updatedDex.seoSiteLanguage || undefined,
-              seoSiteLocale: updatedDex.seoSiteLocale || undefined,
-              seoTwitterHandle: updatedDex.seoTwitterHandle || undefined,
-              seoThemeColor: updatedDex.seoThemeColor || undefined,
-              seoKeywords: updatedDex.seoKeywords || undefined,
-            },
-            {
-              primaryLogo: updatedDex.primaryLogo || undefined,
-              secondaryLogo: updatedDex.secondaryLogo || undefined,
-              favicon: updatedDex.favicon || undefined,
-              pnlPosters: updatedDex.pnlPosters || undefined,
-            },
-            updatedDex.customDomain || undefined
-          );
-
-          console.log(
-            `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
-          );
-        } catch (configError) {
-          console.error("Error updating repository files:", configError);
+            console.log(
+              `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
+            );
+          } catch (configError) {
+            console.error("Error updating repository files:", configError);
+          }
         }
       }
-    }
 
-    return c.json(updatedDex);
-  } catch (error) {
-    console.error("Error updating broker ID:", error);
-    return c.json(
-      { message: "Error updating broker ID", error: String(error) },
-      500
-    );
+      return c.json(updatedDex);
+    } catch (error) {
+      console.error("Error updating broker ID:", error);
+      return c.json(
+        { message: "Error updating broker ID", error: String(error) },
+        500
+      );
+    }
   }
-});
+);
 
 adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
   const id = c.req.param("id");
@@ -249,87 +246,86 @@ adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
   }
 });
 
-adminRoutes.post("/dex/:id/rename-repo", async (c: AdminContext) => {
-  const id = c.req.param("id");
+const renameSchema = z.object({
+  newName: z
+    .string()
+    .min(5)
+    .max(50)
+    .regex(
+      /^[a-z0-9-]+$/,
+      "Repository name must contain only lowercase letters, numbers, and hyphens"
+    ),
+});
 
-  const renameSchema = z.object({
-    newName: z
-      .string()
-      .min(1)
-      .max(90)
-      .regex(
-        /^[a-z0-9-]+$/,
-        "Repository name must contain only lowercase letters, numbers, and hyphens"
-      ),
-  });
-
-  let body;
-  try {
-    body = await c.req.json();
-    renameSchema.parse(body);
-  } catch (e) {
-    return c.json({ message: "Invalid request body", error: String(e) }, 400);
-  }
-
-  try {
-    const dex = await getDexById(id);
-    if (!dex) {
-      return c.json({ message: "DEX not found" }, 404);
-    }
-
-    if (!dex.repoUrl) {
-      return c.json({ message: "This DEX does not have a repository" }, 400);
-    }
-
-    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
-    if (!repoInfo) {
-      return c.json({ message: "Invalid repository URL" }, 400);
-    }
+adminRoutes.post(
+  "/dex/:id/rename-repo",
+  zValidator("json", renameSchema),
+  async c => {
+    const id = c.req.param("id");
+    const { newName } = c.req.valid("json");
 
     try {
-      const newRepoUrl = await renameRepository(
-        repoInfo.owner,
-        repoInfo.repo,
-        body.newName
-      );
-
-      const updatedDex = await updateDexRepoUrl(id, newRepoUrl);
-
-      return c.json({
-        message: "Repository renamed successfully",
-        dex: updatedDex,
-        oldName: repoInfo.repo,
-        newName: body.newName,
-      });
-    } catch (githubError) {
-      console.error("GitHub API error:", githubError);
-
-      if (
-        githubError instanceof Error &&
-        githubError.message.includes("Repository with this name already exists")
-      ) {
-        return c.json(
-          {
-            message: "Repository name already exists",
-            error: githubError.message,
-          },
-          400
-        );
+      const dex = await getDexById(id);
+      if (!dex) {
+        return c.json({ message: "DEX not found" }, 404);
       }
 
+      if (!dex.repoUrl) {
+        return c.json({ message: "This DEX does not have a repository" }, 400);
+      }
+
+      const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+      if (!repoInfo) {
+        return c.json({ message: "Invalid repository URL" }, 400);
+      }
+
+      try {
+        const newRepoUrl = await renameRepository(
+          repoInfo.owner,
+          repoInfo.repo,
+          newName
+        );
+
+        const updatedDex = await updateDexRepoUrl(id, newRepoUrl);
+
+        return c.json({
+          message: "Repository renamed successfully",
+          dex: updatedDex,
+          oldName: repoInfo.repo,
+          newName: newName,
+        });
+      } catch (githubError) {
+        console.error("GitHub API error:", githubError);
+
+        if (
+          githubError instanceof Error &&
+          githubError.message.includes(
+            "Repository with this name already exists"
+          )
+        ) {
+          return c.json(
+            {
+              message: "Repository name already exists",
+              error: githubError.message,
+            },
+            400
+          );
+        }
+
+        return c.json(
+          { message: "Error renaming repository", error: String(githubError) },
+          500
+        );
+      }
+    } catch (error) {
+      console.error("Error renaming repository:", error);
       return c.json(
-        { message: "Error renaming repository", error: String(githubError) },
+        { message: "Error renaming repository", error: String(error) },
         500
       );
     }
-  } catch (error) {
-    console.error("Error renaming repository:", error);
-    return c.json(
-      { message: "Error renaming repository", error: String(error) },
-      500
-    );
   }
-});
+);
 
 adminRoutes.post("/broker/delete", async (c: AdminContext) => {
   try {
@@ -340,7 +336,10 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
     const result = deleteBrokerSchema.safeParse(await c.req.json());
     if (!result.success) {
       return c.json(
-        { error: "Invalid request", details: result.error },
+        {
+          message: "Invalid request body",
+          error: JSON.stringify(result.error.issues),
+        },
         { status: 400 }
       );
     }

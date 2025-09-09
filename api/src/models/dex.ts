@@ -10,6 +10,7 @@ import {
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
+import { ContentfulStatusCode } from "hono/utils/http-status";
 
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
 
@@ -717,6 +718,10 @@ export async function getAllDexes(
   });
 }
 
+type Result<T, E = { message: string; status: ContentfulStatusCode }> =
+  | { success: true; data: T }
+  | { success: false; error: E };
+
 /**
  * Update the custom domain for a DEX
  * @param id The DEX ID
@@ -728,45 +733,66 @@ export async function updateDexCustomDomain(
   id: string,
   domain: string,
   userId: string
-): Promise<Dex> {
+): Promise<Result<Dex>> {
   const dex = await prisma.dex.findUnique({
     where: { id },
   });
 
   if (!dex) {
-    throw new Error("DEX not found");
+    return { success: false, error: { message: "DEX not found", status: 404 } };
   }
 
   if (dex.userId !== userId) {
-    throw new Error("User is not authorized to update this DEX");
+    return {
+      success: false,
+      error: {
+        message: "You are not authorized to update this DEX",
+        status: 403,
+      },
+    };
   }
 
   if (!dex.repoUrl) {
-    throw new Error("This DEX doesn't have a repository URL");
+    return {
+      success: false,
+      error: {
+        message: "This DEX doesn't have a repository configured",
+        status: 400,
+      },
+    };
   }
 
   const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
   if (!repoInfo) {
-    throw new Error("Invalid repository URL");
+    return {
+      success: false,
+      error: { message: "Invalid repository URL format", status: 400 },
+    };
   }
 
   try {
     await setCustomDomain(repoInfo.owner, repoInfo.repo, domain);
   } catch (error) {
-    throw new Error(
-      `Failed to set custom domain in GitHub: ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
+    return {
+      success: false,
+      error: {
+        message: `Failed to configure domain with GitHub Pages: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
+        status: 500,
+      },
+    };
   }
 
-  return prisma.dex.update({
+  const updatedDex = await prisma.dex.update({
     where: { id },
     data: {
       customDomain: domain,
       updatedAt: new Date(),
     },
   });
+
+  return { success: true, data: updatedDex };
 }
 
 /**

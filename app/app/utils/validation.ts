@@ -1,6 +1,16 @@
 import { ValidationFunction } from "../components/FormInput";
 
 /**
+ * Interface for Zod error structure
+ */
+interface ZodError {
+  code: string;
+  message: string;
+  path: (string | number)[];
+  [key: string]: unknown;
+}
+
+/**
  * Creates a required field validator
  * @param fieldName Name of the field to use in error message
  * @returns A validation function
@@ -102,6 +112,34 @@ export const validateBrokerId =
 
     return null;
   };
+
+/**
+ * Parses Zod validation errors from API error responses
+ * @param errorResponse The error response from the API
+ * @returns A user-friendly error message or the original message if not a Zod error
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export const parseZodError = (errorResponse: any): string => {
+  if (errorResponse.success === false && errorResponse.error?.issues) {
+    const issues = errorResponse.error.issues;
+    if (Array.isArray(issues) && issues.length > 0) {
+      return issues[0].message;
+    }
+  }
+
+  if (errorResponse.message === "Invalid request body" && errorResponse.error) {
+    try {
+      const zodErrors: ZodError[] = JSON.parse(errorResponse.error);
+      if (Array.isArray(zodErrors) && zodErrors.length > 0) {
+        return zodErrors[0].message;
+      }
+    } catch {
+      return errorResponse.error;
+    }
+  }
+
+  return errorResponse.message || "An error occurred";
+};
 
 /**
  * Combines multiple validators into one
