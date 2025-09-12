@@ -11,7 +11,7 @@ export default function Navigation() {
 
   return (
     <nav className="flex items-center">
-      <div className="flex gap-2 md:gap-4">
+      <div className="flex lg:gap-4">
         <Link
           to="/"
           className={`text-sm md:text-base font-medium px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all duration-200 
@@ -22,6 +22,18 @@ export default function Navigation() {
             }`}
         >
           Home
+        </Link>
+
+        <Link
+          to="/board"
+          className={`text-sm md:text-base font-medium px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all duration-200 
+            ${
+              isActive("/board")
+                ? "bg-light/10 text-white"
+                : "text-gray-300 hover:bg-light/5 hover:text-white"
+            }`}
+        >
+          Board
         </Link>
 
         <Link

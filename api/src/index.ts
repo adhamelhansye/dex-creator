@@ -7,6 +7,8 @@ import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
 import themeRoutes from "./routes/theme";
 import graduationRoutes from "./routes/graduation";
+import { leaderboard } from "./routes/leaderboard";
+import { leaderboardService } from "./services/leaderboardService";
 import { prisma } from "./lib/prisma";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
 import {
@@ -46,6 +48,7 @@ app.route("/api/auth", authRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/theme", themeRoutes);
 app.route("/api/graduation", graduationRoutes);
+app.route("/api/leaderboard", leaderboard);
 
 app.notFound(c => {
   return c.json(
@@ -109,7 +112,6 @@ prisma
       console.log("💰 Checking gas balances on all chains...");
       const environment = getCurrentEnvironment();
       const gasBalanceData = await checkGasBalances(environment);
-
       if (gasBalanceData.success) {
         console.log("✅ All chains have sufficient gas balances");
       } else {
@@ -130,11 +132,13 @@ prisma
   });
 
 process.on("SIGINT", async () => {
+  leaderboardService.stop();
   await prisma.$disconnect();
   process.exit(0);
 });
 
 process.on("SIGTERM", async () => {
+  leaderboardService.stop();
   await prisma.$disconnect();
   process.exit(0);
 });

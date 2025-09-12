@@ -90,6 +90,14 @@ model Dex {
   seoKeywords          String?  // SEO Keywords
   privyLoginMethods    String?  // Comma-separated list of Privy login methods (email,passkey,twitter,google)
   isGraduated          Boolean  @default(false) // Whether the DEX has fully graduated
+  
+  // Social Card Fields
+  description          String?  // DEX description for social cards
+  banner               String?  // Banner image for social cards (defaults to primaryLogo for migration)
+  logo                 String?  // Small logo for social cards (defaults to secondaryLogo for migration)
+  tokenAddress         String?  // Token contract address
+  tokenChain           String?  // Token chain (e.g., "ethereum", "polygon", "arbitrum")
+  websiteUrl           String?  // DEX website URL for board display
 
   // Relation to User
   userId               String

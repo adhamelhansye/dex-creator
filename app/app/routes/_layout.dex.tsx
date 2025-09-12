@@ -1659,6 +1659,34 @@ export default function DexRoute() {
             </Card>
           )}
 
+          {dexData && (
+            <Card className="my-6 bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-500/30">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 bg-purple-500/20 p-2 rounded-full">
+                    <div className="i-mdi:share-variant text-purple-400 w-6 h-6"></div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1">
+                      DEX Card Setup
+                    </h3>
+                    <p className="text-gray-300">
+                      Configure how your DEX appears on the board page. Set up
+                      description, banner, logo, and token information for
+                      better visibility.
+                    </p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate("/dex/card")}
+                  className="whitespace-nowrap flex-shrink-0"
+                >
+                  Setup DEX Card
+                </Button>
+              </div>
+            </Card>
+          )}
+
           {dexData && dexData.brokerId !== "demo" && (
             <Card
               className={`my-6 ${

@@ -12,7 +12,12 @@ import {
   extractRepoInfoFromUrl,
   dexFormSchema,
   convertFormDataToInternal,
+  updateDexSocialCard,
+  socialCardFormSchema,
+  convertSocialCardFormDataToInternal,
 } from "../models/dex";
+import { geckoTerminalService } from "../services/geckoTerminalService.js";
+import { leaderboardService } from "../services/leaderboardService.js";
 import {
   getWorkflowRunStatus,
   getWorkflowRunDetails,
@@ -59,6 +64,24 @@ dexRoutes.get("/rate-limit-status", async c => {
       ? `Please wait ${Math.ceil(remainingSeconds / 60)} more minutes before updating your DEX again.`
       : "Ready to update your DEX.",
   });
+});
+
+// Get available networks for token chain selection
+dexRoutes.get("/networks", async c => {
+  try {
+    const networks = await geckoTerminalService.getNetworks();
+
+    return c.json(networks, { status: 200 });
+  } catch (error) {
+    console.error("Error fetching networks:", error);
+    return c.json(
+      {
+        message: "Failed to fetch available networks",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
 });
 
 // Get a specific DEX by ID
@@ -108,6 +131,120 @@ dexRoutes.post(
         message = error.message;
       }
       return c.json({ error: message }, { status: 500 });
+    }
+  }
+);
+
+// Update social card information
+dexRoutes.put(
+  "/social-card",
+  zValidator("form", socialCardFormSchema),
+  async c => {
+    try {
+      const userId = c.get("userId");
+      const formData = c.req.valid("form");
+
+      const data = await convertSocialCardFormDataToInternal(formData);
+
+      const dex = await getUserDex(userId);
+      if (!dex) {
+        return c.json({ message: "DEX not found" }, { status: 404 });
+      }
+
+      if (data.tokenChain) {
+        const isValidChain = await geckoTerminalService.isValidNetwork(
+          data.tokenChain
+        );
+        if (!isValidChain) {
+          return c.json(
+            {
+              message:
+                "Invalid token chain. Please use a valid GeckoTerminal network ID.",
+            },
+            { status: 400 }
+          );
+        }
+      }
+
+      if (data.tokenAddress && data.tokenChain) {
+        try {
+          const response = await fetch(
+            `https://api.geckoterminal.com/api/v2/networks/${data.tokenChain}/tokens/${data.tokenAddress}`
+          );
+
+          if (!response.ok) {
+            return c.json(
+              {
+                message:
+                  "Token not found on the specified network. Please verify the token address and network.",
+              },
+              { status: 400 }
+            );
+          }
+
+          const tokenData = await response.json();
+          if (!tokenData.data || !tokenData.data.attributes) {
+            return c.json(
+              {
+                message: "Invalid token data received from GeckoTerminal API.",
+              },
+              { status: 400 }
+            );
+          }
+        } catch (error) {
+          console.error("Error validating token:", error);
+          return c.json(
+            {
+              message: "Failed to validate token. Please try again later.",
+            },
+            { status: 500 }
+          );
+        }
+      }
+
+      const updatedDex = await updateDexSocialCard(dex.id, userId, data);
+
+      if (data.tokenAddress || data.tokenChain) {
+        leaderboardService.invalidateTokenCacheForBroker(dex.brokerId);
+      }
+
+      return c.json(
+        {
+          message: "Social card information updated successfully",
+          dex: {
+            id: updatedDex.id,
+            description: updatedDex.description,
+            banner: updatedDex.banner,
+            logo: updatedDex.logo,
+            tokenAddress: updatedDex.tokenAddress,
+            tokenChain: updatedDex.tokenChain,
+            telegramLink: updatedDex.telegramLink,
+            discordLink: updatedDex.discordLink,
+            xLink: updatedDex.xLink,
+            websiteUrl: updatedDex.websiteUrl,
+          },
+        },
+        { status: 200 }
+      );
+    } catch (error) {
+      console.error("Error updating social card:", error);
+
+      if (error instanceof Error) {
+        if (error.message.includes("DEX not found")) {
+          return c.json({ message: "DEX not found" }, { status: 404 });
+        }
+        if (error.message.includes("User is not authorized")) {
+          return c.json({ message: error.message }, { status: 403 });
+        }
+      }
+
+      return c.json(
+        {
+          message: "Failed to update social card information",
+          error: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 }
+      );
     }
   }
 );
@@ -372,7 +509,7 @@ dexRoutes.post(
     const result = await updateDexCustomDomain(id, domain, userId);
 
     if (!result.success) {
-      return c.json({ message: result.error.message }, result.error.status);
+      return c.json({ message: result.error }, 400);
     }
 
     return c.json(

@@ -248,7 +248,6 @@ function getSolanaConnection(
   }
 
   try {
-    console.log("solanaChain.rpcUrl", solanaChain.rpcUrl);
     return new anchor.web3.Connection(solanaChain.rpcUrl);
   } catch (error) {
     console.warn(

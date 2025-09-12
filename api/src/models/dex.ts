@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import type { Prisma, Dex } from "@prisma/client";
+import type { Result } from "../lib/types";
 import {
   forkTemplateRepository,
   setupRepositoryWithSingleCommit,
@@ -10,7 +11,6 @@ import {
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
-import { ContentfulStatusCode } from "hono/utils/http-status";
 
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
 
@@ -614,15 +614,41 @@ export async function updateDexRepoUrl(
 export async function updateBrokerId(
   id: string,
   brokerId: string
-): Promise<Dex> {
-  return prisma.dex.update({
-    where: {
-      id,
-    },
-    data: {
-      brokerId,
-    },
-  });
+): Promise<Result<Dex>> {
+  if (brokerId !== "demo") {
+    const existingDex = await prisma.dex.findFirst({
+      where: {
+        brokerId,
+        id: { not: id },
+      },
+    });
+
+    if (existingDex) {
+      return {
+        success: false,
+        error: `Broker ID "${brokerId}" is already in use by another DEX`,
+      };
+    }
+  }
+
+  try {
+    const updatedDex = await prisma.dex.update({
+      where: {
+        id,
+      },
+      data: {
+        brokerId,
+      },
+    });
+
+    return { success: true, data: updatedDex };
+  } catch (error) {
+    console.error("Failed to update broker ID:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
 }
 
 export async function deleteDexByWalletAddress(
@@ -718,10 +744,6 @@ export async function getAllDexes(
   });
 }
 
-type Result<T, E = { message: string; status: ContentfulStatusCode }> =
-  | { success: true; data: T }
-  | { success: false; error: E };
-
 /**
  * Update the custom domain for a DEX
  * @param id The DEX ID
@@ -739,26 +761,20 @@ export async function updateDexCustomDomain(
   });
 
   if (!dex) {
-    return { success: false, error: { message: "DEX not found", status: 404 } };
+    return { success: false, error: "DEX not found" };
   }
 
   if (dex.userId !== userId) {
     return {
       success: false,
-      error: {
-        message: "You are not authorized to update this DEX",
-        status: 403,
-      },
+      error: "You are not authorized to update this DEX",
     };
   }
 
   if (!dex.repoUrl) {
     return {
       success: false,
-      error: {
-        message: "This DEX doesn't have a repository configured",
-        status: 400,
-      },
+      error: "This DEX doesn't have a repository configured",
     };
   }
 
@@ -766,7 +782,7 @@ export async function updateDexCustomDomain(
   if (!repoInfo) {
     return {
       success: false,
-      error: { message: "Invalid repository URL format", status: 400 },
+      error: "Invalid repository URL format",
     };
   }
 
@@ -775,12 +791,9 @@ export async function updateDexCustomDomain(
   } catch (error) {
     return {
       success: false,
-      error: {
-        message: `Failed to configure domain with GitHub Pages: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
-        status: 500,
-      },
+      error: `Failed to configure domain with GitHub Pages: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
     };
   }
 
@@ -895,4 +908,115 @@ export async function convertFormDataToInternal(
   });
 
   return data;
+}
+
+// Social Card Update Schema
+export const socialCardUpdateSchema = z.object({
+  description: z
+    .string()
+    .max(150, "Description must be 150 characters or less")
+    .nullish(),
+  banner: z.string().max(250000, "Banner must be smaller than 250KB").nullish(),
+  logo: z.string().max(100000, "Logo must be smaller than 100KB").nullish(),
+  tokenAddress: z
+    .string()
+    .max(100, "Token address must be 100 characters or less")
+    .nullish(),
+  tokenChain: z
+    .string()
+    .max(50, "Token chain must be 50 characters or less")
+    .nullish(),
+  telegramLink: z
+    .string()
+    .max(50, "Telegram link must be 50 characters or less")
+    .nullish(),
+  discordLink: z
+    .string()
+    .max(50, "Discord link must be 50 characters or less")
+    .nullish(),
+  xLink: z
+    .string()
+    .max(50, "X (Twitter) link must be 50 characters or less")
+    .nullish(),
+  websiteUrl: z
+    .string()
+    .url("Must be a valid URL")
+    .max(50, "Website URL must be 50 characters or less")
+    .nullish(),
+});
+
+export const socialCardFormSchema = socialCardUpdateSchema.extend({
+  banner: z.instanceof(File).optional(),
+  logo: z.instanceof(File).optional(),
+});
+
+export async function convertSocialCardFormDataToInternal(
+  formData: z.infer<typeof socialCardFormSchema>
+): Promise<z.infer<typeof socialCardUpdateSchema>> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data: any = { ...formData };
+
+  if (formData.banner instanceof File) {
+    data.banner = await fileToBase64(formData.banner);
+  }
+  if (formData.logo instanceof File) {
+    data.logo = await fileToBase64(formData.logo);
+  }
+
+  return data;
+}
+
+export async function updateDexSocialCard(
+  id: string,
+  userId: string,
+  data: z.infer<typeof socialCardUpdateSchema>
+): Promise<Dex> {
+  const existingDex = await prisma.dex.findFirst({
+    where: { id, userId },
+  });
+
+  if (!existingDex) {
+    throw new Error("DEX not found or access denied");
+  }
+
+  const updateData: Partial<Dex> = {};
+
+  if ("description" in data && data.description !== existingDex.description) {
+    updateData.description = data.description;
+  }
+  if ("banner" in data && data.banner !== existingDex.banner) {
+    updateData.banner = data.banner;
+  }
+  if ("logo" in data && data.logo !== existingDex.logo) {
+    updateData.logo = data.logo;
+  }
+  if (
+    "tokenAddress" in data &&
+    data.tokenAddress !== existingDex.tokenAddress
+  ) {
+    updateData.tokenAddress = data.tokenAddress;
+  }
+  if ("tokenChain" in data && data.tokenChain !== existingDex.tokenChain) {
+    updateData.tokenChain = data.tokenChain;
+  }
+  if (
+    "telegramLink" in data &&
+    data.telegramLink !== existingDex.telegramLink
+  ) {
+    updateData.telegramLink = data.telegramLink;
+  }
+  if ("discordLink" in data && data.discordLink !== existingDex.discordLink) {
+    updateData.discordLink = data.discordLink;
+  }
+  if ("xLink" in data && data.xLink !== existingDex.xLink) {
+    updateData.xLink = data.xLink;
+  }
+  if ("websiteUrl" in data && data.websiteUrl !== existingDex.websiteUrl) {
+    updateData.websiteUrl = data.websiteUrl;
+  }
+
+  return prisma.dex.update({
+    where: { id },
+    data: updateData,
+  });
 }

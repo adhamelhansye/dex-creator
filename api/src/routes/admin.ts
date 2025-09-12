@@ -142,7 +142,13 @@ adminRoutes.post(
         return c.json({ message: "DEX not found" }, 404);
       }
 
-      const updatedDex = await updateBrokerId(id, brokerId);
+      const result = await updateBrokerId(id, brokerId);
+
+      if (!result.success) {
+        return c.json({ message: result.error }, 400);
+      }
+
+      const updatedDex = result.data;
 
       if (updatedDex.repoUrl) {
         const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);

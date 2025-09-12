@@ -6,6 +6,7 @@ import { useModal } from "../context/ModalContext";
 import { Button } from "../components/Button";
 import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
+import Pagination from "../components/Pagination";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 import { getBlockExplorerUrlByChainId } from "../../../config";
 import { getCurrentEnvironment } from "../utils/config";
@@ -1504,88 +1505,14 @@ export default function AdminRoute() {
 
           {/* Pagination Controls */}
           {!loadingDexes && allDexes.length > 0 && (
-            <div className="mt-6 pt-4 border-t border-light/10">
-              <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
-                {/* Page Size Selector */}
-                <div className="flex items-center gap-2">
-                  <label className="text-sm text-gray-400">Show:</label>
-                  <select
-                    value={pageSize}
-                    onChange={e => {
-                      const newSize = parseInt(e.target.value);
-                      setPageSize(newSize);
-                      loadAllDexes(1, newSize, searchTerm);
-                    }}
-                    className="bg-dark border border-light/20 rounded px-2 py-1 text-sm focus:border-primary-light outline-none"
-                  >
-                    <option value={10}>10</option>
-                    <option value={20}>20</option>
-                    <option value={50}>50</option>
-                    <option value={100}>100</option>
-                  </select>
-                  <span className="text-sm text-gray-400">per page</span>
-                </div>
-
-                {/* Pagination Info */}
-                <div className="text-sm text-gray-400">
-                  Showing {(currentPage - 1) * pageSize + 1} to{" "}
-                  {Math.min(currentPage * pageSize, totalDexes)} of {totalDexes}{" "}
-                  DEXes
-                </div>
-
-                {/* Pagination Navigation */}
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() =>
-                      loadAllDexes(currentPage - 1, pageSize, searchTerm)
-                    }
-                    disabled={currentPage <= 1}
-                    className="px-3 py-1 rounded border border-light/20 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-light/10 disabled:hover:bg-transparent"
-                  >
-                    Previous
-                  </button>
-
-                  {/* Page Numbers */}
-                  <div className="flex items-center gap-1">
-                    {Array.from(
-                      { length: Math.min(5, Math.ceil(totalDexes / pageSize)) },
-                      (_, i) => {
-                        const pageNum = i + 1;
-                        return (
-                          <button
-                            key={pageNum}
-                            onClick={() =>
-                              loadAllDexes(pageNum, pageSize, searchTerm)
-                            }
-                            className={`px-2 py-1 rounded text-sm min-w-[32px] ${
-                              currentPage === pageNum
-                                ? "bg-primary-light text-dark"
-                                : "border border-light/20 hover:bg-light/10"
-                            }`}
-                          >
-                            {pageNum}
-                          </button>
-                        );
-                      }
-                    )}
-
-                    {Math.ceil(totalDexes / pageSize) > 5 && (
-                      <span className="text-sm text-gray-400 px-2">...</span>
-                    )}
-                  </div>
-
-                  <button
-                    onClick={() =>
-                      loadAllDexes(currentPage + 1, pageSize, searchTerm)
-                    }
-                    disabled={currentPage >= Math.ceil(totalDexes / pageSize)}
-                    className="px-3 py-1 rounded border border-light/20 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-light/10 disabled:hover:bg-transparent"
-                  >
-                    Next
-                  </button>
-                </div>
-              </div>
-            </div>
+            <Pagination
+              currentPage={currentPage}
+              pageSize={pageSize}
+              totalItems={totalDexes}
+              onPageChange={page => loadAllDexes(page, pageSize, searchTerm)}
+              onPageSizeChange={size => loadAllDexes(1, size, searchTerm)}
+              itemName="DEXes"
+            />
           )}
         </div>
       </div>

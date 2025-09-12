@@ -11,7 +11,13 @@ import { useModal } from "../context/ModalContext";
 import { toast } from "react-toastify";
 import { Button } from "./Button";
 
-type ImageType = "primaryLogo" | "secondaryLogo" | "favicon" | "pnlPoster";
+type ImageType =
+  | "primaryLogo"
+  | "secondaryLogo"
+  | "favicon"
+  | "pnlPoster"
+  | "banner"
+  | "logo";
 
 interface ImagePasteProps {
   id: string;
@@ -35,7 +41,6 @@ export default function ImagePaste({
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [isFocused, setIsFocused] = useState(false);
 
-  // Use refs for data that needs to persist between re-renders and survive component updates
   const originalImageRef = useRef<string | null>(null);
   const originalDimensionsRef = useRef<{
     width: number;
@@ -44,14 +49,13 @@ export default function ImagePaste({
   const pasteAreaRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Get dimensions for the specific image type
   const dimensions = DEFAULT_DIMENSIONS[imageType];
 
-  // Determine if we should enforce square aspect ratio
   const enforceSquare =
-    imageType === "secondaryLogo" || imageType === "favicon";
+    imageType === "secondaryLogo" ||
+    imageType === "favicon" ||
+    imageType === "logo";
 
-  // Determine if we should enforce 16:9 aspect ratio
   const enforce16by9 = imageType === "pnlPoster";
 
   useEffect(() => {
@@ -120,7 +124,6 @@ export default function ImagePaste({
     [dimensions, onChange]
   );
 
-  // Reusable function to process an image (from paste or file selection)
   const processImageAndOpenCropModal = useCallback(
     async (imageDataUrl: string) => {
       if (!imageDataUrl) {
@@ -130,20 +133,15 @@ export default function ImagePaste({
         return;
       }
 
-      // Store the original image in the ref
       originalImageRef.current = imageDataUrl;
 
-      // Get the original dimensions
       try {
         const imageDims = await getImageDimensions(imageDataUrl);
-        // Store dimensions in the ref
         originalDimensionsRef.current = imageDims;
 
-        // Set initial crop parameters based on image type
         let initialCrop: CropParams;
 
         if (imageType === "primaryLogo") {
-          // Primary logo: use full image dimensions starting at (0,0)
           initialCrop = {
             x: 0,
             y: 0,
@@ -151,18 +149,15 @@ export default function ImagePaste({
             height: imageDims.height,
           };
         } else if (imageType === "pnlPoster") {
-          // PnL Poster: 16:9 aspect ratio, largest possible from center
           const aspectRatio = 16 / 9;
           let cropWidth = imageDims.width;
           let cropHeight = imageDims.width / aspectRatio;
 
-          // If calculated height is larger than image height, use height as constraint
           if (cropHeight > imageDims.height) {
             cropHeight = imageDims.height;
             cropWidth = imageDims.height * aspectRatio;
           }
 
-          // Center the crop area
           const x = Math.max(0, (imageDims.width - cropWidth) / 2);
           const y = Math.max(0, (imageDims.height - cropHeight) / 2);
 
@@ -172,8 +167,14 @@ export default function ImagePaste({
             width: Math.round(cropWidth),
             height: Math.round(cropHeight),
           };
+        } else if (imageType === "banner") {
+          initialCrop = {
+            x: 0,
+            y: 0,
+            width: imageDims.width,
+            height: imageDims.height,
+          };
         } else {
-          // Secondary logo and favicon: square aspect ratio (1:1), largest possible from top-left
           const maxSquareSize = Math.min(imageDims.width, imageDims.height);
           initialCrop = {
             x: 0,
@@ -183,12 +184,10 @@ export default function ImagePaste({
           };
         }
 
-        // Prepare the handleApplyCrop function for this specific image operation
         const handleApplyCropForThisImage = async (
           cropParams: CropParams,
           finalDimensions: { width: number; height: number }
         ) => {
-          // Access the image and dimensions from refs
           const imageSource = originalImageRef.current;
 
           if (!imageSource) {
@@ -201,7 +200,6 @@ export default function ImagePaste({
             return;
           }
 
-          // Process the image with the crop parameters
           await processAndSaveImage(imageSource, cropParams, finalDimensions);
         };
 
@@ -225,14 +223,11 @@ export default function ImagePaste({
           "Could not process image. Please ensure it\\'s a valid image file."
         );
         setIsProcessing(false);
-        // Fallback to direct processing without crop if dimensions fail (optional)
-        // await processAndSaveImage(imageDataUrl);
       }
     },
     [openModal, processAndSaveImage, imageType, enforceSquare, enforce16by9]
   );
 
-  // Handle paste events (from keyboard or programmatically)
   const handlePaste = useCallback(
     async (event?: ClipboardEvent | React.ClipboardEvent<HTMLDivElement>) => {
       if (isProcessing) return;
@@ -244,18 +239,15 @@ export default function ImagePaste({
         if (event) {
           let nativeEventToUse: ClipboardEvent;
           if ("nativeEvent" in event) {
-            // It's a React.ClipboardEvent<HTMLDivElement>
             (event as React.ClipboardEvent<HTMLDivElement>).preventDefault();
             nativeEventToUse = (event as React.ClipboardEvent<HTMLDivElement>)
               .nativeEvent;
           } else {
-            // It's a native ClipboardEvent
             (event as ClipboardEvent).preventDefault();
             nativeEventToUse = event as ClipboardEvent;
           }
           imageDataUrl = await extractImageFromClipboard(nativeEventToUse);
         } else {
-          // From button click - use Clipboard API
           try {
             const clipboardItems = await navigator.clipboard.read();
             for (const clipboardItem of clipboardItems) {
@@ -278,7 +270,6 @@ export default function ImagePaste({
             toast.error(
               "Could not access clipboard. Please try using Ctrl+V or ⌘+V directly in the paste area."
             );
-            // Focus the paste area
             pasteAreaRef.current?.focus();
             setIsProcessing(false);
             return;
@@ -294,17 +285,15 @@ export default function ImagePaste({
           return;
         }
 
-        // Process the image using the reusable function
         await processImageAndOpenCropModal(imageDataUrl);
       } catch (error) {
         console.error("Image paste error:", error);
-        setIsProcessing(false); // Ensure isProcessing is reset on error
+        setIsProcessing(false);
       }
     },
-    [isProcessing, processImageAndOpenCropModal] // Removed other dependencies as they are now in processImageAndOpenCropModal
+    [isProcessing, processImageAndOpenCropModal]
   );
 
-  // Handle file selection
   const handleFileSelected = async (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -333,29 +322,24 @@ export default function ImagePaste({
       setIsProcessing(false);
     }
 
-    // Reset file input to allow selecting the same file again
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
   };
 
-  // Clear the image
   const handleClear = () => {
     originalImageRef.current = null;
     originalDimensionsRef.current = null;
     onChange(null);
   };
 
-  // Handle focus changes for visual feedback
   const handleFocus = () => setIsFocused(true);
   const handleBlur = () => setIsFocused(false);
 
-  // Request clipboard access and paste
   const handlePasteButtonClick = async () => {
     await handlePaste();
   };
 
-  // Trigger file input click
   const handleSelectFileButtonClick = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();

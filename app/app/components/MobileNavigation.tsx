@@ -13,11 +13,8 @@ export default function MobileNavigation({
 }: MobileNavigationProps) {
   const location = useLocation();
 
-  // Determine if a link is active
   const isActive = (path: string) => {
-    // Special case for root path
     if (path === "/" && location.pathname === "/") return true;
-    // For non-root paths
     if (path !== "/" && location.pathname.startsWith(path)) return true;
     return false;
   };
@@ -79,6 +76,20 @@ export default function MobileNavigation({
               onClick={closeMenu}
             >
               Home
+            </Link>
+            <Link
+              to="/board"
+              className={`
+                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
+                ${
+                  isActive("/board")
+                    ? "bg-light/10 text-white"
+                    : "text-gray-300 hover:bg-light/5 hover:text-white"
+                }
+              `}
+              onClick={closeMenu}
+            >
+              Board
             </Link>
             <Link
               to="/dex"

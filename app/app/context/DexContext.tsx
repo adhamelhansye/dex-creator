@@ -46,6 +46,12 @@ interface DexData {
   seoTwitterHandle?: string | null;
   seoThemeColor?: string | null;
   seoKeywords?: string | null;
+  description?: string | null;
+  banner?: string | null;
+  logo?: string | null;
+  tokenAddress?: string | null;
+  tokenChain?: string | null;
+  websiteUrl?: string | null;
   isGraduated?: boolean;
   createdAt: string;
   updatedAt: string;

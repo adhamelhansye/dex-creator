@@ -62,6 +62,9 @@ export default function Index() {
             <Button variant="primary" size="lg" onClick={handleStartBuilding}>
               Start Building
             </Button>
+            <Button variant="secondary" size="lg" as="a" href="/board">
+              View Board
+            </Button>
             <Button
               variant="secondary"
               size="lg"
