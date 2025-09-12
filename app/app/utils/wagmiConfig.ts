@@ -28,8 +28,10 @@ export const wagmiAdapter = new WagmiAdapter({
 createAppKit({
   adapters: [wagmiAdapter],
   networks: [mainnet, arbitrum, sepolia, arbitrumSepolia],
+  defaultNetwork: mainnet,
   projectId,
   metadata,
+  defaultAccountTypes: { eip155: "eoa" },
   features: {
     analytics: true,
     email: false,
