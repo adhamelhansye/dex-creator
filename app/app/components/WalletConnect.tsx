@@ -95,7 +95,10 @@ export default function WalletConnect() {
   };
 
   const openWalletModal = () => {
-    appKit?.open();
+    appKit?.open({
+      namespace: "eip155",
+      view: "Connect",
+    });
   };
 
   const handleModalClose = () => {

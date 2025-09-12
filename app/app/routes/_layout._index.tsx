@@ -23,7 +23,10 @@ export default function Index() {
     if (isAuthenticated) {
       navigate("/dex");
     } else {
-      appKit?.open();
+      appKit?.open({
+        namespace: "eip155",
+        view: "Connect",
+      });
     }
   };
 
