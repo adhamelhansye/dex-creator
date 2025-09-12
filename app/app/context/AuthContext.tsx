@@ -9,6 +9,7 @@ import {
 import { useAccount, useSignMessage, useDisconnect } from "wagmi";
 import { API_BASE_URL } from "../utils/wagmiConfig";
 import { toast } from "react-toastify";
+import { setGlobalDisconnect } from "../utils/globalDisconnect";
 
 interface User {
   id: string;
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const [isValidating, setIsValidating] = useState(true); // Add state for initial validation
+  const [isValidating, setIsValidating] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const { address, isConnected } = useAccount();
@@ -132,6 +133,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout();
     }
   }, [isConnected, user, logout]);
+
+  useEffect(() => {
+    setGlobalDisconnect(disconnect);
+  }, [disconnect]);
 
   const login = useCallback(async () => {
     if (!address) {

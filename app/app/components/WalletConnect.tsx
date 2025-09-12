@@ -7,6 +7,7 @@ import { toast } from "react-toastify";
 import { Icon } from "@iconify/react";
 import { Button } from "./Button";
 import { useLocation } from "@remix-run/react";
+import { isHandlingSessionExpiryDisconnect } from "../utils/globalDisconnect";
 
 export default function WalletConnect() {
   const [connectError, setConnectError] = useState<string | null>(null);
@@ -54,7 +55,12 @@ export default function WalletConnect() {
   }, [isAuthenticated]);
 
   useEffect(() => {
-    if (isConnected && !isAuthenticated && !hasUserDismissedModal) {
+    if (
+      isConnected &&
+      !isAuthenticated &&
+      !hasUserDismissedModal &&
+      !isHandlingSessionExpiryDisconnect()
+    ) {
       const timer = setTimeout(() => {
         openModal("login", {
           onLogin: handleLogin,

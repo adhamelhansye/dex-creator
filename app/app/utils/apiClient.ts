@@ -2,6 +2,7 @@
 import { toast } from "react-toastify";
 import { API_BASE_URL } from "./wagmiConfig";
 import { parseZodError } from "./validation";
+import { disconnectWallet } from "./globalDisconnect";
 
 type HttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
 
@@ -57,8 +58,9 @@ export async function apiClient<T = any>({
     const response = await fetch(url, options);
 
     if (response.status === 401) {
+      disconnectWallet();
       if (showToastOnError) {
-        toast.error("Your session has expired. Please login again.");
+        toast.error("Your session has expired. Please reconnect your wallet.");
       }
       throw new Error("Unauthorized: Your session has expired");
     }
@@ -147,8 +149,9 @@ export async function apiClientFormData<T = any>({
     const response = await fetch(url, options);
 
     if (response.status === 401) {
+      disconnectWallet();
       if (showToastOnError) {
-        toast.error("Your session has expired. Please login again.");
+        toast.error("Your session has expired. Please reconnect your wallet.");
       }
       throw new Error("Unauthorized: Your session has expired");
     }

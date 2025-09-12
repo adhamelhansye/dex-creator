@@ -14,7 +14,7 @@ const metadata = {
   name: "Orderly One",
   description: "Create your own DEX on Orderly Network",
   url: "https://dex.orderly.network",
-  icons: ["https://avatars.githubusercontent.com/u/37784886"],
+  icons: ["https://dex.orderly.network/favicon.webp"],
 };
 
 const networks = [mainnet, arbitrum, sepolia, arbitrumSepolia];
