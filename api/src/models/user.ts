@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 
-// User schema
 export const userSchema = z.object({
   id: z.string().optional(),
   address: z.string(),
@@ -12,24 +11,24 @@ export const userSchema = z.object({
 
 export type User = z.infer<typeof userSchema>;
 
-// Authentication request schema
+const ethereumAddressSchema = z
+  .string()
+  .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format");
+
 export const authRequestSchema = z.object({
-  address: z.string(),
+  address: ethereumAddressSchema,
 });
 
-// Authentication verification schema
 export const authVerifySchema = z.object({
-  address: z.string(),
+  address: ethereumAddressSchema,
   signature: z.string(),
 });
 
-// Token validation schema
 export const tokenValidationSchema = z.object({
-  address: z.string(),
+  address: ethereumAddressSchema,
   token: z.string(),
 });
 
-// Database-backed user store
 class UserStore {
   async findByAddress(address: string) {
     return prisma.user.findUnique({
@@ -83,14 +82,11 @@ class UserStore {
   }
 
   async createToken(userId: string): Promise<string> {
-    // Generate a new token
     const token = crypto.randomUUID();
 
-    // Set expiration time (24 hours from now)
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    // Store the token
     await prisma.token.create({
       data: {
         token,
@@ -103,24 +99,19 @@ class UserStore {
   }
 
   async validateToken(token: string, userId: string): Promise<boolean> {
-    // Find the token in the database
     const tokenData = await prisma.token.findUnique({
       where: { token },
     });
 
-    // Check if token exists
     if (!tokenData) {
       return false;
     }
 
-    // Check if token belongs to the user
     if (tokenData.userId !== userId) {
       return false;
     }
 
-    // Check if token is expired
     if (new Date() > tokenData.expiresAt) {
-      // Remove expired token
       await prisma.token.delete({
         where: { id: tokenData.id },
       });
@@ -142,7 +133,6 @@ class UserStore {
     }
   }
 
-  // Clean up expired tokens (this can be called periodically)
   async cleanupExpiredTokens(): Promise<number> {
     const result = await prisma.token.deleteMany({
       where: {
