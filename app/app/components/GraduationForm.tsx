@@ -8,7 +8,7 @@ import {
 import FormInput from "./FormInput";
 import { Button } from "./Button";
 import { toast } from "react-toastify";
-import { post, get } from "../utils/apiClient";
+import { post, get, put } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
 import { validateBrokerId } from "../utils/validation";
 import { Card } from "./Card";
@@ -478,7 +478,7 @@ export function GraduationForm({
     setIsSavingFees(true);
 
     try {
-      const response = await post<FeeConfigResponse>(
+      const response = await put<FeeConfigResponse>(
         "api/graduation/fees",
         { makerFee: newMakerFee, takerFee: newTakerFee },
         token

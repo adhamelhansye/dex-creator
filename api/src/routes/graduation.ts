@@ -266,34 +266,30 @@ graduationRoutes.get("/fees", async c => {
   }
 });
 
-graduationRoutes.post(
-  "/fees",
-  zValidator("json", updateFeesSchema),
-  async c => {
-    try {
-      const userId = c.get("userId");
+graduationRoutes.put("/fees", zValidator("json", updateFeesSchema), async c => {
+  try {
+    const userId = c.get("userId");
 
-      const { makerFee, takerFee } = c.req.valid("json");
+    const { makerFee, takerFee } = c.req.valid("json");
 
-      const result = await updateDexFees(userId, makerFee, takerFee);
+    const result = await updateDexFees(userId, makerFee, takerFee);
 
-      if (result.success) {
-        return c.json(result);
-      } else {
-        return c.json(result, { status: 400 });
-      }
-    } catch (error) {
-      console.error("Error updating DEX fees:", error);
-      return c.json(
-        {
-          success: false,
-          message: `Error updating DEX fees: ${error instanceof Error ? error.message : String(error)}`,
-        },
-        { status: 500 }
-      );
+    if (result.success) {
+      return c.json(result);
+    } else {
+      return c.json(result, { status: 400 });
     }
+  } catch (error) {
+    console.error("Error updating DEX fees:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error updating DEX fees: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
   }
-);
+});
 
 graduationRoutes.post("/finalize-admin-wallet", async c => {
   try {
