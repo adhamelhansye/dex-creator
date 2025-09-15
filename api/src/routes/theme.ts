@@ -2,17 +2,20 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { OpenAI } from "openai";
+import {
+  themeRateLimiter,
+  createDeploymentRateLimit,
+} from "../lib/rateLimiter";
 
-// Create a router for theme-related routes
 const themeRoutes = new Hono();
 
-// Define the schema for the theme modification request
+const themeRateLimit = createDeploymentRateLimit(themeRateLimiter);
+
 const themePromptSchema = z.object({
-  prompt: z.string().min(3).max(1000),
+  prompt: z.string().min(3).max(100),
   currentTheme: z.string().optional(),
 });
 
-// Helper function to create the OpenAI client
 function createOpenAIClient() {
   const apiKey = process.env.CEREBRAS_API_KEY;
   if (!apiKey) {
@@ -25,16 +28,17 @@ function createOpenAIClient() {
   });
 }
 
-// Endpoint to modify theme based on user prompt
-themeRoutes.post("/modify", zValidator("json", themePromptSchema), async c => {
-  try {
-    const { prompt, currentTheme } = c.req.valid("json");
+themeRoutes.post(
+  "/modify",
+  themeRateLimit,
+  zValidator("json", themePromptSchema),
+  async c => {
+    try {
+      const { prompt, currentTheme } = c.req.valid("json");
 
-    // Create OpenAI client with Cerebras endpoint
-    const openai = createOpenAIClient();
+      const openai = createOpenAIClient();
 
-    // Default theme content
-    const defaultTheme = `:root {
+      const defaultTheme = `:root {
   --oui-font-family: 'Manrope', sans-serif;
 
   /* colors */
@@ -129,11 +133,9 @@ themeRoutes.post("/modify", zValidator("json", themePromptSchema), async c => {
   --oui-spacing-xl: 33.75rem;
 }`;
 
-    // Use the provided currentTheme or fall back to the default theme
-    const baseTheme = currentTheme || defaultTheme;
+      const baseTheme = currentTheme || defaultTheme;
 
-    // System prompt to guide the AI - more concise version
-    const systemPrompt = `You are a CSS theme designer for dark trading platforms. Modify the provided CSS theme based on the user's description.
+      const systemPrompt = `You are a CSS theme designer for dark trading platforms. Modify the provided CSS theme based on the user's description.
 
 FORMAT: Use RGB values with spaces (e.g., "176 132 233" for RGB(176,132,233)).
 
@@ -173,40 +175,40 @@ COLOR GUIDELINES:
    • Gradient-brand-start: Similar to primary-light
    • Gradient-brand-end: Similar to primary`;
 
-    const response = await openai.chat.completions.create({
-      model: "llama-4-scout-17b-16e-instruct",
-      messages: [
-        {
-          role: "system",
-          content: systemPrompt,
-        },
-        {
-          role: "user",
-          content: `Please modify this CSS theme based on the following description: ${prompt}\n\nCurrent theme:\n${baseTheme}`,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: 2000,
-    });
+      const response = await openai.chat.completions.create({
+        model: "llama-4-scout-17b-16e-instruct",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: `Please modify this CSS theme based on the following description: ${prompt}\n\nCurrent theme:\n${baseTheme}`,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 2000,
+      });
 
-    // Extract the modified theme from the response
-    const modifiedTheme = response.choices[0]?.message.content?.trim();
+      const modifiedTheme = response.choices[0]?.message.content?.trim();
 
-    if (!modifiedTheme) {
-      return c.json({ error: "Failed to generate theme" }, { status: 500 });
+      if (!modifiedTheme) {
+        return c.json({ error: "Failed to generate theme" }, { status: 500 });
+      }
+
+      return c.json({ theme: modifiedTheme }, { status: 200 });
+    } catch (error) {
+      console.error("Error modifying theme:", error);
+      let message = "Failed to modify theme";
+
+      if (error instanceof Error) {
+        message = error.message;
+      }
+
+      return c.json({ error: message }, { status: 500 });
     }
-
-    return c.json({ theme: modifiedTheme }, { status: 200 });
-  } catch (error) {
-    console.error("Error modifying theme:", error);
-    let message = "Failed to modify theme";
-
-    if (error instanceof Error) {
-      message = error.message;
-    }
-
-    return c.json({ error: message }, { status: 500 });
   }
-});
+);
 
 export default themeRoutes;

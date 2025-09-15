@@ -111,6 +111,7 @@ class RateLimiter {
 }
 
 export const deploymentRateLimiter = new RateLimiter(5);
+export const themeRateLimiter = new RateLimiter(0.5);
 
 /**
  * Middleware factory for rate limiting DEX deployments
@@ -144,8 +145,10 @@ export function createDeploymentRateLimit(rateLimiter: RateLimiter) {
 
 process.on("SIGTERM", () => {
   deploymentRateLimiter.destroy();
+  themeRateLimiter.destroy();
 });
 
 process.on("SIGINT", () => {
   deploymentRateLimiter.destroy();
+  themeRateLimiter.destroy();
 });

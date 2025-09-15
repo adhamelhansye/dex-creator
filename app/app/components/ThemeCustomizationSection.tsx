@@ -294,6 +294,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
             onChange={handleInputChange("themePrompt")}
             placeholder="e.g., A dark blue theme with neon green accents"
             helpText="Describe your desired color scheme and style"
+            maxLength={100}
             disabled={isGeneratingTheme}
           />
         </div>

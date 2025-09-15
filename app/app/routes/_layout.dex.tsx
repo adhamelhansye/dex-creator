@@ -464,7 +464,18 @@ export default function DexRoute() {
       }
     } catch (error) {
       console.error("Error generating theme:", error);
-      toast.error("Error generating theme. Please try again.");
+      if (
+        error &&
+        typeof error === "object" &&
+        "status" in error &&
+        error.status === 429
+      ) {
+        toast.error(
+          "Rate limit exceeded. Please wait 30 seconds before generating another theme."
+        );
+      } else {
+        toast.error("Error generating theme. Please try again.");
+      }
     } finally {
       setIsGeneratingTheme(false);
     }
