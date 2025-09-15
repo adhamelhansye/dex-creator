@@ -1,0 +1,292 @@
+import { Hono } from "hono";
+import { vi } from "vitest";
+import { authMiddleware, adminMiddleware } from "../../src/lib/auth";
+import { PrismaClient } from "@prisma/client";
+
+vi.mock("../../src/lib/prisma", () => {
+  return {
+    prisma: new PrismaClient({
+      datasources: {
+        db: {
+          url: process.env.DATABASE_URL,
+        },
+      },
+    }),
+  };
+});
+
+vi.mock("../../src/lib/orderlyDb", () => ({
+  addBrokerToOrderlyDb: vi.fn().mockResolvedValue({
+    success: true,
+    message: "Broker added to Orderly database successfully",
+  }),
+  updateBrokerAdminAccountId: vi.fn().mockResolvedValue({
+    success: true,
+    message: "Admin account ID updated successfully",
+  }),
+}));
+
+vi.mock("../../src/lib/github", () => ({
+  setupRepositoryWithSingleCommit: vi
+    .fn()
+    .mockResolvedValue({ html_url: "https://github.com/test/test-repo" }),
+  getWorkflowRunStatus: vi.fn().mockResolvedValue({ status: "completed" }),
+  getWorkflowRunDetails: vi.fn().mockResolvedValue({ jobs: [] }),
+  updateDexConfig: vi.fn().mockResolvedValue({ success: true }),
+  forkTemplateRepository: vi.fn().mockResolvedValue({
+    success: true,
+    data: "https://github.com/test/forked-repo",
+  }),
+  deleteRepository: vi.fn().mockResolvedValue({ success: true }),
+  renameRepository: vi.fn().mockResolvedValue({ success: true }),
+  triggerRedeployment: vi.fn().mockResolvedValue({ success: true }),
+}));
+
+vi.mock("../../src/services/geckoTerminalService", () => ({
+  geckoTerminalService: {
+    getTokenInfo: vi.fn().mockResolvedValue({
+      symbol: "TEST",
+      name: "Test Token",
+      price: 1.0,
+      marketCap: 1000000,
+      imageUrl: "https://example.com/token.png",
+    }),
+  },
+}));
+
+vi.mock("../../src/services/leaderboardService", () => ({
+  leaderboardService: {
+    getLeaderboardData: vi.fn().mockResolvedValue([]),
+  },
+}));
+
+vi.mock("../../src/lib/brokerCreation", () => ({
+  initializeBrokerCreation: vi.fn().mockResolvedValue({ success: true }),
+  checkBrokerCreationPermissions: vi
+    .fn()
+    .mockResolvedValue({ canCreate: true }),
+  checkGasBalances: vi.fn().mockResolvedValue({ hasEnoughGas: true }),
+}));
+
+vi.mock("../../src/lib/rateLimiter", () => ({
+  deploymentRateLimiter: {
+    isRateLimited: vi.fn().mockReturnValue(false),
+    recordRequest: vi.fn(),
+    getRemainingCooldown: vi.fn().mockReturnValue(0),
+  },
+  themeRateLimiter: {
+    isRateLimited: vi.fn().mockReturnValue(false),
+    recordRequest: vi.fn(),
+    getRemainingCooldown: vi.fn().mockReturnValue(0),
+  },
+  createDeploymentRateLimit: vi.fn().mockReturnValue(
+    vi.fn().mockImplementation(async (c, next) => {
+      await next();
+    })
+  ),
+}));
+
+vi.mock("../../src/models/graduation", () => ({
+  verifyOrderTransaction: vi.fn().mockImplementation(txHash => {
+    if (
+      txHash ===
+      "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+    ) {
+      return Promise.resolve({
+        success: true,
+        message: "Transaction verified successfully",
+        amount: "1000000000000000000",
+      });
+    }
+    return Promise.resolve({
+      success: false,
+      message: "Invalid transaction",
+    });
+  }),
+  createAutomatedBrokerId: vi.fn().mockImplementation((userId, brokerId) => {
+    if (brokerId.includes("INVALID")) {
+      return Promise.resolve({
+        success: false,
+        message: "Invalid broker ID",
+      });
+    }
+    return Promise.resolve({
+      success: true,
+      message: "Broker ID created successfully",
+      brokerCreationData: {
+        brokerId: brokerId,
+        transactionHashes: { 1: "0x123", 137: "0x456" },
+      },
+    });
+  }),
+  updateDexFees: vi
+    .fn()
+    .mockImplementation(async (userId, makerFee, takerFee) => {
+      const { prisma } = await import("../../src/lib/prisma");
+      const dex = await prisma.dex.findFirst({ where: { userId } });
+
+      if (!dex) {
+        return Promise.resolve({
+          success: false,
+          message: "DEX not found",
+        });
+      }
+
+      if (makerFee > 150 || takerFee < 30 || takerFee > 150) {
+        return Promise.resolve({
+          success: false,
+          message: "Invalid fee values",
+        });
+      }
+      return Promise.resolve({
+        success: true,
+        message: "Fees updated successfully",
+      });
+    }),
+  getDexFees: vi.fn().mockImplementation(async userId => {
+    const { prisma } = await import("../../src/lib/prisma");
+    const dex = await prisma.dex.findFirst({ where: { userId } });
+
+    if (!dex) {
+      return Promise.resolve({
+        success: false,
+        message: "DEX not found",
+      });
+    }
+
+    return Promise.resolve({
+      success: true,
+      makerFee: dex.makerFee || 20,
+      takerFee: dex.takerFee || 40,
+    });
+  }),
+}));
+
+vi.mock("../../src/lib/auth", () => ({
+  authMiddleware: vi.fn().mockImplementation((c, next) => {
+    c.set("userId", "test-user-id");
+    return next();
+  }),
+  adminMiddleware: vi.fn().mockImplementation((c, next) => {
+    c.set("userId", "test-user-id");
+    c.set("isAdmin", true);
+    return next();
+  }),
+}));
+
+process.env.GITHUB_TOKEN = "test-github-token";
+process.env.TEMPLATE_PAT = "test-template-pat";
+process.env.CEREBRAS_API_KEY = "test-cerebras-key";
+process.env.CEREBRAS_API_URL = "https://api.cerebras.ai/v1";
+process.env.BROKER_CREATION_PRIVATE_KEY =
+  "0x1234567890123456789012345678901234567890123456789012345678901234";
+process.env.BROKER_CREATION_PRIVATE_KEY_SOL = "test-solana-private-key";
+
+export async function createTestApp(): Promise<Hono> {
+  process.env.NODE_ENV = "test";
+
+  const { app } = await import("../../src/index");
+  return app;
+}
+
+export function createTestRequest(app: Hono) {
+  return {
+    get: (path: string) => app.request(path, { method: "GET" }),
+    post: (path: string, body?) => {
+      if (body instanceof FormData) {
+        return app.request(path, {
+          method: "POST",
+          body: body,
+        });
+      }
+      return app.request(path, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    },
+    put: (path, body?) => {
+      if (body instanceof FormData) {
+        return app.request(path, {
+          method: "PUT",
+          body: body,
+        });
+      }
+      return app.request(path, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      });
+    },
+    delete: (path: string, body?: unknown) =>
+      app.request(path, {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: body ? JSON.stringify(body) : undefined,
+      }),
+  };
+}
+
+export function createAuthenticatedRequest(
+  app: Hono,
+  userId: string,
+  isAdmin: boolean = false
+) {
+  vi.mocked(authMiddleware).mockImplementation((c, next) => {
+    c.set("userId", userId);
+    c.set("isAdmin", isAdmin);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return next() as any;
+  });
+
+  vi.mocked(adminMiddleware).mockImplementation((c, next) => {
+    c.set("userId", userId);
+    c.set("isAdmin", isAdmin);
+    if (!isAdmin) {
+      return c.json({ error: "Forbidden: Admin access required" }, 403);
+    }
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return next() as any;
+  });
+
+  return createTestRequest(app);
+}
+
+export function createAdminRequest(app: Hono, userId: string) {
+  return createAuthenticatedRequest(app, userId, true);
+}
+
+export function mockAuthMiddleware(userId: string, isAdmin: boolean = false) {
+  vi.mocked(authMiddleware).mockImplementation((c, next) => {
+    c.set("userId", userId);
+    c.set("isAdmin", isAdmin);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return next() as any;
+  });
+}
+
+export function mockAdminMiddleware(userId: string) {
+  vi.mocked(adminMiddleware).mockImplementation((c, next) => {
+    c.set("userId", userId);
+    c.set("isAdmin", true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return next() as any;
+  });
+}
+
+export function resetMocks() {
+  vi.clearAllMocks();
+
+  vi.mocked(authMiddleware).mockImplementation((c, next) => {
+    c.set("userId", "test-user-id");
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return next() as any;
+  });
+
+  vi.mocked(adminMiddleware).mockImplementation((c, next) => {
+    c.set("userId", "test-user-id");
+    c.set("isAdmin", true);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    return next() as any;
+  });
+}

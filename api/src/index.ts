@@ -25,7 +25,7 @@ declare module "hono" {
   }
 }
 
-const app = new Hono();
+export const app = new Hono();
 
 app.use("*", logger());
 app.use("*", cors());
@@ -71,79 +71,85 @@ app.onError((err, c) => {
   );
 });
 
-if (!process.env.ORDER_RECEIVER_ADDRESS) {
-  console.error(
-    "❌ Missing required environment variable: ORDER_RECEIVER_ADDRESS"
-  );
-  process.exit(1);
+if (process.env.NODE_ENV !== "test") {
+  if (!process.env.ORDER_RECEIVER_ADDRESS) {
+    console.error(
+      "❌ Missing required environment variable: ORDER_RECEIVER_ADDRESS"
+    );
+    process.exit(1);
+  }
+
+  prisma
+    .$connect()
+    .then(async () => {
+      console.log("Connected to the database");
+
+      try {
+        console.log("🚀 Initializing broker creation system...");
+        await initializeBrokerCreation();
+        console.log("✅ Broker creation system initialized successfully");
+      } catch (error) {
+        console.error("❌ Failed to initialize broker creation system:", error);
+        process.exit(1);
+      }
+
+      try {
+        console.log("🔍 Checking broker creation permissions on startup...");
+        const environment = getCurrentEnvironment();
+        const permissionData =
+          await checkBrokerCreationPermissions(environment);
+        console.log(
+          "✅ Broker creation permissions check completed:",
+          permissionData
+        );
+      } catch (error) {
+        console.error("⚠️ Broker creation permissions check failed:", error);
+        process.exit(1);
+      }
+
+      try {
+        console.log("💰 Checking gas balances on all chains...");
+        const environment = getCurrentEnvironment();
+        const gasBalanceData = await checkGasBalances(environment);
+        if (gasBalanceData.success) {
+          console.log("✅ All chains have sufficient gas balances");
+        } else {
+          console.warn("⚠️ Gas balance warnings detected:");
+          gasBalanceData.warnings.forEach(warning => console.warn(warning));
+          console.warn(
+            "This may affect broker creation functionality. Consider adding ETH to the wallet."
+          );
+        }
+      } catch (error) {
+        console.error("⚠️ Gas balance check failed:", error);
+        process.exit(1);
+      }
+    })
+    .catch((err: Error) => {
+      console.error("Failed to connect to the database:", err);
+      process.exit(1);
+    });
 }
 
-const port = process.env.PORT || 3001;
-console.log(`Server is running on port ${port}`);
-
-prisma
-  .$connect()
-  .then(async () => {
-    console.log("Connected to the database");
-
-    try {
-      console.log("🚀 Initializing broker creation system...");
-      await initializeBrokerCreation();
-      console.log("✅ Broker creation system initialized successfully");
-    } catch (error) {
-      console.error("❌ Failed to initialize broker creation system:", error);
-      process.exit(1);
-    }
-
-    try {
-      console.log("🔍 Checking broker creation permissions on startup...");
-      const environment = getCurrentEnvironment();
-      const permissionData = await checkBrokerCreationPermissions(environment);
-      console.log(
-        "✅ Broker creation permissions check completed:",
-        permissionData
-      );
-    } catch (error) {
-      console.error("⚠️ Broker creation permissions check failed:", error);
-      process.exit(1);
-    }
-
-    try {
-      console.log("💰 Checking gas balances on all chains...");
-      const environment = getCurrentEnvironment();
-      const gasBalanceData = await checkGasBalances(environment);
-      if (gasBalanceData.success) {
-        console.log("✅ All chains have sufficient gas balances");
-      } else {
-        console.warn("⚠️ Gas balance warnings detected:");
-        gasBalanceData.warnings.forEach(warning => console.warn(warning));
-        console.warn(
-          "This may affect broker creation functionality. Consider adding ETH to the wallet."
-        );
-      }
-    } catch (error) {
-      console.error("⚠️ Gas balance check failed:", error);
-      process.exit(1);
-    }
-  })
-  .catch((err: Error) => {
-    console.error("Failed to connect to the database:", err);
-    process.exit(1);
+if (process.env.NODE_ENV !== "test") {
+  process.on("SIGINT", async () => {
+    leaderboardService.stop();
+    await prisma.$disconnect();
+    process.exit(0);
   });
 
-process.on("SIGINT", async () => {
-  leaderboardService.stop();
-  await prisma.$disconnect();
-  process.exit(0);
-});
+  process.on("SIGTERM", async () => {
+    leaderboardService.stop();
+    await prisma.$disconnect();
+    process.exit(0);
+  });
+}
 
-process.on("SIGTERM", async () => {
-  leaderboardService.stop();
-  await prisma.$disconnect();
-  process.exit(0);
-});
-
-serve({
-  fetch: app.fetch,
-  port: Number(port),
-});
+if (process.env.NODE_ENV !== "test") {
+  const port = process.env.PORT || 3001;
+  console.log(`Server is running on port ${port}`);
+  serve({
+    fetch: app.fetch,
+    port: Number(port),
+  });
+}

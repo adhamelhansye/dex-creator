@@ -18,7 +18,11 @@
     "db:push": "prisma db push",
     "orderly:generate": "prisma generate --schema=./prisma/orderly.schema.prisma",
     "orderly:studio": "prisma studio --schema=./prisma/orderly.schema.prisma",
-    "orderly:push": "prisma db push --schema=./prisma/orderly.schema.prisma"
+    "orderly:push": "prisma db push --schema=./prisma/orderly.schema.prisma",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:run": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "license": "MIT",
   "author": "Mario Reder <mario@orderly.network>",
@@ -45,11 +49,18 @@
     "@types/bs58": "^5.0.0",
     "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^22.14.0",
+    "@types/supertest": "^6.0.3",
+    "@testcontainers/mysql": "^11.5.1",
+    "@testcontainers/postgresql": "^11.5.1",
+    "@vitest/ui": "^3.2.4",
     "prisma": "^6.5.0",
+    "supertest": "^7.1.4",
+    "testcontainers": "^11.5.1",
     "tsup": "^8.4.0",
     "tsx": "^4.7.1",
     "typechain": "^8.3.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.2",
+    "vitest": "^2.1.8"
   },
   "engines": {
     "node": ">=22.0.0"
