@@ -38,17 +38,19 @@ app.post("/verify", zValidator("json", authVerifySchema), async c => {
 
     const message = `Sign this message to authenticate with Orderly One: ${user.nonce}`;
 
-    // Verify signature
-    const recoveredAddress = ethers.verifyMessage(message, signature);
+    let recoveredAddress: string;
+    try {
+      recoveredAddress = ethers.verifyMessage(message, signature);
+    } catch {
+      return c.json({ error: "Invalid signature" }, 401);
+    }
 
     if (recoveredAddress.toLowerCase() !== address.toLowerCase()) {
       return c.json({ error: "Invalid signature" }, 401);
     }
 
-    // Generate a new nonce for security
     await userStore.generateNonce(address);
 
-    // Create a token with expiration
     const token = await userStore.createToken(user.id);
 
     return c.json({

@@ -16,6 +16,7 @@ import {
   socialCardFormSchema,
   convertSocialCardFormDataToInternal,
 } from "../models/dex";
+import { DexErrorType } from "../lib/types";
 import { geckoTerminalService } from "../services/geckoTerminalService.js";
 import { leaderboardService } from "../services/leaderboardService.js";
 import {
@@ -120,17 +121,30 @@ dexRoutes.post(
 
       const data = await convertFormDataToInternal(formData);
 
-      const dex = await createDex(data, userId);
+      const result = await createDex(data, userId);
 
-      return c.json(dex, { status: 201 });
+      if (!result.success) {
+        switch (result.error.type) {
+          case DexErrorType.USER_ALREADY_HAS_DEX:
+            return c.json({ error: result.error.message }, { status: 409 });
+          case DexErrorType.USER_NOT_FOUND:
+            return c.json({ error: result.error.message }, { status: 404 });
+          case DexErrorType.REPOSITORY_PERMISSION_DENIED:
+          case DexErrorType.REPOSITORY_NOT_FOUND:
+          case DexErrorType.REPOSITORY_ALREADY_EXISTS:
+          case DexErrorType.REPOSITORY_CREATION_FAILED:
+          case DexErrorType.REPOSITORY_INFO_EXTRACTION_FAILED:
+          case DexErrorType.DATABASE_ERROR:
+            return c.json({ error: result.error.message }, { status: 500 });
+          default:
+            return c.json({ error: result.error.message }, { status: 500 });
+        }
+      }
+
+      return c.json(result.data, { status: 201 });
     } catch (error) {
       console.error("Error creating DEX:", error);
-
-      let message = "Failed to create DEX";
-      if (error instanceof Error) {
-        message = error.message;
-      }
-      return c.json({ error: message }, { status: 500 });
+      return c.json({ error: "Internal server error" }, { status: 500 });
     }
   }
 );
@@ -263,7 +277,22 @@ dexRoutes.put(
 
       const data = await convertFormDataToInternal(formData);
 
-      const updatedDex = await updateDex(id, userId, data);
+      const result = await updateDex(id, userId, data);
+
+      if (!result.success) {
+        switch (result.error.type) {
+          case DexErrorType.DEX_NOT_FOUND:
+            return c.json({ message: result.error.message }, { status: 404 });
+          case DexErrorType.USER_NOT_AUTHORIZED:
+            return c.json({ message: result.error.message }, { status: 403 });
+          case DexErrorType.DATABASE_ERROR:
+            return c.json({ error: result.error.message }, { status: 500 });
+          default:
+            return c.json({ error: result.error.message }, { status: 500 });
+        }
+      }
+
+      const updatedDex = result.data;
 
       if (updatedDex.repoUrl) {
         const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
@@ -360,23 +389,34 @@ dexRoutes.delete("/:id", async c => {
   const userId = c.get("userId");
 
   try {
-    const deletedDex = await deleteDex(id, userId);
-    return c.json({ message: "DEX deleted successfully", dex: deletedDex });
+    const result = await deleteDex(id, userId);
+
+    if (!result.success) {
+      switch (result.error.type) {
+        case DexErrorType.DEX_NOT_FOUND:
+          return c.json({ message: result.error.message }, 404);
+        case DexErrorType.USER_NOT_AUTHORIZED:
+          return c.json({ message: result.error.message }, 403);
+        case DexErrorType.DATABASE_ERROR:
+          return c.json(
+            { message: "Error deleting DEX", error: result.error.message },
+            500
+          );
+        default:
+          return c.json(
+            { message: "Error deleting DEX", error: result.error.message },
+            500
+          );
+      }
+    }
+
+    return c.json({ message: "DEX deleted successfully", dex: result.data });
   } catch (error) {
     console.error("Error deleting DEX:", error);
-
-    if (
-      error instanceof Error &&
-      error.message.includes("user is not authorized")
-    ) {
-      return c.json({ message: error.message }, 403);
-    }
-
-    if (error instanceof Error && error.message.includes("DEX not found")) {
-      return c.json({ message: "DEX not found" }, 404);
-    }
-
-    return c.json({ message: "Error deleting DEX", error: String(error) }, 500);
+    return c.json(
+      { message: "Internal server error", error: String(error) },
+      500
+    );
   }
 });
 

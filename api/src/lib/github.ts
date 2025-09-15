@@ -21,6 +21,7 @@ import sodium from "libsodium-wrappers";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { GitHubResult, GitHubError, GitHubErrorType } from "./types";
 
 let __dirname: string;
 if (typeof import.meta !== "undefined" && import.meta.url) {
@@ -32,7 +33,6 @@ if (typeof import.meta !== "undefined" && import.meta.url) {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// Simple in-memory cache for ETags
 const etagCache = new Map<string, { etag: string; data: any }>();
 let cacheHits = 0;
 let cacheMisses = 0;
@@ -53,16 +53,12 @@ export function getGitHubETagCacheStats() {
   };
 }
 
-// Initialize Octokit with GitHub token and plugins
 const MyOctokit = Octokit.plugin(restEndpointMethods);
 const octokit = new MyOctokit({
   auth: process.env.GITHUB_TOKEN,
 });
 
-// Helper function to generate a consistent cache key from request options
 function getCacheKey(options: any): string {
-  // For URL templates like '/repos/{owner}/{repo}'
-  // Try to replace placeholders with their actual values
   let url = options.url;
 
   if (url) {
@@ -71,24 +67,19 @@ function getCacheKey(options: any): string {
     });
   }
 
-  // For REST API methods, reconstruct the full URL
   if (options.method && options.baseUrl && options.url) {
     return `${options.method} ${options.baseUrl}${url}`;
   }
 
-  // For direct request() calls
   if (typeof options === "string") {
     return options;
   }
 
-  // Fallback for other scenarios
   return `${options.method || "GET"} ${options.url || ""}:${JSON.stringify(options.params || {})}`;
 }
 
-// Register hooks for ETag caching
 octokit.hook.before("request", async options => {
   try {
-    // Only apply caching for GET requests to conserve memory
     if (options.method !== "GET") {
       return;
     }
@@ -96,16 +87,13 @@ octokit.hook.before("request", async options => {
     const cacheKey = getCacheKey(options);
     const cachedItem = etagCache.get(cacheKey);
 
-    // Add If-None-Match header if we have a cached ETag
     if (cachedItem) {
-      // Initialize headers with required properties if not present
       if (!options.headers) {
         options.headers = {
           accept: "application/vnd.github.v3+json",
           "user-agent": "orderly-dex-creator",
         };
       } else {
-        // Ensure required properties exist
         options.headers.accept =
           options.headers.accept || "application/vnd.github.v3+json";
         options.headers["user-agent"] =
@@ -122,14 +110,12 @@ octokit.hook.before("request", async options => {
 
 octokit.hook.after("request", async (response, options) => {
   try {
-    // Only cache GET requests
     if (options.method !== "GET") {
       return;
     }
 
     const cacheKey = getCacheKey(options);
 
-    // Store the ETag if present in the response
     if (response.headers?.etag) {
       etagCache.set(cacheKey, {
         etag: response.headers.etag,
@@ -145,20 +131,79 @@ octokit.hook.after("request", async (response, options) => {
   }
 });
 
-// Type guard for RequestError
-function isRequestError(
-  error: Error | any
-): error is { status: number; response?: { headers?: any; url?: string } } {
+function isRequestError(error: Error | any): error is {
+  status: number;
+  message?: string;
+  response?: { headers?: any; url?: string };
+} {
   return error && typeof error === "object" && "status" in error;
+}
+
+/**
+ * Converts GitHub API errors to structured error types
+ */
+function handleGitHubError(error: unknown, operation: string): GitHubError {
+  if (isRequestError(error)) {
+    const status = error.status;
+    const message = error.message || "Unknown GitHub API error";
+
+    switch (status) {
+      case 401:
+      case 403:
+        return {
+          type: GitHubErrorType.FORK_PERMISSION_DENIED,
+          message: `Permission denied for ${operation}: ${message}`,
+          details: { status, originalError: error },
+        };
+      case 404:
+        return {
+          type: GitHubErrorType.FORK_REPOSITORY_NOT_FOUND,
+          message: `Repository not found for ${operation}: ${message}`,
+          details: { status, originalError: error },
+        };
+      case 422:
+        if (
+          message.includes("already exists") ||
+          message.includes("name already taken")
+        ) {
+          return {
+            type: GitHubErrorType.FORK_REPOSITORY_ALREADY_EXISTS,
+            message: `Repository already exists for ${operation}: ${message}`,
+            details: { status, originalError: error },
+          };
+        }
+        return {
+          type: GitHubErrorType.FORK_UNKNOWN_ERROR,
+          message: `Validation error for ${operation}: ${message}`,
+          details: { status, originalError: error },
+        };
+      case 429:
+        return {
+          type: GitHubErrorType.FORK_RATE_LIMITED,
+          message: `Rate limited for ${operation}: ${message}`,
+          details: { status, originalError: error },
+        };
+      default:
+        return {
+          type: GitHubErrorType.FORK_UNKNOWN_ERROR,
+          message: `GitHub API error for ${operation}: ${message}`,
+          details: { status, originalError: error },
+        };
+    }
+  }
+
+  const message = error instanceof Error ? error.message : String(error);
+  return {
+    type: GitHubErrorType.FORK_UNKNOWN_ERROR,
+    message: `Unknown error for ${operation}: ${message}`,
+    details: { originalError: error },
+  };
 }
 
 octokit.hook.error("request", async (error, options) => {
   try {
-    // Ensure we're dealing with a RequestError before accessing status/response
     if (isRequestError(error)) {
-      // Check if this is a 304 Not Modified response, which is what we're expecting for cached resources
       if (error.status === 304) {
-        // Only handle 304 responses for GET requests
         if (options.method !== "GET") {
           throw error;
         }
@@ -166,14 +211,12 @@ octokit.hook.error("request", async (error, options) => {
         const cacheKey = getCacheKey(options);
         const cachedItem = etagCache.get(cacheKey);
 
-        // If we have a cached response for a 304, return it
         if (cachedItem) {
           cacheHits++;
           console.log(
             `[GitHub ETag] Cache HIT for ${cacheKey} - using cached data`
           );
 
-          // Return a successful response with cached data
           return {
             data: cachedItem.data,
             headers: { ...error.response?.headers, "x-cached": "true" },
@@ -183,30 +226,26 @@ octokit.hook.error("request", async (error, options) => {
         }
       }
 
-      // Log other errors (but not for debugging purposes)
       console.error(
         `[GitHub ETag] Error for ${getCacheKey(options)}:`,
         error.status,
         error.message
       );
     } else {
-      // Not a RequestError
       console.error(
         `[GitHub ETag] Error for ${getCacheKey(options)}:`,
         error instanceof Error ? error.message : String(error)
       );
     }
 
-    // Re-throw the error regardless of type
     throw error;
   } catch (hookError) {
     console.error("[GitHub ETag] Error in error hook:", hookError);
-    throw error; // Still throw the original error
+    throw error;
   }
 });
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
-// Template repository information
 const templateRepo =
   process.env.GITHUB_TEMPLATE_REPO ||
   "OrderlyNetworkDexCreator/dex-creator-template";
@@ -219,35 +258,46 @@ const [templateOwner, templateRepoName] = templateRepo.split("/");
  */
 export async function forkTemplateRepository(
   repoName: string
-): Promise<string> {
+): Promise<GitHubResult<string>> {
   try {
-    // Validate repository name
     if (!repoName || repoName.trim() === "") {
-      throw new Error("Repository name cannot be empty");
+      return {
+        success: false,
+        error: {
+          type: GitHubErrorType.REPOSITORY_NAME_EMPTY,
+          message: "Repository name cannot be empty",
+        },
+      };
     }
 
-    // GitHub has specific repo name requirements
     if (!/^[a-z0-9-]+$/i.test(repoName)) {
-      throw new Error(
-        "Repository name can only contain alphanumeric characters and hyphens"
-      );
+      return {
+        success: false,
+        error: {
+          type: GitHubErrorType.REPOSITORY_NAME_INVALID,
+          message:
+            "Repository name can only contain alphanumeric characters and hyphens",
+        },
+      };
     }
 
-    // GitHub has a 100 character limit for repo names
     if (repoName.length > 100) {
-      throw new Error(
-        "Repository name exceeds GitHub's maximum length of 100 characters"
-      );
+      return {
+        success: false,
+        error: {
+          type: GitHubErrorType.REPOSITORY_NAME_TOO_LONG,
+          message:
+            "Repository name exceeds GitHub's maximum length of 100 characters",
+        },
+      };
     }
 
     console.log(
       `Forking repository ${templateOwner}/${templateRepoName} to OrderlyNetworkDexCreator/${repoName}`
     );
 
-    // Organization to create the fork in
     const orgName = "OrderlyNetworkDexCreator";
 
-    // Use GitHub's native fork functionality
     const response = await octokit.rest.repos.createFork({
       owner: templateOwner,
       repo: templateRepoName,
@@ -258,15 +308,11 @@ export async function forkTemplateRepository(
     const repoUrl = response.data.html_url;
     console.log(`Successfully forked repository: ${repoUrl}`);
 
-    // GitHub forks happen asynchronously, so the fork might not be immediately available
-    // We'll wait for a few seconds to ensure the fork is created
     console.log("Waiting for fork to be fully created...");
     await new Promise(resolve => setTimeout(resolve, 5_000));
 
-    // Enable GitHub Actions on the forked repository
     await enableRepositoryActions(orgName, repoName);
 
-    // Add GitHub Pages deployment token as a secret if available
     const deploymentToken = process.env.TEMPLATE_PAT;
     if (deploymentToken) {
       try {
@@ -282,28 +328,29 @@ export async function forkTemplateRepository(
           "Error adding GitHub Pages deployment token secret:",
           secretError
         );
-        // Continue even if adding the secret fails - we don't want to fail the fork operation
       }
     } else {
       console.warn("TEMPLATE_PAT not found in environment variables");
       console.warn("GitHub Pages deployment may not work without this token");
     }
 
-    // Enable GitHub Pages on the repository
     try {
       await enableGitHubPages(orgName, repoName);
       console.log(`Enabled GitHub Pages for ${orgName}/${repoName}`);
     } catch (pagesError) {
       console.error("Error enabling GitHub Pages:", pagesError);
-      // Continue even if enabling GitHub Pages fails
     }
 
-    return repoUrl;
+    return {
+      success: true,
+      data: repoUrl,
+    };
   } catch (error: unknown) {
     console.error("Error forking repository:", error);
-    const errorMessage =
-      error instanceof Error ? error.message : "Unknown error";
-    throw new Error(`Failed to fork repository: ${errorMessage}`);
+    return {
+      success: false,
+      error: handleGitHubError(error, "fork repository"),
+    };
   }
 }
 
@@ -319,7 +366,6 @@ async function enableRepositoryActions(
   repo: string
 ): Promise<void> {
   try {
-    // First, enable Actions on the repository
     await octokit.rest.actions.setGithubActionsPermissionsRepository({
       owner,
       repo,
@@ -327,7 +373,6 @@ async function enableRepositoryActions(
       allowed_actions: "all",
     });
 
-    // Then, enable all workflows
     await octokit.rest.actions.setGithubActionsDefaultWorkflowPermissionsRepository(
       {
         owner,
@@ -358,7 +403,6 @@ async function addSecretToRepository(
   try {
     console.log(`Adding secret ${secretName} to ${owner}/${repo}...`);
 
-    // Get the repository's public key for encrypting secrets
     console.log(`Fetching public key for ${owner}/${repo}...`);
     const { data: publicKeyData } = await octokit.rest.actions.getRepoPublicKey(
       {
@@ -369,10 +413,8 @@ async function addSecretToRepository(
 
     console.log(`Received public key: ${publicKeyData.key}`);
 
-    // Encrypt the secret using the repository's public key
     const encryptedValue = await encryptSecret(publicKeyData.key, secretValue);
 
-    // Add the encrypted secret to the repository
     console.log(`Submitting encrypted secret to GitHub...`);
     await octokit.rest.actions.createOrUpdateRepoSecret({
       owner,
@@ -403,12 +445,10 @@ async function encryptSecret(
   secretValue: string
 ): Promise<string> {
   try {
-    // Ensure sodium is ready
     await sodium.ready;
 
     console.log("Processing public key:", publicKey);
 
-    // Ensure the key has correct base64 padding if needed
     let normalizedKey = publicKey;
     if (publicKey.length % 4 !== 0) {
       const padding = 4 - (publicKey.length % 4);
@@ -419,7 +459,6 @@ async function encryptSecret(
     const buffer = Buffer.from(normalizedKey, "base64");
     const publicKeyBinary = new Uint8Array(buffer);
 
-    // GitHub requires keys to be 32 bytes (256 bits)
     if (publicKeyBinary.length !== 32) {
       console.error(
         `Invalid key length: ${publicKeyBinary.length} bytes, expected 32 bytes`
@@ -427,17 +466,13 @@ async function encryptSecret(
       throw new Error("Invalid key length for GitHub encryption");
     }
 
-    // Convert the secret value to a binary buffer
     const secretBinary = sodium.from_string(secretValue);
 
-    // Encrypt the secret using the public key
     const encryptedBinary = sodium.crypto_box_seal(
       secretBinary,
       publicKeyBinary
     );
 
-    // Convert the encrypted value to standard base64 for GitHub API
-    // (NOT URL-safe base64 which uses - and _)
     const base64 = Buffer.from(encryptedBinary).toString("base64");
     console.log("Encrypted value (first 20 chars):", base64.substring(0, 20));
 
@@ -457,14 +492,12 @@ function extractImageDataFromUri(dataUri: string | undefined): Buffer | null {
   if (!dataUri) return null;
 
   try {
-    // Format is typically: data:image/webp;base64,BASE64_DATA
     const match = dataUri.match(/^data:image\/([^;]+);base64,(.+)$/);
     if (!match || !match[2]) {
       console.warn("Invalid data URI format for image");
       return null;
     }
 
-    // Convert base64 to binary buffer
     return Buffer.from(match[2], "base64");
   } catch (error) {
     console.error("Error extracting image data from URI:", error);
@@ -472,9 +505,6 @@ function extractImageDataFromUri(dataUri: string | undefined): Buffer | null {
   }
 }
 
-/**
- * Prepare DEX configuration content including extracting favicon
- */
 function prepareDexConfigContent(
   config: {
     brokerId: string;
@@ -524,7 +554,6 @@ function prepareDexConfigContent(
   secondaryLogoData?: Buffer;
   pnlPostersData?: Buffer[];
 } {
-  // Extract image data
   const faviconData = extractImageDataFromUri(files?.favicon);
   const primaryLogoData = extractImageDataFromUri(files?.primaryLogo);
   const secondaryLogoData = extractImageDataFromUri(files?.secondaryLogo);
@@ -1030,7 +1059,6 @@ export async function getWorkflowRunStatus(
   try {
     console.log(`Fetching workflow runs for ${owner}/${repo}...`);
 
-    // First, try to get workflows to check if they exist
     const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
       owner,
       repo,
@@ -1041,7 +1069,6 @@ export async function getWorkflowRunStatus(
       return { totalCount: 0, workflowRuns: [] };
     }
 
-    // If a specific workflow name is provided, find its ID
     let workflowId: number | undefined;
 
     if (workflowName) {
@@ -1057,8 +1084,6 @@ export async function getWorkflowRunStatus(
       }
     }
 
-    // Get workflow runs, either for all workflows or a specific one
-    // Use separate logic for with/without workflow_id to satisfy TypeScript
     if (workflowId) {
       const { data: runs } = await octokit.rest.actions.listWorkflowRuns({
         owner,
@@ -1067,7 +1092,6 @@ export async function getWorkflowRunStatus(
         workflow_id: workflowId,
       });
 
-      // Format the response with proper type assertions
       const workflowRuns = runs.workflow_runs.map(run => ({
         id: run.id,
         name: run.name || "Unnamed workflow",
@@ -1083,7 +1107,6 @@ export async function getWorkflowRunStatus(
         workflowRuns,
       };
     } else {
-      // Get runs for all workflows
       const { data: runs } = await octokit.rest.actions.listWorkflowRunsForRepo(
         {
           owner,
@@ -1092,7 +1115,6 @@ export async function getWorkflowRunStatus(
         }
       );
 
-      // Format the response with proper type assertions
       const workflowRuns = runs.workflow_runs.map(run => ({
         id: run.id,
         name: run.name || "Unnamed workflow",
@@ -1116,7 +1138,6 @@ export async function getWorkflowRunStatus(
   }
 }
 
-// Add a function to get detailed info for a specific workflow run
 export async function getWorkflowRunDetails(
   owner: string,
   repo: string,
@@ -1149,14 +1170,12 @@ export async function getWorkflowRunDetails(
       `Fetching details for workflow run ${runId} in ${owner}/${repo}...`
     );
 
-    // Get the run details
     const { data: run } = await octokit.rest.actions.getWorkflowRun({
       owner,
       repo,
       run_id: runId,
     });
 
-    // Get jobs for this run
     const { data: jobsData } =
       await octokit.rest.actions.listJobsForWorkflowRun({
         owner,
@@ -1164,7 +1183,6 @@ export async function getWorkflowRunDetails(
         run_id: runId,
       });
 
-    // Format the jobs data with proper type checking
     const jobs = jobsData.jobs.map(job => ({
       id: job.id,
       name: job.name || "Unnamed job",
@@ -1218,7 +1236,6 @@ export async function renameRepository(
       `Renaming repository ${owner}/${repo} to ${owner}/${newName}...`
     );
 
-    // Validate the new repository name
     if (!newName || !/^[a-z0-9-]+$/i.test(newName)) {
       throw new Error(
         "Repository name can only contain alphanumeric characters and hyphens"
@@ -1231,14 +1248,12 @@ export async function renameRepository(
       );
     }
 
-    // Call GitHub API to rename the repository
     const { data } = await octokit.rest.repos.update({
       owner,
       repo,
       name: newName,
     });
 
-    // Return the new repository URL
     return data.html_url;
   } catch (error) {
     console.error(`Error renaming repository ${owner}/${repo}:`, error);
@@ -1288,7 +1303,6 @@ export async function setCustomDomain(
 ): Promise<string> {
   console.log(`Setting custom domain for ${owner}/${repo} to ${domain}...`);
 
-  // Validate the domain format
   if (
     !domain.match(
       /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/
@@ -1298,18 +1312,14 @@ export async function setCustomDomain(
   }
 
   try {
-    // Make sure GitHub Pages is enabled first
     try {
       await enableGitHubPages(owner, repo);
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (_) {
-      // If Pages is already enabled, this might fail but we should continue
+    } catch {
       console.warn(
         `Note: GitHub Pages might already be enabled for ${owner}/${repo}`
       );
     }
 
-    // Update the GitHub Pages site with the custom domain
     const response = await octokit.rest.repos.updateInformationAboutPagesSite({
       owner,
       repo,
@@ -1323,7 +1333,6 @@ export async function setCustomDomain(
       );
     }
 
-    // Create a CNAME file in the repo for GitHub Pages
     const cnameContent = domain;
 
     const fileContents = new Map<string, string>();
@@ -1360,25 +1369,20 @@ export async function removeCustomDomain(
   try {
     console.log(`Removing custom domain for ${owner}/${repo}...`);
 
-    // Clear the CNAME by setting it to an empty string
     await octokit.rest.repos.updateInformationAboutPagesSite({
       owner,
       repo,
       cname: "",
     });
 
-    // Delete the CNAME file from the repo if it exists
     try {
-      // First check if the file exists
       const { data: fileData } = await octokit.rest.repos.getContent({
         owner,
         repo,
         path: "CNAME",
       });
 
-      // If we get here, the file exists and we need to delete it
       if (fileData) {
-        // Get the SHA of the file, needed for deletion
         const sha =
           typeof fileData === "object" && "sha" in fileData
             ? fileData.sha
@@ -1398,9 +1402,7 @@ export async function removeCustomDomain(
           });
         }
       }
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    } catch (fileError) {
-      // If the file doesn't exist, that's fine, we can continue
+    } catch {
       console.log("CNAME file might not exist, continuing...");
     }
 

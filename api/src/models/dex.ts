@@ -1,7 +1,8 @@
 import { z } from "zod";
 import { prisma } from "../lib/prisma";
 import type { Prisma, Dex } from "@prisma/client";
-import type { Result } from "../lib/types";
+import type { DexResult, Result } from "../lib/types";
+import { DexErrorType, GitHubErrorType } from "../lib/types";
 import {
   forkTemplateRepository,
   setupRepositoryWithSingleCommit,
@@ -280,7 +281,7 @@ export function generateId() {
 export async function createDex(
   data: z.infer<typeof dexSchema>,
   userId: string
-): Promise<Dex> {
+): Promise<DexResult<Dex>> {
   const validatedData = dexSchema.parse(data);
 
   if (validatedData.tradingViewColorConfig) {
@@ -290,9 +291,13 @@ export async function createDex(
   const existingDex = await getUserDex(userId);
 
   if (existingDex) {
-    throw new Error(
-      "User already has a DEX. Only one DEX per user is allowed."
-    );
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.USER_ALREADY_HAS_DEX,
+        message: "User already has a DEX. Only one DEX per user is allowed.",
+      },
+    };
   }
 
   const user = await prisma.user.findUnique({
@@ -301,7 +306,13 @@ export async function createDex(
   });
 
   if (!user) {
-    throw new Error("User not found");
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.USER_NOT_FOUND,
+        message: "User not found",
+      },
+    };
   }
 
   const brokerName = validatedData.brokerName || "Orderly DEX";
@@ -314,14 +325,66 @@ export async function createDex(
     console.log(
       "Creating repository in OrderlyNetworkDexCreator organization..."
     );
-    repoUrl = await forkTemplateRepository(repoName);
+    const forkResult = await forkTemplateRepository(repoName);
+    if (!forkResult.success) {
+      switch (forkResult.error.type) {
+        case GitHubErrorType.REPOSITORY_NAME_EMPTY:
+        case GitHubErrorType.REPOSITORY_NAME_INVALID:
+        case GitHubErrorType.REPOSITORY_NAME_TOO_LONG:
+          return {
+            success: false,
+            error: {
+              type: DexErrorType.VALIDATION_ERROR,
+              message: forkResult.error.message,
+            },
+          };
+        case GitHubErrorType.FORK_PERMISSION_DENIED:
+          return {
+            success: false,
+            error: {
+              type: DexErrorType.REPOSITORY_PERMISSION_DENIED,
+              message: forkResult.error.message,
+            },
+          };
+        case GitHubErrorType.FORK_REPOSITORY_NOT_FOUND:
+          return {
+            success: false,
+            error: {
+              type: DexErrorType.REPOSITORY_NOT_FOUND,
+              message: forkResult.error.message,
+            },
+          };
+        case GitHubErrorType.FORK_REPOSITORY_ALREADY_EXISTS:
+          return {
+            success: false,
+            error: {
+              type: DexErrorType.REPOSITORY_ALREADY_EXISTS,
+              message: forkResult.error.message,
+            },
+          };
+        default:
+          return {
+            success: false,
+            error: {
+              type: DexErrorType.REPOSITORY_CREATION_FAILED,
+              message: forkResult.error.message,
+            },
+          };
+      }
+    }
+
+    repoUrl = forkResult.data;
     console.log(`Successfully forked repository: ${repoUrl}`);
 
     const repoInfo = extractRepoInfoFromUrl(repoUrl);
     if (!repoInfo) {
-      throw new Error(
-        `Failed to extract repository information from URL: ${repoUrl}`
-      );
+      return {
+        success: false,
+        error: {
+          type: DexErrorType.REPOSITORY_INFO_EXTRACTION_FAILED,
+          message: `Failed to extract repository information from URL: ${repoUrl}`,
+        },
+      };
     }
 
     const brokerId = "demo";
@@ -371,38 +434,20 @@ export async function createDex(
     );
     console.log(`Successfully set up repository for ${brokerName}`);
   } catch (error) {
-    console.error("Error creating repository:", error);
-
-    let errorMessage = "Unknown error";
-    if (error instanceof Error) {
-      errorMessage = error.message;
-
-      if (
-        errorMessage.includes(
-          "Resource not accessible by personal access token"
-        )
-      ) {
-        throw new Error(
-          "Repository creation failed: The GitHub token does not have sufficient permissions"
-        );
-      } else if (errorMessage.includes("Not Found")) {
-        throw new Error(
-          "Repository creation failed: Template repository or organization not found"
-        );
-      } else if (errorMessage.includes("already exists")) {
-        throw new Error(
-          "Repository creation failed: A repository with this name already exists"
-        );
-      }
-    }
-
-    throw new Error(`Repository creation failed: ${errorMessage}`);
+    console.error("Error setting up repository:", error);
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.REPOSITORY_CREATION_FAILED,
+        message: `Repository setup failed: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    };
   }
 
   try {
     const brokerId = "demo";
 
-    return await prisma.dex.create({
+    const dex = await prisma.dex.create({
       data: {
         brokerName: validatedData.brokerName ?? undefined,
         brokerId: brokerId,
@@ -445,6 +490,11 @@ export async function createDex(
         },
       },
     });
+
+    return {
+      success: true,
+      data: dex,
+    };
   } catch (dbError) {
     console.error("Error creating DEX in database:", dbError);
 
@@ -458,9 +508,13 @@ export async function createDex(
       console.error("Failed to clean up repository:", cleanupError);
     }
 
-    throw new Error(
-      `Failed to create DEX in database: ${dbError instanceof Error ? dbError.message : String(dbError)}`
-    );
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.DATABASE_ERROR,
+        message: `Failed to create DEX in database: ${dbError instanceof Error ? dbError.message : String(dbError)}`,
+      },
+    };
   }
 }
 
@@ -484,7 +538,7 @@ export async function updateDex(
   id: string,
   userId: string,
   data: z.infer<typeof dexSchema>
-): Promise<Dex> {
+): Promise<DexResult<Dex>> {
   const validatedData = dexSchema.parse(data);
 
   if (validatedData.tradingViewColorConfig) {
@@ -493,8 +547,24 @@ export async function updateDex(
 
   const dex = await getDexById(id);
 
-  if (!dex || dex.userId !== userId) {
-    throw new Error("DEX not found or user is not authorized to update it");
+  if (!dex) {
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.DEX_NOT_FOUND,
+        message: "DEX not found",
+      },
+    };
+  }
+
+  if (dex.userId !== userId) {
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.USER_NOT_AUTHORIZED,
+        message: "User is not authorized to update this DEX",
+      },
+    };
   }
 
   const updateData: Prisma.DexUpdateInput = {};
@@ -564,19 +634,53 @@ export async function updateDex(
   if ("seoKeywords" in validatedData)
     updateData.seoKeywords = validatedData.seoKeywords;
 
-  return prisma.dex.update({
-    where: {
-      id,
-    },
-    data: updateData,
-  });
+  try {
+    const updatedDex = await prisma.dex.update({
+      where: {
+        id,
+      },
+      data: updateData,
+    });
+
+    return {
+      success: true,
+      data: updatedDex,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.DATABASE_ERROR,
+        message: `Failed to update DEX: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    };
+  }
 }
 
-export async function deleteDex(id: string, userId: string): Promise<Dex> {
+export async function deleteDex(
+  id: string,
+  userId: string
+): Promise<DexResult<Dex>> {
   const dex = await getDexById(id);
 
-  if (!dex || dex.userId !== userId) {
-    throw new Error("DEX not found or user is not authorized to delete it");
+  if (!dex) {
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.DEX_NOT_FOUND,
+        message: "DEX not found",
+      },
+    };
+  }
+
+  if (dex.userId !== userId) {
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.USER_NOT_AUTHORIZED,
+        message: "User is not authorized to delete this DEX",
+      },
+    };
   }
 
   if (dex.repoUrl) {
@@ -590,11 +694,26 @@ export async function deleteDex(id: string, userId: string): Promise<Dex> {
     }
   }
 
-  return prisma.dex.delete({
-    where: {
-      id,
-    },
-  });
+  try {
+    const deletedDex = await prisma.dex.delete({
+      where: {
+        id,
+      },
+    });
+
+    return {
+      success: true,
+      data: deletedDex,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: {
+        type: DexErrorType.DATABASE_ERROR,
+        message: `Failed to delete DEX: ${error instanceof Error ? error.message : String(error)}`,
+      },
+    };
+  }
 }
 
 export async function updateDexRepoUrl(
