@@ -10,12 +10,18 @@ export type Environment = "mainnet" | "staging" | "qa" | "dev";
 export type ChainNameTestnet =
   | "sepolia"
   | "arbitrum-sepolia"
+  | "bnbTestnet"
+  | "optimism-sepolia"
+  | "base-sepolia"
   | "orderlyTestnet"
   | "solana-devnet";
 
 export type ChainNameMainnet =
   | "ethereum"
   | "arbitrum"
+  | "bnb"
+  | "optimism"
+  | "base"
   | "orderlyL2"
   | "solana-mainnet-beta";
 
@@ -60,6 +66,33 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     rpcUrl: "https://arb1.arbitrum.io/rpc",
     blockExplorerUrl: "https://arbiscan.io",
   },
+  bnb: {
+    id: "bnb",
+    name: "BNB Smart Chain",
+    chainId: 56,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://binance.llamarpc.com",
+    blockExplorerUrl: "https://bscscan.com",
+  },
+  optimism: {
+    id: "optimism",
+    name: "Optimism",
+    chainId: 10,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://mainnet.optimism.io",
+    blockExplorerUrl: "https://optimistic.etherscan.io",
+  },
+  base: {
+    id: "base",
+    name: "Base",
+    chainId: 8453,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://base.llamarpc.com",
+    blockExplorerUrl: "https://basescan.org",
+  },
   sepolia: {
     id: "sepolia",
     name: "Sepolia",
@@ -77,6 +110,33 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainType: "EVM",
     rpcUrl: "https://sepolia-rollup.arbitrum.io/rpc",
     blockExplorerUrl: "https://sepolia.arbiscan.io",
+  },
+  bnbTestnet: {
+    id: "bnbTestnet",
+    name: "BNB Smart Chain Testnet",
+    chainId: 97,
+    isTestnet: true,
+    chainType: "EVM",
+    rpcUrl: "https://bsc-testnet.public.blastapi.io",
+    blockExplorerUrl: "https://testnet.bscscan.com/",
+  },
+  "optimism-sepolia": {
+    id: "optimism-sepolia",
+    name: "Optimism Sepolia",
+    chainId: 11155420,
+    isTestnet: true,
+    chainType: "EVM",
+    rpcUrl: "https://sepolia.optimism.io",
+    blockExplorerUrl: "https://sepolia-optimism.etherscan.io",
+  },
+  "base-sepolia": {
+    id: "base-sepolia",
+    name: "Base Sepolia",
+    chainId: 84532,
+    isTestnet: true,
+    chainType: "EVM",
+    rpcUrl: "https://base-sepolia-rpc.publicnode.com",
+    blockExplorerUrl: "https://sepolia.basescan.org",
   },
   orderlyL2: {
     id: "orderlyL2",
@@ -176,14 +236,23 @@ export interface EnvironmentChainConfig {
 export const ENVIRONMENT_CONFIGS: {
   mainnet: Record<ChainNameMainnet, EnvironmentChainConfig>;
   staging: Record<ChainNameTestnet, EnvironmentChainConfig>;
-  qa: Record<ChainNameTestnet, EnvironmentChainConfig>;
-  dev: Record<ChainNameTestnet, EnvironmentChainConfig>;
+  qa: Partial<Record<ChainNameTestnet, EnvironmentChainConfig>>;
+  dev: Partial<Record<ChainNameTestnet, EnvironmentChainConfig>>;
 } = {
   mainnet: {
     ethereum: {
       vaultAddress: "0x816f722424b49cf1275cc86da9840fbd5a6167e9",
     },
     arbitrum: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    bnb: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    optimism: {
+      vaultAddress: "0x816f722424b49cf1275cc86da9840fbd5a6167e9",
+    },
+    base: {
       vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     },
     "solana-mainnet-beta": {
@@ -200,6 +269,15 @@ export const ENVIRONMENT_CONFIGS: {
     },
     "arbitrum-sepolia": {
       vaultAddress: "0xB15a3a4D451311e03e34d9331C695078Ad5Cf5F1",
+    },
+    bnbTestnet: {
+      vaultAddress: "0xaf2036D5143219fa00dDd90e7A2dbF3E36dba050",
+    },
+    "optimism-sepolia": {
+      vaultAddress: "0xEfF2896077B6ff95379EfA89Ff903598190805EC",
+    },
+    "base-sepolia": {
+      vaultAddress: "0xdc7348975aE9334DbdcB944DDa9163Ba8406a0ec",
     },
     "solana-devnet": {
       vaultAddress: "9shwxWDUNhtwkHocsUAmrNAQfBH2DHh4njdAEdHZZkF2",
