@@ -27,11 +27,6 @@ let solanaPrivateKey: string | null = null;
 let solanaKeypair: anchor.web3.Keypair | null = null;
 let isInitialized = false;
 
-interface WalletSecrets {
-  evmPrivateKey: string;
-  solanaPrivateKey: string;
-}
-
 async function getWalletPrivateKeys(): Promise<{
   evmPrivateKey: string | null;
   solanaPrivateKey: string | null;
@@ -46,15 +41,21 @@ async function getWalletPrivateKeys(): Promise<{
     };
   }
 
-  let secretName: string;
+  let evmSecretName: string;
+  let solanaSecretName: string;
+
   switch (deploymentEnv) {
     case "mainnet":
-      secretName =
-        "projects/964694002890/secrets/[PLACEHOLDER-wallet-keys-prod]/versions/latest";
+      evmSecretName =
+        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-prod-evm/versions/latest";
+      solanaSecretName =
+        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-sol-prod-evm/versions/latest";
       break;
     case "staging":
-      secretName =
-        "projects/964694002890/secrets/[PLACEHOLDER-wallet-keys-staging]/versions/latest";
+      evmSecretName =
+        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-staging-evm/versions/latest";
+      solanaSecretName =
+        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-sol-staging-evm/versions/latest";
       break;
     case "qa":
     case "dev":
@@ -67,34 +68,48 @@ async function getWalletPrivateKeys(): Promise<{
       );
   }
 
+  const client = new SecretManagerServiceClient();
+  let evmPrivateKey: string | null = null;
+  let solanaPrivateKey: string | null = null;
+
   try {
-    console.log(`🔑 Fetching wallet private keys from secret: ${secretName}`);
-    const client = new SecretManagerServiceClient();
-
-    const [version] = await client.accessSecretVersion({
-      name: secretName,
+    console.log(`🔑 Fetching EVM private key from secret: ${evmSecretName}`);
+    const [evmVersion] = await client.accessSecretVersion({
+      name: evmSecretName,
     });
-
-    const payload = version.payload?.data?.toString() || "";
-    console.log("✅ Fetched wallet secrets payload");
-
-    const secrets: WalletSecrets = JSON.parse(payload);
-
-    return {
-      evmPrivateKey: secrets.evmPrivateKey || null,
-      solanaPrivateKey: secrets.solanaPrivateKey || null,
-    };
+    evmPrivateKey = evmVersion.payload?.data?.toString() || null;
+    console.log("✅ Fetched EVM private key");
   } catch (error) {
     console.error(
-      "❌ Failed to get wallet private keys from Google Secret Manager:",
+      "❌ Failed to get EVM private key from Google Secret Manager:",
       error
     );
-    console.log("⚠️ Falling back to environment variables");
-    return {
-      evmPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY || null,
-      solanaPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null,
-    };
+    evmPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY || null;
+    console.log("⚠️ Using environment variable for EVM private key");
   }
+
+  try {
+    console.log(
+      `🔑 Fetching Solana private key from secret: ${solanaSecretName}`
+    );
+    const [solanaVersion] = await client.accessSecretVersion({
+      name: solanaSecretName,
+    });
+    solanaPrivateKey = solanaVersion.payload?.data?.toString() || null;
+    console.log("✅ Fetched Solana private key");
+  } catch (error) {
+    console.error(
+      "❌ Failed to get Solana private key from Google Secret Manager:",
+      error
+    );
+    solanaPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null;
+    console.log("⚠️ Using environment variable for Solana private key");
+  }
+
+  return {
+    evmPrivateKey,
+    solanaPrivateKey,
+  };
 }
 
 export async function initializeBrokerCreation(): Promise<void> {
