@@ -1,24 +1,38 @@
 import { PrismaClient } from "@prisma/client";
+import { getSecret } from "./secretManager.js";
 
-// Prevent multiple instances of Prisma Client in development
 declare global {
   var prisma: PrismaClient | undefined;
 }
 
-// PrismaClient is attached to the `global` object in development to prevent
-// exhausting your database connection limit.
-// Learn more: https://pris.ly/d/help/next-js-best-practices
+function getDatabaseUrl(): string | undefined {
+  try {
+    return getSecret("databaseUrl");
+  } catch {
+    return undefined;
+  }
+}
 
-export const prisma =
-  global.prisma ||
-  new PrismaClient({
+function createPrismaClient(): PrismaClient {
+  const databaseUrl = getDatabaseUrl();
+
+  return new PrismaClient({
+    datasources: databaseUrl
+      ? {
+          db: {
+            url: databaseUrl,
+          },
+        }
+      : undefined,
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
         : ["error"],
   });
+}
 
-// If we're not in production, make the client global to prevent connection exhaustion
+export const prisma = global.prisma || createPrismaClient();
+
 if (process.env.NODE_ENV !== "production") {
   global.prisma = prisma;
 }

@@ -22,6 +22,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { GitHubResult, GitHubError, GitHubErrorType } from "./types";
+import { getSecret } from "./secretManager.js";
 
 let __dirname: string;
 if (typeof import.meta !== "undefined" && import.meta.url) {
@@ -54,9 +55,25 @@ export function getGitHubETagCacheStats() {
 }
 
 const MyOctokit = Octokit.plugin(restEndpointMethods);
-const octokit = new MyOctokit({
-  auth: process.env.GITHUB_TOKEN,
-});
+
+// Initialize octokit lazily to ensure secret manager is initialized
+let octokit: InstanceType<typeof MyOctokit>;
+
+function getOctokit(): InstanceType<typeof MyOctokit> {
+  if (!octokit) {
+    const githubToken = getSecret("githubToken");
+    octokit = new MyOctokit({
+      auth: githubToken,
+    });
+  }
+
+  if (!hooksSetup) {
+    setupOctokitHooks();
+    hooksSetup = true;
+  }
+
+  return octokit;
+}
 
 function getCacheKey(options: any): string {
   let url = options.url;
@@ -78,58 +95,66 @@ function getCacheKey(options: any): string {
   return `${options.method || "GET"} ${options.url || ""}:${JSON.stringify(options.params || {})}`;
 }
 
-octokit.hook.before("request", async options => {
-  try {
-    if (options.method !== "GET") {
-      return;
-    }
+// Setup hooks when octokit is first accessed
+function setupOctokitHooks() {
+  const octokitInstance = getOctokit();
 
-    const cacheKey = getCacheKey(options);
-    const cachedItem = etagCache.get(cacheKey);
-
-    if (cachedItem) {
-      if (!options.headers) {
-        options.headers = {
-          accept: "application/vnd.github.v3+json",
-          "user-agent": "orderly-dex-creator",
-        };
-      } else {
-        options.headers.accept =
-          options.headers.accept || "application/vnd.github.v3+json";
-        options.headers["user-agent"] =
-          options.headers["user-agent"] || "orderly-dex-creator";
+  octokitInstance.hook.before("request", async options => {
+    try {
+      if (options.method !== "GET") {
+        return;
       }
 
-      options.headers["If-None-Match"] = cachedItem.etag;
-      console.log(`[GitHub ETag] Using cached ETag for ${cacheKey}`);
-    }
-  } catch (error) {
-    console.error("[GitHub ETag] Error in before hook:", error);
-  }
-});
+      const cacheKey = getCacheKey(options);
+      const cachedItem = etagCache.get(cacheKey);
 
-octokit.hook.after("request", async (response, options) => {
-  try {
-    if (options.method !== "GET") {
-      return;
-    }
+      if (cachedItem) {
+        if (!options.headers) {
+          options.headers = {
+            accept: "application/vnd.github.v3+json",
+            "user-agent": "orderly-dex-creator",
+          };
+        } else {
+          options.headers.accept =
+            options.headers.accept || "application/vnd.github.v3+json";
+          options.headers["user-agent"] =
+            options.headers["user-agent"] || "orderly-dex-creator";
+        }
 
-    const cacheKey = getCacheKey(options);
-
-    if (response.headers?.etag) {
-      etagCache.set(cacheKey, {
-        etag: response.headers.etag,
-        data: response.data,
-      });
-      cacheMisses++;
-      console.log(
-        `[GitHub ETag] Cache MISS for ${cacheKey} - stored ETag: ${response.headers.etag}`
-      );
+        options.headers["If-None-Match"] = cachedItem.etag;
+        console.log(`[GitHub ETag] Using cached ETag for ${cacheKey}`);
+      }
+    } catch (error) {
+      console.error("[GitHub ETag] Error in before hook:", error);
     }
-  } catch (error) {
-    console.error("[GitHub ETag] Error in after hook:", error);
-  }
-});
+  });
+
+  octokitInstance.hook.after("request", async (response, options) => {
+    try {
+      if (options.method !== "GET") {
+        return;
+      }
+
+      const cacheKey = getCacheKey(options);
+
+      if (response.headers?.etag) {
+        etagCache.set(cacheKey, {
+          etag: response.headers.etag,
+          data: response.data,
+        });
+        cacheMisses++;
+        console.log(
+          `[GitHub ETag] Cache MISS for ${cacheKey} - stored ETag: ${response.headers.etag}`
+        );
+      }
+    } catch (error) {
+      console.error("[GitHub ETag] Error in after hook:", error);
+    }
+  });
+}
+
+// Track if hooks are setup
+let hooksSetup = false;
 
 function isRequestError(error: Error | any): error is {
   status: number;
@@ -200,7 +225,7 @@ function handleGitHubError(error: unknown, operation: string): GitHubError {
   };
 }
 
-octokit.hook.error("request", async (error, options) => {
+getOctokit().hook.error("request", async (error, options) => {
   try {
     if (isRequestError(error)) {
       if (error.status === 304) {
@@ -298,7 +323,7 @@ export async function forkTemplateRepository(
 
     const orgName = "OrderlyNetworkDexCreator";
 
-    const response = await octokit.rest.repos.createFork({
+    const response = await getOctokit().rest.repos.createFork({
       owner: templateOwner,
       repo: templateRepoName,
       organization: orgName,
@@ -313,25 +338,20 @@ export async function forkTemplateRepository(
 
     await enableRepositoryActions(orgName, repoName);
 
-    const deploymentToken = process.env.TEMPLATE_PAT;
-    if (deploymentToken) {
-      try {
-        await addSecretToRepository(
-          orgName,
-          repoName,
-          "TEMPLATE_PAT",
-          deploymentToken
-        );
-        console.log(`Added TEMPLATE_PAT secret to ${orgName}/${repoName}`);
-      } catch (secretError) {
-        console.error(
-          "Error adding GitHub Pages deployment token secret:",
-          secretError
-        );
-      }
-    } else {
-      console.warn("TEMPLATE_PAT not found in environment variables");
-      console.warn("GitHub Pages deployment may not work without this token");
+    const deploymentToken = getSecret("templatePat");
+    try {
+      await addSecretToRepository(
+        orgName,
+        repoName,
+        "TEMPLATE_PAT",
+        deploymentToken
+      );
+      console.log(`Added TEMPLATE_PAT secret to ${orgName}/${repoName}`);
+    } catch (secretError) {
+      console.error(
+        "Error adding GitHub Pages deployment token secret:",
+        secretError
+      );
     }
 
     try {
@@ -366,14 +386,14 @@ async function enableRepositoryActions(
   repo: string
 ): Promise<void> {
   try {
-    await octokit.rest.actions.setGithubActionsPermissionsRepository({
+    await getOctokit().rest.actions.setGithubActionsPermissionsRepository({
       owner,
       repo,
       enabled: true,
       allowed_actions: "all",
     });
 
-    await octokit.rest.actions.setGithubActionsDefaultWorkflowPermissionsRepository(
+    await getOctokit().rest.actions.setGithubActionsDefaultWorkflowPermissionsRepository(
       {
         owner,
         repo,
@@ -404,19 +424,18 @@ async function addSecretToRepository(
     console.log(`Adding secret ${secretName} to ${owner}/${repo}...`);
 
     console.log(`Fetching public key for ${owner}/${repo}...`);
-    const { data: publicKeyData } = await octokit.rest.actions.getRepoPublicKey(
-      {
+    const { data: publicKeyData } =
+      await getOctokit().rest.actions.getRepoPublicKey({
         owner,
         repo,
-      }
-    );
+      });
 
     console.log(`Received public key: ${publicKeyData.key}`);
 
     const encryptedValue = await encryptSecret(publicKeyData.key, secretValue);
 
     console.log(`Submitting encrypted secret to GitHub...`);
-    await octokit.rest.actions.createOrUpdateRepoSecret({
+    await getOctokit().rest.actions.createOrUpdateRepoSecret({
       owner,
       repo,
       secret_name: secretName,
@@ -712,7 +731,7 @@ async function createSingleCommit(
   commitMessage: string
 ): Promise<void> {
   console.log(`Getting latest commit for ${owner}/${repo}...`);
-  const { data: refData } = await octokit.rest.git.getRef({
+  const { data: refData } = await getOctokit().rest.git.getRef({
     owner,
     repo,
     ref: "heads/main",
@@ -722,8 +741,8 @@ async function createSingleCommit(
   console.log("Creating blobs for text files...");
   const textBlobPromises = Array.from(fileContents.entries()).map(
     ([path, content]) =>
-      octokit.rest.git
-        .createBlob({
+      getOctokit()
+        .rest.git.createBlob({
           owner,
           repo,
           content: Buffer.from(content).toString("base64"),
@@ -735,8 +754,8 @@ async function createSingleCommit(
   console.log("Creating blobs for binary files...");
   const binaryBlobPromises = Array.from(binaryFiles.entries()).map(
     ([path, buffer]) =>
-      octokit.rest.git
-        .createBlob({
+      getOctokit()
+        .rest.git.createBlob({
           owner,
           repo,
           content: buffer.toString("base64"),
@@ -764,7 +783,7 @@ async function createSingleCommit(
   ];
 
   console.log("Creating git tree with all files...");
-  const { data: newTree } = await octokit.rest.git.createTree({
+  const { data: newTree } = await getOctokit().rest.git.createTree({
     owner,
     repo,
     base_tree: latestCommitSha,
@@ -772,7 +791,7 @@ async function createSingleCommit(
   });
 
   console.log("Creating commit with all files...");
-  const { data: newCommit } = await octokit.rest.git.createCommit({
+  const { data: newCommit } = await getOctokit().rest.git.createCommit({
     owner,
     repo,
     message: commitMessage,
@@ -781,7 +800,7 @@ async function createSingleCommit(
   });
 
   console.log("Updating branch reference...");
-  await octokit.rest.git.updateRef({
+  await getOctokit().rest.git.updateRef({
     owner,
     repo,
     ref: "heads/main",
@@ -903,7 +922,7 @@ export async function updateDexConfig(
 async function enableGitHubPages(owner: string, repo: string): Promise<void> {
   console.log(`Enabling GitHub Pages for ${owner}/${repo}...`);
 
-  await octokit.rest.repos.createPagesSite({
+  await getOctokit().rest.repos.createPagesSite({
     owner,
     repo,
     build_type: "workflow",
@@ -1059,10 +1078,11 @@ export async function getWorkflowRunStatus(
   try {
     console.log(`Fetching workflow runs for ${owner}/${repo}...`);
 
-    const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
-      owner,
-      repo,
-    });
+    const { data: workflows } =
+      await getOctokit().rest.actions.listRepoWorkflows({
+        owner,
+        repo,
+      });
 
     if (workflows.total_count === 0) {
       console.log(`No workflows found in ${owner}/${repo}`);
@@ -1085,7 +1105,7 @@ export async function getWorkflowRunStatus(
     }
 
     if (workflowId) {
-      const { data: runs } = await octokit.rest.actions.listWorkflowRuns({
+      const { data: runs } = await getOctokit().rest.actions.listWorkflowRuns({
         owner,
         repo,
         per_page: 10,
@@ -1107,13 +1127,12 @@ export async function getWorkflowRunStatus(
         workflowRuns,
       };
     } else {
-      const { data: runs } = await octokit.rest.actions.listWorkflowRunsForRepo(
-        {
+      const { data: runs } =
+        await getOctokit().rest.actions.listWorkflowRunsForRepo({
           owner,
           repo,
           per_page: 10,
-        }
-      );
+        });
 
       const workflowRuns = runs.workflow_runs.map(run => ({
         id: run.id,
@@ -1170,14 +1189,14 @@ export async function getWorkflowRunDetails(
       `Fetching details for workflow run ${runId} in ${owner}/${repo}...`
     );
 
-    const { data: run } = await octokit.rest.actions.getWorkflowRun({
+    const { data: run } = await getOctokit().rest.actions.getWorkflowRun({
       owner,
       repo,
       run_id: runId,
     });
 
     const { data: jobsData } =
-      await octokit.rest.actions.listJobsForWorkflowRun({
+      await getOctokit().rest.actions.listJobsForWorkflowRun({
         owner,
         repo,
         run_id: runId,
@@ -1248,7 +1267,7 @@ export async function renameRepository(
       );
     }
 
-    const { data } = await octokit.rest.repos.update({
+    const { data } = await getOctokit().rest.repos.update({
       owner,
       repo,
       name: newName,
@@ -1276,7 +1295,7 @@ export async function deleteRepository(
   try {
     console.log(`Deleting repository ${owner}/${repo}...`);
 
-    await octokit.rest.repos.delete({
+    await getOctokit().rest.repos.delete({
       owner,
       repo,
     });
@@ -1320,11 +1339,12 @@ export async function setCustomDomain(
       );
     }
 
-    const response = await octokit.rest.repos.updateInformationAboutPagesSite({
-      owner,
-      repo,
-      cname: domain,
-    });
+    const response =
+      await getOctokit().rest.repos.updateInformationAboutPagesSite({
+        owner,
+        repo,
+        cname: domain,
+      });
 
     const validStatusCodes = [200, 201, 204];
     if (!validStatusCodes.includes(response.status)) {
@@ -1369,14 +1389,14 @@ export async function removeCustomDomain(
   try {
     console.log(`Removing custom domain for ${owner}/${repo}...`);
 
-    await octokit.rest.repos.updateInformationAboutPagesSite({
+    await getOctokit().rest.repos.updateInformationAboutPagesSite({
       owner,
       repo,
       cname: "",
     });
 
     try {
-      const { data: fileData } = await octokit.rest.repos.getContent({
+      const { data: fileData } = await getOctokit().rest.repos.getContent({
         owner,
         repo,
         path: "CNAME",
@@ -1393,7 +1413,7 @@ export async function removeCustomDomain(
               : undefined;
 
         if (sha) {
-          await octokit.rest.repos.deleteFile({
+          await getOctokit().rest.repos.deleteFile({
             owner,
             repo,
             path: "CNAME",

@@ -12,102 +12,32 @@ import {
   FeeManager__factory,
 } from "../../types/index.js";
 import { addBrokerToOrderlyDb, getBrokerFromOrderlyDb } from "./orderlyDb.js";
+import { getSecret } from "./secretManager.js";
 
 import * as anchor from "@coral-xyz/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
 import { IDL, type SolanaVault } from "../interface/types/solana_vault.js";
 import { default as bs58 } from "bs58";
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
 
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
 
-let evmPrivateKey: string | null = null;
-let solanaPrivateKey: string | null = null;
+let evmPrivateKey: string;
+let solanaPrivateKey: string;
 let solanaKeypair: anchor.web3.Keypair | null = null;
 let isInitialized = false;
 
 let brokerCreationLock: Promise<BrokerCreationResult> | null = null;
 
 async function getWalletPrivateKeys(): Promise<{
-  evmPrivateKey: string | null;
-  solanaPrivateKey: string | null;
+  evmPrivateKey: string;
+  solanaPrivateKey: string;
 }> {
-  const deploymentEnv = process.env.DEPLOYMENT_ENV;
+  console.log("🔧 Getting wallet private keys from secret manager...");
 
-  if (!deploymentEnv || deploymentEnv === "qa" || deploymentEnv === "dev") {
-    console.log("🔧 Using environment variables for wallet private keys");
-    return {
-      evmPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY || null,
-      solanaPrivateKey: process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null,
-    };
-  }
-
-  let evmSecretName: string;
-  let solanaSecretName: string;
-
-  switch (deploymentEnv) {
-    case "mainnet":
-      evmSecretName =
-        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-prod-evm/versions/latest";
-      solanaSecretName =
-        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-sol-prod-evm/versions/latest";
-      break;
-    case "staging":
-      evmSecretName =
-        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-staging-evm/versions/latest";
-      solanaSecretName =
-        "projects/964694002890/secrets/dex-creator-broker-creation-private-key-sol-staging-evm/versions/latest";
-      break;
-    case "qa":
-    case "dev":
-      throw new Error(
-        `No Google Secret Manager configured for ${deploymentEnv} environment. Please set BROKER_CREATION_PRIVATE_KEY and BROKER_CREATION_PRIVATE_KEY_SOL environment variables.`
-      );
-    default:
-      throw new Error(
-        `Unknown deployment environment: ${deploymentEnv}. Please set BROKER_CREATION_PRIVATE_KEY and BROKER_CREATION_PRIVATE_KEY_SOL environment variables.`
-      );
-  }
-
-  const client = new SecretManagerServiceClient();
-  let evmPrivateKey: string | null = null;
-  let solanaPrivateKey: string | null = null;
-
-  try {
-    console.log(`🔑 Fetching EVM private key from secret: ${evmSecretName}`);
-    const [evmVersion] = await client.accessSecretVersion({
-      name: evmSecretName,
-    });
-    evmPrivateKey = evmVersion.payload?.data?.toString() || null;
-    console.log("✅ Fetched EVM private key");
-  } catch (error) {
-    console.error(
-      "❌ Failed to get EVM private key from Google Secret Manager:",
-      error
-    );
-    evmPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY || null;
-    console.log("⚠️ Using environment variable for EVM private key");
-  }
-
-  try {
-    console.log(
-      `🔑 Fetching Solana private key from secret: ${solanaSecretName}`
-    );
-    const [solanaVersion] = await client.accessSecretVersion({
-      name: solanaSecretName,
-    });
-    solanaPrivateKey = solanaVersion.payload?.data?.toString() || null;
-    console.log("✅ Fetched Solana private key");
-  } catch (error) {
-    console.error(
-      "❌ Failed to get Solana private key from Google Secret Manager:",
-      error
-    );
-    solanaPrivateKey = process.env.BROKER_CREATION_PRIVATE_KEY_SOL || null;
-    console.log("⚠️ Using environment variable for Solana private key");
-  }
+  const evmPrivateKey = getSecret("brokerCreationPrivateKey");
+  const solanaPrivateKey = getSecret("brokerCreationPrivateKeySol");
 
   return {
     evmPrivateKey,
@@ -126,42 +56,22 @@ export async function initializeBrokerCreation(): Promise<void> {
   evmPrivateKey = walletKeys.evmPrivateKey;
   solanaPrivateKey = walletKeys.solanaPrivateKey;
 
-  if (!evmPrivateKey) {
-    console.warn("⚠️  EVM private key not found - EVM operations will fail");
-  } else {
-    const evmWallet = new ethers.Wallet(evmPrivateKey);
-    console.log("✅ EVM private key loaded");
-    console.log(`📍 EVM wallet address: ${evmWallet.address}`);
-  }
+  const evmWallet = new ethers.Wallet(evmPrivateKey);
+  console.log("✅ EVM private key loaded");
+  console.log(`📍 EVM wallet address: ${evmWallet.address}`);
 
-  if (!solanaPrivateKey) {
-    console.warn(
-      "⚠️  Solana private key not found - Solana operations will fail"
+  try {
+    solanaKeypair = parseSolanaPrivateKey(solanaPrivateKey);
+    console.log("✅ Solana private key loaded");
+    console.log(
+      `📍 Solana wallet address: ${solanaKeypair.publicKey.toString()}`
     );
-  } else {
-    try {
-      solanaKeypair = parseSolanaPrivateKey(solanaPrivateKey);
-      console.log("✅ Solana private key loaded");
-      console.log(
-        `📍 Solana wallet address: ${solanaKeypair.publicKey.toString()}`
-      );
-    } catch (error) {
-      console.error("❌ Failed to parse Solana private key:", error);
-      console.error(
-        "   Expected format: base58 string or [1,2,3,4,...] (JSON array of numbers)"
-      );
-      solanaKeypair = null;
-    }
-  }
-
-  if (!evmPrivateKey || !solanaPrivateKey) {
+  } catch (error) {
+    console.error("❌ Failed to parse Solana private key:", error);
     console.error(
-      "❌ Missing required private keys! Broker creation will not work."
+      "   Expected format: base58 string or [1,2,3,4,...] (JSON array of numbers)"
     );
-    console.error(
-      "   Please configure both EVM and Solana wallet private keys via environment variables or Google Secret Manager"
-    );
-    process.exit(1);
+    throw error;
   }
 
   isInitialized = true;
@@ -178,13 +88,6 @@ function ensureInitialized(): void {
 
 function getEvmPrivateKey(): string {
   ensureInitialized();
-
-  if (!evmPrivateKey) {
-    throw new Error(
-      "EVM private key is required for EVM operations but was not found in environment variables or Secret Manager"
-    );
-  }
-
   return evmPrivateKey;
 }
 
@@ -1425,13 +1328,6 @@ export async function deleteBrokerId(
 
     if (!config) {
       throw new Error(`No configuration found for environment: ${env}`);
-    }
-
-    const privateKey = process.env.BROKER_CREATION_PRIVATE_KEY;
-    if (!privateKey) {
-      throw new Error(
-        "BROKER_CREATION_PRIVATE_KEY environment variable is required"
-      );
     }
 
     console.log(

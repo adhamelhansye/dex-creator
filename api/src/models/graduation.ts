@@ -6,6 +6,7 @@ import {
   USDC_ADDRESSES,
   type ChainName,
 } from "../../../config";
+import { getSecret } from "../lib/secretManager.js";
 
 async function withRPCTimeout<T>(
   promise: Promise<T>,
@@ -25,7 +26,9 @@ export interface BrokerCreationData {
   transactionHashes: Record<number, string>; // chainId -> txHash
 }
 
-const ORDER_RECEIVER_ADDRESS = process.env.ORDER_RECEIVER_ADDRESS!;
+function getOrderReceiverAddress(): string {
+  return getSecret("orderReceiverAddress");
+}
 
 const DEFAULT_MAKER_FEE = 30; // Default maker fee (3 bps = 30 units)
 const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
@@ -68,7 +71,7 @@ export async function verifyOrderTransaction(
     };
   }
 
-  const receiverAddress = ORDER_RECEIVER_ADDRESS;
+  const receiverAddress = getOrderReceiverAddress();
 
   try {
     const rpcUrl = ALL_CHAINS[chain as ChainName].rpcUrl;

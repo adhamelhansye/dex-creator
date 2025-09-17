@@ -17,6 +17,7 @@ import {
   checkGasBalances,
 } from "./lib/brokerCreation";
 import { getCurrentEnvironment } from "./models/dex";
+import { initializeSecretManager } from "./lib/secretManager";
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -72,17 +73,19 @@ app.onError((err, c) => {
 });
 
 if (process.env.NODE_ENV !== "test") {
-  if (!process.env.ORDER_RECEIVER_ADDRESS) {
-    console.error(
-      "❌ Missing required environment variable: ORDER_RECEIVER_ADDRESS"
-    );
-    process.exit(1);
-  }
-
   prisma
     .$connect()
     .then(async () => {
       console.log("Connected to the database");
+
+      try {
+        console.log("🔧 Initializing secret manager...");
+        await initializeSecretManager();
+        console.log("✅ Secret manager initialized successfully");
+      } catch (error) {
+        console.error("❌ Failed to initialize secret manager:", error);
+        process.exit(1);
+      }
 
       try {
         console.log("🚀 Initializing broker creation system...");

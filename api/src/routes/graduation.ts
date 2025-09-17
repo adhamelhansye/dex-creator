@@ -12,6 +12,7 @@ import { setupRepositoryWithSingleCommit } from "../lib/github.js";
 import { updateBrokerAdminAccountId } from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
 import { createAutomatedBrokerId } from "../lib/brokerCreation.js";
+import { getSecret } from "../lib/secretManager.js";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -499,7 +500,7 @@ graduationRoutes.get("/fee-options", async c => {
         currency: "ORDER",
         stable: false,
       },
-      receiverAddress: process.env.ORDER_RECEIVER_ADDRESS,
+      receiverAddress: getSecret("orderReceiverAddress"),
     });
   } catch (error) {
     console.error("Error getting graduation fee options:", error);
