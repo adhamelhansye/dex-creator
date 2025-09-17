@@ -9,7 +9,6 @@ import themeRoutes from "./routes/theme";
 import graduationRoutes from "./routes/graduation";
 import { leaderboard } from "./routes/leaderboard";
 import { leaderboardService } from "./services/leaderboardService";
-import { prisma } from "./lib/prisma";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
 import {
   initializeBrokerCreation,
@@ -28,6 +27,8 @@ declare module "hono" {
 }
 
 export const app = new Hono();
+
+let globalPrisma: import("@prisma/client").PrismaClient | null = null;
 
 app.use("*", logger());
 app.use("*", cors());
@@ -74,95 +75,103 @@ app.onError((err, c) => {
 });
 
 if (process.env.NODE_ENV !== "test") {
-  prisma
-    .$connect()
-    .then(async () => {
+  (async () => {
+    try {
+      console.log("🔧 Initializing secret manager...");
+      await initializeSecretManager();
+      console.log("✅ Secret manager initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize secret manager:", error);
+      process.exit(1);
+    }
+
+    const { prisma } = await import("./lib/prisma.js");
+    globalPrisma = prisma;
+    try {
+      await prisma.$connect();
       console.log("Connected to the database");
+    } catch (error) {
+      console.error("Failed to connect to the database:", error);
+      process.exit(1);
+    }
 
+    if (shouldRunMigrations()) {
       try {
-        console.log("🔧 Initializing secret manager...");
-        await initializeSecretManager();
-        console.log("✅ Secret manager initialized successfully");
-      } catch (error) {
-        console.error("❌ Failed to initialize secret manager:", error);
-        process.exit(1);
-      }
-
-      if (shouldRunMigrations()) {
-        try {
-          console.log("🗄️ Running database migrations...");
-          const migrationResult = await runDatabaseMigrations();
-          if (!migrationResult.success) {
-            console.error(
-              "❌ Database migrations failed:",
-              migrationResult.error
-            );
-            process.exit(1);
-          }
-          console.log("✅ Database migrations completed successfully");
-        } catch (error) {
-          console.error("❌ Database migrations failed:", error);
+        console.log("🗄️ Running database migrations...");
+        const migrationResult = await runDatabaseMigrations();
+        if (!migrationResult.success) {
+          console.error(
+            "❌ Database migrations failed:",
+            migrationResult.error
+          );
           process.exit(1);
         }
-      }
-
-      try {
-        console.log("🚀 Initializing broker creation system...");
-        await initializeBrokerCreation();
-        console.log("✅ Broker creation system initialized successfully");
+        console.log("✅ Database migrations completed successfully");
       } catch (error) {
-        console.error("❌ Failed to initialize broker creation system:", error);
+        console.error("❌ Database migrations failed:", error);
         process.exit(1);
       }
+    }
 
-      try {
-        console.log("🔍 Checking broker creation permissions on startup...");
-        const environment = getCurrentEnvironment();
-        const permissionData =
-          await checkBrokerCreationPermissions(environment);
-        console.log(
-          "✅ Broker creation permissions check completed:",
-          permissionData
-        );
-      } catch (error) {
-        console.error("⚠️ Broker creation permissions check failed:", error);
-        process.exit(1);
-      }
-
-      try {
-        console.log("💰 Checking gas balances on all chains...");
-        const environment = getCurrentEnvironment();
-        const gasBalanceData = await checkGasBalances(environment);
-        if (gasBalanceData.success) {
-          console.log("✅ All chains have sufficient gas balances");
-        } else {
-          console.warn("⚠️ Gas balance warnings detected:");
-          gasBalanceData.warnings.forEach(warning => console.warn(warning));
-          console.warn(
-            "This may affect broker creation functionality. Consider adding ETH to the wallet."
-          );
-        }
-      } catch (error) {
-        console.error("⚠️ Gas balance check failed:", error);
-        process.exit(1);
-      }
-    })
-    .catch((err: Error) => {
-      console.error("Failed to connect to the database:", err);
+    try {
+      console.log("🚀 Initializing broker creation system...");
+      await initializeBrokerCreation();
+      console.log("✅ Broker creation system initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize broker creation system:", error);
       process.exit(1);
-    });
+    }
+
+    try {
+      console.log("🔍 Checking broker creation permissions on startup...");
+      const environment = getCurrentEnvironment();
+      const permissionData = await checkBrokerCreationPermissions(environment);
+      console.log(
+        "✅ Broker creation permissions check completed:",
+        permissionData
+      );
+    } catch (error) {
+      console.error("⚠️ Broker creation permissions check failed:", error);
+      process.exit(1);
+    }
+
+    try {
+      console.log("💰 Checking gas balances on all chains...");
+      const environment = getCurrentEnvironment();
+      const gasBalanceData = await checkGasBalances(environment);
+      if (gasBalanceData.success) {
+        console.log("✅ All chains have sufficient gas balances");
+      } else {
+        console.warn("⚠️ Gas balance warnings detected:");
+        gasBalanceData.warnings.forEach(warning => console.warn(warning));
+        console.warn(
+          "This may affect broker creation functionality. Consider adding ETH to the wallet."
+        );
+      }
+    } catch (error) {
+      console.error("⚠️ Gas balance check failed:", error);
+      process.exit(1);
+    }
+  })().catch((err: Error) => {
+    console.error("Application startup failed:", err);
+    process.exit(1);
+  });
 }
 
 if (process.env.NODE_ENV !== "test") {
   process.on("SIGINT", async () => {
     leaderboardService.stop();
-    await prisma.$disconnect();
+    if (globalPrisma) {
+      await globalPrisma.$disconnect();
+    }
     process.exit(0);
   });
 
   process.on("SIGTERM", async () => {
     leaderboardService.stop();
-    await prisma.$disconnect();
+    if (globalPrisma) {
+      await globalPrisma.$disconnect();
+    }
     process.exit(0);
   });
 }
