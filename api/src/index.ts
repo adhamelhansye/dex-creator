@@ -95,6 +95,15 @@ if (process.env.NODE_ENV !== "test") {
       process.exit(1);
     }
 
+    try {
+      console.log("📊 Initializing leaderboard service...");
+      await leaderboardService.initialize();
+      console.log("✅ Leaderboard service initialized successfully");
+    } catch (error) {
+      console.error("❌ Failed to initialize leaderboard service:", error);
+      process.exit(1);
+    }
+
     if (shouldRunMigrations()) {
       try {
         console.log("🗄️ Running database migrations...");

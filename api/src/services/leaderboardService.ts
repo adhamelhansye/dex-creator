@@ -72,11 +72,7 @@ class LeaderboardService {
   private readonly POLL_INTERVAL = 10_000;
   private readonly BROKER_REFRESH_INTERVAL = 5 * 60 * 1000;
 
-  constructor() {
-    this.initialize();
-  }
-
-  private async initialize() {
+  public async initialize() {
     await this.loadBrokerIds();
     this.startPolling();
     this.startBrokerRefresh();
