@@ -3,18 +3,15 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   verifyOrderTransaction,
-  createAutomatedBrokerId,
   updateDexFees,
   getDexFees,
 } from "../models/graduation";
-import { getUserDex } from "../models/dex";
+import { getUserDex, getCurrentEnvironment } from "../models/dex";
 import { prisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
-import {
-  addBrokerToOrderlyDb,
-  updateBrokerAdminAccountId,
-} from "../lib/orderlyDb.js";
+import { updateBrokerAdminAccountId } from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
+import { createAutomatedBrokerId } from "../lib/brokerCreation.js";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -88,42 +85,44 @@ graduationRoutes.post(
         return c.json(feeUpdateResult, { status: 400 });
       }
 
+      const existingDex = await prisma.dex.findFirst({
+        where: {
+          brokerId: brokerId,
+        },
+      });
+
+      if (existingDex) {
+        return c.json(
+          {
+            success: false,
+            message:
+              "This broker ID is already taken. Please choose another one.",
+          },
+          { status: 400 }
+        );
+      }
+
       const brokerCreationResult = await createAutomatedBrokerId(
-        userId,
         brokerId,
-        user.address
+        getCurrentEnvironment(),
+        {
+          brokerName: dex.brokerName,
+          makerFee: makerFee,
+          takerFee: takerFee,
+        }
       );
 
       if (!brokerCreationResult.success) {
         return c.json(brokerCreationResult, { status: 400 });
       }
 
-      try {
-        console.log(`🔄 Adding broker ${brokerId} to Orderly database...`);
-
-        const orderlyDbResult = await addBrokerToOrderlyDb({
-          brokerId: brokerId,
-          brokerName: dex.brokerName,
-          makerFee: makerFee,
-          takerFee: takerFee,
-        });
-
-        if (!orderlyDbResult.success) {
-          console.error(
-            "❌ Failed to add broker to Orderly database:",
-            orderlyDbResult.message
-          );
-        } else {
-          console.log(
-            `✅ Successfully added broker ${brokerId} to Orderly database`
-          );
-        }
-      } catch (orderlyDbError) {
-        console.error(
-          "❌ Error adding broker to Orderly database:",
-          orderlyDbError
-        );
-      }
+      await prisma.dex.update({
+        where: { userId },
+        data: {
+          brokerId,
+          isGraduated: false,
+        },
+      });
 
       try {
         console.log(
@@ -193,7 +192,10 @@ graduationRoutes.post(
         success: true,
         message: `Transaction verified and broker ID '${brokerId}' created successfully! Your DEX has graduated automatically.`,
         amount: verificationResult.amount,
-        brokerCreationData: brokerCreationResult.brokerCreationData,
+        brokerCreationData: {
+          brokerId,
+          transactionHashes: brokerCreationResult.transactionHashes || {},
+        },
       });
     } catch (error) {
       console.error("Error in graduation verification:", error);
@@ -364,7 +366,7 @@ graduationRoutes.post("/finalize-admin-wallet", async c => {
         );
       } else {
         console.warn(
-          `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.message}`
+          `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.error}`
         );
       }
     } catch (orderlyDbError) {

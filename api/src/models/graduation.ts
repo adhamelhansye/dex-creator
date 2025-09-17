@@ -1,7 +1,5 @@
 import { prisma } from "../lib/prisma";
 import { ethers } from "ethers";
-import { createAutomatedBrokerId as createBrokerOnAllChains } from "../lib/brokerCreation.js";
-import { getCurrentEnvironment } from "./dex.js";
 import {
   ALL_CHAINS,
   ORDER_ADDRESSES,
@@ -213,92 +211,6 @@ export async function verifyOrderTransaction(
     return {
       success: false,
       message: `Error verifying transaction: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-}
-
-/**
- * Create broker ID automatically on all chains after successful ORDER token verification
- */
-export async function createAutomatedBrokerId(
-  userId: string,
-  brokerId: string,
-  userAddress: string
-): Promise<{
-  success: boolean;
-  message: string;
-  brokerCreationData?: BrokerCreationData;
-}> {
-  try {
-    const existingDex = await prisma.dex.findFirst({
-      where: {
-        brokerId: brokerId,
-        NOT: { userId },
-      },
-    });
-
-    if (existingDex) {
-      return {
-        success: false,
-        message: "This broker ID is already taken. Please choose another one.",
-      };
-    }
-
-    console.log(`🚀 Attempting to create broker ID for user ${userAddress}...`);
-
-    const environment = getCurrentEnvironment();
-
-    const brokerCreationResult = await createBrokerOnAllChains(
-      brokerId,
-      environment
-    );
-
-    if (!brokerCreationResult.success) {
-      console.error(
-        `❌ Failed to create broker ID:`,
-        brokerCreationResult.errors
-      );
-      return {
-        success: false,
-        message: `Failed to create broker ID: ${brokerCreationResult.errors?.join(", ") || "Unknown error"}`,
-      };
-    }
-
-    console.log(`✅ Successfully created broker ID: ${brokerId} on all chains`);
-
-    console.log(
-      `✅ Broker creation completed successfully for all configured chains!`
-    );
-
-    console.log(`🎯 Final broker information:`);
-    console.log(`  - Broker ID: ${brokerId}`);
-    console.log(
-      `  - Transaction hashes: ${brokerCreationResult.transactionHashes ? Object.values(brokerCreationResult.transactionHashes).join(", ") : "none"}`
-    );
-
-    await prisma.dex.update({
-      where: { userId },
-      data: {
-        brokerId: brokerId,
-        isGraduated: false,
-      },
-    });
-
-    console.log(`🎉 Broker ID ${brokerId} created and assigned to DEX!`);
-
-    return {
-      success: true,
-      message: `Broker ID ${brokerId} created successfully and DEX graduated!`,
-      brokerCreationData: {
-        brokerId: brokerId,
-        transactionHashes: brokerCreationResult.transactionHashes || {},
-      },
-    };
-  } catch (error) {
-    console.error("Error creating automated broker ID:", error);
-    return {
-      success: false,
-      message: `Error creating broker ID: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }

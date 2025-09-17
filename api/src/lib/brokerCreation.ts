@@ -11,6 +11,7 @@ import {
   VaultManager__factory,
   FeeManager__factory,
 } from "../../types/index.js";
+import { addBrokerToOrderlyDb, getBrokerFromOrderlyDb } from "./orderlyDb.js";
 
 import * as anchor from "@coral-xyz/anchor";
 import { SystemProgram } from "@solana/web3.js";
@@ -26,6 +27,8 @@ let evmPrivateKey: string | null = null;
 let solanaPrivateKey: string | null = null;
 let solanaKeypair: anchor.web3.Keypair | null = null;
 let isInitialized = false;
+
+let brokerCreationLock: Promise<BrokerCreationResult> | null = null;
 
 async function getWalletPrivateKeys(): Promise<{
   evmPrivateKey: string | null;
@@ -353,7 +356,35 @@ interface BrokerCreationResult {
 
 export async function createAutomatedBrokerId(
   brokerId: string,
-  environment?: Environment
+  environment: Environment,
+  brokerData: { brokerName: string; makerFee: number; takerFee: number }
+): Promise<BrokerCreationResult> {
+  if (brokerCreationLock) {
+    console.log(`⏳ Broker creation already in progress, waiting...`);
+    try {
+      await brokerCreationLock;
+    } catch {}
+  }
+
+  const creationPromise = createAutomatedBrokerIdInternal(
+    brokerId,
+    environment,
+    brokerData
+  );
+  brokerCreationLock = creationPromise;
+
+  try {
+    const result = await creationPromise;
+    return result;
+  } finally {
+    brokerCreationLock = null;
+  }
+}
+
+async function createAutomatedBrokerIdInternal(
+  brokerId: string,
+  environment: Environment,
+  brokerData: { brokerName: string; makerFee: number; takerFee: number }
 ): Promise<BrokerCreationResult> {
   try {
     const env = environment || getCurrentEnvironment();
@@ -443,7 +474,29 @@ export async function createAutomatedBrokerId(
       };
     }
 
-    console.log("✅ All simulations passed, executing transactions...");
+    console.log(
+      "✅ All simulations passed, adding broker to Orderly database..."
+    );
+
+    const orderlyDbResult = await addBrokerToOrderlyDb({
+      brokerId: brokerId,
+      brokerName: brokerData.brokerName,
+      makerFee: brokerData.makerFee,
+      takerFee: brokerData.takerFee,
+    });
+
+    if (!orderlyDbResult.success) {
+      throw new Error(
+        `Failed to add broker to Orderly database: ${orderlyDbResult.error}`
+      );
+    }
+
+    const brokerIndex = orderlyDbResult.data.brokerIndex;
+    console.log(
+      `✅ Broker added to Orderly database with index: ${brokerIndex}`
+    );
+
+    console.log("🚀 Executing on-chain transactions...");
 
     const executionPromises: Array<
       Promise<{ chainId: number; txHash: string }>
@@ -466,14 +519,19 @@ export async function createAutomatedBrokerId(
       }
     }
 
-    for (const [chainName, chainConfig] of solanaChains) {
-      const chainId = ALL_CHAINS[chainName as ChainName].chainId;
-      if (chainConfig.vaultAddress) {
-        executionPromises.push(
-          executeSolanaVaultTransaction(chainConfig, brokerId, chainName).then(
-            txHash => ({ chainId, txHash })
-          )
-        );
+    if (solanaChains.length > 0) {
+      for (const [chainName, chainConfig] of solanaChains) {
+        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+        if (chainConfig.vaultAddress) {
+          executionPromises.push(
+            executeSolanaVaultTransaction(
+              chainConfig,
+              brokerId,
+              chainName,
+              brokerIndex
+            ).then(txHash => ({ chainId, txHash }))
+          );
+        }
       }
     }
 
@@ -765,13 +823,25 @@ async function simulateSolanaVaultTransaction(
 
     await program.methods
       .setBroker({
-        brokerManagerRole: codedBrokerManagerRoleHash,
         brokerHash: codedBrokerHash,
         allowed: true,
       })
       .accounts({
         brokerManager: keypair.publicKey,
         allowedBroker: brokerPda,
+        managerRole: brokerManagerRolePda,
+        systemProgram: SystemProgram.programId,
+      })
+      .simulate();
+    await program.methods
+      .setWithdrawBroker({
+        brokerHash: codedBrokerHash,
+        brokerIndex: 0,
+        allowed: true,
+      })
+      .accounts({
+        brokerManager: keypair.publicKey,
+        withdrawBroker: brokerPda,
         managerRole: brokerManagerRolePda,
         systemProgram: SystemProgram.programId,
       })
@@ -1484,20 +1554,41 @@ export async function deleteBrokerId(
       }
     }
 
-    for (const { chainName } of successfulSimulations) {
-      const chainConfig = config[
-        chainName as keyof typeof config
-      ] as EnvironmentChainConfig;
-      const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+    const solanaDeletionChains = successfulSimulations.filter(
+      ({ chainName }) => {
+        const chainConfig = config[
+          chainName as keyof typeof config
+        ] as EnvironmentChainConfig;
+        return (
+          chainConfig.vaultAddress &&
+          ALL_CHAINS[chainName as ChainName].chainType === "SOL"
+        );
+      }
+    );
 
-      if (
-        chainConfig.vaultAddress &&
-        ALL_CHAINS[chainName as ChainName].chainType === "SOL"
-      ) {
+    if (solanaDeletionChains.length > 0) {
+      const brokerResult = await getBrokerFromOrderlyDb(brokerId);
+      if (!brokerResult.success) {
+        throw new Error(
+          `Failed to get broker index for Solana deletion: ${brokerResult.error}`
+        );
+      }
+
+      const solanaBrokerIndex = brokerResult.data.brokerIndex;
+
+      for (const { chainName } of solanaDeletionChains) {
+        const chainConfig = config[
+          chainName as keyof typeof config
+        ] as EnvironmentChainConfig;
+        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+
         executionPromises.push(
-          executeSolanaDeletion(chainConfig, brokerId, chainName).then(
-            txHash => ({ chainId, txHash, chainName })
-          )
+          executeSolanaDeletion(
+            chainConfig,
+            brokerId,
+            chainName,
+            solanaBrokerIndex
+          ).then(txHash => ({ chainId, txHash, chainName }))
         );
       }
     }
@@ -1687,7 +1778,6 @@ async function simulateSolanaDeletion(
 
     await program.methods
       .setBroker({
-        brokerManagerRole: codedBrokerManagerRoleHash,
         brokerHash: codedBrokerHash,
         allowed: false,
       })
@@ -1696,6 +1786,19 @@ async function simulateSolanaDeletion(
         allowedBroker: brokerPda,
         managerRole: brokerManagerRolePda,
         systemProgram: anchor.web3.SystemProgram.programId,
+      })
+      .simulate();
+    await program.methods
+      .setWithdrawBroker({
+        brokerHash: codedBrokerHash,
+        brokerIndex: 0,
+        allowed: true,
+      })
+      .accounts({
+        brokerManager: keypair.publicKey,
+        withdrawBroker: brokerPda,
+        managerRole: brokerManagerRolePda,
+        systemProgram: SystemProgram.programId,
       })
       .simulate();
 
@@ -1758,7 +1861,8 @@ async function executeOrderlyDeletion(
 async function executeSolanaDeletion(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  chainName: string
+  chainName: string,
+  brokerIndex: number
 ): Promise<string> {
   if (!chainConfig.vaultAddress) {
     throw new Error("Vault address not configured for this chain");
@@ -1792,9 +1896,8 @@ async function executeSolanaDeletion(
 
   const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
 
-  const tx = await program.methods
+  const setBrokerTx = await program.methods
     .setBroker({
-      brokerManagerRole: codedBrokerManagerRoleHash,
       brokerHash: codedBrokerHash,
       allowed: false,
     })
@@ -1807,17 +1910,35 @@ async function executeSolanaDeletion(
     .rpc();
 
   console.log(
-    `🗑️ Solana deletion transaction executed for broker ${brokerId} on ${chainName}`
+    `🗑️ Solana setBroker deletion transaction executed for broker ${brokerId} on ${chainName}: ${setBrokerTx}`
   );
-  console.log(`📝 Transaction signature: ${tx}`);
 
-  return tx;
+  const setWithdrawBrokerTx = await program.methods
+    .setWithdrawBroker({
+      brokerHash: codedBrokerHash,
+      brokerIndex: brokerIndex,
+      allowed: false,
+    })
+    .accounts({
+      brokerManager: keypair.publicKey,
+      withdrawBroker: brokerPda,
+      managerRole: brokerManagerRolePda,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
+
+  console.log(
+    `🗑️ Solana setWithdrawBroker deletion transaction executed for broker ${brokerId} on ${chainName}: ${setWithdrawBrokerTx}`
+  );
+
+  return setBrokerTx;
 }
 
 async function executeSolanaVaultTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
-  chainName: string
+  chainName: string,
+  brokerIndex: number
 ): Promise<string> {
   if (!chainConfig.vaultAddress) {
     throw new Error("Vault address not configured for this chain");
@@ -1858,9 +1979,8 @@ async function executeSolanaVaultTransaction(
 
   const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
 
-  const tx = await program.methods
+  const setBrokerTx = await program.methods
     .setBroker({
-      brokerManagerRole: codedBrokerManagerRoleHash,
       brokerHash: codedBrokerHash,
       allowed: true,
     })
@@ -1873,9 +1993,26 @@ async function executeSolanaVaultTransaction(
     .rpc();
 
   console.log(
-    `🚀 Solana transaction executed for broker ${brokerId} on ${chainName}`
+    `🚀 Solana setBroker transaction executed for broker ${brokerId} on ${chainName}: ${setBrokerTx}`
   );
-  console.log(`📝 Transaction signature: ${tx}`);
 
-  return tx;
+  const setWithdrawBrokerTx = await program.methods
+    .setWithdrawBroker({
+      brokerHash: codedBrokerHash,
+      brokerIndex: brokerIndex,
+      allowed: true,
+    })
+    .accounts({
+      brokerManager: keypair.publicKey,
+      withdrawBroker: brokerPda,
+      managerRole: brokerManagerRolePda,
+      systemProgram: SystemProgram.programId,
+    })
+    .rpc();
+
+  console.log(
+    `🚀 Solana setWithdrawBroker transaction executed for broker ${brokerId} on ${chainName}: ${setWithdrawBrokerTx}`
+  );
+
+  return setBrokerTx;
 }

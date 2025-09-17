@@ -2,6 +2,7 @@ import { ethers } from "ethers";
 import { PrismaClient } from "../lib/generated/orderly-client";
 import { Decimal } from "../lib/generated/orderly-client/runtime/library";
 import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
+import { Result } from "./types.js";
 
 interface OrderlyBrokerData {
   brokerId: string;
@@ -148,7 +149,7 @@ function convertBasisPointsToDecimal(basisPoints: number): Decimal {
 
 export async function addBrokerToOrderlyDb(
   data: OrderlyBrokerData
-): Promise<{ success: boolean; message: string }> {
+): Promise<Result<{ message: string; brokerIndex: number }>> {
   const orderlyPrisma = await getOrderlyPrismaClient();
 
   try {
@@ -158,7 +159,7 @@ export async function addBrokerToOrderlyDb(
     const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
 
-    await orderlyPrisma.orderlyBroker.create({
+    const createdBroker = await orderlyPrisma.orderlyBroker.create({
       data: {
         brokerId: data.brokerId,
         brokerName: data.brokerName,
@@ -175,13 +176,17 @@ export async function addBrokerToOrderlyDb(
       },
     });
 
+    const brokerIndex = Number(createdBroker.id);
     console.log(
-      `✅ Successfully added broker ${data.brokerId} to Orderly database`
+      `✅ Successfully added broker ${data.brokerId} to Orderly database with index ${brokerIndex}`
     );
 
     return {
       success: true,
-      message: `Broker ${data.brokerId} successfully added to Orderly database`,
+      data: {
+        message: `Broker ${data.brokerId} successfully added to Orderly database`,
+        brokerIndex,
+      },
     };
   } catch (error) {
     console.error("❌ Error adding broker to Orderly database:", error);
@@ -189,13 +194,13 @@ export async function addBrokerToOrderlyDb(
     if (error instanceof Error && error.message.includes("Unique constraint")) {
       return {
         success: false,
-        message: `Broker ID ${data.brokerId} already exists in Orderly database`,
+        error: `Broker ID ${data.brokerId} already exists in Orderly database`,
       };
     }
 
     return {
       success: false,
-      message: `Failed to add broker to Orderly database: ${error instanceof Error ? error.message : String(error)}`,
+      error: `Failed to add broker to Orderly database: ${error instanceof Error ? error.message : String(error)}`,
     };
   } finally {
     await orderlyPrisma.$disconnect();
@@ -205,7 +210,7 @@ export async function addBrokerToOrderlyDb(
 export async function updateBrokerAdminAccountId(
   brokerId: string,
   adminAccountId: string
-): Promise<{ success: boolean; message: string }> {
+): Promise<Result<{ message: string }>> {
   const orderlyPrisma = await getOrderlyPrismaClient();
 
   try {
@@ -224,7 +229,9 @@ export async function updateBrokerAdminAccountId(
 
     return {
       success: true,
-      message: `Admin account ID updated successfully for broker ${brokerId}`,
+      data: {
+        message: `Admin account ID updated successfully for broker ${brokerId}`,
+      },
     };
   } catch (error) {
     console.error("❌ Error updating admin account ID:", error);
@@ -235,13 +242,59 @@ export async function updateBrokerAdminAccountId(
     ) {
       return {
         success: false,
-        message: `Broker ID ${brokerId} not found in Orderly database`,
+        error: `Broker ID ${brokerId} not found in Orderly database`,
       };
     }
 
     return {
       success: false,
-      message: `Failed to update admin account ID: ${error instanceof Error ? error.message : String(error)}`,
+      error: `Failed to update admin account ID: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await orderlyPrisma.$disconnect();
+  }
+}
+
+export async function getBrokerFromOrderlyDb(
+  brokerId: string
+): Promise<Result<{ message: string; brokerIndex: number }>> {
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
+  try {
+    const broker = await orderlyPrisma.orderlyBroker.findUnique({
+      where: {
+        brokerId: brokerId,
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (!broker) {
+      return {
+        success: false,
+        error: `Broker ID ${brokerId} not found in Orderly database`,
+      };
+    }
+
+    const brokerIndex = Number(broker.id);
+    console.log(
+      `✅ Found broker ${brokerId} in Orderly database with index ${brokerIndex}`
+    );
+
+    return {
+      success: true,
+      data: {
+        message: `Broker ${brokerId} found in Orderly database`,
+        brokerIndex,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error getting broker from Orderly database:", error);
+
+    return {
+      success: false,
+      error: `Failed to get broker from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
     };
   } finally {
     await orderlyPrisma.$disconnect();
@@ -250,7 +303,7 @@ export async function updateBrokerAdminAccountId(
 
 export async function deleteBrokerFromOrderlyDb(
   brokerId: string
-): Promise<{ success: boolean; message: string }> {
+): Promise<Result<{ message: string }>> {
   const orderlyPrisma = await getOrderlyPrismaClient();
 
   try {
@@ -266,7 +319,9 @@ export async function deleteBrokerFromOrderlyDb(
 
     return {
       success: true,
-      message: `Broker ${brokerId} successfully deleted from Orderly database`,
+      data: {
+        message: `Broker ${brokerId} successfully deleted from Orderly database`,
+      },
     };
   } catch (error) {
     console.error("❌ Error deleting broker from Orderly database:", error);
@@ -277,13 +332,13 @@ export async function deleteBrokerFromOrderlyDb(
     ) {
       return {
         success: false,
-        message: `Broker ID ${brokerId} not found in Orderly database`,
+        error: `Broker ID ${brokerId} not found in Orderly database`,
       };
     }
 
     return {
       success: false,
-      message: `Failed to delete broker from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
+      error: `Failed to delete broker from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
     };
   } finally {
     await orderlyPrisma.$disconnect();

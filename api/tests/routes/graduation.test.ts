@@ -160,6 +160,88 @@ describe("Graduation Routes", () => {
       expect(body).toHaveProperty("success", false);
       expect(body).toHaveProperty("message");
     });
+
+    it("should prevent duplicate broker IDs across all users", async () => {
+      const request1 = createAuthenticatedRequest(app, testUser.id);
+      const secondUser = await testDataFactory.createTestUser();
+      const request2 = createAuthenticatedRequest(app, secondUser.id);
+
+      await testDataFactory.createTestDex(testUser.id, {
+        brokerName: "First DEX",
+        repoUrl: "https://github.com/test/test-repo-1",
+      });
+      await testDataFactory.createTestDex(secondUser.id, {
+        brokerName: "Second DEX",
+        repoUrl: "https://github.com/test/test-repo-2",
+      });
+
+      const sameBrokerId = createMockBrokerId();
+      const graduationData = {
+        txHash:
+          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        chain: "ethereum",
+        brokerId: sameBrokerId,
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
+      };
+
+      const response1 = await request1.post(
+        "/api/graduation/verify-tx",
+        graduationData
+      );
+      expect(response1.status).toBe(200);
+
+      const response2 = await request2.post(
+        "/api/graduation/verify-tx",
+        graduationData
+      );
+      const body2 = await response2.json();
+
+      expect(response2.status).toBe(400);
+      expect(body2).toHaveProperty("success", false);
+      expect(body2.message).toContain("already taken");
+    });
+
+    it("should handle concurrent broker creation requests", async () => {
+      const secondUser = await testDataFactory.createTestUser();
+
+      const request1 = createAuthenticatedRequest(app, testUser.id);
+      const request2 = createAuthenticatedRequest(app, secondUser.id);
+
+      await testDataFactory.createTestDex(testUser.id, {
+        brokerName: "Test DEX 1",
+        repoUrl: "https://github.com/test/test-repo-1",
+      });
+
+      await testDataFactory.createTestDex(secondUser.id, {
+        brokerName: "Test DEX 2",
+        repoUrl: "https://github.com/test/test-repo-2",
+      });
+
+      const graduationData1 = {
+        txHash:
+          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        chain: "ethereum",
+        brokerId: createMockBrokerId(),
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
+      };
+
+      const graduationData2 = {
+        ...graduationData1,
+        brokerId: createMockBrokerId(),
+      };
+
+      const [response1, response2] = await Promise.all([
+        request1.post("/api/graduation/verify-tx", graduationData1),
+        request2.post("/api/graduation/verify-tx", graduationData2),
+      ]);
+
+      expect(response1.status).toBe(200);
+      expect(response2.status).toBe(200);
+    });
   });
 
   describe("PUT /api/graduation/fees", () => {

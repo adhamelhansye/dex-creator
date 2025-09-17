@@ -18,11 +18,29 @@ vi.mock("../../src/lib/prisma", () => {
 vi.mock("../../src/lib/orderlyDb", () => ({
   addBrokerToOrderlyDb: vi.fn().mockResolvedValue({
     success: true,
-    message: "Broker added to Orderly database successfully",
+    data: {
+      message: "Broker added to Orderly database successfully",
+      brokerIndex: 1,
+    },
+  }),
+  getBrokerFromOrderlyDb: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      message: "Broker found in Orderly database",
+      brokerIndex: 1,
+    },
   }),
   updateBrokerAdminAccountId: vi.fn().mockResolvedValue({
     success: true,
-    message: "Admin account ID updated successfully",
+    data: {
+      message: "Admin account ID updated successfully",
+    },
+  }),
+  deleteBrokerFromOrderlyDb: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      message: "Broker deleted from Orderly database successfully",
+    },
   }),
 }));
 
@@ -66,6 +84,26 @@ vi.mock("../../src/lib/brokerCreation", () => ({
     .fn()
     .mockResolvedValue({ canCreate: true }),
   checkGasBalances: vi.fn().mockResolvedValue({ hasEnoughGas: true }),
+  createAutomatedBrokerId: vi
+    .fn()
+    .mockImplementation((brokerId, _environment, _brokerData) => {
+      if (brokerId.includes("INVALID")) {
+        return Promise.resolve({
+          success: false,
+          errors: ["Invalid broker ID"],
+        });
+      }
+      return Promise.resolve({
+        success: true,
+        brokerId: brokerId,
+        transactionHashes: { 1: "0x123", 137: "0x456" },
+      });
+    }),
+  deleteBrokerId: vi.fn().mockResolvedValue({
+    success: true,
+    brokerId: "test-broker",
+    transactionHashes: { 1: "0x123" },
+  }),
 }));
 
 vi.mock("../../src/lib/rateLimiter", () => ({
@@ -101,22 +139,6 @@ vi.mock("../../src/models/graduation", () => ({
     return Promise.resolve({
       success: false,
       message: "Invalid transaction",
-    });
-  }),
-  createAutomatedBrokerId: vi.fn().mockImplementation((userId, brokerId) => {
-    if (brokerId.includes("INVALID")) {
-      return Promise.resolve({
-        success: false,
-        message: "Invalid broker ID",
-      });
-    }
-    return Promise.resolve({
-      success: true,
-      message: "Broker ID created successfully",
-      brokerCreationData: {
-        brokerId: brokerId,
-        transactionHashes: { 1: "0x123", 137: "0x456" },
-      },
     });
   }),
   updateDexFees: vi
