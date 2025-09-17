@@ -137,10 +137,12 @@ if (process.env.NODE_ENV !== "test") {
       console.log("🔍 Checking broker creation permissions on startup...");
       const environment = getCurrentEnvironment();
       const permissionData = await checkBrokerCreationPermissions(environment);
-      console.log(
-        "✅ Broker creation permissions check completed:",
-        permissionData
-      );
+      if (permissionData.hasPermissions) {
+        console.log(`✅ Broker creation permissions check completed`);
+      } else {
+        console.warn("⚠️ Broker creation permissions check failed:");
+        permissionData.errors?.forEach(error => console.warn(error));
+      }
     } catch (error) {
       console.error("⚠️ Broker creation permissions check failed:", error);
       process.exit(1);
