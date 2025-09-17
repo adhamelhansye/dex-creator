@@ -151,6 +151,51 @@ function setupOctokitHooks() {
       console.error("[GitHub ETag] Error in after hook:", error);
     }
   });
+
+  octokitInstance.hook.error("request", async (error, options) => {
+    try {
+      if (isRequestError(error)) {
+        if (error.status === 304) {
+          if (options.method !== "GET") {
+            throw error;
+          }
+
+          const cacheKey = getCacheKey(options);
+          const cachedItem = etagCache.get(cacheKey);
+
+          if (cachedItem) {
+            cacheHits++;
+            console.log(
+              `[GitHub ETag] Cache HIT for ${cacheKey} - using cached data`
+            );
+
+            return {
+              data: cachedItem.data,
+              headers: { ...error.response?.headers, "x-cached": "true" },
+              status: 200,
+              url: error.response?.url,
+            };
+          }
+        }
+
+        console.error(
+          `[GitHub ETag] Error for ${getCacheKey(options)}:`,
+          error.status,
+          error.message
+        );
+      } else {
+        console.error(
+          `[GitHub ETag] Error for ${getCacheKey(options)}:`,
+          error instanceof Error ? error.message : String(error)
+        );
+      }
+
+      throw error;
+    } catch (hookError) {
+      console.error("[GitHub ETag] Error in error hook:", hookError);
+      throw error;
+    }
+  });
 }
 
 // Track if hooks are setup
@@ -225,50 +270,6 @@ function handleGitHubError(error: unknown, operation: string): GitHubError {
   };
 }
 
-getOctokit().hook.error("request", async (error, options) => {
-  try {
-    if (isRequestError(error)) {
-      if (error.status === 304) {
-        if (options.method !== "GET") {
-          throw error;
-        }
-
-        const cacheKey = getCacheKey(options);
-        const cachedItem = etagCache.get(cacheKey);
-
-        if (cachedItem) {
-          cacheHits++;
-          console.log(
-            `[GitHub ETag] Cache HIT for ${cacheKey} - using cached data`
-          );
-
-          return {
-            data: cachedItem.data,
-            headers: { ...error.response?.headers, "x-cached": "true" },
-            status: 200,
-            url: error.response?.url,
-          };
-        }
-      }
-
-      console.error(
-        `[GitHub ETag] Error for ${getCacheKey(options)}:`,
-        error.status,
-        error.message
-      );
-    } else {
-      console.error(
-        `[GitHub ETag] Error for ${getCacheKey(options)}:`,
-        error instanceof Error ? error.message : String(error)
-      );
-    }
-
-    throw error;
-  } catch (hookError) {
-    console.error("[GitHub ETag] Error in error hook:", hookError);
-    throw error;
-  }
-});
 /* eslint-enable @typescript-eslint/no-explicit-any */
 
 const templateRepo =
