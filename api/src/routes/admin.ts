@@ -8,10 +8,10 @@ import {
   updateDexRepoUrl,
   getAllDexes,
 } from "../models/dex";
+import { getPrisma } from "../lib/prisma";
 
 import { getCurrentEnvironment } from "../models/dex.js";
 import { deleteBrokerId } from "../lib/brokerCreation.js";
-import { PrismaClient } from "@prisma/client";
 import { deleteBrokerFromOrderlyDb } from "../lib/orderlyDb.js";
 import {
   setupRepositoryWithSingleCommit,
@@ -19,8 +19,6 @@ import {
   deleteRepository,
   triggerRedeployment,
 } from "../lib/github";
-
-const prisma = new PrismaClient();
 
 type AdminContext = Context<{
   Variables: {
@@ -70,7 +68,8 @@ adminRoutes.get(
 
 adminRoutes.get("/dexes/stats", async c => {
   try {
-    const stats = await prisma.$transaction(async tx => {
+    const prismaClient = await getPrisma();
+    const stats = await prismaClient.$transaction(async tx => {
       const totalDexes = await tx.dex.count();
       const graduatedDexes = await tx.dex.count({
         where: {
@@ -239,7 +238,8 @@ adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
       }
     }
 
-    await prisma.dex.delete({
+    const prismaClient = await getPrisma();
+    await prismaClient.dex.delete({
       where: {
         id,
       },
@@ -357,7 +357,8 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
       `Admin attempting to delete broker ID: ${brokerId} on environment: ${env}`
     );
 
-    const dex = await prisma.dex.findFirst({
+    const prismaClient = await getPrisma();
+    const dex = await prismaClient.dex.findFirst({
       where: { brokerId },
     });
 
@@ -393,7 +394,7 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
 
     let updatedDex = null;
     if (dex) {
-      updatedDex = await prisma.dex.update({
+      updatedDex = await prismaClient.dex.update({
         where: { id: dex.id },
         data: {
           brokerId: "demo",

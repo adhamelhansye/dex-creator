@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { getPrisma } from "../lib/prisma";
 
 /**
  * Check if a user is an admin by their user ID
@@ -6,7 +6,8 @@ import { prisma } from "../lib/prisma";
  */
 export async function isUserAdmin(userId: string): Promise<boolean> {
   try {
-    const user = await prisma.user.findUnique({
+    const prismaClient = await getPrisma();
+    const user = await prismaClient.user.findUnique({
       where: { id: userId },
       select: { isAdmin: true },
     });
@@ -24,7 +25,8 @@ export async function isUserAdmin(userId: string): Promise<boolean> {
  */
 export async function getAllAdmins() {
   try {
-    return await prisma.user.findMany({
+    const prismaClient = await getPrisma();
+    return await prismaClient.user.findMany({
       where: { isAdmin: true },
       select: {
         id: true,

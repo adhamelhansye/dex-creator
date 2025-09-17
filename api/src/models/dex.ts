@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prisma } from "../lib/prisma";
+import { getPrisma } from "../lib/prisma";
 import type { Prisma, Dex } from "@prisma/client";
 import type { DexResult, Result } from "../lib/types";
 import { DexErrorType, GitHubErrorType } from "../lib/types";
@@ -300,7 +300,8 @@ export async function createDex(
     };
   }
 
-  const user = await prisma.user.findUnique({
+  const prismaClient = await getPrisma();
+  const user = await prismaClient.user.findUnique({
     where: { id: userId },
     select: { address: true },
   });
@@ -447,7 +448,8 @@ export async function createDex(
   try {
     const brokerId = "demo";
 
-    const dex = await prisma.dex.create({
+    const prismaClient = await getPrisma();
+    const dex = await prismaClient.dex.create({
       data: {
         brokerName: validatedData.brokerName ?? undefined,
         brokerId: brokerId,
@@ -519,7 +521,8 @@ export async function createDex(
 }
 
 export async function getUserDex(userId: string): Promise<Dex | null> {
-  return prisma.dex.findUnique({
+  const prismaClient = await getPrisma();
+  return prismaClient.dex.findUnique({
     where: {
       userId,
     },
@@ -527,7 +530,8 @@ export async function getUserDex(userId: string): Promise<Dex | null> {
 }
 
 export async function getDexById(id: string): Promise<Dex | null> {
-  return prisma.dex.findUnique({
+  const prismaClient = await getPrisma();
+  return prismaClient.dex.findUnique({
     where: {
       id,
     },
@@ -635,7 +639,8 @@ export async function updateDex(
     updateData.seoKeywords = validatedData.seoKeywords;
 
   try {
-    const updatedDex = await prisma.dex.update({
+    const prismaClient = await getPrisma();
+    const updatedDex = await prismaClient.dex.update({
       where: {
         id,
       },
@@ -695,7 +700,8 @@ export async function deleteDex(
   }
 
   try {
-    const deletedDex = await prisma.dex.delete({
+    const prismaClient = await getPrisma();
+    const deletedDex = await prismaClient.dex.delete({
       where: {
         id,
       },
@@ -720,7 +726,8 @@ export async function updateDexRepoUrl(
   id: string,
   repoUrl: string
 ): Promise<Dex> {
-  return prisma.dex.update({
+  const prismaClient = await getPrisma();
+  return prismaClient.dex.update({
     where: {
       id,
     },
@@ -734,8 +741,9 @@ export async function updateBrokerId(
   id: string,
   brokerId: string
 ): Promise<Result<Dex>> {
+  const prismaClient = await getPrisma();
   if (brokerId !== "demo") {
-    const existingDex = await prisma.dex.findFirst({
+    const existingDex = await prismaClient.dex.findFirst({
       where: {
         brokerId,
         id: { not: id },
@@ -751,7 +759,7 @@ export async function updateBrokerId(
   }
 
   try {
-    const updatedDex = await prisma.dex.update({
+    const updatedDex = await prismaClient.dex.update({
       where: {
         id,
       },
@@ -773,7 +781,8 @@ export async function updateBrokerId(
 export async function deleteDexByWalletAddress(
   address: string
 ): Promise<Dex | null> {
-  const user = await prisma.user.findUnique({
+  const prismaClient = await getPrisma();
+  const user = await prismaClient.user.findUnique({
     where: {
       address: address.toLowerCase(),
     },
@@ -800,7 +809,7 @@ export async function deleteDexByWalletAddress(
     }
   }
 
-  return prisma.dex.delete({
+  return prismaClient.dex.delete({
     where: {
       id: dexId,
     },
@@ -831,7 +840,8 @@ export async function getAllDexes(
       }
     : {};
 
-  return await prisma.$transaction(async tx => {
+  const prismaClient = await getPrisma();
+  return await prismaClient.$transaction(async tx => {
     const total = await tx.dex.count({
       where: whereClause,
     });
@@ -875,7 +885,8 @@ export async function updateDexCustomDomain(
   domain: string,
   userId: string
 ): Promise<Result<Dex>> {
-  const dex = await prisma.dex.findUnique({
+  const prismaClient = await getPrisma();
+  const dex = await prismaClient.dex.findUnique({
     where: { id },
   });
 
@@ -916,7 +927,7 @@ export async function updateDexCustomDomain(
     };
   }
 
-  const updatedDex = await prisma.dex.update({
+  const updatedDex = await prismaClient.dex.update({
     where: { id },
     data: {
       customDomain: domain,
@@ -937,7 +948,8 @@ export async function removeDexCustomDomain(
   id: string,
   userId: string
 ): Promise<Dex> {
-  const dex = await prisma.dex.findUnique({
+  const prismaClient = await getPrisma();
+  const dex = await prismaClient.dex.findUnique({
     where: { id },
   });
 
@@ -975,7 +987,7 @@ export async function removeDexCustomDomain(
     );
   }
 
-  return prisma.dex.update({
+  return prismaClient.dex.update({
     where: { id },
     data: {
       customDomain: null,
@@ -1090,7 +1102,8 @@ export async function updateDexSocialCard(
   userId: string,
   data: z.infer<typeof socialCardUpdateSchema>
 ): Promise<Dex> {
-  const existingDex = await prisma.dex.findFirst({
+  const prismaClient = await getPrisma();
+  const existingDex = await prismaClient.dex.findFirst({
     where: { id, userId },
   });
 
@@ -1134,7 +1147,7 @@ export async function updateDexSocialCard(
     updateData.websiteUrl = data.websiteUrl;
   }
 
-  return prisma.dex.update({
+  return prismaClient.dex.update({
     where: { id },
     data: updateData,
   });

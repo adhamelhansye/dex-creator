@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { prisma } from "../lib/prisma";
+import { getPrisma } from "../lib/prisma";
 
 export const userSchema = z.object({
   id: z.string().optional(),
@@ -31,7 +31,8 @@ export const tokenValidationSchema = z.object({
 
 class UserStore {
   async findByAddress(address: string) {
-    return prisma.user.findUnique({
+    const prismaClient = await getPrisma();
+    return prismaClient.user.findUnique({
       where: {
         address: address.toLowerCase(),
       },
@@ -41,9 +42,10 @@ class UserStore {
   async createOrUpdate(user: User) {
     const now = new Date();
     const existingUser = await this.findByAddress(user.address);
+    const prismaClient = await getPrisma();
 
     if (existingUser) {
-      return prisma.user.update({
+      return prismaClient.user.update({
         where: { id: existingUser.id },
         data: {
           nonce: user.nonce,
@@ -51,7 +53,7 @@ class UserStore {
         },
       });
     } else {
-      return prisma.user.create({
+      return prismaClient.user.create({
         data: {
           address: user.address.toLowerCase(),
           nonce: user.nonce,
@@ -63,14 +65,15 @@ class UserStore {
   async generateNonce(address: string): Promise<string> {
     const nonce = Math.floor(Math.random() * 1000000).toString();
     const existingUser = await this.findByAddress(address);
+    const prismaClient = await getPrisma();
 
     if (existingUser) {
-      await prisma.user.update({
+      await prismaClient.user.update({
         where: { id: existingUser.id },
         data: { nonce },
       });
     } else {
-      await prisma.user.create({
+      await prismaClient.user.create({
         data: {
           address: address.toLowerCase(),
           nonce,
@@ -87,7 +90,8 @@ class UserStore {
     const expiresAt = new Date();
     expiresAt.setHours(expiresAt.getHours() + 24);
 
-    await prisma.token.create({
+    const prismaClient = await getPrisma();
+    await prismaClient.token.create({
       data: {
         token,
         userId,
@@ -99,7 +103,8 @@ class UserStore {
   }
 
   async validateToken(token: string, userId: string): Promise<boolean> {
-    const tokenData = await prisma.token.findUnique({
+    const prismaClient = await getPrisma();
+    const tokenData = await prismaClient.token.findUnique({
       where: { token },
     });
 
@@ -112,7 +117,8 @@ class UserStore {
     }
 
     if (new Date() > tokenData.expiresAt) {
-      await prisma.token.delete({
+      const prismaClient = await getPrisma();
+      await prismaClient.token.delete({
         where: { id: tokenData.id },
       });
       return false;
@@ -123,7 +129,8 @@ class UserStore {
 
   async revokeToken(token: string): Promise<boolean> {
     try {
-      await prisma.token.delete({
+      const prismaClient = await getPrisma();
+      await prismaClient.token.delete({
         where: { token },
       });
       return true;
@@ -134,7 +141,8 @@ class UserStore {
   }
 
   async cleanupExpiredTokens(): Promise<number> {
-    const result = await prisma.token.deleteMany({
+    const prismaClient = await getPrisma();
+    const result = await prismaClient.token.deleteMany({
       where: {
         expiresAt: {
           lt: new Date(),

@@ -1,5 +1,5 @@
 import { Context } from "hono";
-import { prisma } from "./prisma";
+import { getPrisma } from "./prisma";
 
 /**
  * Parse JWT token from Authorization header
@@ -22,6 +22,7 @@ function parseJwt(authHeader: string | undefined): string | null {
  */
 async function verifyAuthToken(token: string): Promise<string | null> {
   try {
+    const prisma = await getPrisma();
     const tokenRecord = await prisma.token.findUnique({
       where: { token },
     });
@@ -83,6 +84,7 @@ export async function adminMiddleware(c: Context, next: () => Promise<void>) {
       return c.json({ error: "Unauthorized: Invalid or expired token" }, 401);
     }
 
+    const prisma = await getPrisma();
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: { isAdmin: true },

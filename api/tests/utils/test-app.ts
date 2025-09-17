@@ -4,14 +4,18 @@ import { authMiddleware, adminMiddleware } from "../../src/lib/auth";
 import { PrismaClient } from "@prisma/client";
 
 vi.mock("../../src/lib/prisma", () => {
-  return {
-    prisma: new PrismaClient({
-      datasources: {
-        db: {
-          url: process.env.DATABASE_URL,
-        },
+  const mockPrismaClient = new PrismaClient({
+    datasources: {
+      db: {
+        url: process.env.DATABASE_URL,
       },
-    }),
+    },
+  });
+
+  return {
+    prisma: mockPrismaClient,
+    getPrisma: vi.fn().mockResolvedValue(mockPrismaClient),
+    initializePrisma: vi.fn().mockResolvedValue(mockPrismaClient),
   };
 });
 
@@ -144,7 +148,8 @@ vi.mock("../../src/models/graduation", () => ({
   updateDexFees: vi
     .fn()
     .mockImplementation(async (userId, makerFee, takerFee) => {
-      const { prisma } = await import("../../src/lib/prisma");
+      const { getPrisma } = await import("../../src/lib/prisma");
+      const prisma = await getPrisma();
       const dex = await prisma.dex.findFirst({ where: { userId } });
 
       if (!dex) {
@@ -166,7 +171,8 @@ vi.mock("../../src/models/graduation", () => ({
       });
     }),
   getDexFees: vi.fn().mockImplementation(async userId => {
-    const { prisma } = await import("../../src/lib/prisma");
+    const { getPrisma } = await import("../../src/lib/prisma");
+    const prisma = await getPrisma();
     const dex = await prisma.dex.findFirst({ where: { userId } });
 
     if (!dex) {

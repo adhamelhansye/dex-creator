@@ -2,7 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { leaderboardService } from "../services/leaderboardService.js";
-import { prisma } from "../lib/prisma.js";
+import { getPrisma } from "../lib/prisma.js";
 import dayjs from "dayjs";
 
 const leaderboard = new Hono();
@@ -127,6 +127,7 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
       return c.json(cached.data);
     }
 
+    const prisma = await getPrisma();
     const dexes = await prisma.dex.findMany({
       where: {
         brokerId: {
@@ -264,6 +265,7 @@ leaderboard.get(
         return c.json({ data: cached.data });
       }
 
+      const prisma = await getPrisma();
       const dex = await prisma.dex.findFirst({
         where: { brokerId },
         select: {

@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma.js";
+import { getPrisma } from "../lib/prisma.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
 
 export interface BrokerStats {
@@ -80,6 +80,7 @@ class LeaderboardService {
 
   private async loadBrokerIds() {
     try {
+      const prisma = await getPrisma();
       const dexes = await prisma.dex.findMany({
         where: {
           brokerId: {
@@ -156,6 +157,7 @@ class LeaderboardService {
 
   private async loadTokenInfoForBroker(brokerId: string) {
     try {
+      const prisma = await getPrisma();
       const dex = await prisma.dex.findFirst({
         where: { brokerId },
         select: {
@@ -277,6 +279,7 @@ class LeaderboardService {
         throw new Error("Invalid response format from Orderly API");
       }
 
+      const prisma = await getPrisma();
       const dex = await prisma.dex.findFirst({
         where: { brokerId },
         select: { brokerName: true },

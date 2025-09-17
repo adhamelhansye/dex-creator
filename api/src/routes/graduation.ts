@@ -7,7 +7,7 @@ import {
   getDexFees,
 } from "../models/graduation";
 import { getUserDex, getCurrentEnvironment } from "../models/dex";
-import { prisma } from "../lib/prisma";
+import { getPrisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
 import { updateBrokerAdminAccountId } from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
@@ -58,7 +58,8 @@ graduationRoutes.post(
         );
       }
 
-      const user = await prisma.user.findUnique({
+      const prismaClient = await getPrisma();
+      const user = await prismaClient.user.findUnique({
         where: { id: userId },
       });
 
@@ -86,7 +87,7 @@ graduationRoutes.post(
         return c.json(feeUpdateResult, { status: 400 });
       }
 
-      const existingDex = await prisma.dex.findFirst({
+      const existingDex = await prismaClient.dex.findFirst({
         where: {
           brokerId: brokerId,
         },
@@ -117,7 +118,7 @@ graduationRoutes.post(
         return c.json(brokerCreationResult, { status: 400 });
       }
 
-      await prisma.dex.update({
+      await prismaClient.dex.update({
         where: { userId },
         data: {
           brokerId,
@@ -313,7 +314,8 @@ graduationRoutes.post("/finalize-admin-wallet", async c => {
       );
     }
 
-    const user = await prisma.user.findUnique({
+    const prismaClient = await getPrisma();
+    const user = await prismaClient.user.findUnique({
       where: { id: userId },
     });
 
@@ -377,7 +379,7 @@ graduationRoutes.post("/finalize-admin-wallet", async c => {
       );
     }
 
-    await prisma.dex.update({
+    await prismaClient.dex.update({
       where: { userId },
       data: { isGraduated: true },
     });

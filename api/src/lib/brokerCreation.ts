@@ -36,8 +36,8 @@ async function getWalletPrivateKeys(): Promise<{
 }> {
   console.log("🔧 Getting wallet private keys from secret manager...");
 
-  const evmPrivateKey = getSecret("brokerCreationPrivateKey");
-  const solanaPrivateKey = getSecret("brokerCreationPrivateKeySol");
+  const evmPrivateKey = await getSecret("brokerCreationPrivateKey");
+  const solanaPrivateKey = await getSecret("brokerCreationPrivateKeySol");
 
   return {
     evmPrivateKey,

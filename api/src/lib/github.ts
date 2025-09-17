@@ -56,19 +56,18 @@ export function getGitHubETagCacheStats() {
 
 const MyOctokit = Octokit.plugin(restEndpointMethods);
 
-// Initialize octokit lazily to ensure secret manager is initialized
-let octokit: InstanceType<typeof MyOctokit>;
+let octokit: InstanceType<typeof MyOctokit> | null = null;
 
-function getOctokit(): InstanceType<typeof MyOctokit> {
+async function getOctokit(): Promise<InstanceType<typeof MyOctokit>> {
   if (!octokit) {
-    const githubToken = getSecret("githubToken");
+    const githubToken = await getSecret("githubToken");
     octokit = new MyOctokit({
       auth: githubToken,
     });
   }
 
   if (!hooksSetup) {
-    setupOctokitHooks();
+    await setupOctokitHooks();
     hooksSetup = true;
   }
 
@@ -95,9 +94,8 @@ function getCacheKey(options: any): string {
   return `${options.method || "GET"} ${options.url || ""}:${JSON.stringify(options.params || {})}`;
 }
 
-// Setup hooks when octokit is first accessed
-function setupOctokitHooks() {
-  const octokitInstance = getOctokit();
+async function setupOctokitHooks() {
+  const octokitInstance = await getOctokit();
 
   octokitInstance.hook.before("request", async options => {
     try {
@@ -324,7 +322,8 @@ export async function forkTemplateRepository(
 
     const orgName = "OrderlyNetworkDexCreator";
 
-    const response = await getOctokit().rest.repos.createFork({
+    const octokit = await getOctokit();
+    const response = await octokit.rest.repos.createFork({
       owner: templateOwner,
       repo: templateRepoName,
       organization: orgName,
@@ -339,7 +338,7 @@ export async function forkTemplateRepository(
 
     await enableRepositoryActions(orgName, repoName);
 
-    const deploymentToken = getSecret("templatePat");
+    const deploymentToken = await getSecret("templatePat");
     try {
       await addSecretToRepository(
         orgName,
@@ -387,14 +386,15 @@ async function enableRepositoryActions(
   repo: string
 ): Promise<void> {
   try {
-    await getOctokit().rest.actions.setGithubActionsPermissionsRepository({
+    const octokit = await getOctokit();
+    await octokit.rest.actions.setGithubActionsPermissionsRepository({
       owner,
       repo,
       enabled: true,
       allowed_actions: "all",
     });
 
-    await getOctokit().rest.actions.setGithubActionsDefaultWorkflowPermissionsRepository(
+    await octokit.rest.actions.setGithubActionsDefaultWorkflowPermissionsRepository(
       {
         owner,
         repo,
@@ -425,18 +425,20 @@ async function addSecretToRepository(
     console.log(`Adding secret ${secretName} to ${owner}/${repo}...`);
 
     console.log(`Fetching public key for ${owner}/${repo}...`);
-    const { data: publicKeyData } =
-      await getOctokit().rest.actions.getRepoPublicKey({
+    const octokit = await getOctokit();
+    const { data: publicKeyData } = await octokit.rest.actions.getRepoPublicKey(
+      {
         owner,
         repo,
-      });
+      }
+    );
 
     console.log(`Received public key: ${publicKeyData.key}`);
 
     const encryptedValue = await encryptSecret(publicKeyData.key, secretValue);
 
     console.log(`Submitting encrypted secret to GitHub...`);
-    await getOctokit().rest.actions.createOrUpdateRepoSecret({
+    await octokit.rest.actions.createOrUpdateRepoSecret({
       owner,
       repo,
       secret_name: secretName,
@@ -732,7 +734,8 @@ async function createSingleCommit(
   commitMessage: string
 ): Promise<void> {
   console.log(`Getting latest commit for ${owner}/${repo}...`);
-  const { data: refData } = await getOctokit().rest.git.getRef({
+  const octokit = await getOctokit();
+  const { data: refData } = await octokit.rest.git.getRef({
     owner,
     repo,
     ref: "heads/main",
@@ -742,8 +745,8 @@ async function createSingleCommit(
   console.log("Creating blobs for text files...");
   const textBlobPromises = Array.from(fileContents.entries()).map(
     ([path, content]) =>
-      getOctokit()
-        .rest.git.createBlob({
+      octokit.rest.git
+        .createBlob({
           owner,
           repo,
           content: Buffer.from(content).toString("base64"),
@@ -755,8 +758,8 @@ async function createSingleCommit(
   console.log("Creating blobs for binary files...");
   const binaryBlobPromises = Array.from(binaryFiles.entries()).map(
     ([path, buffer]) =>
-      getOctokit()
-        .rest.git.createBlob({
+      octokit.rest.git
+        .createBlob({
           owner,
           repo,
           content: buffer.toString("base64"),
@@ -784,7 +787,7 @@ async function createSingleCommit(
   ];
 
   console.log("Creating git tree with all files...");
-  const { data: newTree } = await getOctokit().rest.git.createTree({
+  const { data: newTree } = await octokit.rest.git.createTree({
     owner,
     repo,
     base_tree: latestCommitSha,
@@ -792,7 +795,7 @@ async function createSingleCommit(
   });
 
   console.log("Creating commit with all files...");
-  const { data: newCommit } = await getOctokit().rest.git.createCommit({
+  const { data: newCommit } = await octokit.rest.git.createCommit({
     owner,
     repo,
     message: commitMessage,
@@ -801,7 +804,7 @@ async function createSingleCommit(
   });
 
   console.log("Updating branch reference...");
-  await getOctokit().rest.git.updateRef({
+  await octokit.rest.git.updateRef({
     owner,
     repo,
     ref: "heads/main",
@@ -923,7 +926,8 @@ export async function updateDexConfig(
 async function enableGitHubPages(owner: string, repo: string): Promise<void> {
   console.log(`Enabling GitHub Pages for ${owner}/${repo}...`);
 
-  await getOctokit().rest.repos.createPagesSite({
+  const octokit = await getOctokit();
+  await octokit.rest.repos.createPagesSite({
     owner,
     repo,
     build_type: "workflow",
@@ -1078,12 +1082,12 @@ export async function getWorkflowRunStatus(
 }> {
   try {
     console.log(`Fetching workflow runs for ${owner}/${repo}...`);
+    const octokit = await getOctokit();
 
-    const { data: workflows } =
-      await getOctokit().rest.actions.listRepoWorkflows({
-        owner,
-        repo,
-      });
+    const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
+      owner,
+      repo,
+    });
 
     if (workflows.total_count === 0) {
       console.log(`No workflows found in ${owner}/${repo}`);
@@ -1106,7 +1110,7 @@ export async function getWorkflowRunStatus(
     }
 
     if (workflowId) {
-      const { data: runs } = await getOctokit().rest.actions.listWorkflowRuns({
+      const { data: runs } = await octokit.rest.actions.listWorkflowRuns({
         owner,
         repo,
         per_page: 10,
@@ -1128,12 +1132,13 @@ export async function getWorkflowRunStatus(
         workflowRuns,
       };
     } else {
-      const { data: runs } =
-        await getOctokit().rest.actions.listWorkflowRunsForRepo({
+      const { data: runs } = await octokit.rest.actions.listWorkflowRunsForRepo(
+        {
           owner,
           repo,
           per_page: 10,
-        });
+        }
+      );
 
       const workflowRuns = runs.workflow_runs.map(run => ({
         id: run.id,
@@ -1189,15 +1194,16 @@ export async function getWorkflowRunDetails(
     console.log(
       `Fetching details for workflow run ${runId} in ${owner}/${repo}...`
     );
+    const octokit = await getOctokit();
 
-    const { data: run } = await getOctokit().rest.actions.getWorkflowRun({
+    const { data: run } = await octokit.rest.actions.getWorkflowRun({
       owner,
       repo,
       run_id: runId,
     });
 
     const { data: jobsData } =
-      await getOctokit().rest.actions.listJobsForWorkflowRun({
+      await octokit.rest.actions.listJobsForWorkflowRun({
         owner,
         repo,
         run_id: runId,
@@ -1268,7 +1274,8 @@ export async function renameRepository(
       );
     }
 
-    const { data } = await getOctokit().rest.repos.update({
+    const octokit = await getOctokit();
+    const { data } = await octokit.rest.repos.update({
       owner,
       repo,
       name: newName,
@@ -1296,7 +1303,8 @@ export async function deleteRepository(
   try {
     console.log(`Deleting repository ${owner}/${repo}...`);
 
-    await getOctokit().rest.repos.delete({
+    const octokit = await getOctokit();
+    await octokit.rest.repos.delete({
       owner,
       repo,
     });
@@ -1340,12 +1348,12 @@ export async function setCustomDomain(
       );
     }
 
-    const response =
-      await getOctokit().rest.repos.updateInformationAboutPagesSite({
-        owner,
-        repo,
-        cname: domain,
-      });
+    const octokit = await getOctokit();
+    const response = await octokit.rest.repos.updateInformationAboutPagesSite({
+      owner,
+      repo,
+      cname: domain,
+    });
 
     const validStatusCodes = [200, 201, 204];
     if (!validStatusCodes.includes(response.status)) {
@@ -1390,14 +1398,15 @@ export async function removeCustomDomain(
   try {
     console.log(`Removing custom domain for ${owner}/${repo}...`);
 
-    await getOctokit().rest.repos.updateInformationAboutPagesSite({
+    const octokit = await getOctokit();
+    await octokit.rest.repos.updateInformationAboutPagesSite({
       owner,
       repo,
       cname: "",
     });
 
     try {
-      const { data: fileData } = await getOctokit().rest.repos.getContent({
+      const { data: fileData } = await octokit.rest.repos.getContent({
         owner,
         repo,
         path: "CNAME",
@@ -1414,7 +1423,7 @@ export async function removeCustomDomain(
               : undefined;
 
         if (sha) {
-          await getOctokit().rest.repos.deleteFile({
+          await octokit.rest.repos.deleteFile({
             owner,
             repo,
             path: "CNAME",

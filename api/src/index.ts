@@ -85,11 +85,13 @@ if (process.env.NODE_ENV !== "test") {
       process.exit(1);
     }
 
-    const { prisma } = await import("./lib/prisma.js");
-    globalPrisma = prisma;
+    const { initializePrisma } = await import("./lib/prisma");
     try {
+      const prisma = await initializePrisma();
       await prisma.$connect();
       console.log("Connected to the database");
+
+      globalPrisma = prisma;
     } catch (error) {
       console.error("Failed to connect to the database:", error);
       process.exit(1);

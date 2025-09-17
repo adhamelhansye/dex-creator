@@ -8,7 +8,7 @@ export async function runDatabaseMigrations(): Promise<{
   try {
     console.log("📊 Running database migrations...");
 
-    const databaseUrl = getSecret("databaseUrl");
+    const databaseUrl = await getSecret("databaseUrl");
 
     if (!databaseUrl) {
       throw new Error("DATABASE_URL not available from secret manager");

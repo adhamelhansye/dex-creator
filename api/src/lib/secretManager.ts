@@ -6,6 +6,7 @@ interface SecretCache {
 
 let secretCache: SecretCache = {};
 let isInitialized = false;
+let initializationPromise: Promise<SecretConfig> | null = null;
 
 export interface SecretConfig {
   databaseUrl: string;
@@ -81,8 +82,25 @@ export async function initializeSecretManager(): Promise<SecretConfig> {
     return getSecretConfig();
   }
 
+  if (initializationPromise) {
+    return initializationPromise;
+  }
+
   console.log("🔧 Initializing secret manager...");
 
+  initializationPromise = initializeSecretsInternal();
+
+  try {
+    const result = await initializationPromise;
+    initializationPromise = null;
+    return result;
+  } catch (error) {
+    initializationPromise = null;
+    throw error;
+  }
+}
+
+async function initializeSecretsInternal(): Promise<SecretConfig> {
   const deploymentEnv = process.env.DEPLOYMENT_ENV;
 
   if (!deploymentEnv || deploymentEnv === "qa" || deploymentEnv === "dev") {
@@ -190,7 +208,11 @@ export function getSecretConfig(): SecretConfig {
   };
 }
 
-export function getSecret(key: keyof SecretConfig): string {
+export async function getSecret(key: keyof SecretConfig): Promise<string> {
+  if (!isInitialized) {
+    await initializeSecretManager();
+  }
+
   const config = getSecretConfig();
   return config[key];
 }

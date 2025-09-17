@@ -1,4 +1,4 @@
-import { prisma } from "../lib/prisma";
+import { getPrisma } from "../lib/prisma";
 import { ethers } from "ethers";
 import {
   ALL_CHAINS,
@@ -26,7 +26,7 @@ export interface BrokerCreationData {
   transactionHashes: Record<number, string>; // chainId -> txHash
 }
 
-function getOrderReceiverAddress(): string {
+function getOrderReceiverAddress(): Promise<string> {
   return getSecret("orderReceiverAddress");
 }
 
@@ -71,7 +71,7 @@ export async function verifyOrderTransaction(
     };
   }
 
-  const receiverAddress = getOrderReceiverAddress();
+  const receiverAddress = await getOrderReceiverAddress();
 
   try {
     const rpcUrl = ALL_CHAINS[chain as ChainName].rpcUrl;
@@ -259,7 +259,8 @@ export async function updateDexFees(
       };
     }
 
-    const dex = await prisma.dex.findFirst({
+    const prismaClient = await getPrisma();
+    const dex = await prismaClient.dex.findFirst({
       where: { userId },
     });
 
@@ -278,7 +279,7 @@ export async function updateDexFees(
       };
     }
 
-    await prisma.dex.update({
+    await prismaClient.dex.update({
       where: { userId },
       data: {
         makerFee,
@@ -313,7 +314,8 @@ export async function getDexFees(userId: string): Promise<
   | { success: false; message: string }
 > {
   try {
-    const dex = await prisma.dex.findFirst({
+    const prismaClient = await getPrisma();
+    const dex = await prismaClient.dex.findFirst({
       where: { userId },
     });
 

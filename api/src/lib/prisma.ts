@@ -5,25 +5,19 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-function getDatabaseUrl(): string | undefined {
-  try {
-    return getSecret("databaseUrl");
-  } catch {
-    return undefined;
-  }
-}
+async function createPrismaClient(): Promise<PrismaClient> {
+  const databaseUrl = await getSecret("databaseUrl");
 
-function createPrismaClient(): PrismaClient {
-  const databaseUrl = getDatabaseUrl();
+  if (!databaseUrl) {
+    throw new Error("DATABASE_URL not available from secret manager");
+  }
 
   return new PrismaClient({
-    datasources: databaseUrl
-      ? {
-          db: {
-            url: databaseUrl,
-          },
-        }
-      : undefined,
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
     log:
       process.env.NODE_ENV === "development"
         ? ["query", "error", "warn"]
@@ -31,8 +25,23 @@ function createPrismaClient(): PrismaClient {
   });
 }
 
-export const prisma = global.prisma || createPrismaClient();
+let _prisma: PrismaClient | null = null;
 
-if (process.env.NODE_ENV !== "production") {
-  global.prisma = prisma;
+async function initializePrisma(): Promise<PrismaClient> {
+  if (_prisma) {
+    return _prisma;
+  }
+
+  _prisma = await createPrismaClient();
+  global.prisma = _prisma;
+  return _prisma;
+}
+
+export { initializePrisma };
+
+export async function getPrisma(): Promise<PrismaClient> {
+  if (!_prisma) {
+    await initializePrisma();
+  }
+  return _prisma!;
 }
