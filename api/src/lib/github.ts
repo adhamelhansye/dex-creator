@@ -64,11 +64,11 @@ async function getOctokit(): Promise<InstanceType<typeof MyOctokit>> {
     octokit = new MyOctokit({
       auth: githubToken,
     });
-  }
 
-  if (!hooksSetup) {
-    await setupOctokitHooks();
-    hooksSetup = true;
+    if (!hooksSetup) {
+      await setupOctokitHooks();
+      hooksSetup = true;
+    }
   }
 
   return octokit;
@@ -95,7 +95,10 @@ function getCacheKey(options: any): string {
 }
 
 async function setupOctokitHooks() {
-  const octokitInstance = await getOctokit();
+  if (!octokit) {
+    throw new Error("Octokit instance not initialized");
+  }
+  const octokitInstance = octokit;
 
   octokitInstance.hook.before("request", async options => {
     try {
