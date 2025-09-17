@@ -18,6 +18,7 @@ import {
 } from "./lib/brokerCreation";
 import { getCurrentEnvironment } from "./models/dex";
 import { initializeSecretManager } from "./lib/secretManager";
+import { runDatabaseMigrations, shouldRunMigrations } from "./lib/migrations";
 
 declare module "hono" {
   interface ContextVariableMap {
@@ -85,6 +86,24 @@ if (process.env.NODE_ENV !== "test") {
       } catch (error) {
         console.error("❌ Failed to initialize secret manager:", error);
         process.exit(1);
+      }
+
+      if (shouldRunMigrations()) {
+        try {
+          console.log("🗄️ Running database migrations...");
+          const migrationResult = await runDatabaseMigrations();
+          if (!migrationResult.success) {
+            console.error(
+              "❌ Database migrations failed:",
+              migrationResult.error
+            );
+            process.exit(1);
+          }
+          console.log("✅ Database migrations completed successfully");
+        } catch (error) {
+          console.error("❌ Database migrations failed:", error);
+          process.exit(1);
+        }
       }
 
       try {

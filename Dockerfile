@@ -51,9 +51,6 @@ COPY --from=builder /app/api/node_modules ./node_modules
 COPY --from=builder /app/api/src/workflows /app/workflows
 COPY --from=builder /app/api/src/lib/generated ./src/lib/generated
 
-# Copy entrypoint script
-COPY api/docker-entrypoint.sh ./docker-entrypoint.sh
-RUN chmod +x ./docker-entrypoint.sh
 
 # Use non-root user
 RUN addgroup -S appgroup && \
@@ -64,6 +61,4 @@ USER appuser
 # Expose port
 EXPOSE 3001  
 
-# Use entrypoint script
-ENTRYPOINT ["./docker-entrypoint.sh"]
 CMD ["node", "dist/index.cjs"]
