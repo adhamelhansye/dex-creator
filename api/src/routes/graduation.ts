@@ -502,7 +502,7 @@ graduationRoutes.get("/fee-options", async c => {
         currency: "ORDER",
         stable: false,
       },
-      receiverAddress: getSecret("orderReceiverAddress"),
+      receiverAddress: await getSecret("orderReceiverAddress"),
     });
   } catch (error) {
     console.error("Error getting graduation fee options:", error);
