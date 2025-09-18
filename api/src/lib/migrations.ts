@@ -6,8 +6,6 @@ export async function runDatabaseMigrations(): Promise<{
   error?: string;
 }> {
   try {
-    console.log("📊 Running database migrations...");
-
     const databaseUrl = await getSecret("databaseUrl");
 
     if (!databaseUrl) {

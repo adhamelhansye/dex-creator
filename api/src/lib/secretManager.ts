@@ -187,7 +187,6 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
   };
 
   isInitialized = true;
-  console.log("🚀 Secret manager initialized");
   return getSecretConfig();
 }
 
