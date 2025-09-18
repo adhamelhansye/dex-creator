@@ -145,9 +145,11 @@ function getSolanaKeypair(): anchor.web3.Keypair {
 function getEvmProvider(chainName: string): ethers.JsonRpcProvider {
   ensureInitialized();
 
-  const provider = new ethers.JsonRpcProvider(
-    ALL_CHAINS[chainName as ChainName].rpcUrl
-  );
+  const chainInfo = ALL_CHAINS[chainName as ChainName];
+  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    chainId: chainInfo.chainId,
+    name: chainInfo.name,
+  });
   return provider;
 }
 
@@ -185,14 +187,6 @@ function getSolanaConnection(
 
 function getBrokerHash(brokerId: string): string {
   return ethers.keccak256(ethers.toUtf8Bytes(brokerId));
-}
-
-function getRpcUrlForChain(chainName: string): string {
-  const chainConfig = ALL_CHAINS[chainName as ChainName];
-  if (!chainConfig) {
-    throw new Error(`No chain configuration found for: ${chainName}`);
-  }
-  return chainConfig.rpcUrl;
 }
 
 function getManagerRoleHash(managerRole: string): string {
@@ -518,7 +512,10 @@ export async function setBrokerAccountId(
     }
 
     const orderlyChainConfig = ALL_CHAINS[orderlyChainName];
-    const provider = new ethers.JsonRpcProvider(orderlyChainConfig.rpcUrl);
+    const provider = new ethers.JsonRpcProvider(orderlyChainConfig.rpcUrl, {
+      chainId: orderlyChainConfig.chainId,
+      name: orderlyChainConfig.name,
+    });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
 
     const feeManager = FeeManager__factory.connect(
@@ -558,7 +555,11 @@ async function simulateVaultTransaction(
       throw new Error("Vault address not configured for this chain");
     }
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const chainInfo = ALL_CHAINS[chainName as ChainName];
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+      chainId: chainInfo.chainId,
+      name: chainInfo.name,
+    });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
@@ -603,7 +604,11 @@ async function simulateVaultManagerTransaction(
       throw new Error("VaultManager address not configured for Orderly L2");
     }
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const chainInfo = ALL_CHAINS[chainName as ChainName];
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+      chainId: chainInfo.chainId,
+      name: chainInfo.name,
+    });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
@@ -652,7 +657,11 @@ async function simulateFeeManagerTransaction(
       throw new Error("FeeManager address not configured for Orderly L2");
     }
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const chainInfo = ALL_CHAINS[chainName as ChainName];
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+      chainId: chainInfo.chainId,
+      name: chainInfo.name,
+    });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const feeManager = FeeManager__factory.connect(
       chainConfig.feeManagerAddress,
@@ -802,7 +811,11 @@ async function executeVaultTransaction(
     throw new Error("Vault address not configured for this chain");
   }
 
-  const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+  const chainInfo = ALL_CHAINS[chainName as ChainName];
+  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    chainId: chainInfo.chainId,
+    name: chainInfo.name,
+  });
   const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
@@ -1569,7 +1582,11 @@ async function simulateL1Deletion(
       throw new Error("Vault address not configured for this chain");
     }
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const chainInfo = ALL_CHAINS[chainName as ChainName];
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+      chainId: chainInfo.chainId,
+      name: chainInfo.name,
+    });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
@@ -1614,7 +1631,11 @@ async function simulateOrderlyDeletion(
       throw new Error("VaultManager address not configured for Orderly L2");
     }
 
-    const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+    const chainInfo = ALL_CHAINS[chainName as ChainName];
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+      chainId: chainInfo.chainId,
+      name: chainInfo.name,
+    });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
@@ -1761,7 +1782,11 @@ async function executeL1Deletion(
     throw new Error("Vault address not configured for this chain");
   }
 
-  const provider = new ethers.JsonRpcProvider(getRpcUrlForChain(chainName));
+  const chainInfo = ALL_CHAINS[chainName as ChainName];
+  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    chainId: chainInfo.chainId,
+    name: chainInfo.name,
+  });
   const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
