@@ -214,6 +214,18 @@ function getSolanaBrokerPda(
   )[0];
 }
 
+function getSolanaWithdrawBrokerPda(
+  programId: anchor.web3.PublicKey,
+  brokerIndex: number
+): anchor.web3.PublicKey {
+  const indexBuffer = Buffer.alloc(2);
+  indexBuffer.writeUInt16BE(brokerIndex, 0);
+  return anchor.web3.PublicKey.findProgramAddressSync(
+    [Buffer.from("Broker", "utf8"), indexBuffer],
+    programId
+  )[0];
+}
+
 function getSolanaVaultProgram(
   environment?: Environment
 ): anchor.Program<SolanaVault> {
@@ -748,6 +760,11 @@ async function simulateSolanaVaultTransaction(
         systemProgram: SystemProgram.programId,
       })
       .simulate();
+    const withdrawBrokerPda = getSolanaWithdrawBrokerPda(
+      program.programId,
+      brokerIndex
+    );
+
     await program.methods
       .setWithdrawBroker({
         brokerHash: codedBrokerHash,
@@ -756,7 +773,7 @@ async function simulateSolanaVaultTransaction(
       })
       .accounts({
         brokerManager: keypair.publicKey,
-        withdrawBroker: brokerPda,
+        withdrawBroker: withdrawBrokerPda,
         managerRole: brokerManagerRolePda,
         systemProgram: SystemProgram.programId,
       })
@@ -1696,15 +1713,27 @@ async function simulateSolanaDeletion(
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .simulate();
+    const brokerResult = await getBrokerFromOrderlyDb(brokerId);
+    if (!brokerResult.success) {
+      throw new Error(
+        `Failed to get broker index for simulation: ${brokerResult.error}`
+      );
+    }
+    const simulationBrokerIndex = brokerResult.data.brokerIndex;
+    const withdrawBrokerPda = getSolanaWithdrawBrokerPda(
+      program.programId,
+      simulationBrokerIndex
+    );
+
     await program.methods
       .setWithdrawBroker({
         brokerHash: codedBrokerHash,
-        brokerIndex: 0,
-        allowed: true,
+        brokerIndex: simulationBrokerIndex,
+        allowed: false,
       })
       .accounts({
         brokerManager: keypair.publicKey,
-        withdrawBroker: brokerPda,
+        withdrawBroker: withdrawBrokerPda,
         managerRole: brokerManagerRolePda,
         systemProgram: SystemProgram.programId,
       })
@@ -1821,6 +1850,11 @@ async function executeSolanaDeletion(
     `🗑️ Solana setBroker deletion transaction executed for broker ${brokerId} on ${chainName}: ${setBrokerTx}`
   );
 
+  const withdrawBrokerPda = getSolanaWithdrawBrokerPda(
+    program.programId,
+    brokerIndex
+  );
+
   const setWithdrawBrokerTx = await program.methods
     .setWithdrawBroker({
       brokerHash: codedBrokerHash,
@@ -1829,7 +1863,7 @@ async function executeSolanaDeletion(
     })
     .accounts({
       brokerManager: keypair.publicKey,
-      withdrawBroker: brokerPda,
+      withdrawBroker: withdrawBrokerPda,
       managerRole: brokerManagerRolePda,
       systemProgram: SystemProgram.programId,
     })
@@ -1904,6 +1938,8 @@ async function executeSolanaVaultTransaction(
     `🚀 Solana setBroker transaction executed for broker ${brokerId} on ${chainName}: ${setBrokerTx}`
   );
 
+  const withdrawBrokerPda = getSolanaWithdrawBrokerPda(programId, brokerIndex);
+
   const setWithdrawBrokerTx = await program.methods
     .setWithdrawBroker({
       brokerHash: codedBrokerHash,
@@ -1912,7 +1948,7 @@ async function executeSolanaVaultTransaction(
     })
     .accounts({
       brokerManager: keypair.publicKey,
-      withdrawBroker: brokerPda,
+      withdrawBroker: withdrawBrokerPda,
       managerRole: brokerManagerRolePda,
       systemProgram: SystemProgram.programId,
     })
