@@ -4,7 +4,6 @@ import { Card } from "../components/Card";
 import { useAuth } from "../context/AuthContext";
 import { Outlet, useNavigate } from "@remix-run/react";
 import { useAppKit } from "@reown/appkit/react";
-import { Icon } from "@iconify/react";
 
 export const meta: MetaFunction = () => [
   { title: "Orderly One | No-Code Perp DEX Launcher" },
@@ -86,13 +85,15 @@ export default function Index() {
         {/* Video Section */}
         <section className="section-container text-center">
           <div className="max-w-4xl mx-auto">
-            <div className="aspect-video bg-black/50 rounded-2xl border border-white/20 flex items-center justify-center">
-              <div className="w-20 h-20 bg-white/10 rounded-full flex items-center justify-center">
-                <Icon
-                  icon="heroicons:play"
-                  className="w-8 h-8 text-white ml-1"
-                />
-              </div>
+            <div className="aspect-video rounded-2xl border border-white/20 overflow-hidden">
+              <video
+                controls
+                className="w-full h-full object-cover"
+                preload="metadata"
+              >
+                <source src="/promo.webm" type="video/webm" />
+                Your browser does not support the video tag.
+              </video>
             </div>
           </div>
         </section>
