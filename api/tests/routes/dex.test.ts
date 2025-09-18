@@ -213,4 +213,81 @@ describe("DEX Routes", () => {
       expect(body).toHaveProperty("message");
     });
   });
+
+  describe("POST /api/dex/:id/custom-domain", () => {
+    let dex: { id: string };
+
+    beforeEach(async () => {
+      dex = await testDataFactory.createTestDex(testUser.id, {
+        repoUrl: "https://github.com/testuser/testrepo",
+      });
+    });
+
+    describe("invalid domains", () => {
+      const invalidDomains = [
+        "",
+        "   ",
+        "example",
+        "192.168.1.1",
+        "example..com",
+        ".example.com",
+        "example.com.",
+        "-example.com",
+        "example-.com",
+        "example.c",
+        "example.c0m",
+        "a".repeat(64) + ".com",
+        "a".repeat(250) + ".com",
+        "example_domain.com",
+      ];
+
+      invalidDomains.forEach(domain => {
+        it(`should reject "${domain}"`, async () => {
+          const request = createAuthenticatedRequest(app, testUser.id);
+
+          const response = await request.post(
+            `/api/dex/${dex.id}/custom-domain`,
+            {
+              json: { domain },
+            }
+          );
+
+          expect(response.status).toBe(400);
+        });
+      });
+    });
+
+    describe("authorization and prerequisites", () => {
+      it("should return 400 if DEX not found", async () => {
+        const request = createAuthenticatedRequest(app, testUser.id);
+
+        const response = await request.post(
+          "/api/dex/non-existent-id/custom-domain",
+          {
+            json: { domain: "example.com" },
+          }
+        );
+
+        expect(response.status).toBe(400);
+      });
+
+      it("should return 400 if user doesn't own the DEX", async () => {
+        const otherUser = await testDataFactory.createTestUser();
+        const otherDex = await testDataFactory.createTestDex(otherUser.id, {
+          repoUrl: "https://github.com/otheruser/otherrepo",
+        });
+
+        const request = createAuthenticatedRequest(app, testUser.id);
+
+        const response = await request.post(
+          `/api/dex/${otherDex.id}/custom-domain`,
+          {
+            json: { domain: "example.com" },
+          }
+        );
+
+        expect(response.status).toBe(400);
+      });
+    });
+  });
 });

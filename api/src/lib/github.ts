@@ -1334,14 +1334,6 @@ export async function setCustomDomain(
 ): Promise<string> {
   console.log(`Setting custom domain for ${owner}/${repo} to ${domain}...`);
 
-  if (
-    !domain.match(
-      /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/
-    )
-  ) {
-    throw new Error(`Invalid domain format: ${domain}`);
-  }
-
   try {
     try {
       await enableGitHubPages(owner, repo);

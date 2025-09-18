@@ -62,6 +62,8 @@ vi.mock("../../src/lib/github", () => ({
   deleteRepository: vi.fn().mockResolvedValue({ success: true }),
   renameRepository: vi.fn().mockResolvedValue({ success: true }),
   triggerRedeployment: vi.fn().mockResolvedValue({ success: true }),
+  setCustomDomain: vi.fn().mockResolvedValue("example.com"),
+  removeCustomDomain: vi.fn().mockResolvedValue(true),
 }));
 
 vi.mock("../../src/services/geckoTerminalService", () => ({

@@ -63,10 +63,40 @@ export default function CustomDomainSection({
   const { openModal } = useModal();
 
   const handleSetDomain = async () => {
+    const normalizedDomain = customDomain.trim().toLowerCase();
+
     const domainRegex =
-      /^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/;
-    if (!domainRegex.test(customDomain)) {
+      /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/;
+
+    if (!normalizedDomain) {
+      toast.error("Domain name cannot be empty");
+      return;
+    }
+
+    if (normalizedDomain !== customDomain) {
+      toast.error("Domain must be lowercase with no leading/trailing spaces");
+      return;
+    }
+
+    if (!domainRegex.test(normalizedDomain)) {
       toast.error("Please enter a valid domain name (e.g., example.com)");
+      return;
+    }
+
+    if (
+      normalizedDomain.includes("..") ||
+      normalizedDomain.startsWith(".") ||
+      normalizedDomain.endsWith(".")
+    ) {
+      toast.error(
+        "Domain cannot have consecutive dots or start/end with a dot"
+      );
+      return;
+    }
+
+    const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
+    if (ipRegex.test(normalizedDomain)) {
+      toast.error("IP addresses are not allowed. Please use a domain name");
       return;
     }
 
@@ -75,13 +105,13 @@ export default function CustomDomainSection({
     try {
       await post(
         `api/dex/${dexData.id}/custom-domain`,
-        { domain: customDomain },
+        { domain: normalizedDomain },
         token
       );
 
       onDexDataUpdate({
         ...dexData,
-        customDomain: customDomain,
+        customDomain: normalizedDomain,
       });
 
       toast.success("Custom domain configured successfully");

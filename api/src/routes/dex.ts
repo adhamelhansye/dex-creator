@@ -516,10 +516,22 @@ const customDomainSchema = z.object({
     .string()
     .min(1, "Domain is required")
     .max(253, "Domain cannot exceed 253 characters")
-    .regex(
-      /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/,
-      "Invalid domain format. Use a valid domain like 'example.com' or 'subdomain.example.com'"
-    )
+    .transform(val => val.trim().toLowerCase())
+    .refine(domain => {
+      return domain.length > 0;
+    }, "Domain cannot be empty")
+    .refine(domain => {
+      return (
+        !domain.includes("..") &&
+        !domain.startsWith(".") &&
+        !domain.endsWith(".")
+      );
+    }, "Domain cannot have consecutive dots or start/end with a dot")
+    .refine(domain => {
+      const domainRegex =
+        /^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)*\.[a-z]{2,}$/;
+      return domainRegex.test(domain);
+    }, "Invalid domain format. Use a valid domain like 'example.com' or 'subdomain.example.com'")
     .refine(domain => {
       const ipRegex = /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}$/;
       return !ipRegex.test(domain);
@@ -529,12 +541,18 @@ const customDomainSchema = z.object({
     }, "Domain must include a top-level domain (e.g., '.com', '.org')")
     .refine(domain => {
       const labels = domain.split(".");
-      return labels.every(label => label.length <= 63);
-    }, "Each part of the domain cannot exceed 63 characters")
+      return labels.every(label => label.length <= 63 && label.length > 0);
+    }, "Each part of the domain must be 1-63 characters long")
     .refine(domain => {
       const tld = domain.split(".").pop();
-      return tld && tld.length >= 2 && /^[a-zA-Z]+$/.test(tld);
-    }, "Domain must have a valid top-level domain (e.g., '.com', '.org')"),
+      return tld && tld.length >= 2 && /^[a-z]+$/.test(tld);
+    }, "Domain must have a valid top-level domain (e.g., '.com', '.org')")
+    .refine(domain => {
+      const labels = domain.split(".");
+      return labels.every(
+        label => !label.startsWith("-") && !label.endsWith("-")
+      );
+    }, "Domain labels cannot start or end with hyphens"),
 });
 
 // Set a custom domain for a DEX
