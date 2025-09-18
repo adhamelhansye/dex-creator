@@ -675,33 +675,66 @@ async function simulateSolanaVaultTransaction(
   chainName: string
 ): Promise<SimulationResult> {
   try {
+    console.log(
+      `🔍 Starting Solana simulation for broker ${brokerId} on ${chainName}`
+    );
+
     if (!chainConfig.vaultAddress) {
       throw new Error("Vault address not configured for this chain");
     }
 
+    console.log(`🔧 Getting environment and program setup...`);
     const env = getCurrentEnvironment();
+    console.log(`📍 Environment: ${env}`);
+
     const program = getSolanaVaultProgram(env);
+    console.log(`📍 Program ID: ${program.programId.toString()}`);
+
     const keypair = getSolanaKeypair();
+    console.log(`📍 Keypair public key: ${keypair.publicKey.toString()}`);
 
+    console.log(`🔐 Generating broker hash and PDA...`);
     const brokerHash = getSolanaBrokerHash(brokerId);
-    const brokerPda = getSolanaBrokerPda(program.programId, brokerHash);
+    console.log(`📍 Broker hash: ${brokerHash}`);
 
+    const brokerPda = getSolanaBrokerPda(program.programId, brokerHash);
+    console.log(`📍 Broker PDA: ${brokerPda.toString()}`);
+
+    console.log(`🔍 Checking if broker account already exists...`);
     const brokerAccount =
       await program.provider.connection.getAccountInfo(brokerPda);
+    console.log(`📍 Broker account exists: ${!!brokerAccount}`);
+
     if (brokerAccount) {
-      const allowedBrokerData =
-        await program.account.allowedBroker.fetch(brokerPda);
-      if (allowedBrokerData.allowed) {
-        throw new Error(
-          `Broker ${brokerId} already exists and is allowed on ${chainName}`
-        );
+      console.log(
+        `📍 Broker account data length: ${brokerAccount.data.length}`
+      );
+      console.log(`📍 Broker account owner: ${brokerAccount.owner.toString()}`);
+      console.log(`📍 Broker account lamports: ${brokerAccount.lamports}`);
+
+      try {
+        const allowedBrokerData =
+          await program.account.allowedBroker.fetch(brokerPda);
+        console.log(`📍 Allowed broker data:`, allowedBrokerData);
+
+        if (allowedBrokerData.allowed) {
+          throw new Error(
+            `Broker ${brokerId} already exists and is allowed on ${chainName}`
+          );
+        }
+      } catch (fetchError) {
+        console.log(`⚠️  Failed to fetch allowed broker data:`, fetchError);
+        // Continue with simulation even if fetch fails
       }
     }
 
+    console.log(`💰 Checking keypair balance...`);
     const balance = await program.provider.connection.getBalance(
       keypair.publicKey
     );
     const estimatedFee = 5000;
+    console.log(`📍 Current balance: ${balance} lamports`);
+    console.log(`📍 Estimated fee: ${estimatedFee} lamports`);
 
     if (balance < estimatedFee) {
       throw new Error(
@@ -709,10 +742,17 @@ async function simulateSolanaVaultTransaction(
       );
     }
 
+    console.log(`🔑 Generating broker manager role hash and PDA...`);
     const brokerManagerRoleHash = getManagerRoleHash(BROKER_MANAGER_ROLE);
+    console.log(`📍 Broker manager role hash: ${brokerManagerRoleHash}`);
+
     const codedBrokerManagerRoleHash = Array.from(
       Buffer.from(brokerManagerRoleHash.slice(2), "hex")
     );
+    console.log(
+      `📍 Coded broker manager role hash: [${codedBrokerManagerRoleHash.join(", ")}]`
+    );
+
     const brokerManagerRolePda = anchor.web3.PublicKey.findProgramAddressSync(
       [
         Buffer.from(ACCESS_CONTROL_SEED, "utf8"),
@@ -721,41 +761,74 @@ async function simulateSolanaVaultTransaction(
       ],
       program.programId
     )[0];
+    console.log(
+      `📍 Broker manager role PDA: ${brokerManagerRolePda.toString()}`
+    );
 
     const codedBrokerHash = Array.from(Buffer.from(brokerHash.slice(2), "hex"));
+    console.log(`📍 Coded broker hash: [${codedBrokerHash.join(", ")}]`);
 
-    await program.methods
-      .setBroker({
-        brokerHash: codedBrokerHash,
-        allowed: true,
-      })
-      .accounts({
-        brokerManager: keypair.publicKey,
-        allowedBroker: brokerPda,
-        managerRole: brokerManagerRolePda,
-        systemProgram: SystemProgram.programId,
-      })
-      .simulate();
-    await program.methods
-      .setWithdrawBroker({
-        brokerHash: codedBrokerHash,
-        brokerIndex: 0,
-        allowed: true,
-      })
-      .accounts({
-        brokerManager: keypair.publicKey,
-        withdrawBroker: brokerPda,
-        managerRole: brokerManagerRolePda,
-        systemProgram: SystemProgram.programId,
-      })
-      .simulate();
+    console.log(`🎯 Simulating setBroker transaction...`);
+    try {
+      const setBrokerSimulation = await program.methods
+        .setBroker({
+          brokerHash: codedBrokerHash,
+          allowed: true,
+        })
+        .accounts({
+          brokerManager: keypair.publicKey,
+          allowedBroker: brokerPda,
+          managerRole: brokerManagerRolePda,
+          systemProgram: SystemProgram.programId,
+        })
+        .simulate();
+      console.log(`✅ setBroker simulation successful:`, setBrokerSimulation);
+    } catch (simulationError) {
+      console.log(`❌ setBroker simulation failed:`, simulationError);
+      throw simulationError;
+    }
+
+    console.log(`🎯 Simulating setWithdrawBroker transaction...`);
+    try {
+      const setWithdrawBrokerSimulation = await program.methods
+        .setWithdrawBroker({
+          brokerHash: codedBrokerHash,
+          brokerIndex: 0,
+          allowed: true,
+        })
+        .accounts({
+          brokerManager: keypair.publicKey,
+          withdrawBroker: brokerPda,
+          managerRole: brokerManagerRolePda,
+          systemProgram: SystemProgram.programId,
+        })
+        .simulate();
+      console.log(
+        `✅ setWithdrawBroker simulation successful:`,
+        setWithdrawBrokerSimulation
+      );
+    } catch (simulationError) {
+      console.log(`❌ setWithdrawBroker simulation failed:`, simulationError);
+      throw simulationError;
+    }
 
     console.log(
       `🔍 Solana simulation successful for broker ${brokerId} on ${chainName}`
     );
     return { success: true };
   } catch (error) {
-    console.log("error", error);
+    console.log(
+      `❌ Solana simulation failed for broker ${brokerId} on ${chainName}:`
+    );
+    console.log(`📍 Error type: ${error?.constructor?.name || "Unknown"}`);
+    console.log(
+      `📍 Error message: ${error instanceof Error ? error.message : String(error)}`
+    );
+    console.log(
+      `📍 Error stack:`,
+      error instanceof Error ? error.stack : "No stack trace"
+    );
+
     return {
       success: false,
       error:
