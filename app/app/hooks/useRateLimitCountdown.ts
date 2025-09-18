@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { get } from "../utils/apiClient";
 import { useAuth } from "../context/AuthContext";
 
@@ -29,11 +29,14 @@ export function useRateLimitCountdown(
     useState<RateLimitStatus | null>(null);
   const [isChecking, setIsChecking] = useState(false);
   const [remainingSeconds, setRemainingSeconds] = useState(0);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const formatTime = useCallback((seconds: number): string => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds.toString().padStart(2, "0")}`;
+    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
+      .toString()
+      .padStart(2, "0")}`;
   }, []);
 
   const checkRateLimit = useCallback(async () => {
@@ -57,6 +60,16 @@ export function useRateLimitCountdown(
       setIsChecking(false);
     }
   }, [enabled, isAuthenticated, token]);
+
+  const debouncedCheckRateLimit = useCallback(() => {
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(() => {
+      checkRateLimit();
+    }, 500);
+  }, [checkRateLimit]);
 
   useEffect(() => {
     if (!enabled || !rateLimitStatus?.isRateLimited || remainingSeconds <= 0) {
@@ -83,6 +96,38 @@ export function useRateLimitCountdown(
       checkRateLimit();
     }
   }, [enabled, isAuthenticated, token, checkRateLimit]);
+
+  useEffect(() => {
+    if (!enabled || !isAuthenticated || !token) {
+      return;
+    }
+
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        debouncedCheckRateLimit();
+      }
+    };
+
+    const handleWindowFocus = () => {
+      debouncedCheckRateLimit();
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    window.addEventListener("focus", handleWindowFocus);
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      window.removeEventListener("focus", handleWindowFocus);
+    };
+  }, [enabled, isAuthenticated, token, debouncedCheckRateLimit]);
+
+  useEffect(() => {
+    return () => {
+      if (debounceTimeoutRef.current) {
+        clearTimeout(debounceTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return {
     isRateLimited: Boolean(

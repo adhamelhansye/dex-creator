@@ -12,6 +12,7 @@ import {
 } from "../lib/github";
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
+import { validateCSS } from "../lib/cssValidator.js";
 
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
 
@@ -101,7 +102,20 @@ export const dexSchema = z.object({
     .nullish(),
   chainIds: z.array(z.number().positive().int()).optional(),
   defaultChain: z.number().positive().int().optional(),
-  themeCSS: z.string().nullish(),
+  themeCSS: z
+    .string()
+    .refine(
+      value => {
+        if (!value || value.trim() === "") return true;
+        const validation = validateCSS(value);
+        return validation.isValid;
+      },
+      {
+        message:
+          "Invalid CSS syntax detected. Please check your CSS for errors.",
+      }
+    )
+    .nullish(),
   primaryLogo: z
     .string()
     .max(250000, "Primary logo must be smaller than 250KB")
@@ -261,15 +275,6 @@ export const dexFormSchema = dexSchema
       .optional(),
   })
   .catchall(z.union([z.instanceof(File), z.string()]).optional()); // Allow pnlPoster0, pnlPoster1, etc.
-
-export const customDomainSchema = z.object({
-  domain: z
-    .string()
-    .regex(/^([a-zA-Z0-9]([a-zA-Z0-9\-]{0,61}[a-zA-Z0-9])?\.)+[a-zA-Z]{2,}$/, {
-      message:
-        "Invalid domain format. Please enter a valid domain like 'example.com'",
-    }),
-});
 
 export function generateId() {
   return (
@@ -440,7 +445,9 @@ export async function createDex(
       success: false,
       error: {
         type: DexErrorType.REPOSITORY_CREATION_FAILED,
-        message: `Repository setup failed: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Repository setup failed: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       },
     };
   }
@@ -514,7 +521,9 @@ export async function createDex(
       success: false,
       error: {
         type: DexErrorType.DATABASE_ERROR,
-        message: `Failed to create DEX in database: ${dbError instanceof Error ? dbError.message : String(dbError)}`,
+        message: `Failed to create DEX in database: ${
+          dbError instanceof Error ? dbError.message : String(dbError)
+        }`,
       },
     };
   }
@@ -656,7 +665,9 @@ export async function updateDex(
       success: false,
       error: {
         type: DexErrorType.DATABASE_ERROR,
-        message: `Failed to update DEX: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Failed to update DEX: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       },
     };
   }
@@ -716,7 +727,9 @@ export async function deleteDex(
       success: false,
       error: {
         type: DexErrorType.DATABASE_ERROR,
-        message: `Failed to delete DEX: ${error instanceof Error ? error.message : String(error)}`,
+        message: `Failed to delete DEX: ${
+          error instanceof Error ? error.message : String(error)
+        }`,
       },
     };
   }
@@ -841,7 +854,7 @@ export async function getAllDexes(
     : {};
 
   const prismaClient = await getPrisma();
-  return await prismaClient.$transaction(async tx => {
+  return prismaClient.$transaction(async tx => {
     const total = await tx.dex.count({
       where: whereClause,
     });
@@ -1041,7 +1054,6 @@ export async function convertFormDataToInternal(
   return data;
 }
 
-// Social Card Update Schema
 export const socialCardUpdateSchema = z.object({
   description: z
     .string()

@@ -62,7 +62,9 @@ dexRoutes.get("/rate-limit-status", async c => {
     remainingCooldownSeconds: remainingSeconds,
     cooldownMinutes: 5,
     message: isRateLimited
-      ? `Please wait ${Math.ceil(remainingSeconds / 60)} more minutes before updating your DEX again.`
+      ? `Please wait ${Math.ceil(
+          remainingSeconds / 60
+        )} more minutes before updating your DEX again.`
       : "Ready to update your DEX.",
   });
 });

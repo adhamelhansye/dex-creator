@@ -3,6 +3,8 @@
  * Prevents DoS attacks by limiting deployment frequency per user account
  */
 
+import { Context } from "hono";
+
 interface RateLimitEntry {
   lastRequest: number;
   count: number;
@@ -35,14 +37,15 @@ class RateLimiter {
     const userEntry = this.userLimits.get(userId);
     if (userEntry && now - userEntry.lastRequest < this.cooldownMs) {
       console.log(
-        `Rate limit hit for user ${userId}: ${Math.ceil((this.cooldownMs - (now - userEntry.lastRequest)) / 1000)}s remaining`
+        `Rate limit hit for user ${userId}: ${Math.ceil(
+          (this.cooldownMs - (now - userEntry.lastRequest)) / 1000
+        )}s remaining`
       );
       return true;
     }
 
     return false;
   }
-
   /**
    * Record a deployment request for a user
    * @param userId The user ID
@@ -50,7 +53,6 @@ class RateLimiter {
   recordRequest(userId: string): void {
     const now = Date.now();
 
-    // Record user request
     this.userLimits.set(userId, {
       lastRequest: now,
       count: (this.userLimits.get(userId)?.count || 0) + 1,
@@ -113,15 +115,9 @@ class RateLimiter {
 export const deploymentRateLimiter = new RateLimiter(5);
 export const themeRateLimiter = new RateLimiter(0.5);
 
-/**
- * Middleware factory for rate limiting DEX deployments
- * @param rateLimiter The rate limiter instance to use
- * @returns Hono middleware function
- */
-
 export function createDeploymentRateLimit(rateLimiter: RateLimiter) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return async (c: any, next: any) => {
+  return async (c: Context, next: any) => {
     const userId = c.get("userId");
 
     if (rateLimiter.isRateLimited(userId)) {
@@ -137,9 +133,12 @@ export function createDeploymentRateLimit(rateLimiter: RateLimiter) {
       );
     }
 
-    rateLimiter.recordRequest(userId);
-
     await next();
+
+    const response = c.res;
+    if (response && response.status >= 200 && response.status < 300) {
+      rateLimiter.recordRequest(userId);
+    }
   };
 }
 

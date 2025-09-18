@@ -873,7 +873,13 @@ export default function DexConfigRoute() {
       }
     } catch (error) {
       console.error("Error updating DEX:", error);
-      toast.error("Failed to update DEX configuration");
+
+      const errorMessage =
+        error instanceof Error
+          ? error.message
+          : "Failed to update DEX configuration";
+
+      toast.error(errorMessage);
     } finally {
       setIsSaving(false);
     }
