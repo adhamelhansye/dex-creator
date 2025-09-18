@@ -1,5 +1,5 @@
 import { ethers } from "ethers";
-import { Environment, getCurrentEnvironment } from "../models/dex";
+import { Environment, getCurrentEnvironment } from "../models/dex.js";
 import {
   type ChainName,
   ALL_CHAINS,
@@ -10,14 +10,18 @@ import {
   Vault__factory,
   VaultManager__factory,
   FeeManager__factory,
-} from "../../types";
-import { addBrokerToOrderlyDb, getBrokerFromOrderlyDb } from "./orderlyDb";
-import { getSecret } from "./secretManager";
+} from "../../types/index.js";
+import {
+  addBrokerToOrderlyDb,
+  getBrokerFromOrderlyDb,
+  getNextBrokerIndex,
+} from "./orderlyDb.js";
+import { getSecret } from "./secretManager.js";
 
 import * as anchor from "@coral-xyz/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
-import { IDL, type SolanaVault } from "../interface/types/solana_vault";
+import { IDL, type SolanaVault } from "../interface/types/solana_vault.js";
 import { default as bs58 } from "bs58";
 
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
@@ -679,6 +683,14 @@ async function simulateSolanaVaultTransaction(
       throw new Error("Vault address not configured for this chain");
     }
 
+    const nextBrokerIndexResult = await getNextBrokerIndex();
+    if (!nextBrokerIndexResult.success) {
+      throw new Error(
+        `Failed to get next broker index: ${nextBrokerIndexResult.error}`
+      );
+    }
+    const brokerIndex = nextBrokerIndexResult.data.brokerIndex;
+
     const env = getCurrentEnvironment();
     const program = getSolanaVaultProgram(env);
     const keypair = getSolanaKeypair();
@@ -736,9 +748,22 @@ async function simulateSolanaVaultTransaction(
         systemProgram: SystemProgram.programId,
       })
       .simulate();
+    await program.methods
+      .setWithdrawBroker({
+        brokerHash: codedBrokerHash,
+        brokerIndex: brokerIndex,
+        allowed: true,
+      })
+      .accounts({
+        brokerManager: keypair.publicKey,
+        withdrawBroker: brokerPda,
+        managerRole: brokerManagerRolePda,
+        systemProgram: SystemProgram.programId,
+      })
+      .simulate();
 
     console.log(
-      `🔍 Solana simulation successful for broker ${brokerId} on ${chainName}`
+      `🔍 Solana simulation successful for broker ${brokerId} on ${chainName} with index ${brokerIndex}`
     );
     return { success: true };
   } catch (error) {
