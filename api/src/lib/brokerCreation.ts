@@ -11,7 +11,11 @@ import {
   VaultManager__factory,
   FeeManager__factory,
 } from "../../types/index.js";
-import { addBrokerToOrderlyDb, getBrokerFromOrderlyDb } from "./orderlyDb.js";
+import {
+  addBrokerToOrderlyDb,
+  getBrokerFromOrderlyDb,
+  getNextBrokerIndex,
+} from "./orderlyDb.js";
 import { getSecret } from "./secretManager.js";
 
 import * as anchor from "@coral-xyz/anchor";
@@ -679,6 +683,14 @@ async function simulateSolanaVaultTransaction(
       throw new Error("Vault address not configured for this chain");
     }
 
+    const nextBrokerIndexResult = await getNextBrokerIndex();
+    if (!nextBrokerIndexResult.success) {
+      throw new Error(
+        `Failed to get next broker index: ${nextBrokerIndexResult.error}`
+      );
+    }
+    const brokerIndex = nextBrokerIndexResult.data.brokerIndex;
+
     const env = getCurrentEnvironment();
     const program = getSolanaVaultProgram(env);
     const keypair = getSolanaKeypair();
@@ -739,7 +751,7 @@ async function simulateSolanaVaultTransaction(
     await program.methods
       .setWithdrawBroker({
         brokerHash: codedBrokerHash,
-        brokerIndex: 0,
+        brokerIndex: brokerIndex,
         allowed: true,
       })
       .accounts({
@@ -751,7 +763,7 @@ async function simulateSolanaVaultTransaction(
       .simulate();
 
     console.log(
-      `🔍 Solana simulation successful for broker ${brokerId} on ${chainName}`
+      `🔍 Solana simulation successful for broker ${brokerId} on ${chainName} with index ${brokerIndex}`
     );
     return { success: true };
   } catch (error) {
