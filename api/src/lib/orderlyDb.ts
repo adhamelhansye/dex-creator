@@ -301,37 +301,6 @@ export async function getBrokerFromOrderlyDb(
   }
 }
 
-export async function getNextBrokerIndex(): Promise<
-  Result<{ brokerIndex: number }>
-> {
-  const orderlyPrisma = await getOrderlyPrismaClient();
-
-  try {
-    const brokerCount = await orderlyPrisma.orderlyBroker.count();
-    const nextBrokerIndex = brokerCount + 1;
-
-    console.log(
-      `📍 Current broker count: ${brokerCount}, next broker index will be: ${nextBrokerIndex}`
-    );
-
-    return {
-      success: true,
-      data: {
-        brokerIndex: nextBrokerIndex,
-      },
-    };
-  } catch (error) {
-    console.error("❌ Error getting next broker index:", error);
-
-    return {
-      success: false,
-      error: `Failed to get next broker index: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  } finally {
-    await orderlyPrisma.$disconnect();
-  }
-}
-
 export async function deleteBrokerFromOrderlyDb(
   brokerId: string
 ): Promise<Result<{ message: string }>> {
