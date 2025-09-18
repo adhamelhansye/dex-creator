@@ -74,15 +74,21 @@ export async function verifyOrderTransaction(
   const receiverAddress = await getOrderReceiverAddress();
 
   try {
-    const rpcUrl = ALL_CHAINS[chain as ChainName].rpcUrl;
-    if (!rpcUrl) {
+    const chainConfig = ALL_CHAINS[chain as ChainName];
+    if (!chainConfig?.rpcUrl) {
       return {
         success: false,
         message: `No RPC URL configured for chain: ${chain}`,
       };
     }
 
-    const provider = new ethers.JsonRpcProvider(rpcUrl);
+    const network = ethers.Network.from({
+      chainId: chainConfig.chainId,
+      name: chainConfig.name,
+    });
+    const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl, network, {
+      staticNetwork: network,
+    });
 
     await new Promise(resolve => setTimeout(resolve, 5_000));
     const receipt = await withRPCTimeout(

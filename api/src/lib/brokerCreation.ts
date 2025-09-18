@@ -146,9 +146,12 @@ function getEvmProvider(chainName: string): ethers.JsonRpcProvider {
   ensureInitialized();
 
   const chainInfo = ALL_CHAINS[chainName as ChainName];
-  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+  const network = ethers.Network.from({
     chainId: chainInfo.chainId,
     name: chainInfo.name,
+  });
+  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
+    staticNetwork: network,
   });
   return provider;
 }
@@ -512,10 +515,17 @@ export async function setBrokerAccountId(
     }
 
     const orderlyChainConfig = ALL_CHAINS[orderlyChainName];
-    const provider = new ethers.JsonRpcProvider(orderlyChainConfig.rpcUrl, {
+    const network = ethers.Network.from({
       chainId: orderlyChainConfig.chainId,
       name: orderlyChainConfig.name,
     });
+    const provider = new ethers.JsonRpcProvider(
+      orderlyChainConfig.rpcUrl,
+      network,
+      {
+        staticNetwork: network,
+      }
+    );
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
 
     const feeManager = FeeManager__factory.connect(
@@ -556,9 +566,12 @@ async function simulateVaultTransaction(
     }
 
     const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    const network = ethers.Network.from({
       chainId: chainInfo.chainId,
       name: chainInfo.name,
+    });
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
+      staticNetwork: network,
     });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
@@ -605,9 +618,12 @@ async function simulateVaultManagerTransaction(
     }
 
     const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    const network = ethers.Network.from({
       chainId: chainInfo.chainId,
       name: chainInfo.name,
+    });
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
+      staticNetwork: network,
     });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
@@ -658,9 +674,12 @@ async function simulateFeeManagerTransaction(
     }
 
     const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    const network = ethers.Network.from({
       chainId: chainInfo.chainId,
       name: chainInfo.name,
+    });
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
+      staticNetwork: network,
     });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const feeManager = FeeManager__factory.connect(
@@ -1583,9 +1602,12 @@ async function simulateL1Deletion(
     }
 
     const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    const network = ethers.Network.from({
       chainId: chainInfo.chainId,
       name: chainInfo.name,
+    });
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
+      staticNetwork: network,
     });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
@@ -1632,9 +1654,12 @@ async function simulateOrderlyDeletion(
     }
 
     const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
+    const network = ethers.Network.from({
       chainId: chainInfo.chainId,
       name: chainInfo.name,
+    });
+    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
+      staticNetwork: network,
     });
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
