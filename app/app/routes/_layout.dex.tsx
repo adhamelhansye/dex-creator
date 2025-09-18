@@ -1634,7 +1634,8 @@ export default function DexRoute() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate("/dex/config")}
+                  as="a"
+                  href="/dex/config"
                   className="whitespace-nowrap flex-shrink-0"
                 >
                   Open Settings
@@ -1661,7 +1662,8 @@ export default function DexRoute() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate("/graduation")}
+                  as="a"
+                  href="/graduation"
                   className="whitespace-nowrap flex-shrink-0"
                 >
                   Upgrade Now
@@ -1689,7 +1691,8 @@ export default function DexRoute() {
                   </div>
                 </div>
                 <Button
-                  onClick={() => navigate("/dex/card")}
+                  as="a"
+                  href="/dex/card"
                   className="whitespace-nowrap flex-shrink-0"
                 >
                   Setup DEX Card
@@ -1814,14 +1817,16 @@ export default function DexRoute() {
                 </div>
                 {isGraduated ? (
                   <Button
-                    onClick={() => navigate("/referral")}
+                    as="a"
+                    href="/referral"
                     className="whitespace-nowrap flex-shrink-0"
                   >
                     Manage Referrals
                   </Button>
                 ) : (
                   <Button
-                    onClick={() => navigate("/graduation")}
+                    as="a"
+                    href="/graduation"
                     variant="secondary"
                     className="whitespace-nowrap flex-shrink-0"
                   >
