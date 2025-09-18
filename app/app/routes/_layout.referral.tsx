@@ -7,7 +7,7 @@ import { useModal } from "../context/ModalContext";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import WalletConnect from "../components/WalletConnect";
-import { Link, useNavigate } from "@remix-run/react";
+import { Link } from "@remix-run/react";
 import { useAccount, useChainId, useSwitchChain } from "wagmi";
 import {
   getAutoReferralInfo,
@@ -30,7 +30,6 @@ export default function ReferralRoute() {
   const { orderlyKey, accountId, hasValidKey, setOrderlyKey } = useOrderlyKey();
   const { openModal } = useModal();
   const { address } = useAccount();
-  const navigate = useNavigate();
 
   const connectedChainId = useChainId();
   const { switchChain } = useSwitchChain();
@@ -345,7 +344,8 @@ export default function ReferralRoute() {
               </div>
 
               <Button
-                onClick={() => navigate("/graduation")}
+                as="a"
+                href="/dex/graduation"
                 className="flex items-center gap-2"
               >
                 <div className="i-mdi:rocket-launch w-4 h-4"></div>

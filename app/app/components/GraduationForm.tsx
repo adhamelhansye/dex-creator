@@ -780,7 +780,7 @@ export function GraduationForm({
               <p className="text-sm text-gray-400 mb-3">
                 Your DEX has been deployed with your broker ID and is now fully
                 operational. Users can start trading and you'll earn fees from
-                all transactions.
+                all trades.
               </p>
               <a
                 href={generateDeploymentUrl(dexData.repoUrl)}

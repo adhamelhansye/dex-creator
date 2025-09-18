@@ -1656,14 +1656,13 @@ export default function DexRoute() {
                       Ready to Upgrade?
                     </h3>
                     <p className="text-gray-300">
-                      Graduate your DEX to earn fee splits and provide rewards
-                      for your traders.
+                      Graduate your DEX to earn fee splits.
                     </p>
                   </div>
                 </div>
                 <Button
                   as="a"
-                  href="/graduation"
+                  href="/dex/graduation"
                   className="whitespace-nowrap flex-shrink-0"
                 >
                   Upgrade Now
@@ -1763,7 +1762,7 @@ export default function DexRoute() {
                 </div>
                 <Button
                   as="a"
-                  href="/graduation"
+                  href="/dex/graduation"
                   variant={isGraduated ? "success" : "primary"}
                   leftIcon={
                     <div
@@ -1826,7 +1825,7 @@ export default function DexRoute() {
                 ) : (
                   <Button
                     as="a"
-                    href="/graduation"
+                    href="/dex/graduation"
                     variant="secondary"
                     className="whitespace-nowrap flex-shrink-0"
                   >
