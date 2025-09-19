@@ -426,7 +426,8 @@ export async function deleteBrokerFromOrderlyDb(
 }
 
 export async function addBrokerToNexusDb(
-  data: OrderlyBrokerData
+  data: OrderlyBrokerData,
+  brokerIndex: number
 ): Promise<Result<{ message: string; brokerIndex: number }>> {
   const nexusPrisma = await getNexusPrismaClient();
 
@@ -437,34 +438,43 @@ export async function addBrokerToNexusDb(
     const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
 
-    const createdBroker = await nexusPrisma.nexusBroker.create({
-      data: {
-        brokerId: data.brokerId,
-        brokerName: data.brokerName,
-        brokerHash: brokerHash,
-        baseMakerFeeRate: baseMakerFee,
-        baseTakerFeeRate: baseTakerFee,
-        defaultMakerFeeRate: defaultMakerFee,
-        defaultTakerFeeRate: defaultTakerFee,
-      },
-    });
+    await nexusPrisma.$executeRaw`
+      INSERT INTO broker_info (
+        id,
+        broker_id, 
+        broker_name, 
+        broker_hash,
+        base_maker_fee_rate,
+        base_taker_fee_rate,
+        default_maker_fee_rate,
+        default_taker_fee_rate
+      ) VALUES (
+        ${brokerIndex},
+        ${data.brokerId},
+        ${data.brokerName},
+        ${brokerHash},
+        ${baseMakerFee},
+        ${baseTakerFee},
+        ${defaultMakerFee},
+        ${defaultTakerFee}
+      )
+    `;
 
-    const brokerIndex = Number(createdBroker.id);
     console.log(
-      `✅ Successfully added broker ${data.brokerId} to Nexus database with index ${brokerIndex}`
+      `✅ Successfully added broker ${data.brokerId} to Nexus database with matching index ${brokerIndex}`
     );
 
     return {
       success: true,
       data: {
-        message: `Broker ${data.brokerId} successfully added to Nexus database`,
+        message: `Broker ${data.brokerId} successfully added to Nexus database with matching ID`,
         brokerIndex,
       },
     };
   } catch (error) {
     console.error("❌ Error adding broker to Nexus database:", error);
 
-    if (error instanceof Error && error.message.includes("Unique constraint")) {
+    if (error instanceof Error && error.message.includes("Duplicate entry")) {
       return {
         success: false,
         error: `Broker ID ${data.brokerId} already exists in Nexus database`,
@@ -545,7 +555,10 @@ export async function addBrokerToBothDatabases(
     };
   }
 
-  const nexusResult = await addBrokerToNexusDb(data);
+  const nexusResult = await addBrokerToNexusDb(
+    data,
+    orderlyResult.data.brokerIndex
+  );
   if (!nexusResult.success) {
     console.log(
       `🔄 Rolling back Orderly database insertion due to Nexus failure`
@@ -564,7 +577,7 @@ export async function addBrokerToBothDatabases(
   }
 
   console.log(
-    `✅ Successfully added broker ${data.brokerId} to both databases. Orderly index: ${orderlyResult.data.brokerIndex}, Nexus index: ${nexusResult.data.brokerIndex}`
+    `✅ Successfully added broker ${data.brokerId} to both databases with matching ID: ${orderlyResult.data.brokerIndex}`
   );
 
   return {
