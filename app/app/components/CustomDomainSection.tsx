@@ -60,6 +60,7 @@ export default function CustomDomainSection({
   onShowDomainRemoveConfirm,
 }: CustomDomainSectionProps) {
   const [customDomain, setCustomDomain] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
   const { openModal } = useModal();
 
   const handleSetDomain = async () => {
@@ -114,13 +115,33 @@ export default function CustomDomainSection({
         customDomain: normalizedDomain,
       });
 
-      toast.success("Custom domain configured successfully");
+      toast.success(
+        isEditing
+          ? "Custom domain updated successfully"
+          : "Custom domain configured successfully"
+      );
+      setIsEditing(false);
+      setCustomDomain("");
     } catch (error) {
       console.error("Error setting custom domain:", error);
-      toast.error("Failed to set custom domain");
+      toast.error(
+        isEditing
+          ? "Failed to update custom domain"
+          : "Failed to set custom domain"
+      );
     } finally {
       onSavingChange(false);
     }
+  };
+
+  const handleEditDomain = () => {
+    setCustomDomain(dexData.customDomain || "");
+    setIsEditing(true);
+  };
+
+  const handleCancelEdit = () => {
+    setIsEditing(false);
+    setCustomDomain("");
   };
 
   const copyToClipboard = (text: string, successMessage: string) => {
@@ -190,50 +211,126 @@ export default function CustomDomainSection({
 
       {dexData.customDomain ? (
         <div className="mb-4">
-          <div className="flex flex-col md:flex-row gap-3 items-start md:items-center mb-4">
-            <div className="bg-success/10 text-success px-3 py-1 rounded-full text-sm flex items-center">
-              <div className="i-mdi:check-circle h-4 w-4 mr-1"></div>
-              Domain Configured
-            </div>
-            <div className="text-sm">
-              Your DEX is available at{" "}
-              <a
-                href={`https://${dexData.customDomain}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary-light hover:underline inline-flex items-center"
-              >
-                {dexData.customDomain}
-                <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
-              </a>
-            </div>
-          </div>
+          {!isEditing ? (
+            <>
+              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center mb-4">
+                <div className="bg-success/10 text-success px-3 py-1 rounded-full text-sm flex items-center">
+                  <div className="i-mdi:check-circle h-4 w-4 mr-1"></div>
+                  Domain Configured
+                </div>
+                <div className="text-sm">
+                  Your DEX is available at{" "}
+                  <a
+                    href={`https://${dexData.customDomain}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-primary-light hover:underline inline-flex items-center"
+                  >
+                    {dexData.customDomain}
+                    <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
+                  </a>
+                </div>
+              </div>
 
-          <div className="bg-info/10 rounded-lg border border-info/20 p-4 mb-4">
-            <h5 className="text-sm font-bold mb-2 flex items-center">
-              <div className="i-mdi:information-outline text-info mr-2 h-4 w-4"></div>
-              DNS Configuration Status
-            </h5>
-            <p className="text-sm text-gray-300 mb-3">
-              It may take up to 24 hours for DNS changes to propagate. If your
-              domain is not working yet, please check back later.
-            </p>
-            <div className="flex justify-start">
-              <Button
-                onClick={onShowDomainRemoveConfirm}
-                variant="danger"
-                size="sm"
-                isLoading={isSaving}
-                loadingText="Removing..."
-                disabled={isSaving}
-              >
-                <span className="flex items-center gap-1">
-                  <div className="i-mdi:delete h-4 w-4"></div>
-                  Remove Custom Domain
-                </span>
-              </Button>
+              <div className="bg-info/10 rounded-lg border border-info/20 p-4 mb-4">
+                <h5 className="text-sm font-bold mb-2 flex items-center">
+                  <div className="i-mdi:information-outline text-info mr-2 h-4 w-4"></div>
+                  DNS Configuration Status
+                </h5>
+                <p className="text-sm text-gray-300 mb-3">
+                  It may take up to 24 hours for DNS changes to propagate. If
+                  your domain is not working yet, please check back later.
+                </p>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button
+                    onClick={handleEditDomain}
+                    variant="secondary"
+                    size="sm"
+                    disabled={isSaving}
+                  >
+                    <span className="flex items-center gap-1">
+                      <div className="i-mdi:pencil h-4 w-4"></div>
+                      Edit Domain
+                    </span>
+                  </Button>
+                  <Button
+                    onClick={onShowDomainRemoveConfirm}
+                    variant="danger"
+                    size="sm"
+                    isLoading={isSaving}
+                    loadingText="Removing..."
+                    disabled={isSaving}
+                  >
+                    <span className="flex items-center gap-1">
+                      <div className="i-mdi:delete h-4 w-4"></div>
+                      Remove Custom Domain
+                    </span>
+                  </Button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="mb-4">
+              <div className="flex flex-col md:flex-row gap-3 items-start md:items-center mb-4">
+                <div className="bg-warning/10 text-warning px-3 py-1 rounded-full text-sm flex items-center">
+                  <div className="i-mdi:pencil h-4 w-4 mr-1"></div>
+                  Editing Domain
+                </div>
+                <div className="text-sm text-gray-300">
+                  Current domain: {dexData.customDomain}
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <label
+                  htmlFor="editCustomDomain"
+                  className="block text-sm font-bold mb-1"
+                >
+                  Domain Name
+                </label>
+                <div className="flex flex-col sm:flex-row gap-3 sm:gap-2">
+                  <input
+                    id="editCustomDomain"
+                    type="text"
+                    value={customDomain}
+                    onChange={e => setCustomDomain(e.target.value)}
+                    placeholder="example.com"
+                    className="flex-1 bg-background-dark/80 border border-light/10 rounded px-3 py-2 text-sm focus:ring-1 focus:ring-primary-light focus:border-primary-light"
+                  />
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleSetDomain}
+                      variant="primary"
+                      size="sm"
+                      isLoading={isSaving}
+                      loadingText="Saving..."
+                      disabled={!customDomain || isSaving}
+                    >
+                      <span className="flex items-center gap-1">
+                        <div className="i-mdi:check h-4 w-4"></div>
+                        Update
+                      </span>
+                    </Button>
+                    <Button
+                      onClick={handleCancelEdit}
+                      variant="secondary"
+                      size="sm"
+                      disabled={isSaving}
+                    >
+                      <span className="flex items-center gap-1">
+                        <div className="i-mdi:close h-4 w-4"></div>
+                        Cancel
+                      </span>
+                    </Button>
+                  </div>
+                </div>
+                <p className="text-xs text-gray-400 mt-1">
+                  Enter your domain without 'http://' or 'https://' (e.g.,
+                  example.com)
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       ) : (
         <div className="mb-4">
