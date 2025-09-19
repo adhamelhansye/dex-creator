@@ -47,9 +47,7 @@ export async function setupTestDatabases() {
   process.env.ORDERLY_DATABASE_URL = orderlyMysqlUrl;
   process.env.ORDERLY_DATABASE_USER = "test_user";
   process.env.ORDERLY_DATABASE_PASSWORD = "test_password";
-  process.env.NEXUS_DATABASE_URL = nexusMysqlUrl;
-  process.env.NEXUS_DATABASE_USER = "test_user";
-  process.env.NEXUS_DATABASE_PASSWORD = "test_password";
+  process.env.ORDERLY_DATABASE_URL_NEXUS = nexusMysqlUrl;
 
   testPrismaClient = new PrismaClient({
     datasources: {
@@ -64,7 +62,7 @@ export async function setupTestDatabases() {
     env: {
       ...process.env,
       ORDERLY_DATABASE_URL: orderlyMysqlUrl,
-      NEXUS_DATABASE_URL: nexusMysqlUrl,
+      ORDERLY_DATABASE_URL_NEXUS: nexusMysqlUrl,
     },
   });
 

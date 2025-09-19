@@ -250,9 +250,8 @@ process.env.ORDERLY_DATABASE_URL =
   "mysql://test:test@localhost:3306/orderly_test";
 process.env.ORDERLY_DATABASE_USER = "test";
 process.env.ORDERLY_DATABASE_PASSWORD = "test";
-process.env.NEXUS_DATABASE_URL = "mysql://test:test@localhost:3306/nexus_test";
-process.env.NEXUS_DATABASE_USER = "test";
-process.env.NEXUS_DATABASE_PASSWORD = "test";
+process.env.ORDERLY_DATABASE_URL_NEXUS =
+  "mysql://test:test@localhost:3306/nexus_test";
 
 export async function createTestApp(): Promise<Hono> {
   process.env.NODE_ENV = "test";

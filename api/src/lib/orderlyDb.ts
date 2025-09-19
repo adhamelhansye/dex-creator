@@ -115,13 +115,14 @@ async function getNexusDatabaseUrl(): Promise<string> {
   const deploymentEnv = process.env.DEPLOYMENT_ENV;
 
   if (deploymentEnv === "qa" || deploymentEnv === "dev") {
-    const dbUrl = process.env.NEXUS_DATABASE_URL;
-    const dbUser = process.env.NEXUS_DATABASE_USER;
-    const dbPassword = process.env.NEXUS_DATABASE_PASSWORD;
+    const dbUrl = process.env.ORDERLY_DATABASE_URL_NEXUS;
+    const dbUser = process.env.ORDERLY_DATABASE_USER;
+    const dbPassword = process.env.ORDERLY_DATABASE_PASSWORD;
 
     if (!dbUrl || !dbUser || !dbPassword) {
       throw new Error(
-        `Missing required Nexus database environment variables for QA environment. Please set NEXUS_DATABASE_URL, NEXUS_DATABASE_USER, and NEXUS_DATABASE_PASSWORD.`
+        `Missing required Nexus database environment variables for QA environment. Please set ORDERLY_DATABASE_URL_NEXUS, ORDERLY_DATABASE_USER, and     const dbPassword = process.env.ORDERLY_DATABASE_PASSWORD;
+.`
       );
     }
 

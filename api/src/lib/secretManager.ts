@@ -115,7 +115,7 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
     const requiredEnvVars = [
       "DATABASE_URL",
       "ORDERLY_DATABASE_URL",
-      "NEXUS_DATABASE_URL",
+      "ORDERLY_DATABASE_URL_NEXUS",
       "GITHUB_TOKEN",
       "TEMPLATE_PAT",
       "ORDER_RECEIVER_ADDRESS",
@@ -136,7 +136,7 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
     secretCache = {
       databaseUrl: process.env.DATABASE_URL!,
       orderlyDatabaseUrl: process.env.ORDERLY_DATABASE_URL!,
-      nexusDatabaseUrl: process.env.NEXUS_DATABASE_URL!,
+      nexusDatabaseUrl: process.env.ORDERLY_DATABASE_URL_NEXUS!,
       githubToken: process.env.GITHUB_TOKEN!,
       templatePat: process.env.TEMPLATE_PAT!,
       orderReceiverAddress: process.env.ORDER_RECEIVER_ADDRESS!,
@@ -169,7 +169,11 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
   ] = await Promise.all([
     fetchSecret(client, secretNames.databaseUrl, "DATABASE_URL"),
     fetchSecret(client, secretNames.orderlyDatabaseUrl, "ORDERLY_DATABASE_URL"),
-    fetchSecret(client, secretNames.nexusDatabaseUrl, "NEXUS_DATABASE_URL"),
+    fetchSecret(
+      client,
+      secretNames.nexusDatabaseUrl,
+      "ORDERLY_DATABASE_URL_NEXUS"
+    ),
     fetchSecret(client, secretNames.githubToken, "GITHUB_TOKEN"),
     fetchSecret(client, secretNames.templatePat, "TEMPLATE_PAT"),
     fetchSecret(
