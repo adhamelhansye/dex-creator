@@ -139,7 +139,7 @@ export default function CaseStudies() {
             </p>
 
             <div className="flex justify-center">
-              <div className="flex gap-2">
+              <div className="flex flex-wrap justify-center gap-2">
                 {caseStudies.map(study => (
                   <button
                     key={study.id}

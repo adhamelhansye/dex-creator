@@ -302,7 +302,7 @@ export default function Index() {
           <div className="grid md:grid-cols-2 gap-6 max-w-6xl mx-auto">
             <Card className="p-8 b-2 relative overflow-hidden">
               <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
-              <div className="flex items-start gap-6 relative z-10">
+              <div className="flex flex-wrap items-start justify-center gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
                     src="/coins.webp"
@@ -310,11 +310,11 @@ export default function Index() {
                     className="size-32 object-cover"
                   />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-white mb-4">
+                <div className="flex-1 min-w-64">
+                  <h3 className="text-2xl font-semibold text-white mb-4 leading-tight break-words">
                     Trading Communities
                   </h3>
-                  <p className="text-white/80">
+                  <p className="text-white/80 leading-relaxed">
                     Stop shilling ref-links: Launch your own DEX and capture
                     100% of your community's trading fees. Set your own fee
                     structure—premium rates for profit or zero fees for loyalty.
@@ -325,7 +325,7 @@ export default function Index() {
 
             <Card className="p-8 b-2 relative overflow-hidden">
               <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
-              <div className="flex items-start gap-6 relative z-10">
+              <div className="flex flex-wrap items-start justify-center gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
                     src="/meme.webp"
@@ -333,11 +333,11 @@ export default function Index() {
                     className="size-32 object-cover"
                   />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-white mb-4">
+                <div className="flex-1 min-w-64">
+                  <h3 className="text-2xl font-semibold text-white mb-4 leading-tight break-words">
                     Meme Projects
                   </h3>
-                  <p className="text-white/80">
+                  <p className="text-white/80 leading-relaxed">
                     Give your meme token real utility. Launch a community perp
                     dex, use trading fees for token buybacks, and reward your
                     holders with better trading terms. Turn hype into revenue.
@@ -348,7 +348,7 @@ export default function Index() {
 
             <Card className="p-8 b-2 relative overflow-hidden">
               <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
-              <div className="flex items-start gap-6 relative z-10">
+              <div className="flex flex-wrap items-start justify-center gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
                     src="/infra.webp"
@@ -356,11 +356,11 @@ export default function Index() {
                     className="size-32 object-cover"
                   />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-white mb-4">
+                <div className="flex-1 min-w-64">
+                  <h3 className="text-2xl font-semibold text-white mb-4 leading-tight break-words">
                     DeFi Protocols
                   </h3>
-                  <p className="text-white/80">
+                  <p className="text-white/80 leading-relaxed">
                     Add perpetuals to your protocol without months of
                     development. White-label deployment in minutes—your brand,
                     your fees, institutional-grade trading infrastructure.
@@ -371,7 +371,7 @@ export default function Index() {
 
             <Card className="p-8 b-2 relative overflow-hidden">
               <div className="absolute bottom-0 right-0 w-72 h-32 bg-gradient-to-br from-transparent via-transparent to-purple-500/20 pointer-events-none"></div>
-              <div className="flex items-start gap-6 relative z-10">
+              <div className="flex flex-wrap items-start justify-center gap-6 relative z-10">
                 <div className="w-32 h-32 rounded-2xl flex items-center justify-center flex-shrink-0">
                   <img
                     src="/people.webp"
@@ -379,11 +379,11 @@ export default function Index() {
                     className="size-32 object-cover"
                   />
                 </div>
-                <div>
-                  <h3 className="text-2xl font-semibold text-white mb-4">
+                <div className="flex-1 min-w-64">
+                  <h3 className="text-2xl font-semibold text-white mb-4 leading-tight break-words">
                     Everyone
                   </h3>
-                  <p className="text-white/80">
+                  <p className="text-white/80 leading-relaxed">
                     Why trade on someone else's exchange? Launch your own DEX in
                     minutes. Set your fees, customize the experience, trade
                     without limits. Your exchange, your rules.
