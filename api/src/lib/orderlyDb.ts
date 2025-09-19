@@ -184,8 +184,7 @@ function generateBrokerHash(brokerId: string): string {
 
 function convertBasisPointsToDecimal(basisPoints: number): Decimal {
   const actualBasisPoints = basisPoints / 10;
-  const decimal = actualBasisPoints / 10000;
-  return new Decimal(decimal.toFixed(8));
+  return new Decimal(actualBasisPoints.toFixed(8));
 }
 
 export async function addBrokerToOrderlyDb(
