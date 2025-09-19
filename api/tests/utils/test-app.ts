@@ -46,6 +46,39 @@ vi.mock("../../src/lib/orderlyDb", () => ({
       message: "Broker deleted from Orderly database successfully",
     },
   }),
+  getNextBrokerIndex: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      brokerIndex: 2,
+    },
+  }),
+  addBrokerToNexusDb: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      message: "Broker added to Nexus database successfully",
+      brokerIndex: 1,
+    },
+  }),
+  deleteBrokerFromNexusDb: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      message: "Broker deleted from Nexus database successfully",
+    },
+  }),
+  addBrokerToBothDatabases: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      message: "Broker added to both databases successfully",
+      orderlyBrokerIndex: 1,
+      nexusBrokerIndex: 1,
+    },
+  }),
+  deleteBrokerFromBothDatabases: vi.fn().mockResolvedValue({
+    success: true,
+    data: {
+      message: "Broker deleted from both databases successfully",
+    },
+  }),
 }));
 
 vi.mock("../../src/lib/github", () => ({
@@ -211,6 +244,15 @@ process.env.CEREBRAS_API_URL = "https://api.cerebras.ai/v1";
 process.env.BROKER_CREATION_PRIVATE_KEY =
   "0x1234567890123456789012345678901234567890123456789012345678901234";
 process.env.BROKER_CREATION_PRIVATE_KEY_SOL = "test-solana-private-key";
+process.env.ORDER_RECEIVER_ADDRESS =
+  "0x1234567890123456789012345678901234567890";
+process.env.ORDERLY_DATABASE_URL =
+  "mysql://test:test@localhost:3306/orderly_test";
+process.env.ORDERLY_DATABASE_USER = "test";
+process.env.ORDERLY_DATABASE_PASSWORD = "test";
+process.env.NEXUS_DATABASE_URL = "mysql://test:test@localhost:3306/nexus_test";
+process.env.NEXUS_DATABASE_USER = "test";
+process.env.NEXUS_DATABASE_PASSWORD = "test";
 
 export async function createTestApp(): Promise<Hono> {
   process.env.NODE_ENV = "test";

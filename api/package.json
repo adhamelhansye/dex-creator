@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
-    "postinstall": "yarn orderly:generate",
+    "postinstall": "yarn orderly:generate && yarn nexus:generate",
     "dev": "tsx watch src/index.ts",
     "start": "node dist/index.js",
     "typecheck": "tsc --noEmit",
@@ -19,6 +19,9 @@
     "orderly:generate": "prisma generate --schema=./prisma/orderly.schema.prisma",
     "orderly:studio": "prisma studio --schema=./prisma/orderly.schema.prisma",
     "orderly:push": "prisma db push --schema=./prisma/orderly.schema.prisma",
+    "nexus:generate": "prisma generate --schema=./prisma/nexus.schema.prisma",
+    "nexus:studio": "prisma studio --schema=./prisma/nexus.schema.prisma",
+    "nexus:push": "prisma db push --schema=./prisma/nexus.schema.prisma",
     "test": "vitest",
     "test:ui": "vitest --ui",
     "test:run": "vitest run",

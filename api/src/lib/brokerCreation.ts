@@ -12,7 +12,7 @@ import {
   FeeManager__factory,
 } from "../../types/index.js";
 import {
-  addBrokerToOrderlyDb,
+  addBrokerToBothDatabases,
   getBrokerFromOrderlyDb,
   getNextBrokerIndex,
 } from "./orderlyDb.js";
@@ -389,7 +389,7 @@ async function createAutomatedBrokerIdInternal(
       "✅ All simulations passed, adding broker to Orderly database..."
     );
 
-    const orderlyDbResult = await addBrokerToOrderlyDb({
+    const orderlyDbResult = await addBrokerToBothDatabases({
       brokerId: brokerId,
       brokerName: brokerData.brokerName,
       makerFee: brokerData.makerFee,
@@ -402,7 +402,7 @@ async function createAutomatedBrokerIdInternal(
       );
     }
 
-    const brokerIndex = orderlyDbResult.data.brokerIndex;
+    const brokerIndex = orderlyDbResult.data.orderlyBrokerIndex;
     console.log(
       `✅ Broker added to Orderly database with index: ${brokerIndex}`
     );

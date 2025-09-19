@@ -6,11 +6,14 @@ import { MySqlContainer, StartedMySqlContainer } from "@testcontainers/mysql";
 import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 import type { PrismaClient as OrderlyPrismaClient } from "../../src/lib/generated/orderly-client";
+import type { PrismaClient as NexusPrismaClient } from "../../src/lib/generated/nexus-client";
 
 let postgresContainer: StartedPostgreSqlContainer | null = null;
-let mysqlContainer: StartedMySqlContainer | null = null;
+let orderlyMysqlContainer: StartedMySqlContainer | null = null;
+let nexusMysqlContainer: StartedMySqlContainer | null = null;
 let testPrismaClient: PrismaClient | null = null;
 let testOrderlyClient: OrderlyPrismaClient | null = null;
+let testNexusClient: NexusPrismaClient | null = null;
 
 export async function setupTestDatabases() {
   console.log("🚀 Starting test databases...");
@@ -22,18 +25,31 @@ export async function setupTestDatabases() {
     .withExposedPorts(5432)
     .start();
 
-  mysqlContainer = await new MySqlContainer("mysql:8.0")
+  orderlyMysqlContainer = await new MySqlContainer("mysql:8.0")
     .withDatabase("orderly_test")
     .withUsername("test_user")
     .withRootPassword("test_password")
     .withExposedPorts(3306)
     .start();
 
+  nexusMysqlContainer = await new MySqlContainer("mysql:8.0")
+    .withDatabase("nexus_test")
+    .withUsername("test_user")
+    .withRootPassword("test_password")
+    .withExposedPorts(3306)
+    .start();
+
   const postgresUrl = postgresContainer.getConnectionUri();
-  const mysqlUrl = mysqlContainer.getConnectionUri();
+  const orderlyMysqlUrl = orderlyMysqlContainer.getConnectionUri();
+  const nexusMysqlUrl = nexusMysqlContainer.getConnectionUri();
 
   process.env.DATABASE_URL = postgresUrl;
-  process.env.ORDERLY_DATABASE_URL = mysqlUrl;
+  process.env.ORDERLY_DATABASE_URL = orderlyMysqlUrl;
+  process.env.ORDERLY_DATABASE_USER = "test_user";
+  process.env.ORDERLY_DATABASE_PASSWORD = "test_password";
+  process.env.NEXUS_DATABASE_URL = nexusMysqlUrl;
+  process.env.NEXUS_DATABASE_USER = "test_user";
+  process.env.NEXUS_DATABASE_PASSWORD = "test_password";
 
   testPrismaClient = new PrismaClient({
     datasources: {
@@ -43,9 +59,13 @@ export async function setupTestDatabases() {
     },
   });
 
-  execSync("yarn orderly:generate", {
+  execSync("yarn orderly:generate && yarn nexus:generate", {
     cwd: process.cwd(),
-    env: { ...process.env, ORDERLY_DATABASE_URL: mysqlUrl },
+    env: {
+      ...process.env,
+      ORDERLY_DATABASE_URL: orderlyMysqlUrl,
+      NEXUS_DATABASE_URL: nexusMysqlUrl,
+    },
   });
 
   const { PrismaClient: OrderlyPrismaClient } = await import(
@@ -54,7 +74,18 @@ export async function setupTestDatabases() {
   testOrderlyClient = new OrderlyPrismaClient({
     datasources: {
       db: {
-        url: mysqlUrl,
+        url: orderlyMysqlUrl,
+      },
+    },
+  });
+
+  const { PrismaClient: NexusPrismaClient } = await import(
+    "../../src/lib/generated/nexus-client"
+  );
+  testNexusClient = new NexusPrismaClient({
+    datasources: {
+      db: {
+        url: nexusMysqlUrl,
       },
     },
   });
@@ -86,6 +117,21 @@ export async function setupTestDatabases() {
     )
   `;
 
+  await testNexusClient.$executeRaw`
+    CREATE TABLE IF NOT EXISTS broker_info (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      broker_id VARCHAR(64) UNIQUE NOT NULL,
+      created_time TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3),
+      updated_time TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3),
+      broker_name VARCHAR(64) NOT NULL,
+      broker_hash VARCHAR(256) UNIQUE DEFAULT '',
+      base_maker_fee_rate DECIMAL(28, 8) DEFAULT 0.00000000,
+      base_taker_fee_rate DECIMAL(28, 8) DEFAULT 0.00000000,
+      default_maker_fee_rate DECIMAL(28, 8) DEFAULT 0.00000000,
+      default_taker_fee_rate DECIMAL(28, 8) DEFAULT 0.00000000
+    )
+  `;
+
   console.log("✅ Test databases ready!");
 }
 
@@ -100,12 +146,20 @@ export async function cleanupTestDatabases() {
     await testOrderlyClient.$disconnect();
   }
 
+  if (testNexusClient) {
+    await testNexusClient.$disconnect();
+  }
+
   if (postgresContainer) {
     await postgresContainer.stop();
   }
 
-  if (mysqlContainer) {
-    await mysqlContainer.stop();
+  if (orderlyMysqlContainer) {
+    await orderlyMysqlContainer.stop();
+  }
+
+  if (nexusMysqlContainer) {
+    await nexusMysqlContainer.stop();
   }
 
   console.log("✅ Test databases cleaned up!");
@@ -135,13 +189,24 @@ export function getTestOrderlyClient() {
   return testOrderlyClient;
 }
 
+export function getTestNexusClient() {
+  if (!testNexusClient) {
+    throw new Error(
+      "Test Nexus database not initialized. Call setupTestDatabases() first."
+    );
+  }
+  return testNexusClient;
+}
+
 export async function cleanupTestData() {
   const prisma = getTestPrismaClient();
   const orderly = getTestOrderlyClient();
+  const nexus = getTestNexusClient();
 
   await prisma.token.deleteMany();
   await prisma.dex.deleteMany();
   await prisma.user.deleteMany();
 
   await orderly.orderlyBroker.deleteMany();
+  await nexus.nexusBroker.deleteMany();
 }

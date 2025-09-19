@@ -1,0 +1,29 @@
+// This is your Prisma schema file for the Nexus MySQL database
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/lib/generated/nexus-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://dummy:dummy@localhost:3306/dummy"
+}
+
+// Nexus broker model for the Nexus database
+model NexusBroker {
+  id                      BigInt   @id @default(autoincrement()) @db.BigInt
+  brokerId                String   @unique @db.VarChar(64) @map("broker_id")
+  createdTime             DateTime @default(now()) @db.Timestamp(3) @map("created_time")
+  updatedTime             DateTime @default(now()) @updatedAt @db.Timestamp(3) @map("updated_time")
+  brokerName              String   @db.VarChar(64) @map("broker_name")
+  brokerHash              String   @unique @default("") @db.VarChar(256) @map("broker_hash")
+  baseMakerFeeRate        Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("base_maker_fee_rate")
+  baseTakerFeeRate        Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("base_taker_fee_rate")
+  defaultMakerFeeRate     Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("default_maker_fee_rate")
+  defaultTakerFeeRate     Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("default_taker_fee_rate")
+
+  @@map("broker_info")
+}

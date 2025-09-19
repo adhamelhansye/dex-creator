@@ -1,8 +1,9 @@
 import { ethers } from "ethers";
 import { PrismaClient } from "../lib/generated/orderly-client";
+import { PrismaClient as NexusPrismaClient } from "../lib/generated/nexus-client";
 import { Decimal } from "../lib/generated/orderly-client/runtime/library";
-import { SecretManagerServiceClient } from "@google-cloud/secret-manager";
-import { Result } from "./types.js";
+import { getSecret } from "./secretManager";
+import { Result } from "./types";
 
 interface OrderlyBrokerData {
   brokerId: string;
@@ -54,7 +55,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 
     if (!dbUrl || !dbUser || !dbPassword) {
       throw new Error(
-        `Missing required database environment variables for QA environment. Please set ORDERLY_DATABASE_URL, ORDERLY_DATABASE_USER, and ORDERLY_DATABASE_PASSWORD.`
+        `Missing required Orderly database environment variables for QA environment. Please set ORDERLY_DATABASE_URL, ORDERLY_DATABASE_USER, and ORDERLY_DATABASE_PASSWORD.`
       );
     }
 
@@ -66,44 +67,16 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
     }
 
     console.log(
-      `Converted JDBC URL to MySQL URL for QA: ${host}:${port}/${db}`
+      `Converted JDBC URL to MySQL URL for Orderly QA: ${host}:${port}/${db}`
     );
     return mysqlUrl;
   }
 
-  let secretName: string;
-  switch (deploymentEnv) {
-    case "mainnet":
-      secretName =
-        "projects/964694002890/secrets/dex-creator-woo-db-prod-evm/versions/latest";
-      break;
-    case "staging":
-      secretName =
-        "projects/964694002890/secrets/dex-creator-woo-db-staging-evm/versions/latest";
-      break;
-    case "qa":
-    case "dev":
-      throw new Error(
-        `No Google Secret Manager configured for ${deploymentEnv} environment. Please set ORDERLY_DATABASE_URL environment variable.`
-      );
-    default:
-      throw new Error(
-        `Unknown deployment environment: ${deploymentEnv}. Please set ORDERLY_DATABASE_URL environment variable.`
-      );
-  }
-
   try {
-    const client = new SecretManagerServiceClient();
-    console.log(`Fetching secret: ${secretName}`);
+    const secretPayload = await getSecret("orderlyDatabaseUrl");
+    console.log("Fetched Orderly secret payload length:", secretPayload.length);
 
-    const [version] = await client.accessSecretVersion({
-      name: secretName,
-    });
-
-    const payload = version.payload?.data?.toString() || "";
-    console.log("Fetched secret payload length:", payload.length);
-
-    const config: DatabaseConfig = JSON.parse(payload);
+    const config: DatabaseConfig = JSON.parse(secretPayload);
 
     const { host, port, db, params } = parseMysqlUrl(config.url);
 
@@ -112,15 +85,17 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
       mysqlUrl += `?${params}`;
     }
 
-    console.log(`Converted JDBC URL to MySQL URL: ${host}:${port}/${db}`);
+    console.log(
+      `Converted JDBC URL to MySQL URL for Orderly: ${host}:${port}/${db}`
+    );
     return mysqlUrl;
   } catch (error) {
     console.error(
-      "Failed to get database URL from Google Secret Manager:",
+      "Failed to get Orderly database URL from secret manager:",
       error
     );
     throw new Error(
-      `Database connection failed: ${error instanceof Error ? error.message : String(error)}`
+      `Orderly database connection failed: ${error instanceof Error ? error.message : String(error)}`
     );
   }
 }
@@ -128,6 +103,72 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 async function getOrderlyPrismaClient(): Promise<PrismaClient> {
   const databaseUrl = await getOrderlyDatabaseUrl();
   return new PrismaClient({
+    datasources: {
+      db: {
+        url: databaseUrl,
+      },
+    },
+  });
+}
+
+async function getNexusDatabaseUrl(): Promise<string> {
+  const deploymentEnv = process.env.DEPLOYMENT_ENV;
+
+  if (deploymentEnv === "qa" || deploymentEnv === "dev") {
+    const dbUrl = process.env.NEXUS_DATABASE_URL;
+    const dbUser = process.env.NEXUS_DATABASE_USER;
+    const dbPassword = process.env.NEXUS_DATABASE_PASSWORD;
+
+    if (!dbUrl || !dbUser || !dbPassword) {
+      throw new Error(
+        `Missing required Nexus database environment variables for QA environment. Please set NEXUS_DATABASE_URL, NEXUS_DATABASE_USER, and NEXUS_DATABASE_PASSWORD.`
+      );
+    }
+
+    const { host, port, db, params } = parseMysqlUrl(dbUrl);
+
+    let mysqlUrl = `mysql://${dbUser}:${dbPassword}@${host}:${port}/${db}`;
+    if (params) {
+      mysqlUrl += `?${params}`;
+    }
+
+    console.log(
+      `Converted JDBC URL to MySQL URL for Nexus QA: ${host}:${port}/${db}`
+    );
+    return mysqlUrl;
+  }
+
+  try {
+    const secretPayload = await getSecret("nexusDatabaseUrl");
+    console.log("Fetched Nexus secret payload length:", secretPayload.length);
+
+    const config: DatabaseConfig = JSON.parse(secretPayload);
+
+    const { host, port, db, params } = parseMysqlUrl(config.url);
+
+    let mysqlUrl = `mysql://${config.username}:${config.pwd}@${host}:${port}/${db}`;
+    if (params) {
+      mysqlUrl += `?${params}`;
+    }
+
+    console.log(
+      `Converted JDBC URL to MySQL URL for Nexus: ${host}:${port}/${db}`
+    );
+    return mysqlUrl;
+  } catch (error) {
+    console.error(
+      "Failed to get Nexus database URL from secret manager:",
+      error
+    );
+    throw new Error(
+      `Nexus database connection failed: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
+}
+
+async function getNexusPrismaClient(): Promise<NexusPrismaClient> {
+  const databaseUrl = await getNexusDatabaseUrl();
+  return new NexusPrismaClient({
     datasources: {
       db: {
         url: databaseUrl,
@@ -382,4 +423,202 @@ export async function deleteBrokerFromOrderlyDb(
   } finally {
     await orderlyPrisma.$disconnect();
   }
+}
+
+export async function addBrokerToNexusDb(
+  data: OrderlyBrokerData
+): Promise<Result<{ message: string; brokerIndex: number }>> {
+  const nexusPrisma = await getNexusPrismaClient();
+
+  try {
+    const brokerHash = generateBrokerHash(data.brokerId);
+    const baseMakerFee = convertBasisPointsToDecimal(0);
+    const baseTakerFee = convertBasisPointsToDecimal(25);
+    const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
+    const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
+
+    const createdBroker = await nexusPrisma.nexusBroker.create({
+      data: {
+        brokerId: data.brokerId,
+        brokerName: data.brokerName,
+        brokerHash: brokerHash,
+        baseMakerFeeRate: baseMakerFee,
+        baseTakerFeeRate: baseTakerFee,
+        defaultMakerFeeRate: defaultMakerFee,
+        defaultTakerFeeRate: defaultTakerFee,
+      },
+    });
+
+    const brokerIndex = Number(createdBroker.id);
+    console.log(
+      `✅ Successfully added broker ${data.brokerId} to Nexus database with index ${brokerIndex}`
+    );
+
+    return {
+      success: true,
+      data: {
+        message: `Broker ${data.brokerId} successfully added to Nexus database`,
+        brokerIndex,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error adding broker to Nexus database:", error);
+
+    if (error instanceof Error && error.message.includes("Unique constraint")) {
+      return {
+        success: false,
+        error: `Broker ID ${data.brokerId} already exists in Nexus database`,
+      };
+    }
+
+    return {
+      success: false,
+      error: `Failed to add broker to Nexus database: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await nexusPrisma.$disconnect();
+  }
+}
+
+export async function deleteBrokerFromNexusDb(
+  brokerId: string
+): Promise<Result<{ message: string }>> {
+  const nexusPrisma = await getNexusPrismaClient();
+
+  try {
+    await nexusPrisma.nexusBroker.delete({
+      where: {
+        brokerId: brokerId,
+      },
+    });
+
+    console.log(
+      `✅ Successfully deleted broker ${brokerId} from Nexus database`
+    );
+
+    return {
+      success: true,
+      data: {
+        message: `Broker ${brokerId} successfully deleted from Nexus database`,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error deleting broker from Nexus database:", error);
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Record to delete does not exist")
+    ) {
+      return {
+        success: false,
+        error: `Broker ID ${brokerId} not found in Nexus database`,
+      };
+    }
+
+    return {
+      success: false,
+      error: `Failed to delete broker from Nexus database: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await nexusPrisma.$disconnect();
+  }
+}
+
+export async function addBrokerToBothDatabases(
+  data: OrderlyBrokerData
+): Promise<
+  Result<{
+    message: string;
+    orderlyBrokerIndex: number;
+    nexusBrokerIndex: number;
+  }>
+> {
+  console.log(
+    `🔄 Adding broker ${data.brokerId} to both Orderly and Nexus databases`
+  );
+
+  const orderlyResult = await addBrokerToOrderlyDb(data);
+  if (!orderlyResult.success) {
+    return {
+      success: false,
+      error: `Failed to add to Orderly database: ${orderlyResult.error}`,
+    };
+  }
+
+  const nexusResult = await addBrokerToNexusDb(data);
+  if (!nexusResult.success) {
+    console.log(
+      `🔄 Rolling back Orderly database insertion due to Nexus failure`
+    );
+    const rollbackResult = await deleteBrokerFromOrderlyDb(data.brokerId);
+    if (!rollbackResult.success) {
+      console.error(
+        `❌ Failed to rollback Orderly database: ${rollbackResult.error}`
+      );
+    }
+
+    return {
+      success: false,
+      error: `Failed to add to Nexus database: ${nexusResult.error}`,
+    };
+  }
+
+  console.log(
+    `✅ Successfully added broker ${data.brokerId} to both databases. Orderly index: ${orderlyResult.data.brokerIndex}, Nexus index: ${nexusResult.data.brokerIndex}`
+  );
+
+  return {
+    success: true,
+    data: {
+      message: `Broker ${data.brokerId} successfully added to both Orderly and Nexus databases`,
+      orderlyBrokerIndex: orderlyResult.data.brokerIndex,
+      nexusBrokerIndex: nexusResult.data.brokerIndex,
+    },
+  };
+}
+
+export async function deleteBrokerFromBothDatabases(
+  brokerId: string
+): Promise<Result<{ message: string }>> {
+  console.log(
+    `🔄 Deleting broker ${brokerId} from both Orderly and Nexus databases`
+  );
+
+  const results = await Promise.allSettled([
+    deleteBrokerFromOrderlyDb(brokerId),
+    deleteBrokerFromNexusDb(brokerId),
+  ]);
+
+  const orderlyResult = results[0];
+  const nexusResult = results[1];
+
+  const errors: string[] = [];
+
+  if (orderlyResult.status === "rejected") {
+    errors.push(`Orderly database error: ${orderlyResult.reason}`);
+  } else if (!orderlyResult.value.success) {
+    errors.push(`Orderly database: ${orderlyResult.value.error}`);
+  }
+
+  if (nexusResult.status === "rejected") {
+    errors.push(`Nexus database error: ${nexusResult.reason}`);
+  } else if (!nexusResult.value.success) {
+    errors.push(`Nexus database: ${nexusResult.value.error}`);
+  }
+
+  if (errors.length > 0) {
+    return {
+      success: false,
+      error: `Failed to delete from databases: ${errors.join("; ")}`,
+    };
+  }
+
+  console.log(`✅ Successfully deleted broker ${brokerId} from both databases`);
+
+  return {
+    success: true,
+    data: {
+      message: `Broker ${brokerId} successfully deleted from both Orderly and Nexus databases`,
+    },
+  };
 }

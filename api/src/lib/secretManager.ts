@@ -10,6 +10,8 @@ let initializationPromise: Promise<SecretConfig> | null = null;
 
 export interface SecretConfig {
   databaseUrl: string;
+  orderlyDatabaseUrl: string;
+  nexusDatabaseUrl: string;
   githubToken: string;
   templatePat: string;
   orderReceiverAddress: string;
@@ -22,6 +24,8 @@ function getSecretNames(deploymentEnv: string): Record<string, string> {
     case "mainnet":
       return {
         databaseUrl: `projects/964694002890/secrets/dex-creator-postgres-db-prod-evm/versions/latest`,
+        orderlyDatabaseUrl: `projects/964694002890/secrets/dex-creator-woo-db-prod-evm/versions/latest`,
+        nexusDatabaseUrl: `projects/964694002890/secrets/dex-creator-nexus-db-prod-evm/versions/latest`,
         githubToken: `projects/964694002890/secrets/dex-creator-github-token-prod-evm/versions/latest`,
         templatePat: `projects/964694002890/secrets/dex-creator-template-pat-prod-evm/versions/latest`,
         orderReceiverAddress: `projects/964694002890/secrets/dex-creator-order-receiver-address-prod-evm/versions/latest`,
@@ -31,6 +35,8 @@ function getSecretNames(deploymentEnv: string): Record<string, string> {
     case "staging":
       return {
         databaseUrl: `projects/964694002890/secrets/dex-creator-postgres-db-staging-evm/versions/latest`,
+        orderlyDatabaseUrl: `projects/964694002890/secrets/dex-creator-woo-db-staging-evm/versions/latest`,
+        nexusDatabaseUrl: `projects/964694002890/secrets/dex-creator-nexus-db-staging-evm/versions/latest`,
         githubToken: `projects/964694002890/secrets/dex-creator-github-token-staging-evm/versions/latest`,
         templatePat: `projects/964694002890/secrets/dex-creator-template-pat-staging-evm/versions/latest`,
         orderReceiverAddress: `projects/964694002890/secrets/dex-creator-order-receiver-address-staging-evm/versions/latest`,
@@ -108,6 +114,8 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
 
     const requiredEnvVars = [
       "DATABASE_URL",
+      "ORDERLY_DATABASE_URL",
+      "NEXUS_DATABASE_URL",
       "GITHUB_TOKEN",
       "TEMPLATE_PAT",
       "ORDER_RECEIVER_ADDRESS",
@@ -127,6 +135,8 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
 
     secretCache = {
       databaseUrl: process.env.DATABASE_URL!,
+      orderlyDatabaseUrl: process.env.ORDERLY_DATABASE_URL!,
+      nexusDatabaseUrl: process.env.NEXUS_DATABASE_URL!,
       githubToken: process.env.GITHUB_TOKEN!,
       templatePat: process.env.TEMPLATE_PAT!,
       orderReceiverAddress: process.env.ORDER_RECEIVER_ADDRESS!,
@@ -149,6 +159,8 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
 
   const [
     databaseUrl,
+    orderlyDatabaseUrl,
+    nexusDatabaseUrl,
     githubToken,
     templatePat,
     orderReceiverAddress,
@@ -156,6 +168,8 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
     brokerCreationPrivateKeySol,
   ] = await Promise.all([
     fetchSecret(client, secretNames.databaseUrl, "DATABASE_URL"),
+    fetchSecret(client, secretNames.orderlyDatabaseUrl, "ORDERLY_DATABASE_URL"),
+    fetchSecret(client, secretNames.nexusDatabaseUrl, "NEXUS_DATABASE_URL"),
     fetchSecret(client, secretNames.githubToken, "GITHUB_TOKEN"),
     fetchSecret(client, secretNames.templatePat, "TEMPLATE_PAT"),
     fetchSecret(
@@ -177,6 +191,8 @@ async function initializeSecretsInternal(): Promise<SecretConfig> {
 
   secretCache = {
     databaseUrl,
+    orderlyDatabaseUrl,
+    nexusDatabaseUrl,
     githubToken,
     templatePat,
     orderReceiverAddress,
@@ -197,6 +213,8 @@ export function getSecretConfig(): SecretConfig {
 
   return {
     databaseUrl: secretCache.databaseUrl,
+    orderlyDatabaseUrl: secretCache.orderlyDatabaseUrl,
+    nexusDatabaseUrl: secretCache.nexusDatabaseUrl,
     githubToken: secretCache.githubToken,
     templatePat: secretCache.templatePat,
     orderReceiverAddress: secretCache.orderReceiverAddress,

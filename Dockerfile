@@ -27,6 +27,7 @@ COPY api/types/ ./api/types/
 WORKDIR /app/api
 RUN yarn db:generate && \
     yarn orderly:generate && \
+    yarn nexus:generate && \
     yarn build && \
     # Clean up build deps to reduce image size
     apk del .build-deps

@@ -10,9 +10,9 @@ import {
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 
-import { getCurrentEnvironment } from "../models/dex.js";
-import { deleteBrokerId } from "../lib/brokerCreation.js";
-import { deleteBrokerFromOrderlyDb } from "../lib/orderlyDb.js";
+import { getCurrentEnvironment } from "../models/dex";
+import { deleteBrokerId } from "../lib/brokerCreation";
+import { deleteBrokerFromBothDatabases } from "../lib/orderlyDb";
 import {
   setupRepositoryWithSingleCommit,
   renameRepository,
@@ -378,7 +378,8 @@ adminRoutes.post("/broker/delete", async (c: AdminContext) => {
       console.log(
         `🗑️ Attempting to delete broker ${brokerId} from Orderly database...`
       );
-      const orderlyDeletionResult = await deleteBrokerFromOrderlyDb(brokerId);
+      const orderlyDeletionResult =
+        await deleteBrokerFromBothDatabases(brokerId);
 
       if (!orderlyDeletionResult.success) {
         console.warn(
