@@ -458,7 +458,7 @@ export const ENVIRONMENT_CONFIGS: {
       vaultAddress: "0x0EaC556c0C2321BA25b9DC01e4e3c95aD5CDCd2f",
     },
     "arbitrum-sepolia": {
-      vaultAddress: "0xB15a3a4D451311e03e34d9331C695078Ad5Cf5F1",
+      vaultAddress: "0x0EaC556c0C2321BA25b9DC01e4e3c95aD5CDCd2f",
     },
     bnbTestnet: {
       vaultAddress: "0xaf2036D5143219fa00dDd90e7A2dbF3E36dba050",
