@@ -22,7 +22,7 @@ export type ChainNameMainnet =
   | "bnb"
   | "optimism"
   | "base"
-  | "polygon"
+  // | "polygon"
   | "mantle"
   | "avalanche"
   | "sei"
@@ -122,19 +122,19 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     ],
     blockExplorerUrl: "https://basescan.org",
   },
-  polygon: {
-    id: "polygon",
-    name: "Polygon",
-    chainId: 137,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://polygon-public.nodies.app",
-    fallbackRpcUrls: [
-      "https://1rpc.io/matic",
-      "https://polygon-bor-rpc.publicnode.com",
-    ],
-    blockExplorerUrl: "https://polygonscan.com",
-  },
+  // polygon: {
+  //   id: "polygon",
+  //   name: "Polygon",
+  //   chainId: 137,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://polygon-public.nodies.app",
+  //   fallbackRpcUrls: [
+  //     "https://1rpc.io/matic",
+  //     "https://polygon-bor-rpc.publicnode.com",
+  //   ],
+  //   blockExplorerUrl: "https://polygonscan.com",
+  // },
   mantle: {
     id: "mantle",
     name: "Mantle",
@@ -412,9 +412,9 @@ export const ENVIRONMENT_CONFIGS: {
     base: {
       vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     },
-    polygon: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
+    // polygon: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
     mantle: {
       vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     },
