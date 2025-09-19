@@ -18,26 +18,24 @@ export interface SecretConfig {
 }
 
 function getSecretNames(deploymentEnv: string): Record<string, string> {
-  const baseProject = "projects/964694002890/secrets";
-
   switch (deploymentEnv) {
     case "mainnet":
       return {
-        databaseUrl: `${baseProject}/dex-creator-postgres-db-prod-evm/versions/latest`,
-        githubToken: `${baseProject}/dex-creator-github-token-prod-evm/versions/latest`,
-        templatePat: `${baseProject}/dex-creator-template-pat-prod-evm/versions/latest`,
-        orderReceiverAddress: `${baseProject}/dex-creator-order-receiver-address-prod-evm/versions/latest`,
-        brokerCreationPrivateKey: `${baseProject}/dex-creator-broker-creation-private-key-prod-evm/versions/latest`,
-        brokerCreationPrivateKeySol: `${baseProject}/dex-creator-broker-creation-private-key-sol-prod-evm/versions/latest`,
+        databaseUrl: `projects/964694002890/secrets/dex-creator-postgres-db-prod-evm/versions/latest`,
+        githubToken: `projects/964694002890/secrets/dex-creator-github-token-prod-evm/versions/latest`,
+        templatePat: `projects/964694002890/secrets/dex-creator-template-pat-prod-evm/versions/latest`,
+        orderReceiverAddress: `projects/964694002890/secrets/dex-creator-order-receiver-address-prod-evm/versions/latest`,
+        brokerCreationPrivateKey: `projects/100655379011/secrets/dex-creator-broker-creation-private-key-prod-evm/versions/latest`,
+        brokerCreationPrivateKeySol: `projects/100655379011/secrets/dex-creator-broker-creation-private-key-sol-prod-evm/versions/latest`,
       };
     case "staging":
       return {
-        databaseUrl: `${baseProject}/dex-creator-postgres-db-staging-evm/versions/latest`,
-        githubToken: `${baseProject}/dex-creator-github-token-staging-evm/versions/latest`,
-        templatePat: `${baseProject}/dex-creator-template-pat-staging-evm/versions/latest`,
-        orderReceiverAddress: `${baseProject}/dex-creator-order-receiver-address-staging-evm/versions/latest`,
-        brokerCreationPrivateKey: `${baseProject}/dex-creator-broker-creation-private-key-staging-evm/versions/latest`,
-        brokerCreationPrivateKeySol: `${baseProject}/dex-creator-broker-creation-private-key-sol-staging-evm/versions/latest`,
+        databaseUrl: `projects/964694002890/secrets/dex-creator-postgres-db-staging-evm/versions/latest`,
+        githubToken: `projects/964694002890/secrets/dex-creator-github-token-staging-evm/versions/latest`,
+        templatePat: `projects/964694002890/secrets/dex-creator-template-pat-staging-evm/versions/latest`,
+        orderReceiverAddress: `projects/964694002890/secrets/dex-creator-order-receiver-address-staging-evm/versions/latest`,
+        brokerCreationPrivateKey: `projects/964694002890/secrets/dex-creator-broker-creation-private-key-staging-evm/versions/latest`,
+        brokerCreationPrivateKeySol: `projects/964694002890/secrets/dex-creator-broker-creation-private-key-sol-staging-evm/versions/latest`,
       };
     default:
       return {};
