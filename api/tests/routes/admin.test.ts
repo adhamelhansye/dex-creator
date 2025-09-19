@@ -120,4 +120,87 @@ describe("Admin Routes", () => {
       expect(body).toHaveProperty("error");
     });
   });
+
+  describe("POST /api/admin/dex/:id/broker-id", () => {
+    it("should update broker ID for admin", async () => {
+      const request = createAdminRequest(app, adminUser.id);
+
+      const dex = await testDataFactory.createTestDex(regularUser.id, {
+        brokerName: "DEX for Broker ID Update",
+      });
+
+      const brokerIdData = {
+        brokerId: "valid-broker-123",
+      };
+
+      const response = await request.post(
+        `/api/admin/dex/${dex.id}/broker-id`,
+        brokerIdData
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(200);
+      expect(body).toHaveProperty("brokerId", "valid-broker-123");
+      expect(body).toHaveProperty("id", dex.id);
+    });
+
+    it("should return 400 for invalid broker ID format", async () => {
+      const request = createAdminRequest(app, adminUser.id);
+
+      const dex = await testDataFactory.createTestDex(regularUser.id, {
+        brokerName: "DEX for Broker ID Update",
+      });
+
+      const brokerIdData = {
+        brokerId: "INVALID_BROKER_ID!",
+      };
+
+      const response = await request.post(
+        `/api/admin/dex/${dex.id}/broker-id`,
+        brokerIdData
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body).toHaveProperty("error");
+    });
+
+    it("should return 404 if DEX not found", async () => {
+      const request = createAdminRequest(app, adminUser.id);
+
+      const brokerIdData = {
+        brokerId: "valid-broker-123",
+      };
+
+      const response = await request.post(
+        "/api/admin/dex/non-existent-id/broker-id",
+        brokerIdData
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(404);
+      expect(body).toHaveProperty("message", "DEX not found");
+    });
+
+    it("should return 403 for regular user", async () => {
+      const request = createAuthenticatedRequest(app, regularUser.id);
+
+      const dex = await testDataFactory.createTestDex(regularUser.id, {
+        brokerName: "DEX for Broker ID Update",
+      });
+
+      const brokerIdData = {
+        brokerId: "valid-broker-123",
+      };
+
+      const response = await request.post(
+        `/api/admin/dex/${dex.id}/broker-id`,
+        brokerIdData
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(403);
+      expect(body).toHaveProperty("error");
+    });
+  });
 });

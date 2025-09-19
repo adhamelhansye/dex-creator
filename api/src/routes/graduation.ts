@@ -27,6 +27,10 @@ const verifyTxSchema = z.object({
     .regex(
       /^[a-z0-9_-]+$/,
       "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
+    )
+    .refine(
+      value => !value.includes("orderly"),
+      "Broker ID cannot contain 'orderly'"
     ),
   makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
   takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units

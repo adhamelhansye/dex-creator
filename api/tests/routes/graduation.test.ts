@@ -90,6 +90,35 @@ describe("Graduation Routes", () => {
       expect(body).toHaveProperty("error");
     });
 
+    it("should return 400 for broker ID containing 'orderly'", async () => {
+      const request = createAuthenticatedRequest(app, testUser.id);
+
+      await testDataFactory.createTestDex(testUser.id, {
+        repoUrl: "https://github.com/test/test-repo",
+      });
+
+      const graduationData = {
+        txHash:
+          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        chain: "ethereum",
+        brokerId: "my-orderly-dex",
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
+      };
+
+      const response = await request.post(
+        "/api/graduation/verify-tx",
+        graduationData
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body).toHaveProperty("success", false);
+      expect(body).toHaveProperty("error");
+      expect(body.error.issues[0].message).toContain("orderly");
+    });
+
     it("should return 400 for invalid fee values", async () => {
       const request = createAuthenticatedRequest(app, testUser.id);
 

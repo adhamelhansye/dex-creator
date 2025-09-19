@@ -106,6 +106,10 @@ export const validateBrokerId =
       return "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores";
     }
 
+    if (trimmedValue.includes("orderly")) {
+      return "Broker ID cannot contain 'orderly'";
+    }
+
     if (existingBrokerIds.includes(trimmedValue)) {
       return "This broker ID is already taken. Please choose another one.";
     }
