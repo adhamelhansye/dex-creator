@@ -307,11 +307,19 @@ export async function getNextBrokerIndex(): Promise<
   const orderlyPrisma = await getOrderlyPrismaClient();
 
   try {
-    const brokerCount = await orderlyPrisma.orderlyBroker.count();
-    const nextBrokerIndex = brokerCount + 1;
+    const lastBroker = await orderlyPrisma.orderlyBroker.findFirst({
+      orderBy: {
+        id: "desc",
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    const nextBrokerIndex = lastBroker ? Number(lastBroker.id) + 1 : 1;
 
     console.log(
-      `📍 Current broker count: ${brokerCount}, next broker index will be: ${nextBrokerIndex}`
+      `📍 Last broker ID: ${lastBroker?.id || "none"}, next broker index will be: ${nextBrokerIndex}`
     );
 
     return {
