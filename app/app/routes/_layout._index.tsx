@@ -71,7 +71,7 @@ export default function Index() {
               variant="secondary"
               size="lg"
               as="a"
-              href="https://orderly.network/docs"
+              href="https://orderly.network/docs/introduction/getting-started/what-is-orderly"
               target="_blank"
               rel="noopener noreferrer"
             >
