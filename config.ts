@@ -55,6 +55,7 @@ export interface ChainConfig {
   isTestnet: boolean;
   chainType: ChainType;
   rpcUrl: string;
+  fallbackRpcUrls?: string[];
   blockExplorerUrl: string;
 }
 
@@ -66,6 +67,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://eth.llamarpc.com",
+    fallbackRpcUrls: [
+      "https://1rpc.io/eth",
+      "https://ethereum-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://etherscan.io",
   },
   arbitrum: {
@@ -75,6 +80,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://arb1.arbitrum.io/rpc",
+    fallbackRpcUrls: [
+      "https://1rpc.io/arb",
+      "https://arbitrum-one-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://arbiscan.io",
   },
   bnb: {
@@ -84,6 +93,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://binance.llamarpc.com",
+    fallbackRpcUrls: ["https://1rpc.io/bnb", "https://bsc-rpc.publicnode.com"],
     blockExplorerUrl: "https://bscscan.com",
   },
   optimism: {
@@ -93,6 +103,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://mainnet.optimism.io",
+    fallbackRpcUrls: [
+      "https://1rpc.io/op",
+      "https://optimism-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://optimistic.etherscan.io",
   },
   base: {
@@ -102,6 +116,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://base.llamarpc.com",
+    fallbackRpcUrls: [
+      "https://1rpc.io/base",
+      "https://base-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://basescan.org",
   },
   polygon: {
@@ -111,6 +129,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://polygon-public.nodies.app",
+    fallbackRpcUrls: [
+      "https://1rpc.io/matic",
+      "https://polygon-bor-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://polygonscan.com",
   },
   mantle: {
@@ -120,6 +142,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://rpc.mantle.xyz",
+    fallbackRpcUrls: [
+      "https://1rpc.io/mantle",
+      "https://mantle-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://mantlescan.xyz",
   },
   avalanche: {
@@ -129,6 +155,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://avalanche.therpc.io",
+    fallbackRpcUrls: [
+      "https://1rpc.io/avax/c",
+      "https://avalanche-c-chain-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://avascan.info",
   },
   sei: {
@@ -138,6 +168,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://sei.therpc.io",
+    fallbackRpcUrls: ["https://sei-public.nodies.app", "https://sei.drpc.org"],
     blockExplorerUrl: "https://seiscan.io",
   },
   morph: {
@@ -147,6 +178,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://rpc.morphl2.io",
+    fallbackRpcUrls: ["https://rpc-quicknode.morphl2.io"],
     blockExplorerUrl: "https://morphscan.io",
   },
   sonic: {
@@ -156,6 +188,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://rpc.soniclabs.com",
+    fallbackRpcUrls: [
+      "https://sonic.therpc.io",
+      "https://sonic-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://sonicscan.org",
   },
   berachain: {
@@ -165,6 +201,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://rpc.berachain.com",
+    fallbackRpcUrls: [
+      "https://berachain.therpc.io",
+      "https://berachain-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://berascan.com",
   },
   story: {
@@ -174,6 +214,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://mainnet.storyrpc.io",
+    fallbackRpcUrls: ["https://rpc.ankr.com/story_mainnet"],
     blockExplorerUrl: "https://explorer.story.foundation",
   },
   mode: {
@@ -183,6 +224,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://mode.drpc.org",
+    fallbackRpcUrls: ["https://mainnet.mode.network"],
     blockExplorerUrl: "https://modescan.io",
   },
   plume: {
@@ -201,6 +243,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://api.mainnet.abs.xyz",
+    fallbackRpcUrls: ["https://abstract.drpc.org"],
     blockExplorerUrl: "https://explorer.mainnet.abs.xyz",
   },
   sepolia: {
@@ -210,6 +253,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: true,
     chainType: "EVM",
     rpcUrl: "https://eth-sepolia.public.blastapi.io",
+    fallbackRpcUrls: [
+      "https://1rpc.io/sepolia",
+      "https://ethereum-sepolia-rpc.publicnode.com",
+    ],
     blockExplorerUrl: "https://sepolia.etherscan.io",
   },
   "arbitrum-sepolia": {

@@ -7,6 +7,7 @@ import {
   type ChainName,
 } from "../../../config";
 import { getSecret } from "../lib/secretManager.js";
+import { createProvider } from "../lib/fallbackProvider.js";
 
 async function withRPCTimeout<T>(
   promise: Promise<T>,
@@ -82,13 +83,7 @@ export async function verifyOrderTransaction(
       };
     }
 
-    const network = ethers.Network.from({
-      chainId: chainConfig.chainId,
-      name: chainConfig.name,
-    });
-    const provider = new ethers.JsonRpcProvider(chainConfig.rpcUrl, network, {
-      staticNetwork: network,
-    });
+    const provider = createProvider(chain as ChainName, true);
 
     await new Promise(resolve => setTimeout(resolve, 5_000));
     const receipt = await withRPCTimeout(

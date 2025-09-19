@@ -17,6 +17,7 @@ import {
   getNextBrokerIndex,
 } from "./orderlyDb.js";
 import { getSecret } from "./secretManager.js";
+import { createProvider } from "./fallbackProvider.js";
 
 import * as anchor from "@coral-xyz/anchor";
 import { SystemProgram } from "@solana/web3.js";
@@ -142,18 +143,12 @@ function getSolanaKeypair(): anchor.web3.Keypair {
   return solanaKeypair;
 }
 
-function getEvmProvider(chainName: string): ethers.JsonRpcProvider {
+function getEvmProvider(
+  chainName: string
+): ethers.FallbackProvider | ethers.JsonRpcProvider {
   ensureInitialized();
 
-  const chainInfo = ALL_CHAINS[chainName as ChainName];
-  const network = ethers.Network.from({
-    chainId: chainInfo.chainId,
-    name: chainInfo.name,
-  });
-  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
-    staticNetwork: network,
-  });
-  return provider;
+  return createProvider(chainName as ChainName, true);
 }
 
 function getSolanaConnection(
@@ -514,18 +509,7 @@ export async function setBrokerAccountId(
       throw new Error(`Simulation failed: ${simulationResult.error}`);
     }
 
-    const orderlyChainConfig = ALL_CHAINS[orderlyChainName];
-    const network = ethers.Network.from({
-      chainId: orderlyChainConfig.chainId,
-      name: orderlyChainConfig.name,
-    });
-    const provider = new ethers.JsonRpcProvider(
-      orderlyChainConfig.rpcUrl,
-      network,
-      {
-        staticNetwork: network,
-      }
-    );
+    const provider = createProvider(orderlyChainName as ChainName, true);
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
 
     const feeManager = FeeManager__factory.connect(
@@ -541,10 +525,11 @@ export async function setBrokerAccountId(
       `Successfully set broker account ID. Transaction hash: ${tx.hash}`
     );
 
+    const orderlyChainId = ALL_CHAINS[orderlyChainName as ChainName].chainId;
     return {
       success: true,
       brokerId,
-      transactionHashes: { [orderlyChainConfig.chainId]: tx.hash },
+      transactionHashes: { [orderlyChainId]: tx.hash },
     };
   } catch (error) {
     console.error("Failed to set broker account ID:", error);
@@ -565,14 +550,7 @@ async function simulateVaultTransaction(
       throw new Error("Vault address not configured for this chain");
     }
 
-    const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const network = ethers.Network.from({
-      chainId: chainInfo.chainId,
-      name: chainInfo.name,
-    });
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
-      staticNetwork: network,
-    });
+    const provider = createProvider(chainName as ChainName, true);
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
@@ -617,14 +595,7 @@ async function simulateVaultManagerTransaction(
       throw new Error("VaultManager address not configured for Orderly L2");
     }
 
-    const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const network = ethers.Network.from({
-      chainId: chainInfo.chainId,
-      name: chainInfo.name,
-    });
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
-      staticNetwork: network,
-    });
+    const provider = createProvider(chainName as ChainName, true);
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
@@ -673,14 +644,7 @@ async function simulateFeeManagerTransaction(
       throw new Error("FeeManager address not configured for Orderly L2");
     }
 
-    const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const network = ethers.Network.from({
-      chainId: chainInfo.chainId,
-      name: chainInfo.name,
-    });
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
-      staticNetwork: network,
-    });
+    const provider = createProvider(chainName as ChainName, true);
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const feeManager = FeeManager__factory.connect(
       chainConfig.feeManagerAddress,
@@ -830,11 +794,7 @@ async function executeVaultTransaction(
     throw new Error("Vault address not configured for this chain");
   }
 
-  const chainInfo = ALL_CHAINS[chainName as ChainName];
-  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
-    chainId: chainInfo.chainId,
-    name: chainInfo.name,
-  });
+  const provider = createProvider(chainName as ChainName, true);
   const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
@@ -1601,14 +1561,7 @@ async function simulateL1Deletion(
       throw new Error("Vault address not configured for this chain");
     }
 
-    const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const network = ethers.Network.from({
-      chainId: chainInfo.chainId,
-      name: chainInfo.name,
-    });
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
-      staticNetwork: network,
-    });
+    const provider = createProvider(chainName as ChainName, true);
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
@@ -1653,14 +1606,7 @@ async function simulateOrderlyDeletion(
       throw new Error("VaultManager address not configured for Orderly L2");
     }
 
-    const chainInfo = ALL_CHAINS[chainName as ChainName];
-    const network = ethers.Network.from({
-      chainId: chainInfo.chainId,
-      name: chainInfo.name,
-    });
-    const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, network, {
-      staticNetwork: network,
-    });
+    const provider = createProvider(chainName as ChainName, true);
     const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
     const vaultManager = VaultManager__factory.connect(
       chainConfig.vaultManagerAddress,
@@ -1807,11 +1753,7 @@ async function executeL1Deletion(
     throw new Error("Vault address not configured for this chain");
   }
 
-  const chainInfo = ALL_CHAINS[chainName as ChainName];
-  const provider = new ethers.JsonRpcProvider(chainInfo.rpcUrl, {
-    chainId: chainInfo.chainId,
-    name: chainInfo.name,
-  });
+  const provider = createProvider(chainName as ChainName, true);
   const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
   const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
 
