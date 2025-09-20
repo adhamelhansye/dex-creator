@@ -2,9 +2,11 @@
 /* tslint:disable */
 /* eslint-disable */
 export type { FeeManager } from "./FeeManager";
+export type { SolConnector } from "./SolConnector";
 export type { Vault } from "./Vault";
 export type { VaultManager } from "./VaultManager";
 export * as factories from "./factories";
 export { FeeManager__factory } from "./factories/FeeManager__factory";
+export { SolConnector__factory } from "./factories/SolConnector__factory";
 export { Vault__factory } from "./factories/Vault__factory";
 export { VaultManager__factory } from "./factories/VaultManager__factory";

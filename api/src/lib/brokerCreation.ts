@@ -10,6 +10,7 @@ import {
   Vault__factory,
   VaultManager__factory,
   FeeManager__factory,
+  SolConnector__factory,
 } from "../../types/index.js";
 import {
   addBrokerToBothDatabases,
@@ -368,6 +369,16 @@ async function createAutomatedBrokerIdInternal(
       }
     }
 
+    for (const [chainName, chainConfig] of evmChains) {
+      if (chainConfig.solConnectorAddress) {
+        simulationPromises.push(
+          simulateSolConnectorSetup(chainConfig, brokerId, chainName).then(
+            result => ({ chainName, result })
+          )
+        );
+      }
+    }
+
     const simulationResults = await Promise.all(simulationPromises);
 
     const failedSimulations = simulationResults.filter(
@@ -426,6 +437,17 @@ async function createAutomatedBrokerIdInternal(
           executeVaultManagerTransaction(chainConfig, brokerId, chainName).then(
             txHash => ({ chainId, txHash })
           )
+        );
+      }
+
+      if (chainConfig.solConnectorAddress) {
+        executionPromises.push(
+          executeSolConnectorTransaction(
+            chainConfig,
+            brokerId,
+            brokerIndex,
+            chainName
+          ).then(txHash => ({ chainId, txHash }))
         );
       }
     }
@@ -785,6 +807,71 @@ async function simulateSolanaVaultTransaction(
   }
 }
 
+async function simulateSolConnectorSetup(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  chainName: string
+): Promise<SimulationResult> {
+  try {
+    if (!chainConfig.solConnectorAddress) {
+      throw new Error("SolConnector address not configured for this chain");
+    }
+
+    const provider = createProvider(chainName as ChainName, true);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const solConnector = SolConnector__factory.connect(
+      chainConfig.solConnectorAddress,
+      wallet
+    );
+
+    const brokerHash = getBrokerHash(brokerId);
+
+    const existingIndex = await solConnector.brokerHash2Index(brokerHash);
+    if (existingIndex > 0n) {
+      throw new Error(
+        `Broker ${brokerId} already has index ${existingIndex} on ${chainName}`
+      );
+    }
+
+    const BROKER_MANAGER_ROLE = await solConnector.BROKER_MANAGER_ROLE();
+    const hasPermission = await solConnector.hasRole(
+      BROKER_MANAGER_ROLE,
+      wallet.address
+    );
+    if (!hasPermission) {
+      throw new Error(
+        `Missing BROKER_MANAGER_ROLE on SolConnector contract at ${chainName}`
+      );
+    }
+
+    const gasEstimate = await solConnector.setBrokerHash2Index.estimateGas(
+      brokerHash,
+      1
+    );
+
+    const balance = await provider.getBalance(wallet.address);
+    const gasPrice = await provider.getFeeData();
+    const estimatedCost = gasEstimate * (gasPrice.gasPrice || BigInt(0));
+
+    if (balance < estimatedCost) {
+      throw new Error(
+        `Insufficient balance. Required: ${ethers.formatEther(estimatedCost)} ETH, Available: ${ethers.formatEther(balance)} ETH`
+      );
+    }
+
+    console.log(
+      `🔍 SolConnector setup simulation successful for broker ${brokerId} on ${chainName}`
+    );
+    return { success: true, gasEstimate };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown simulation error",
+    };
+  }
+}
+
 async function executeVaultTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
@@ -824,6 +911,34 @@ async function executeVaultManagerTransaction(
   const brokerHash = getBrokerHash(brokerId);
   const tx = await vaultManager.setAllowedBroker(brokerHash, true);
   await tx.wait();
+
+  return tx.hash;
+}
+
+async function executeSolConnectorTransaction(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  brokerIndex: number,
+  chainName: string
+): Promise<string> {
+  if (!chainConfig.solConnectorAddress) {
+    throw new Error("SolConnector address not configured for this chain");
+  }
+
+  const provider = createProvider(chainName as ChainName, true);
+  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+  const solConnector = SolConnector__factory.connect(
+    chainConfig.solConnectorAddress,
+    wallet
+  );
+
+  const brokerHash = getBrokerHash(brokerId);
+  const tx = await solConnector.setBrokerHash2Index(brokerHash, brokerIndex);
+  await tx.wait();
+
+  console.log(
+    `🚀 SolConnector setBrokerHash2Index transaction executed for broker ${brokerId} with index ${brokerIndex} on ${chainName}: ${tx.hash}`
+  );
 
   return tx.hash;
 }
@@ -991,6 +1106,31 @@ async function checkChainPermissions(
       }
     }
 
+    if (chainConfig.solConnectorAddress) {
+      try {
+        const hasPermission = await checkSolConnectorPermissions(
+          chainConfig,
+          walletAddress,
+          chainName
+        );
+        return {
+          chain: chainName,
+          hasPermission,
+          contractType: "SolConnector",
+          error: hasPermission
+            ? undefined
+            : "Missing BROKER_MANAGER_ROLE on SolConnector contract",
+        };
+      } catch (error) {
+        return {
+          chain: chainName,
+          hasPermission: false,
+          contractType: "SolConnector",
+          error: `Error checking permissions: ${error instanceof Error ? error.message : "Unknown error"}`,
+        };
+      }
+    }
+
     return {
       chain: chainName,
       hasPermission: true,
@@ -1117,6 +1257,28 @@ async function checkSolanaPermissions(
     return true;
   } catch (error) {
     console.error("Error checking Solana permissions:", error);
+    return false;
+  }
+}
+
+async function checkSolConnectorPermissions(
+  chainConfig: EnvironmentChainConfig,
+  walletAddress: string,
+  chainName: string
+): Promise<boolean> {
+  try {
+    if (!chainConfig.solConnectorAddress) return false;
+
+    const provider = getEvmProvider(chainName);
+    const solConnector = SolConnector__factory.connect(
+      chainConfig.solConnectorAddress,
+      provider
+    );
+
+    const BROKER_MANAGER_ROLE = await solConnector.BROKER_MANAGER_ROLE();
+    return await solConnector.hasRole(BROKER_MANAGER_ROLE, walletAddress);
+  } catch (error) {
+    console.error("Error checking SolConnector permissions:", error);
     return false;
   }
 }
@@ -1401,6 +1563,16 @@ export async function deleteBrokerId(
       }
     }
 
+    for (const [chainName, chainConfig] of evmChains) {
+      if (chainConfig.solConnectorAddress) {
+        simulationPromises.push(
+          simulateSolConnectorDeletion(chainConfig, brokerId, chainName).then(
+            result => ({ chainName, result })
+          )
+        );
+      }
+    }
+
     for (const [chainName, chainConfig] of solanaChains) {
       if (chainConfig.vaultAddress) {
         simulationPromises.push(
@@ -1470,6 +1642,32 @@ export async function deleteBrokerId(
         );
       }
     }
+
+    // TODO check if this is possible
+    // const solConnectorDeletionChains = successfulSimulations.filter(
+    //   ({ chainName }) => {
+    //     const chainConfig = config[
+    //       chainName as keyof typeof config
+    //     ] as EnvironmentChainConfig;
+    //     return (
+    //       chainConfig.solConnectorAddress &&
+    //       ALL_CHAINS[chainName as ChainName].chainType === "EVM"
+    //     );
+    //   }
+    // );
+
+    // for (const { chainName } of solConnectorDeletionChains) {
+    //   const chainConfig = config[
+    //     chainName as keyof typeof config
+    //   ] as EnvironmentChainConfig;
+    //   const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+
+    //   executionPromises.push(
+    //     executeSolConnectorDeletion(chainConfig, brokerId, chainName).then(
+    //       txHash => ({ chainId, txHash, chainName })
+    //     )
+    //   );
+    // }
 
     const solanaDeletionChains = successfulSimulations.filter(
       ({ chainName }) => {
@@ -1744,6 +1942,60 @@ async function simulateSolanaDeletion(
   }
 }
 
+async function simulateSolConnectorDeletion(
+  chainConfig: EnvironmentChainConfig,
+  brokerId: string,
+  chainName: string
+): Promise<SimulationResult> {
+  try {
+    if (!chainConfig.solConnectorAddress) {
+      throw new Error("SolConnector address not configured for this chain");
+    }
+
+    const provider = createProvider(chainName as ChainName, true);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const solConnector = SolConnector__factory.connect(
+      chainConfig.solConnectorAddress,
+      wallet
+    );
+
+    const brokerHash = getBrokerHash(brokerId);
+
+    const existingIndex = await solConnector.brokerHash2Index(brokerHash);
+    if (existingIndex === 0n) {
+      throw new Error(
+        `Broker ${brokerId} does not have an index set on ${chainName}`
+      );
+    }
+
+    const gasEstimate = await solConnector.setBrokerHash2Index.estimateGas(
+      brokerHash,
+      0
+    );
+
+    const balance = await provider.getBalance(wallet.address);
+    const gasPrice = await provider.getFeeData();
+    const estimatedCost = gasEstimate * (gasPrice.gasPrice || BigInt(0));
+
+    if (balance < estimatedCost) {
+      throw new Error(
+        `Insufficient balance. Required: ${ethers.formatEther(estimatedCost)} ETH, Available: ${ethers.formatEther(balance)} ETH`
+      );
+    }
+
+    console.log(
+      `🔍 SolConnector deletion simulation successful for broker ${brokerId} on ${chainName}`
+    );
+    return { success: true, gasEstimate };
+  } catch (error) {
+    return {
+      success: false,
+      error:
+        error instanceof Error ? error.message : "Unknown simulation error",
+    };
+  }
+}
+
 async function executeL1Deletion(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
@@ -1867,6 +2119,33 @@ async function executeSolanaDeletion(
 
   return setBrokerTx;
 }
+
+// async function executeSolConnectorDeletion(
+//   chainConfig: EnvironmentChainConfig,
+//   brokerId: string,
+//   chainName: string
+// ): Promise<string> {
+//   if (!chainConfig.solConnectorAddress) {
+//     throw new Error("SolConnector address not configured for this chain");
+//   }
+
+//   const provider = createProvider(chainName as ChainName, true);
+//   const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+//   const solConnector = SolConnector__factory.connect(
+//     chainConfig.solConnectorAddress,
+//     wallet
+//   );
+
+//   const brokerHash = getBrokerHash(brokerId);
+//   const tx = await solConnector.setBrokerHash2Index(brokerHash, 0);
+//   await tx.wait();
+
+//   console.log(
+//     `🗑️ SolConnector deletion transaction executed for broker ${brokerId} on ${chainName}: ${tx.hash}`
+//   );
+
+//   return tx.hash;
+// }
 
 async function executeSolanaVaultTransaction(
   chainConfig: EnvironmentChainConfig,

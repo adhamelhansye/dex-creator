@@ -388,6 +388,7 @@ export interface EnvironmentChainConfig {
   vaultAddress?: string;
   vaultManagerAddress?: string;
   feeManagerAddress?: string;
+  solConnectorAddress?: string;
 }
 
 export const ENVIRONMENT_CONFIGS: {
@@ -451,6 +452,7 @@ export const ENVIRONMENT_CONFIGS: {
     orderlyL2: {
       vaultManagerAddress: "0x14a6342A8C1Ef9856898F510FcCE377e46668F33",
       feeManagerAddress: "0x343Ca787e960cB2cCA0ce8cfB2f38c3739E28a1E",
+      solConnectorAddress: "0xCecAe061aa078e13b5e70D5F9eCee90a3F2B6AeA",
     },
   },
   staging: {
@@ -475,6 +477,7 @@ export const ENVIRONMENT_CONFIGS: {
     orderlyTestnet: {
       vaultManagerAddress: "0x873c120b42C80D528389d85cEA9d4dC0197974aD",
       feeManagerAddress: "0x0B98ba78DDb29937d895c718ED167DD8f5B2972d",
+      solConnectorAddress: "0x5Bf771A65d057e778C5f0Ed52A0003316f94322D",
     },
   },
   qa: {
@@ -490,6 +493,7 @@ export const ENVIRONMENT_CONFIGS: {
     orderlyTestnet: {
       vaultManagerAddress: "0x3B092aEe40Cb99174E8C73eF90935F9F35943B22",
       feeManagerAddress: "0x8A929891DE9a648B6A3D05d21362418f756cf728",
+      solConnectorAddress: "0x45b6C6266A7A2170617d8A27A50C642fd68b91c4",
     },
   },
   dev: {
@@ -505,6 +509,7 @@ export const ENVIRONMENT_CONFIGS: {
     orderlyTestnet: {
       vaultManagerAddress: "0x4922872C26Befa37AdcA287fF68106013C82FeeD",
       feeManagerAddress: "0x835E970110E4a46BCA21A7551FEaA5F532F72701",
+      solConnectorAddress: "0x9Dc724b24146BeDD2dA28b8C4B74126169B8f312",
     },
   },
 };
