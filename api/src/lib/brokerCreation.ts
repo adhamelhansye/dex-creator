@@ -540,7 +540,19 @@ export async function setBrokerAccountId(
     );
 
     const brokerHash = getBrokerHash(brokerId);
-    const tx = await feeManager.setBrokerAccountId(brokerHash, accountId);
+
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice;
+
+    if (!gasPrice) {
+      throw new Error("Unable to get gas price from network");
+    }
+
+    const increasedGasPrice = (gasPrice * 120n) / 100n;
+
+    const tx = await feeManager.setBrokerAccountId(brokerHash, accountId, {
+      gasPrice: increasedGasPrice,
+    });
     await tx.wait();
 
     console.log(
@@ -909,7 +921,19 @@ async function executeVaultManagerTransaction(
   );
 
   const brokerHash = getBrokerHash(brokerId);
-  const tx = await vaultManager.setAllowedBroker(brokerHash, true);
+
+  const feeData = await provider.getFeeData();
+  const gasPrice = feeData.gasPrice;
+
+  if (!gasPrice) {
+    throw new Error("Unable to get gas price from network");
+  }
+
+  const increasedGasPrice = (gasPrice * 120n) / 100n;
+
+  const tx = await vaultManager.setAllowedBroker(brokerHash, true, {
+    gasPrice: increasedGasPrice,
+  });
   await tx.wait();
 
   return tx.hash;
@@ -933,7 +957,19 @@ async function executeSolConnectorTransaction(
   );
 
   const brokerHash = getBrokerHash(brokerId);
-  const tx = await solConnector.setBrokerHash2Index(brokerHash, brokerIndex);
+
+  const feeData = await provider.getFeeData();
+  const gasPrice = feeData.gasPrice;
+
+  if (!gasPrice) {
+    throw new Error("Unable to get gas price from network");
+  }
+
+  const increasedGasPrice = (gasPrice * 120n) / 100n;
+
+  const tx = await solConnector.setBrokerHash2Index(brokerHash, brokerIndex, {
+    gasPrice: increasedGasPrice,
+  });
   await tx.wait();
 
   console.log(
@@ -2033,7 +2069,19 @@ async function executeOrderlyDeletion(
   );
 
   const brokerHash = getBrokerHash(brokerId);
-  const tx = await vaultManager.setAllowedBroker(brokerHash, false);
+
+  const feeData = await provider.getFeeData();
+  const gasPrice = feeData.gasPrice;
+
+  if (!gasPrice) {
+    throw new Error("Unable to get gas price from network");
+  }
+
+  const increasedGasPrice = (gasPrice * 120n) / 100n;
+
+  const tx = await vaultManager.setAllowedBroker(brokerHash, false, {
+    gasPrice: increasedGasPrice,
+  });
   await tx.wait();
 
   return tx.hash;
