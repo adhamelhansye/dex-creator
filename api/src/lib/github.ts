@@ -123,7 +123,6 @@ async function setupOctokitHooks() {
         }
 
         options.headers["If-None-Match"] = cachedItem.etag;
-        console.log(`[GitHub ETag] Using cached ETag for ${cacheKey}`);
       }
     } catch (error) {
       console.error("[GitHub ETag] Error in before hook:", error);
@@ -144,9 +143,6 @@ async function setupOctokitHooks() {
           data: response.data,
         });
         cacheMisses++;
-        console.log(
-          `[GitHub ETag] Cache MISS for ${cacheKey} - stored ETag: ${response.headers.etag}`
-        );
       }
     } catch (error) {
       console.error("[GitHub ETag] Error in after hook:", error);
@@ -166,9 +162,6 @@ async function setupOctokitHooks() {
 
           if (cachedItem) {
             cacheHits++;
-            console.log(
-              `[GitHub ETag] Cache HIT for ${cacheKey} - using cached data`
-            );
 
             return {
               data: cachedItem.data,
@@ -199,7 +192,6 @@ async function setupOctokitHooks() {
   });
 }
 
-// Track if hooks are setup
 let hooksSetup = false;
 
 function isRequestError(error: Error | any): error is {
@@ -1094,7 +1086,6 @@ export async function getWorkflowRunStatus(
   }>;
 }> {
   try {
-    console.log(`Fetching workflow runs for ${owner}/${repo}...`);
     const octokit = await getOctokit();
 
     const { data: workflows } = await octokit.rest.actions.listRepoWorkflows({
