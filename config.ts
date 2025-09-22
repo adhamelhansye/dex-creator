@@ -154,11 +154,8 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainId: 43114,
     isTestnet: false,
     chainType: "EVM",
-    rpcUrl: "https://avalanche.therpc.io",
-    fallbackRpcUrls: [
-      "https://1rpc.io/avax/c",
-      "https://avalanche-c-chain-rpc.publicnode.com",
-    ],
+    rpcUrl: "https://avalanche-c-chain-rpc.publicnode.com",
+    fallbackRpcUrls: ["https://1rpc.io/avax/c"],
     blockExplorerUrl: "https://avascan.info",
   },
   sei: {
@@ -167,8 +164,8 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainId: 1329,
     isTestnet: false,
     chainType: "EVM",
-    rpcUrl: "https://sei.therpc.io",
-    fallbackRpcUrls: ["https://sei-public.nodies.app", "https://sei.drpc.org"],
+    rpcUrl: "https://sei.drpc.org",
+    fallbackRpcUrls: ["https://sei-public.nodies.app"],
     blockExplorerUrl: "https://seiscan.io",
   },
   morph: {
@@ -188,10 +185,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://rpc.soniclabs.com",
-    fallbackRpcUrls: [
-      "https://sonic.therpc.io",
-      "https://sonic-rpc.publicnode.com",
-    ],
+    fallbackRpcUrls: ["https://sonic-rpc.publicnode.com"],
     blockExplorerUrl: "https://sonicscan.org",
   },
   berachain: {
@@ -201,10 +195,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     isTestnet: false,
     chainType: "EVM",
     rpcUrl: "https://rpc.berachain.com",
-    fallbackRpcUrls: [
-      "https://berachain.therpc.io",
-      "https://berachain-rpc.publicnode.com",
-    ],
+    fallbackRpcUrls: ["https://berachain-rpc.publicnode.com"],
     blockExplorerUrl: "https://berascan.com",
   },
   story: {
@@ -301,7 +292,7 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainId: 291,
     isTestnet: false,
     chainType: "EVM",
-    rpcUrl: "https://rpc.orderly.org",
+    rpcUrl: "https://rpc.orderly.network",
     blockExplorerUrl: "https://explorer.orderly.network",
   },
   orderlyTestnet: {
