@@ -61,7 +61,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 
     const { host, port, db, params } = parseMysqlUrl(dbUrl);
 
-    let mysqlUrl = `mysql://${dbUser}:${dbPassword}@${host}:${port}/${db}`;
+    let mysqlUrl = `mysql://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${host}:${port}/${db}`;
     if (params) {
       mysqlUrl += `?${params}`;
     }
@@ -80,7 +80,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 
     const { host, port, db, params } = parseMysqlUrl(config.url);
 
-    let mysqlUrl = `mysql://${config.username}:${config.pwd}@${host}:${port}/${db}`;
+    let mysqlUrl = `mysql://${encodeURIComponent(config.username)}:${encodeURIComponent(config.pwd)}@${host}:${port}/${db}`;
     if (params) {
       mysqlUrl += `?${params}`;
     }
@@ -128,7 +128,7 @@ async function getNexusDatabaseUrl(): Promise<string> {
 
     const { host, port, db, params } = parseMysqlUrl(dbUrl);
 
-    let mysqlUrl = `mysql://${dbUser}:${dbPassword}@${host}:${port}/${db}`;
+    let mysqlUrl = `mysql://${encodeURIComponent(dbUser)}:${encodeURIComponent(dbPassword)}@${host}:${port}/${db}`;
     if (params) {
       mysqlUrl += `?${params}`;
     }
@@ -147,7 +147,7 @@ async function getNexusDatabaseUrl(): Promise<string> {
 
     const { host, port, db, params } = parseMysqlUrl(config.url);
 
-    let mysqlUrl = `mysql://${config.username}:${config.pwd}@${host}:${port}/${db}`;
+    let mysqlUrl = `mysql://${encodeURIComponent(config.username)}:${encodeURIComponent(config.pwd)}@${host}:${port}/${db}`;
     if (params) {
       mysqlUrl += `?${params}`;
     }
