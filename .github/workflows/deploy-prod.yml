@@ -1,0 +1,84 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    tags:
+      - "*"
+  workflow_dispatch:
+
+jobs:
+  build:
+    name: Build Application
+    runs-on: ubuntu-latest
+    if: github.ref_type == 'tag' || github.event_name == 'workflow_dispatch'
+    outputs:
+      build-artifact: ${{ steps.build.outputs.artifact-name }}
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: "yarn"
+
+      - name: Install dependencies
+        run: yarn install --frozen-lockfile
+
+      - name: Build Remix app in SPA mode
+        id: build
+        run: |
+          yarn app build
+          echo "artifact-name=build-$(date +%Y%m%d-%H%M%S)" >> $GITHUB_OUTPUT
+        env:
+          VITE_API_URL: ${{ vars.VITE_API_URL }}
+          VITE_DEPLOYMENT_ENV: ${{ vars.VITE_DEPLOYMENT_ENV }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ steps.build.outputs.artifact-name }}
+          path: app/build/client/
+          retention-days: 1
+
+  deploy:
+    name: Deploy to GitHub Pages
+    runs-on: ubuntu-latest
+    needs: build
+    environment:
+      name: production
+      url: https://dex.orderly.network
+
+    steps:
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: ${{ needs.build.outputs.build-artifact }}
+          path: app/build/client/
+
+      - name: Setup Git for GitHub Pages deployment
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "github-actions@github.com"
+          git config --global init.defaultBranch main
+
+      - name: Create GitHub Pages Repository
+        run: |
+          mkdir -p gh-pages-repo
+          cp -r app/build/client/* gh-pages-repo/
+          cp gh-pages-repo/index.html gh-pages-repo/404.html
+          echo "dex.orderly.network" > gh-pages-repo/CNAME
+          # Add .nojekyll file to disable Jekyll processing
+          touch gh-pages-repo/.nojekyll
+
+      - name: Deploy to GitHub Pages
+        run: |
+          cd gh-pages-repo
+          git init
+          git branch -m main
+          git remote add origin https://${{ secrets.GH_PAGES_DEPLOY_TOKEN }}@github.com/OrderlyNetworkDexCreator/orderlynetworkdexcreator.github.io.git
+          git add -A
+          git commit -m "Deploy: $(date +%Y-%m-%d_%H-%M-%S)"
+          git push -f origin main
