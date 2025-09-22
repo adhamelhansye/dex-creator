@@ -849,6 +849,26 @@ export async function getAllDexes(
               mode: "insensitive" as const,
             },
           },
+          {
+            id: {
+              contains: search,
+              mode: "insensitive" as const,
+            },
+          },
+          {
+            user: {
+              address: {
+                contains: search,
+                mode: "insensitive" as const,
+              },
+            },
+          },
+          {
+            repoUrl: {
+              contains: search,
+              mode: "insensitive" as const,
+            },
+          },
         ],
       }
     : {};

@@ -128,11 +128,13 @@ export default function AdminRoute() {
   const [pageSize, setPageSize] = useState(20);
   const [totalDexes, setTotalDexes] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
+  const [searchInput, setSearchInput] = useState("");
   const [dexStats, setDexStats] = useState<DexStatsResponse | null>(null);
 
   const [dexToDeleteId, setDexToDeleteId] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [filteredDeleteDexes, setFilteredDeleteDexes] = useState<Dex[]>([]);
+  const [isSearchingDelete, setIsSearchingDelete] = useState(false);
 
   const [adminUsers, setAdminUsers] = useState<AdminUser[]>([]);
   const [isLoadingAdmins, setIsLoadingAdmins] = useState(false);
@@ -142,12 +144,14 @@ export default function AdminRoute() {
   const [isUpdatingBrokerId, setIsUpdatingBrokerId] = useState(false);
   const [filteredBrokerDexes, setFilteredBrokerDexes] = useState<Dex[]>([]);
   const [brokerSearchQuery, setBrokerSearchQuery] = useState("");
+  const [isSearchingBroker, setIsSearchingBroker] = useState(false);
 
   const [repoDexId, setRepoDexId] = useState("");
   const [newRepoName, setNewRepoName] = useState("");
   const [isRenamingRepo, setIsRenamingRepo] = useState(false);
   const [filteredRepoDexes, setFilteredRepoDexes] = useState<Dex[]>([]);
   const [repoSearchQuery, setRepoSearchQuery] = useState("");
+  const [isSearchingRepo, setIsSearchingRepo] = useState(false);
 
   const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -313,7 +317,7 @@ export default function AdminRoute() {
   };
 
   const handleSearch = (query: string) => {
-    setSearchTerm(query);
+    setSearchInput(query);
   };
 
   useEffect(() => {
@@ -328,56 +332,82 @@ export default function AdminRoute() {
     return () => clearTimeout(timeoutId);
   }, [searchTerm, pageSize, isAuthenticated, token]);
 
-  const handleDeleteDexSearch = (query: string) => {
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      setSearchTerm(searchInput);
+    }, 300);
+
+    return () => clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  const searchAllDexes = async (query: string): Promise<Dex[]> => {
+    if (!isAuthenticated || !token || !query.trim()) {
+      return [];
+    }
+
+    try {
+      const response = await get<DexesResponse>(
+        `api/admin/dexes?limit=100&offset=0&search=${encodeURIComponent(query.trim())}`,
+        token
+      );
+      return response.dexes;
+    } catch (error) {
+      console.error("Error searching DEXes:", error);
+      return [];
+    }
+  };
+
+  const handleDeleteDexSearch = async (query: string) => {
     setSearchQuery(query);
     if (!query) {
       setFilteredDeleteDexes([]);
+      setIsSearchingDelete(false);
       return;
     }
 
-    const queryLower = query.toLowerCase();
-    const filtered = allDexes.filter(
-      dex =>
-        dex.user.address.toLowerCase().includes(queryLower) ||
-        dex.brokerName.toLowerCase().includes(queryLower) ||
-        dex.id.toLowerCase().includes(queryLower)
-    );
-    setFilteredDeleteDexes(filtered);
+    setIsSearchingDelete(true);
+    try {
+      const searchResults = await searchAllDexes(query);
+      setFilteredDeleteDexes(searchResults);
+    } finally {
+      setIsSearchingDelete(false);
+    }
   };
 
-  const handleBrokerSearch = (query: string) => {
+  const handleBrokerSearch = async (query: string) => {
     setBrokerSearchQuery(query);
     if (!query) {
       setFilteredBrokerDexes([]);
+      setIsSearchingBroker(false);
       return;
     }
 
-    const queryLower = query.toLowerCase();
-    const filtered = allDexes.filter(
-      dex =>
-        dex.id.toLowerCase().includes(queryLower) ||
-        dex.brokerName.toLowerCase().includes(queryLower) ||
-        dex.brokerId.toLowerCase().includes(queryLower)
-    );
-    setFilteredBrokerDexes(filtered);
+    setIsSearchingBroker(true);
+    try {
+      const searchResults = await searchAllDexes(query);
+      setFilteredBrokerDexes(searchResults);
+    } finally {
+      setIsSearchingBroker(false);
+    }
   };
 
-  const handleRepoSearch = (query: string) => {
+  const handleRepoSearch = async (query: string) => {
     setRepoSearchQuery(query);
     if (!query) {
       setFilteredRepoDexes([]);
+      setIsSearchingRepo(false);
       return;
     }
 
-    const queryLower = query.toLowerCase();
-    const filtered = allDexes.filter(
-      dex =>
-        dex.repoUrl &&
-        (dex.id.toLowerCase().includes(queryLower) ||
-          dex.brokerName.toLowerCase().includes(queryLower) ||
-          dex.repoUrl.toLowerCase().includes(queryLower))
-    );
-    setFilteredRepoDexes(filtered);
+    setIsSearchingRepo(true);
+    try {
+      const searchResults = await searchAllDexes(query);
+      // Filter to only show DEXes with repositories
+      const filtered = searchResults.filter(dex => dex.repoUrl);
+      setFilteredRepoDexes(filtered);
+    } finally {
+      setIsSearchingRepo(false);
+    }
   };
 
   const handleSelectDexToDelete = (dex: Dex) => {
@@ -829,7 +859,7 @@ export default function AdminRoute() {
                 Search DEX
               </label>
               <FuzzySearchInput
-                placeholder="Search by DEX ID or broker name..."
+                placeholder="Search by DEX ID, broker name, or broker ID..."
                 onSearch={handleBrokerSearch}
                 initialValue={brokerSearchQuery}
                 className="mb-2"
@@ -866,15 +896,16 @@ export default function AdminRoute() {
 
               {brokerSearchQuery &&
                 filteredBrokerDexes.length === 0 &&
-                !loadingDexes && (
+                !isSearchingBroker && (
                   <div className="text-sm text-gray-400 p-2">
                     No DEXes found matching your search.
                   </div>
                 )}
 
-              {loadingDexes && (
+              {isSearchingBroker && (
                 <div className="text-center py-2">
                   <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-primary-light/80"></div>
+                  <p className="text-xs text-gray-300 mt-1">Searching...</p>
                 </div>
               )}
             </div>
@@ -930,7 +961,7 @@ export default function AdminRoute() {
                 Search DEX
               </label>
               <FuzzySearchInput
-                placeholder="Search by DEX ID or broker name..."
+                placeholder="Search by DEX ID, broker name, or repository URL..."
                 onSearch={handleRepoSearch}
                 initialValue={repoSearchQuery}
                 className="mb-2"
@@ -970,15 +1001,16 @@ export default function AdminRoute() {
 
               {repoSearchQuery &&
                 filteredRepoDexes.length === 0 &&
-                !loadingDexes && (
+                !isSearchingRepo && (
                   <div className="text-sm text-gray-400 p-2">
                     No DEXes found matching your search.
                   </div>
                 )}
 
-              {loadingDexes && (
+              {isSearchingRepo && (
                 <div className="text-center py-2">
                   <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-primary-light/80"></div>
+                  <p className="text-xs text-gray-300 mt-1">Searching...</p>
                 </div>
               )}
             </div>
@@ -1042,7 +1074,7 @@ export default function AdminRoute() {
                 Search DEX
               </label>
               <FuzzySearchInput
-                placeholder="Search by wallet address, broker name or DEX ID..."
+                placeholder="Search by wallet address, broker name, broker ID, or DEX ID..."
                 onSearch={handleDeleteDexSearch}
                 initialValue={searchQuery}
                 className="mb-2"
@@ -1082,15 +1114,16 @@ export default function AdminRoute() {
 
               {searchQuery &&
                 filteredDeleteDexes.length === 0 &&
-                !loadingDexes && (
+                !isSearchingDelete && (
                   <div className="text-sm text-gray-400 p-2">
                     No DEXes found matching your search.
                   </div>
                 )}
 
-              {loadingDexes && (
+              {isSearchingDelete && (
                 <div className="text-center py-2">
                   <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-primary-light/80"></div>
+                  <p className="text-xs text-gray-300 mt-1">Searching...</p>
                 </div>
               )}
             </div>
@@ -1261,11 +1294,11 @@ export default function AdminRoute() {
               <input
                 type="text"
                 placeholder="Search by broker name or broker ID..."
-                value={searchTerm}
+                value={searchInput}
                 onChange={e => handleSearch(e.target.value)}
                 className="w-full bg-dark border border-light/20 rounded px-4 py-2 text-sm focus:border-primary-light outline-none placeholder:text-gray-500"
               />
-              {searchTerm && (
+              {searchInput && (
                 <button
                   onClick={() => handleSearch("")}
                   className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-300 p-1"
