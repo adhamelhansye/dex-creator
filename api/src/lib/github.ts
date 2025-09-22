@@ -612,19 +612,19 @@ function prepareDexConfigContent(
     42161, // Arbitrum One
     10, // Optimism
     8453, // Base
-    5000, // Mantle
+    // 5000, // Mantle
     1, // Ethereum
     56, // BNB Chain
-    1329, // Sei
-    43114, // Avalanche
-    900900900, // Solana
-    2818, // Morph
-    146, // Sonic
-    80094, // Berachain
-    1514, // Story
-    34443, // Mode
-    98866, // Plume
-    2741, // Abstract
+    // 1329, // Sei
+    // 43114, // Avalanche
+    // 900900900, // Solana
+    // 2818, // Morph
+    // 146, // Sonic
+    // 80094, // Berachain
+    // 1514, // Story
+    // 34443, // Mode
+    // 98866, // Plume
+    // 2741, // Abstract
   ];
 
   const testnetChainIds = [
@@ -640,14 +640,14 @@ function prepareDexConfigContent(
     mainnetChainIds.includes(id)
   );
   if (selectedMainnetChains.length === 0) {
-    selectedMainnetChains = [
-      1, 1329, 80094, 1514, 146, 43114, 56, 42161, 10, 5000, 8453, 2818, 34443,
-      2741, 98866,
-    ];
+    selectedMainnetChains = mainnetChainIds;
   }
-  const selectedTestnetChains = selectedChainIds.filter(id =>
+  let selectedTestnetChains = selectedChainIds.filter(id =>
     testnetChainIds.includes(id)
   );
+  if (selectedTestnetChains.length === 0) {
+    selectedTestnetChains = testnetChainIds;
+  }
 
   const runtimeConfig = {
     // Broker settings

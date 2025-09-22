@@ -23,16 +23,16 @@ export type ChainNameMainnet =
   | "optimism"
   | "base"
   // | "polygon"
-  | "mantle"
-  | "avalanche"
-  | "sei"
-  | "morph"
-  | "sonic"
-  | "berachain"
-  | "story"
-  | "mode"
-  | "plume"
-  | "abstract"
+  // | "mantle"
+  // | "avalanche"
+  // | "sei"
+  // | "morph"
+  // | "sonic"
+  // | "berachain"
+  // | "story"
+  // | "mode"
+  // | "plume"
+  // | "abstract"
   | "orderlyL2";
 // | "solana-mainnet-beta";
 
@@ -135,108 +135,108 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
   //   ],
   //   blockExplorerUrl: "https://polygonscan.com",
   // },
-  mantle: {
-    id: "mantle",
-    name: "Mantle",
-    chainId: 5000,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://rpc.mantle.xyz",
-    fallbackRpcUrls: [
-      "https://1rpc.io/mantle",
-      "https://mantle-rpc.publicnode.com",
-    ],
-    blockExplorerUrl: "https://mantlescan.xyz",
-  },
-  avalanche: {
-    id: "avalanche",
-    name: "Avalanche",
-    chainId: 43114,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://avalanche-c-chain-rpc.publicnode.com",
-    fallbackRpcUrls: ["https://1rpc.io/avax/c"],
-    blockExplorerUrl: "https://avascan.info",
-  },
-  sei: {
-    id: "sei",
-    name: "Sei",
-    chainId: 1329,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://sei.drpc.org",
-    fallbackRpcUrls: ["https://sei-public.nodies.app"],
-    blockExplorerUrl: "https://seiscan.io",
-  },
-  morph: {
-    id: "morph",
-    name: "Morph",
-    chainId: 2818,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://rpc.morphl2.io",
-    fallbackRpcUrls: ["https://rpc-quicknode.morphl2.io"],
-    blockExplorerUrl: "https://morphscan.io",
-  },
-  sonic: {
-    id: "sonic",
-    name: "Sonic",
-    chainId: 146,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://rpc.soniclabs.com",
-    fallbackRpcUrls: ["https://sonic-rpc.publicnode.com"],
-    blockExplorerUrl: "https://sonicscan.org",
-  },
-  berachain: {
-    id: "berachain",
-    name: "Berachain",
-    chainId: 80094,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://rpc.berachain.com",
-    fallbackRpcUrls: ["https://berachain-rpc.publicnode.com"],
-    blockExplorerUrl: "https://berascan.com",
-  },
-  story: {
-    id: "story",
-    name: "Story",
-    chainId: 1514,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://mainnet.storyrpc.io",
-    fallbackRpcUrls: ["https://rpc.ankr.com/story_mainnet"],
-    blockExplorerUrl: "https://explorer.story.foundation",
-  },
-  mode: {
-    id: "mode",
-    name: "Mode",
-    chainId: 34443,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://mode.drpc.org",
-    fallbackRpcUrls: ["https://mainnet.mode.network"],
-    blockExplorerUrl: "https://modescan.io",
-  },
-  plume: {
-    id: "plume",
-    name: "Plume",
-    chainId: 98866,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://rpc.plume.org",
-    blockExplorerUrl: "https://explorer.plume.org",
-  },
-  abstract: {
-    id: "abstract",
-    name: "Abstract",
-    chainId: 2741,
-    isTestnet: false,
-    chainType: "EVM",
-    rpcUrl: "https://api.mainnet.abs.xyz",
-    fallbackRpcUrls: ["https://abstract.drpc.org"],
-    blockExplorerUrl: "https://explorer.mainnet.abs.xyz",
-  },
+  // mantle: {
+  //   id: "mantle",
+  //   name: "Mantle",
+  //   chainId: 5000,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://rpc.mantle.xyz",
+  //   fallbackRpcUrls: [
+  //     "https://1rpc.io/mantle",
+  //     "https://mantle-rpc.publicnode.com",
+  //   ],
+  //   blockExplorerUrl: "https://mantlescan.xyz",
+  // },
+  // avalanche: {
+  //   id: "avalanche",
+  //   name: "Avalanche",
+  //   chainId: 43114,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://avalanche-c-chain-rpc.publicnode.com",
+  //   fallbackRpcUrls: ["https://1rpc.io/avax/c"],
+  //   blockExplorerUrl: "https://avascan.info",
+  // },
+  // sei: {
+  //   id: "sei",
+  //   name: "Sei",
+  //   chainId: 1329,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://sei.drpc.org",
+  //   fallbackRpcUrls: ["https://sei-public.nodies.app"],
+  //   blockExplorerUrl: "https://seiscan.io",
+  // },
+  // morph: {
+  //   id: "morph",
+  //   name: "Morph",
+  //   chainId: 2818,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://rpc.morphl2.io",
+  //   fallbackRpcUrls: ["https://rpc-quicknode.morphl2.io"],
+  //   blockExplorerUrl: "https://morphscan.io",
+  // },
+  // sonic: {
+  //   id: "sonic",
+  //   name: "Sonic",
+  //   chainId: 146,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://rpc.soniclabs.com",
+  //   fallbackRpcUrls: ["https://sonic-rpc.publicnode.com"],
+  //   blockExplorerUrl: "https://sonicscan.org",
+  // },
+  // berachain: {
+  //   id: "berachain",
+  //   name: "Berachain",
+  //   chainId: 80094,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://rpc.berachain.com",
+  //   fallbackRpcUrls: ["https://berachain-rpc.publicnode.com"],
+  //   blockExplorerUrl: "https://berascan.com",
+  // },
+  // story: {
+  //   id: "story",
+  //   name: "Story",
+  //   chainId: 1514,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://mainnet.storyrpc.io",
+  //   fallbackRpcUrls: ["https://rpc.ankr.com/story_mainnet"],
+  //   blockExplorerUrl: "https://explorer.story.foundation",
+  // },
+  // mode: {
+  //   id: "mode",
+  //   name: "Mode",
+  //   chainId: 34443,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://mode.drpc.org",
+  //   fallbackRpcUrls: ["https://mainnet.mode.network"],
+  //   blockExplorerUrl: "https://modescan.io",
+  // },
+  // plume: {
+  //   id: "plume",
+  //   name: "Plume",
+  //   chainId: 98866,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://rpc.plume.org",
+  //   blockExplorerUrl: "https://explorer.plume.org",
+  // },
+  // abstract: {
+  //   id: "abstract",
+  //   name: "Abstract",
+  //   chainId: 2741,
+  //   isTestnet: false,
+  //   chainType: "EVM",
+  //   rpcUrl: "https://api.mainnet.abs.xyz",
+  //   fallbackRpcUrls: ["https://abstract.drpc.org"],
+  //   blockExplorerUrl: "https://explorer.mainnet.abs.xyz",
+  // },
   sepolia: {
     id: "sepolia",
     name: "Sepolia",
@@ -407,36 +407,36 @@ export const ENVIRONMENT_CONFIGS: {
     // polygon: {
     //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     // },
-    mantle: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    avalanche: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    sei: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    morph: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    sonic: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    berachain: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    story: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    mode: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    plume: {
-      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    },
-    abstract: {
-      vaultAddress: "0xE80F2396A266e898FBbD251b89CFE65B3e41fD18",
-    },
+    // mantle: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // avalanche: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // sei: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // morph: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // sonic: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // berachain: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // story: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // mode: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // plume: {
+    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    // },
+    // abstract: {
+    //   vaultAddress: "0xE80F2396A266e898FBbD251b89CFE65B3e41fD18",
+    // },
     // "solana-mainnet-beta": {
     //   vaultAddress: "ErBmAD61mGFKvrFNaTJuxoPwqrS8GgtwtqJTJVjFWx9Q",
     // },
