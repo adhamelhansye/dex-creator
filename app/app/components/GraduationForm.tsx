@@ -1026,13 +1026,19 @@ export function GraduationForm({
                   </div>
                 </div>
                 <p className="text-2xl font-bold text-warning">
-                  {feeOptions.order.amount.toLocaleString()} ORDER
+                  {new Intl.NumberFormat("en-US").format(
+                    feeOptions.order.amount
+                  )}{" "}
+                  ORDER
                 </p>
                 <p className="text-sm text-gray-400">
                   ~$
-                  {(
+                  {new Intl.NumberFormat("en-US", {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                  }).format(
                     feeOptions.order.amount * feeOptions.order.currentPrice
-                  ).toFixed(2)}{" "}
+                  )}{" "}
                   <span className="text-warning font-medium">
                     (25% off USD)
                   </span>
@@ -1087,7 +1093,10 @@ export function GraduationForm({
                 <div className="text-xs mb-3 flex items-center">
                   <span className="text-info">Your balance:</span>{" "}
                   <span className="font-medium ml-1">
-                    {parseFloat(tokenBalance?.formatted || "0").toFixed(2)}{" "}
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(parseFloat(tokenBalance?.formatted || "0"))}{" "}
                     {paymentType === "usdc" ? "USDC" : "ORDER"}
                   </span>
                   {feeOptions &&
