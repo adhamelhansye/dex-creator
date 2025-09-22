@@ -74,6 +74,17 @@ graduationRoutes.post(
         );
       }
 
+      if (dex.brokerId && dex.brokerId !== "demo") {
+        return c.json(
+          {
+            success: false,
+            message:
+              "You have already graduated. Each user can only graduate once.",
+          },
+          { status: 400 }
+        );
+      }
+
       const verificationResult = await verifyOrderTransaction(
         txHash,
         chain,
@@ -122,13 +133,32 @@ graduationRoutes.post(
         return c.json(brokerCreationResult, { status: 400 });
       }
 
-      await prismaClient.dex.update({
-        where: { userId },
-        data: {
-          brokerId,
-          isGraduated: false,
-        },
-      });
+      try {
+        await prismaClient.dex.update({
+          where: { userId },
+          data: {
+            brokerId,
+            isGraduated: false,
+            graduationTxHash: txHash,
+          },
+        });
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      } catch (error: any) {
+        if (
+          error.code === "P2002" &&
+          error.meta?.target?.includes("graduationTxHash")
+        ) {
+          return c.json(
+            {
+              success: false,
+              message:
+                "This transaction hash has already been used for graduation. Please use a different transaction.",
+            },
+            { status: 400 }
+          );
+        }
+        throw error;
+      }
 
       try {
         console.log(

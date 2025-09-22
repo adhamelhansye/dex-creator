@@ -35,6 +35,7 @@ describe("Graduation Routes", () => {
       await testDataFactory.createTestDex(testUser.id, {
         brokerName: "Test DEX for Graduation",
         repoUrl: "https://github.com/test/test-repo",
+        brokerId: "demo",
       });
 
       const graduationData = {
@@ -68,6 +69,7 @@ describe("Graduation Routes", () => {
 
       await testDataFactory.createTestDex(testUser.id, {
         repoUrl: "https://github.com/test/test-repo",
+        brokerId: "demo",
       });
 
       const graduationData = {
@@ -95,6 +97,7 @@ describe("Graduation Routes", () => {
 
       await testDataFactory.createTestDex(testUser.id, {
         repoUrl: "https://github.com/test/test-repo",
+        brokerId: "demo",
       });
 
       const graduationData = {
@@ -124,6 +127,7 @@ describe("Graduation Routes", () => {
 
       await testDataFactory.createTestDex(testUser.id, {
         repoUrl: "https://github.com/test/test-repo",
+        brokerId: "demo",
       });
 
       const graduationData = {
@@ -191,21 +195,23 @@ describe("Graduation Routes", () => {
     });
 
     it("should prevent duplicate broker IDs across all users", async () => {
-      const request1 = createAuthenticatedRequest(app, testUser.id);
+      const firstUser = await testDataFactory.createTestUser();
       const secondUser = await testDataFactory.createTestUser();
-      const request2 = createAuthenticatedRequest(app, secondUser.id);
 
-      await testDataFactory.createTestDex(testUser.id, {
+      await testDataFactory.createTestDex(firstUser.id, {
         brokerName: "First DEX",
         repoUrl: "https://github.com/test/test-repo-1",
+        brokerId: "demo",
       });
       await testDataFactory.createTestDex(secondUser.id, {
         brokerName: "Second DEX",
         repoUrl: "https://github.com/test/test-repo-2",
+        brokerId: "demo",
       });
 
       const sameBrokerId = createMockBrokerId();
-      const graduationData = {
+
+      const graduationData1 = {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
@@ -215,15 +221,27 @@ describe("Graduation Routes", () => {
         paymentType: "order" as const,
       };
 
+      const graduationData2 = {
+        txHash:
+          "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        chain: "ethereum",
+        brokerId: sameBrokerId,
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
+      };
+
+      const request1 = createAuthenticatedRequest(app, firstUser.id);
       const response1 = await request1.post(
         "/api/graduation/verify-tx",
-        graduationData
+        graduationData1
       );
       expect(response1.status).toBe(200);
 
+      const request2 = createAuthenticatedRequest(app, secondUser.id);
       const response2 = await request2.post(
         "/api/graduation/verify-tx",
-        graduationData
+        graduationData2
       );
       const body2 = await response2.json();
 
@@ -241,11 +259,13 @@ describe("Graduation Routes", () => {
       await testDataFactory.createTestDex(testUser.id, {
         brokerName: "Test DEX 1",
         repoUrl: "https://github.com/test/test-repo-1",
+        brokerId: "demo",
       });
 
       await testDataFactory.createTestDex(secondUser.id, {
         brokerName: "Test DEX 2",
         repoUrl: "https://github.com/test/test-repo-2",
+        brokerId: "demo",
       });
 
       const graduationData1 = {
@@ -270,6 +290,86 @@ describe("Graduation Routes", () => {
 
       expect(response1.status).toBe(200);
       expect(response2.status).toBe(200);
+    });
+
+    it("should prevent reuse of the same transaction hash", async () => {
+      const request = createAuthenticatedRequest(app, testUser.id);
+
+      await testDataFactory.createTestDex(testUser.id, {
+        brokerName: "Test DEX for TX Hash Reuse",
+        repoUrl: "https://github.com/test/test-repo",
+        brokerId: "demo",
+      });
+
+      const graduationData1 = {
+        txHash:
+          "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        chain: "ethereum",
+        brokerId: createMockBrokerId(),
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
+      };
+
+      const response1 = await request.post(
+        "/api/graduation/verify-tx",
+        graduationData1
+      );
+      expect(response1.status).toBe(200);
+
+      const secondUser = await testDataFactory.createTestUser();
+      const request2 = createAuthenticatedRequest(app, secondUser.id);
+
+      await testDataFactory.createTestDex(secondUser.id, {
+        brokerName: "Second Test DEX",
+        repoUrl: "https://github.com/test/test-repo-2",
+        brokerId: "demo",
+      });
+
+      const graduationData2 = {
+        ...graduationData1,
+        brokerId: createMockBrokerId(),
+      };
+
+      const response2 = await request2.post(
+        "/api/graduation/verify-tx",
+        graduationData2
+      );
+      const body2 = await response2.json();
+
+      expect(response2.status).toBe(400);
+      expect(body2).toHaveProperty("success", false);
+      expect(body2.message).toContain("already been used for graduation");
+    });
+
+    it("should prevent already graduated users from graduating again", async () => {
+      const request = createAuthenticatedRequest(app, testUser.id);
+
+      await testDataFactory.createTestDex(testUser.id, {
+        brokerName: "Already Graduated DEX",
+        repoUrl: "https://github.com/test/test-repo",
+        brokerId: "already-graduated-broker",
+      });
+
+      const graduationData = {
+        txHash:
+          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        chain: "ethereum",
+        brokerId: createMockBrokerId(),
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
+      };
+
+      const response = await request.post(
+        "/api/graduation/verify-tx",
+        graduationData
+      );
+      const body = await response.json();
+
+      expect(response.status).toBe(400);
+      expect(body).toHaveProperty("success", false);
+      expect(body.message).toContain("already graduated");
     });
   });
 
@@ -300,6 +400,7 @@ describe("Graduation Routes", () => {
 
       await testDataFactory.createTestDex(testUser.id, {
         repoUrl: "https://github.com/test/test-repo",
+        brokerId: "demo",
       });
 
       const feeData = {

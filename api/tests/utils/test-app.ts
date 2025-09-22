@@ -167,7 +167,9 @@ vi.mock("../../src/models/graduation", () => ({
   verifyOrderTransaction: vi.fn().mockImplementation(txHash => {
     if (
       txHash ===
-      "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef"
+        "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef" ||
+      txHash ===
+        "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890"
     ) {
       return Promise.resolve({
         success: true,

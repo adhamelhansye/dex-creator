@@ -60,6 +60,21 @@ export async function verifyOrderTransaction(
     };
   }
 
+  const prismaClient = await getPrisma();
+  const existingDex = await prismaClient.dex.findFirst({
+    where: {
+      graduationTxHash: txHash,
+    },
+  });
+
+  if (existingDex) {
+    return {
+      success: false,
+      message:
+        "This transaction hash has already been used for graduation. Please use a different transaction.",
+    };
+  }
+
   const tokenAddress =
     paymentType === "usdc"
       ? USDC_ADDRESSES[chain as keyof typeof USDC_ADDRESSES]
