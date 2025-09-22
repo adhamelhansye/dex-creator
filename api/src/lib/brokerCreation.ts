@@ -29,6 +29,39 @@ import { createProvider } from "./fallbackProvider.js";
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
 
+async function retryTransaction<T>(
+  fn: () => Promise<T>,
+  maxRetries = 3,
+  delayMs = 1000
+): Promise<T> {
+  let lastError: Error = new Error("Unknown error");
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 Transaction attempt ${attempt}/${maxRetries}`);
+      const result = await fn();
+      if (attempt > 1) {
+        console.log(`✅ Transaction succeeded on attempt ${attempt}`);
+      }
+      return result;
+    } catch (error) {
+      lastError = error instanceof Error ? error : new Error(String(error));
+      console.warn(
+        `❌ Transaction attempt ${attempt}/${maxRetries} failed:`,
+        lastError.message
+      );
+
+      if (attempt < maxRetries) {
+        const delay = delayMs * attempt;
+        console.log(`⏳ Waiting ${delay}ms before retry...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError;
+}
+
 let evmPrivateKey: string;
 // let solanaPrivateKey: string;
 // let solanaKeypair: anchor.web3.Keypair | null = null;
@@ -396,28 +429,6 @@ async function createAutomatedBrokerIdInternal(
       };
     }
 
-    console.log(
-      "✅ All simulations passed, adding broker to Orderly database..."
-    );
-
-    const orderlyDbResult = await addBrokerToBothDatabases({
-      brokerId: brokerId,
-      brokerName: brokerData.brokerName,
-      makerFee: brokerData.makerFee,
-      takerFee: brokerData.takerFee,
-    });
-
-    if (!orderlyDbResult.success) {
-      throw new Error(
-        `Failed to add broker to Orderly database: ${orderlyDbResult.error}`
-      );
-    }
-
-    const brokerIndex = orderlyDbResult.data.orderlyBrokerIndex;
-    console.log(
-      `✅ Broker added to Orderly database with index: ${brokerIndex}`
-    );
-
     console.log("🚀 Executing on-chain transactions...");
 
     const executionPromises: Array<
@@ -476,8 +487,35 @@ async function createAutomatedBrokerIdInternal(
       transactionHashes[chainId] = txHash;
     }
 
-    console.log(`Successfully created broker ID ${brokerId} on all chains`);
+    console.log(`✅ Successfully created broker ID ${brokerId} on all chains`);
     console.log(`Transaction hashes:`, transactionHashes);
+
+    console.log("💾 Adding broker to databases...");
+
+    const orderlyDbResult = await addBrokerToBothDatabases({
+      brokerId: brokerId,
+      brokerName: brokerData.brokerName,
+      makerFee: brokerData.makerFee,
+      takerFee: brokerData.takerFee,
+    });
+
+    if (!orderlyDbResult.success) {
+      console.error(
+        `❌ Failed to add broker to databases: ${orderlyDbResult.error}`
+      );
+      return {
+        success: false,
+        brokerId,
+        transactionHashes,
+        errors: [
+          `Blockchain transactions succeeded but database operation failed: ${orderlyDbResult.error}`,
+          "Manual database intervention may be required to sync with blockchain state",
+        ],
+      };
+    }
+
+    const brokerIndex = orderlyDbResult.data.orderlyBrokerIndex;
+    console.log(`✅ Broker added to databases with index: ${brokerIndex}`);
 
     return {
       success: true,
@@ -551,20 +589,23 @@ export async function setBrokerAccountId(
 
     const increasedGasPrice = (gasPrice * 120n) / 100n;
 
-    const tx = await feeManager.setBrokerAccountId(brokerHash, accountId, {
-      gasPrice: increasedGasPrice,
+    const txHash = await retryTransaction(async () => {
+      const tx = await feeManager.setBrokerAccountId(brokerHash, accountId, {
+        gasPrice: increasedGasPrice,
+      });
+      await tx.wait();
+      return tx.hash;
     });
-    await tx.wait();
 
     console.log(
-      `Successfully set broker account ID. Transaction hash: ${tx.hash}`
+      `Successfully set broker account ID. Transaction hash: ${txHash}`
     );
 
     const orderlyChainId = ALL_CHAINS[orderlyChainName as ChainName].chainId;
     return {
       success: true,
       brokerId,
-      transactionHashes: { [orderlyChainId]: tx.hash },
+      transactionHashes: { [orderlyChainId]: txHash },
     };
   } catch (error) {
     console.error("Failed to set broker account ID:", error);
@@ -894,15 +935,17 @@ async function executeVaultTransaction(
     throw new Error("Vault address not configured for this chain");
   }
 
-  const provider = createProvider(chainName as ChainName, true);
-  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
-  const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
+  return retryTransaction(async () => {
+    const provider = createProvider(chainName as ChainName, true);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const vault = Vault__factory.connect(chainConfig.vaultAddress!, wallet);
 
-  const brokerHash = getBrokerHash(brokerId);
-  const tx = await vault.setAllowedBroker(brokerHash, true);
-  await tx.wait();
+    const brokerHash = getBrokerHash(brokerId);
+    const tx = await vault.setAllowedBroker(brokerHash, true);
+    await tx.wait();
 
-  return tx.hash;
+    return tx.hash;
+  });
 }
 
 async function executeVaultManagerTransaction(
@@ -914,30 +957,32 @@ async function executeVaultManagerTransaction(
     throw new Error("VaultManager address not configured for Orderly L2");
   }
 
-  const provider = getEvmProvider(chainName);
-  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
-  const vaultManager = VaultManager__factory.connect(
-    chainConfig.vaultManagerAddress,
-    wallet
-  );
+  return retryTransaction(async () => {
+    const provider = getEvmProvider(chainName);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const vaultManager = VaultManager__factory.connect(
+      chainConfig.vaultManagerAddress!,
+      wallet
+    );
 
-  const brokerHash = getBrokerHash(brokerId);
+    const brokerHash = getBrokerHash(brokerId);
 
-  const feeData = await provider.getFeeData();
-  const gasPrice = feeData.gasPrice;
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice;
 
-  if (!gasPrice) {
-    throw new Error("Unable to get gas price from network");
-  }
+    if (!gasPrice) {
+      throw new Error("Unable to get gas price from network");
+    }
 
-  const increasedGasPrice = (gasPrice * 120n) / 100n;
+    const increasedGasPrice = (gasPrice * 120n) / 100n;
 
-  const tx = await vaultManager.setAllowedBroker(brokerHash, true, {
-    gasPrice: increasedGasPrice,
+    const tx = await vaultManager.setAllowedBroker(brokerHash, true, {
+      gasPrice: increasedGasPrice,
+    });
+    await tx.wait();
+
+    return tx.hash;
   });
-  await tx.wait();
-
-  return tx.hash;
 }
 
 // async function executeSolConnectorTransaction(
@@ -2042,15 +2087,17 @@ async function executeL1Deletion(
     throw new Error("Vault address not configured for this chain");
   }
 
-  const provider = createProvider(chainName as ChainName, true);
-  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
-  const vault = Vault__factory.connect(chainConfig.vaultAddress, wallet);
+  return retryTransaction(async () => {
+    const provider = createProvider(chainName as ChainName, true);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const vault = Vault__factory.connect(chainConfig.vaultAddress!, wallet);
 
-  const brokerHash = getBrokerHash(brokerId);
-  const tx = await vault.setAllowedBroker(brokerHash, false);
-  await tx.wait();
+    const brokerHash = getBrokerHash(brokerId);
+    const tx = await vault.setAllowedBroker(brokerHash, false);
+    await tx.wait();
 
-  return tx.hash;
+    return tx.hash;
+  });
 }
 
 async function executeOrderlyDeletion(
@@ -2062,30 +2109,32 @@ async function executeOrderlyDeletion(
     throw new Error("VaultManager address not configured for Orderly L2");
   }
 
-  const provider = getEvmProvider(chainName);
-  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
-  const vaultManager = VaultManager__factory.connect(
-    chainConfig.vaultManagerAddress,
-    wallet
-  );
+  return retryTransaction(async () => {
+    const provider = getEvmProvider(chainName);
+    const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+    const vaultManager = VaultManager__factory.connect(
+      chainConfig.vaultManagerAddress!,
+      wallet
+    );
 
-  const brokerHash = getBrokerHash(brokerId);
+    const brokerHash = getBrokerHash(brokerId);
 
-  const feeData = await provider.getFeeData();
-  const gasPrice = feeData.gasPrice;
+    const feeData = await provider.getFeeData();
+    const gasPrice = feeData.gasPrice;
 
-  if (!gasPrice) {
-    throw new Error("Unable to get gas price from network");
-  }
+    if (!gasPrice) {
+      throw new Error("Unable to get gas price from network");
+    }
 
-  const increasedGasPrice = (gasPrice * 120n) / 100n;
+    const increasedGasPrice = (gasPrice * 120n) / 100n;
 
-  const tx = await vaultManager.setAllowedBroker(brokerHash, false, {
-    gasPrice: increasedGasPrice,
+    const tx = await vaultManager.setAllowedBroker(brokerHash, false, {
+      gasPrice: increasedGasPrice,
+    });
+    await tx.wait();
+
+    return tx.hash;
   });
-  await tx.wait();
-
-  return tx.hash;
 }
 
 // async function executeSolanaDeletion(
