@@ -55,7 +55,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
 
     if (!dbUrl || !dbUser || !dbPassword) {
       throw new Error(
-        `Missing required Orderly database environment variables for QA environment. Please set ORDERLY_DATABASE_URL, ORDERLY_DATABASE_USER, and ORDERLY_DATABASE_PASSWORD.`
+        `Missing required Orderly database environment variables for QA environment. Please set ORDERLY_DATABASE_URL, ORDERLY_DATABASE_USER and ORDERLY_DATABASE_PASSWORD.`
       );
     }
 
@@ -121,7 +121,7 @@ async function getNexusDatabaseUrl(): Promise<string> {
 
     if (!dbUrl || !dbUser || !dbPassword) {
       throw new Error(
-        `Missing required Nexus database environment variables for QA environment. Please set ORDERLY_DATABASE_URL_NEXUS, ORDERLY_DATABASE_USER, and     const dbPassword = process.env.ORDERLY_DATABASE_PASSWORD;
+        `Missing required Nexus database environment variables for QA environment. Please set ORDERLY_DATABASE_URL_NEXUS, ORDERLY_DATABASE_USER and ORDERLY_DATABASE_PASSWORD;
 .`
       );
     }
