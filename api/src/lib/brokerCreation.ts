@@ -440,16 +440,17 @@ async function createAutomatedBrokerIdInternal(
         );
       }
 
-      if (chainConfig.solConnectorAddress) {
-        executionPromises.push(
-          executeSolConnectorTransaction(
-            chainConfig,
-            brokerId,
-            brokerIndex,
-            chainName
-          ).then(txHash => ({ chainId, txHash }))
-        );
-      }
+      // TODO requires sol connector vault upgrade
+      // if (chainConfig.solConnectorAddress) {
+      //   executionPromises.push(
+      //     executeSolConnectorTransaction(
+      //       chainConfig,
+      //       brokerId,
+      //       brokerIndex,
+      //       chainName
+      //     ).then(txHash => ({ chainId, txHash }))
+      //   );
+      // }
     }
 
     if (solanaChains.length > 0) {
@@ -939,45 +940,45 @@ async function executeVaultManagerTransaction(
   return tx.hash;
 }
 
-async function executeSolConnectorTransaction(
-  chainConfig: EnvironmentChainConfig,
-  brokerId: string,
-  brokerIndex: number,
-  chainName: string
-): Promise<string> {
-  if (!chainConfig.solConnectorAddress) {
-    throw new Error("SolConnector address not configured for this chain");
-  }
+// async function executeSolConnectorTransaction(
+//   chainConfig: EnvironmentChainConfig,
+//   brokerId: string,
+//   brokerIndex: number,
+//   chainName: string
+// ): Promise<string> {
+//   if (!chainConfig.solConnectorAddress) {
+//     throw new Error("SolConnector address not configured for this chain");
+//   }
 
-  const provider = createProvider(chainName as ChainName, true);
-  const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
-  const solConnector = SolConnector__factory.connect(
-    chainConfig.solConnectorAddress,
-    wallet
-  );
+//   const provider = createProvider(chainName as ChainName, true);
+//   const wallet = new ethers.Wallet(getEvmPrivateKey(), provider);
+//   const solConnector = SolConnector__factory.connect(
+//     chainConfig.solConnectorAddress,
+//     wallet
+//   );
 
-  const brokerHash = getBrokerHash(brokerId);
+//   const brokerHash = getBrokerHash(brokerId);
 
-  const feeData = await provider.getFeeData();
-  const gasPrice = feeData.gasPrice;
+//   const feeData = await provider.getFeeData();
+//   const gasPrice = feeData.gasPrice;
 
-  if (!gasPrice) {
-    throw new Error("Unable to get gas price from network");
-  }
+//   if (!gasPrice) {
+//     throw new Error("Unable to get gas price from network");
+//   }
 
-  const increasedGasPrice = (gasPrice * 120n) / 100n;
+//   const increasedGasPrice = (gasPrice * 120n) / 100n;
 
-  const tx = await solConnector.setBrokerHash2Index(brokerHash, brokerIndex, {
-    gasPrice: increasedGasPrice,
-  });
-  await tx.wait();
+//   const tx = await solConnector.setBrokerHash2Index(brokerHash, brokerIndex, {
+//     gasPrice: increasedGasPrice,
+//   });
+//   await tx.wait();
 
-  console.log(
-    `🚀 SolConnector setBrokerHash2Index transaction executed for broker ${brokerId} with index ${brokerIndex} on ${chainName}: ${tx.hash}`
-  );
+//   console.log(
+//     `🚀 SolConnector setBrokerHash2Index transaction executed for broker ${brokerId} with index ${brokerIndex} on ${chainName}: ${tx.hash}`
+//   );
 
-  return tx.hash;
-}
+//   return tx.hash;
+// }
 
 export async function checkBrokerCreationPermissions(
   environment?: Environment

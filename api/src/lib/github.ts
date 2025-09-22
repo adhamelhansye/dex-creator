@@ -636,9 +636,15 @@ function prepareDexConfigContent(
   ];
 
   const selectedChainIds = config.chainIds || [];
-  const selectedMainnetChains = selectedChainIds.filter(id =>
+  let selectedMainnetChains = selectedChainIds.filter(id =>
     mainnetChainIds.includes(id)
   );
+  if (selectedMainnetChains.length === 0) {
+    selectedMainnetChains = [
+      1, 1329, 80094, 1514, 146, 43114, 56, 42161, 10, 5000, 8453, 2818, 34443,
+      2741, 98866,
+    ];
+  }
   const selectedTestnetChains = selectedChainIds.filter(id =>
     testnetChainIds.includes(id)
   );
@@ -651,8 +657,12 @@ function prepareDexConfigContent(
     // Network settings
     VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
-    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains.join(","),
-    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains.join(","),
+    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains
+      .filter(id => id !== 900900900)
+      .join(","),
+    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains
+      .filter(id => id !== 901901901)
+      .join(","),
     VITE_DEFAULT_CHAIN: config.defaultChain ? String(config.defaultChain) : "",
 
     // Wallet settings
