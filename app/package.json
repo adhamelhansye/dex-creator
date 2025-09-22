@@ -46,7 +46,6 @@
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@unocss/preset-uno": "^66.1.0-beta.8",
-    "@unocss/preset-web-fonts": "^66.1.0-beta.8",
     "remix": "^2.16.4",
     "tsx": "^4.19.3",
     "unocss": "^66.1.0-beta.8",

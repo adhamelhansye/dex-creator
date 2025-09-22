@@ -6628,7 +6628,7 @@
     "@unocss/core" "66.1.0-beta.8"
     "@unocss/preset-wind3" "66.1.0-beta.8"
 
-"@unocss/preset-web-fonts@66.1.0-beta.8", "@unocss/preset-web-fonts@^66.1.0-beta.8":
+"@unocss/preset-web-fonts@66.1.0-beta.8":
   version "66.1.0-beta.8"
   resolved "https://registry.yarnpkg.com/@unocss/preset-web-fonts/-/preset-web-fonts-66.1.0-beta.8.tgz#51be68dda06726026b9c17949b631d3273fba085"
   integrity sha512-sDeDaQeMPSVm7YbiNuOoboJKLszqPCwXaJwfQasqlAoBOL527Cp0iVTivImhcHsd4uXBRG5pxqB+d9pKqYAJeA==

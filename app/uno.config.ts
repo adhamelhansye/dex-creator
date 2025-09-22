@@ -1,16 +1,7 @@
-import { defineConfig, presetUno, presetWebFonts, presetIcons } from "unocss";
+import { defineConfig, presetUno, presetIcons } from "unocss";
 
 export default defineConfig({
-  presets: [
-    presetUno({ important: true }),
-    presetWebFonts({
-      provider: "google",
-      fonts: {
-        sans: "Inter:400,500,600,700",
-      },
-    }),
-    presetIcons(),
-  ],
+  presets: [presetUno({ important: true }), presetIcons()],
   safelist: [
     "rounded-full",
     "py-2",
