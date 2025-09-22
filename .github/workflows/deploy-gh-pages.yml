@@ -1,4 +1,4 @@
-name: Deploy to GitHub Pages
+name: Deploy Fork
 
 on:
   push:
@@ -48,7 +48,7 @@ jobs:
           retention-days: 1
 
   deploy:
-    name: Deploy to GitHub Pages
+    name: Deploy Fork
     runs-on: ubuntu-latest
     needs: build
     environment:
