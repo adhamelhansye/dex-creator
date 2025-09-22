@@ -42,7 +42,6 @@ import {
   getCurrentEnvironment,
 } from "../utils/config";
 import {
-  ChainName,
   ORDER_ADDRESSES,
   USDC_ADDRESSES,
   OrderTokenChainName,
@@ -139,7 +138,7 @@ export function GraduationForm({
 
   const defaultChain =
     getCurrentEnvironment() === "mainnet" ? "arbitrum" : "arbitrum-sepolia";
-  const [chain, setChain] = useState<ChainName>(defaultChain);
+  const [chain, setChain] = useState<OrderTokenChainName>(defaultChain);
 
   const [brokerId, setBrokerId] = useState("");
   const [brokerIdError, setBrokerIdError] = useState<string | null>(null);
@@ -197,7 +196,7 @@ export function GraduationForm({
   }, []);
 
   const handleChainChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const newChain = e.target.value as ChainName;
+    const newChain = e.target.value as OrderTokenChainName;
     setChain(newChain);
 
     const preferredChain = getPreferredChain(newChain);

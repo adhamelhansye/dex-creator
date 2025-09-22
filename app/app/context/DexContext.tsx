@@ -6,7 +6,7 @@ import {
   ReactNode,
   useEffect,
 } from "react";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "./useAuth";
 import { get } from "../utils/apiClient";
 
 interface DexData {

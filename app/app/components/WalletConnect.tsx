@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useAccount, useDisconnect } from "wagmi";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useModal } from "../context/ModalContext";
 import { useAppKit } from "@reown/appkit/react";
 import { toast } from "react-toastify";

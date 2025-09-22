@@ -4,9 +4,9 @@ import { AppLogos } from "@orderly.network/react-app";
 
 import {
   type Environment,
-  type ChainName,
   type ChainConfig,
   ALL_CHAINS,
+  OrderTokenChainName,
 } from "../../../config";
 
 export type OrderlyConfig = {
@@ -110,7 +110,9 @@ export function getOrderTokenSupportedChains(): ChainConfig[] {
   );
 }
 
-export function getPreferredChain(selectedChain: ChainName): ChainName {
+export function getPreferredChain(
+  selectedChain: OrderTokenChainName
+): OrderTokenChainName {
   const deploymentEnv = getCurrentEnvironment();
   const isTestnet =
     deploymentEnv === "staging" ||
@@ -118,25 +120,21 @@ export function getPreferredChain(selectedChain: ChainName): ChainName {
     deploymentEnv === "dev";
 
   if (isTestnet) {
-    const testnetMap: Record<ChainName, ChainName> = {
+    const testnetMap: Record<OrderTokenChainName, OrderTokenChainName> = {
       arbitrum: "arbitrum-sepolia",
       ethereum: "sepolia",
       "arbitrum-sepolia": "arbitrum-sepolia",
       sepolia: "sepolia",
-      orderlyL2: "orderlyTestnet",
-      orderlyTestnet: "orderlyTestnet",
       "solana-devnet": "solana-devnet",
       "solana-mainnet-beta": "solana-devnet",
     };
     return testnetMap[selectedChain] || selectedChain;
   } else {
-    const mainnetMap: Record<ChainName, ChainName> = {
+    const mainnetMap: Record<OrderTokenChainName, OrderTokenChainName> = {
       "arbitrum-sepolia": "arbitrum",
       sepolia: "ethereum",
       arbitrum: "arbitrum",
       ethereum: "ethereum",
-      orderlyTestnet: "orderlyL2",
-      orderlyL2: "orderlyL2",
       "solana-devnet": "solana-mainnet-beta",
       "solana-mainnet-beta": "solana-mainnet-beta",
     };

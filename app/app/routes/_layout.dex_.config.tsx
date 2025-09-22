@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useCallback } from "react";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useModal } from "../context/ModalContext";
 import { get, post, putFormData, createDexFormData } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";

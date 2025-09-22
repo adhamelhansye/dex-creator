@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
 import { useOrderlyKey } from "../context/OrderlyKeyContext";
 import { useModal } from "../context/ModalContext";
@@ -20,7 +20,7 @@ import {
   getPreferredChain,
   getCurrentEnvironment,
 } from "../utils/config";
-import { ChainName } from "../../../config";
+import { OrderTokenChainName } from "../../../config";
 
 const SUPPORTED_CHAINS = getSupportedChains();
 
@@ -36,7 +36,7 @@ export default function ReferralRoute() {
 
   const defaultChain =
     getCurrentEnvironment() === "mainnet" ? "arbitrum" : "arbitrum-sepolia";
-  const preferredChain = getPreferredChain(defaultChain as ChainName);
+  const preferredChain = getPreferredChain(defaultChain as OrderTokenChainName);
   const currentChainId =
     SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 42161;
   const isCorrectChain = connectedChainId === currentChainId;

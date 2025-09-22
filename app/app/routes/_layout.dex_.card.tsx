@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent, useRef, useMemo } from "react";
 import { toast } from "react-toastify";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
 import { putFormData, get } from "../utils/apiClient";
 import { Button } from "../components/Button";

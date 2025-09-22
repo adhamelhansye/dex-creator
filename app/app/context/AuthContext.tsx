@@ -1,6 +1,5 @@
 import {
   createContext,
-  useContext,
   useState,
   useCallback,
   ReactNode,
@@ -37,6 +36,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previousAddress, setPreviousAddress] = useState<string | null>(null);
 
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
@@ -58,6 +58,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       if (savedToken && savedUser) {
         return true;
       }
+      return false;
+    }
+
+    if (address && user.address.toLowerCase() !== address.toLowerCase()) {
+      console.log(
+        "Authenticated address doesn't match connected wallet address"
+      );
+      logout();
       return false;
     }
 
@@ -85,7 +93,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       logout();
       return false;
     }
-  }, [token, user, logout]);
+  }, [token, user, address, logout]);
 
   useEffect(() => {
     const validateSavedAuth = async () => {
@@ -126,13 +134,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     validateSavedAuth();
-  }, [isConnected, logout]);
+  }, [isConnected, address, logout]);
 
   useEffect(() => {
     if (!isConnected && user) {
       logout();
     }
   }, [isConnected, user, logout]);
+
+  useEffect(() => {
+    if (address && previousAddress && address !== previousAddress) {
+      console.log(
+        "Wallet address changed from",
+        previousAddress,
+        "to",
+        address
+      );
+
+      setUser(null);
+      setToken(null);
+      localStorage.removeItem("auth_token");
+      localStorage.removeItem("auth_user");
+
+      toast.info("Wallet switched. Please sign in with the new wallet.");
+    }
+
+    setPreviousAddress(address || null);
+  }, [address, previousAddress]);
 
   useEffect(() => {
     setGlobalDisconnect(disconnect);
@@ -211,12 +239,4 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       {children}
     </AuthContext.Provider>
   );
-}
-
-export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
 }

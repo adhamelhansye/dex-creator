@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
 import { get } from "../utils/apiClient";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { toast } from "react-toastify";
 import { Card } from "./Card";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
-// Types for workflow run data
 type WorkflowRun = {
   id: number;
   name: string;

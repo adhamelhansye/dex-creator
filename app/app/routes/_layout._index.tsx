@@ -1,7 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { Outlet, useNavigate } from "@remix-run/react";
 import { useAppKit } from "@reown/appkit/react";
 

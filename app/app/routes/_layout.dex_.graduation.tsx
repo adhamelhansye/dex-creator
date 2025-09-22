@@ -1,5 +1,5 @@
 import { GraduationForm } from "../components/GraduationForm";
-import { useAuth } from "../context/AuthContext";
+import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
 import { Card } from "../components/Card";
 import WalletConnect from "../components/WalletConnect";
