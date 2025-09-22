@@ -214,7 +214,7 @@ export default function BoardRoute() {
               <Link
                 key={broker.brokerId}
                 to={`/board/${broker.brokerId}`}
-                className="staggered-item block"
+                className="staggered-item block h-fit"
                 style={{
                   animation: `slideFadeIn 0.25s ease ${index * 0.05}s forwards`,
                 }}
