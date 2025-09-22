@@ -355,6 +355,26 @@ appkit-modal {
 .staggered-item:nth-child(3) { animation: slideFadeIn 0.25s ease 0.15s forwards; }
 .staggered-item:nth-child(4) { animation: slideFadeIn 0.25s ease 0.2s forwards; }
 .staggered-item:nth-child(5) { animation: slideFadeIn 0.25s ease 0.25s forwards; }
+.staggered-item:nth-child(6) { animation: slideFadeIn 0.25s ease 0.3s forwards; }
+.staggered-item:nth-child(7) { animation: slideFadeIn 0.25s ease 0.35s forwards; }
+.staggered-item:nth-child(8) { animation: slideFadeIn 0.25s ease 0.4s forwards; }
+.staggered-item:nth-child(9) { animation: slideFadeIn 0.25s ease 0.45s forwards; }
+.staggered-item:nth-child(10) { animation: slideFadeIn 0.25s ease 0.5s forwards; }
+.staggered-item:nth-child(11) { animation: slideFadeIn 0.25s ease 0.55s forwards; }
+.staggered-item:nth-child(12) { animation: slideFadeIn 0.25s ease 0.6s forwards; }
+.staggered-item:nth-child(13) { animation: slideFadeIn 0.25s ease 0.65s forwards; }
+.staggered-item:nth-child(14) { animation: slideFadeIn 0.25s ease 0.7s forwards; }
+.staggered-item:nth-child(15) { animation: slideFadeIn 0.25s ease 0.75s forwards; }
+.staggered-item:nth-child(16) { animation: slideFadeIn 0.25s ease 0.8s forwards; }
+.staggered-item:nth-child(17) { animation: slideFadeIn 0.25s ease 0.85s forwards; }
+.staggered-item:nth-child(18) { animation: slideFadeIn 0.25s ease 0.9s forwards; }
+.staggered-item:nth-child(19) { animation: slideFadeIn 0.25s ease 0.95s forwards; }
+.staggered-item:nth-child(20) { animation: slideFadeIn 0.25s ease 1s forwards; }
+
+/* Fallback for items beyond 20 - they will use the inline animation delay */
+.staggered-item:nth-child(n+21) { 
+  animation: slideFadeIn 0.25s ease forwards; 
+}
 
 /* Fix for mobile navigation height issues */
 @supports (-webkit-touch-callout: none) {

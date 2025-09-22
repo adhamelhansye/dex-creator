@@ -100,7 +100,11 @@ export default function DexDetailRoute() {
       };
 
       setDexData(dexData);
-      setDailyStats(response.data.daily);
+      setDailyStats(
+        response.data.daily.sort(
+          (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+        )
+      );
     } catch (err) {
       console.error("Error fetching DEX data:", err);
       setError("Failed to load DEX data");

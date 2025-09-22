@@ -216,7 +216,7 @@ export default function BoardRoute() {
                 to={`/board/${broker.brokerId}`}
                 className="staggered-item block"
                 style={{
-                  animationDelay: `${index * 0.05}s`,
+                  animation: `slideFadeIn 0.25s ease ${index * 0.05}s forwards`,
                 }}
               >
                 <DexCard broker={broker} rank={index} timePeriod={timePeriod} />
