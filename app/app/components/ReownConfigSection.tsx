@@ -104,14 +104,11 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
                   </a>{" "}
                   and create a free account
                 </li>
-                <li>Click "Create Project" and give your project a name</li>
+                <li>Set up your project following their setup wizard</li>
                 <li>
-                  Select <strong>WalletKit</strong> as the product type
+                  Copy the Project ID from the top header of your project
+                  dashboard
                 </li>
-                <li>
-                  Choose <strong>JavaScript</strong> as the platform
-                </li>
-                <li>Copy the Project ID from your dashboard</li>
               </ol>
             </div>
 
