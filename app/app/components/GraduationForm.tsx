@@ -633,15 +633,35 @@ export function GraduationForm({
       console.log("Transaction verification error:", error);
 
       let errorMessage = "Verification failed";
+      let is502ErrorLocal = false;
 
       if (error instanceof Error) {
         errorMessage = error.message;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const statusCode = (error as any)?.status;
+        is502ErrorLocal =
+          statusCode === 502 ||
+          error.message.includes("502") ||
+          error.message.includes("Bad Gateway");
         setResult({ success: false, message: error.message });
       } else {
         setResult({ success: false, message: "Unknown error occurred" });
       }
 
-      toast.error(errorMessage);
+      if (is502ErrorLocal) {
+        toast.error(
+          "Connection lost during verification. The transaction may have succeeded. Refreshing page to check status...",
+          {
+            autoClose: 3000,
+            closeButton: false,
+          }
+        );
+        setTimeout(() => {
+          window.location.reload();
+        }, 2000);
+      } else {
+        toast.error(errorMessage);
+      }
     } finally {
       setIsLoading(false);
     }
