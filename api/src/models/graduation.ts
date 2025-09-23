@@ -61,13 +61,14 @@ export async function verifyOrderTransaction(
   }
 
   const prismaClient = await getPrisma();
-  const existingDex = await prismaClient.dex.findFirst({
+
+  const existingUsedTx = await prismaClient.usedTransactionHash.findUnique({
     where: {
-      graduationTxHash: txHash,
+      txHash: txHash,
     },
   });
 
-  if (existingDex) {
+  if (existingUsedTx) {
     return {
       success: false,
       message:

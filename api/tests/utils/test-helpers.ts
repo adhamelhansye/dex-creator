@@ -169,3 +169,12 @@ export function createMockThemeCSS(): string {
 export function createMockLogoData(): string {
   return "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
 }
+
+export function generateRandomTxHash(): string {
+  const chars = "0123456789abcdef";
+  let result = "0x";
+  for (let i = 0; i < 64; i++) {
+    result += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return result;
+}

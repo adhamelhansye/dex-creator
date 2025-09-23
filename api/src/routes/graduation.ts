@@ -134,12 +134,20 @@ graduationRoutes.post(
       }
 
       try {
-        await prismaClient.dex.update({
+        const updatedDex = await prismaClient.dex.update({
           where: { userId },
           data: {
             brokerId,
             isGraduated: false,
             graduationTxHash: txHash,
+          },
+        });
+
+        await prismaClient.usedTransactionHash.create({
+          data: {
+            txHash,
+            userId,
+            dexId: updatedDex.id,
           },
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -148,6 +156,16 @@ graduationRoutes.post(
           error.code === "P2002" &&
           error.meta?.target?.includes("graduationTxHash")
         ) {
+          return c.json(
+            {
+              success: false,
+              message:
+                "This transaction hash has already been used for graduation. Please use a different transaction.",
+            },
+            { status: 400 }
+          );
+        }
+        if (error.code === "P2002" && error.meta?.target?.includes("txHash")) {
           return c.json(
             {
               success: false,

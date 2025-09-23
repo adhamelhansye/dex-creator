@@ -8,6 +8,7 @@ import {
   TestDataFactory,
   createMockBrokerId,
   TestUser,
+  generateRandomTxHash,
 } from "../utils/test-helpers";
 import { Hono } from "hono";
 
@@ -38,9 +39,10 @@ describe("Graduation Routes", () => {
         brokerId: "demo",
       });
 
+      const txHash = generateRandomTxHash();
+
       const graduationData = {
-        txHash:
-          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        txHash,
         chain: "ethereum",
         brokerId: createMockBrokerId(),
         makerFee: 10,
@@ -211,9 +213,11 @@ describe("Graduation Routes", () => {
 
       const sameBrokerId = createMockBrokerId();
 
+      const txHash1 = generateRandomTxHash();
+      const txHash2 = generateRandomTxHash();
+
       const graduationData1 = {
-        txHash:
-          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        txHash: txHash1,
         chain: "ethereum",
         brokerId: sameBrokerId,
         makerFee: 10,
@@ -222,8 +226,7 @@ describe("Graduation Routes", () => {
       };
 
       const graduationData2 = {
-        txHash:
-          "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        txHash: txHash2,
         chain: "ethereum",
         brokerId: sameBrokerId,
         makerFee: 10,
@@ -268,9 +271,11 @@ describe("Graduation Routes", () => {
         brokerId: "demo",
       });
 
+      const txHash1 = generateRandomTxHash();
+      const txHash2 = generateRandomTxHash();
+
       const graduationData1 = {
-        txHash:
-          "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+        txHash: txHash1,
         chain: "ethereum",
         brokerId: createMockBrokerId(),
         makerFee: 10,
@@ -279,8 +284,12 @@ describe("Graduation Routes", () => {
       };
 
       const graduationData2 = {
-        ...graduationData1,
+        txHash: txHash2,
+        chain: "ethereum",
         brokerId: createMockBrokerId(),
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
       };
 
       const [response1, response2] = await Promise.all([
@@ -301,9 +310,10 @@ describe("Graduation Routes", () => {
         brokerId: "demo",
       });
 
+      const txHash = generateRandomTxHash();
+
       const graduationData1 = {
-        txHash:
-          "0xabcdef1234567890abcdef1234567890abcdef1234567890abcdef1234567890",
+        txHash,
         chain: "ethereum",
         brokerId: createMockBrokerId(),
         makerFee: 10,
@@ -327,8 +337,12 @@ describe("Graduation Routes", () => {
       });
 
       const graduationData2 = {
-        ...graduationData1,
+        txHash,
+        chain: "ethereum",
         brokerId: createMockBrokerId(),
+        makerFee: 10,
+        takerFee: 30,
+        paymentType: "order" as const,
       };
 
       const response2 = await request2.post(
