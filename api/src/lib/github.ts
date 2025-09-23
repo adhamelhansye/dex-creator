@@ -609,7 +609,7 @@ function prepareDexConfigContent(
     56, // BNB Chain
     // 1329, // Sei
     // 43114, // Avalanche
-    // 900900900, // Solana
+    900900900, // Solana
     // 2818, // Morph
     // 146, // Sonic
     // 80094, // Berachain
@@ -649,12 +649,8 @@ function prepareDexConfigContent(
     // Network settings
     VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
-    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains
-      .filter(id => id !== 900900900)
-      .join(","),
-    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains
-      .filter(id => id !== 901901901)
-      .join(","),
+    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains,
+    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains,
     VITE_DEFAULT_CHAIN: config.defaultChain ? String(config.defaultChain) : "",
 
     // Wallet settings
