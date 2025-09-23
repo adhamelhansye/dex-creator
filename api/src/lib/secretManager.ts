@@ -30,7 +30,7 @@ function getSecretNames(deploymentEnv: string): Record<string, string> {
         templatePat: `projects/964694002890/secrets/dex-creator-template-pat-prod-evm/versions/latest`,
         orderReceiverAddress: `projects/964694002890/secrets/dex-creator-order-receiver-address-prod-evm/versions/latest`,
         brokerCreationPrivateKey: `projects/100655379011/secrets/dex-creator-broker-creation-private-key-prod-evm/versions/latest`,
-        brokerCreationPrivateKeySol: `projects/100655379011/secrets/dex-creator-broker-creation-private-key-sol-prod-evm/versions/latest`,
+        brokerCreationPrivateKeySol: `projects/964694002890/secrets/dex-creator-broker-creation-private-key-sol-prod-evm/versions/latest`,
       };
     case "staging":
       return {
