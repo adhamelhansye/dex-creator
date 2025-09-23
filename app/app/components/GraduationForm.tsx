@@ -1303,6 +1303,21 @@ export function GraduationForm({
                 >
                   Verify Transaction
                 </Button>
+
+                {/* Disabled state hint */}
+                {(!txHash || !!brokerIdError || !brokerId) && (
+                  <div className="mt-2 text-xs text-gray-400 text-center">
+                    {!brokerId && (
+                      <span>Please enter your broker ID to continue</span>
+                    )}
+                    {brokerId && brokerIdError && (
+                      <span>Please fix the broker ID error above</span>
+                    )}
+                    {brokerId && !brokerIdError && !txHash && (
+                      <span>Please enter the transaction hash to verify</span>
+                    )}
+                  </div>
+                )}
               </form>
             </div>
           )}
