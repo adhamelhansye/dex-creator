@@ -1,10 +1,21 @@
 import { PrismaClient } from "@prisma/client";
 import { MAX_BROKER_COUNT } from "../../../config";
 import { Result } from "./types";
+import { getCurrentEnvironment } from "../models/dex";
 
 const prisma = new PrismaClient();
 
-const STARTING_BROKER_INDEX = 18_000;
+const BROKER_INDEX_START = {
+  mainnet: 18_000,
+  staging: 18_002,
+  qa: 18_003,
+  dev: 18_000,
+} as const;
+
+function getStartingBrokerIndex(): number {
+  const env = getCurrentEnvironment();
+  return BROKER_INDEX_START[env];
+}
 
 export type BrokerIndexResult = Result<{ brokerIndex: number }>;
 
@@ -12,6 +23,8 @@ export type CreateBrokerIndexResult = Result<{ brokerIndex: number }>;
 
 export async function getNextBrokerIndex(): Promise<BrokerIndexResult> {
   try {
+    const startingBrokerIndex = getStartingBrokerIndex();
+
     const lastBroker = await prisma.brokerIndex.findFirst({
       orderBy: {
         brokerIndex: "desc",
@@ -23,13 +36,14 @@ export async function getNextBrokerIndex(): Promise<BrokerIndexResult> {
 
     let nextBrokerIndex = lastBroker
       ? lastBroker.brokerIndex + 1
-      : STARTING_BROKER_INDEX;
+      : startingBrokerIndex;
 
-    if (nextBrokerIndex < STARTING_BROKER_INDEX) {
-      nextBrokerIndex = STARTING_BROKER_INDEX;
+    if (nextBrokerIndex < startingBrokerIndex) {
+      nextBrokerIndex = startingBrokerIndex;
     }
 
-    if (nextBrokerIndex >= STARTING_BROKER_INDEX + MAX_BROKER_COUNT) {
+    const maxAllowedIndex = 18_000 + MAX_BROKER_COUNT;
+    if (nextBrokerIndex >= maxAllowedIndex) {
       return {
         success: false,
         error: `Only a maximum broker count of ${MAX_BROKER_COUNT} can be set up`,
