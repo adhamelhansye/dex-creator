@@ -1,9 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import { MAX_BROKER_COUNT } from "../../../config";
 import { Result } from "./types";
 import { getCurrentEnvironment } from "../models/dex";
-
-const prisma = new PrismaClient();
+import { getPrisma } from "./prisma";
 
 const BROKER_INDEX_START = {
   mainnet: 18_000,
@@ -25,6 +23,7 @@ export async function getNextBrokerIndex(): Promise<BrokerIndexResult> {
   try {
     const startingBrokerIndex = getStartingBrokerIndex();
 
+    const prisma = await getPrisma();
     const lastBroker = await prisma.brokerIndex.findFirst({
       orderBy: {
         brokerIndex: "desc",
@@ -75,6 +74,7 @@ export async function createBrokerIndex(
   brokerIndex: number
 ): Promise<CreateBrokerIndexResult> {
   try {
+    const prisma = await getPrisma();
     const existingBroker = await prisma.brokerIndex.findUnique({
       where: { brokerId },
     });
@@ -128,6 +128,7 @@ export async function getBrokerByBrokerId(
   brokerId: string
 ): Promise<Result<{ brokerIndex: number }>> {
   try {
+    const prisma = await getPrisma();
     const broker = await prisma.brokerIndex.findUnique({
       where: { brokerId },
       select: {
@@ -162,6 +163,7 @@ export async function getBrokerByIndex(
   brokerIndex: number
 ): Promise<Result<{ brokerId: string }>> {
   try {
+    const prisma = await getPrisma();
     const broker = await prisma.brokerIndex.findUnique({
       where: { brokerIndex },
       select: {
@@ -199,6 +201,7 @@ export async function getAllBrokerIndices(): Promise<
   Result<Array<{ brokerIndex: number; brokerId: string; createdAt: Date }>>
 > {
   try {
+    const prisma = await getPrisma();
     const brokers = await prisma.brokerIndex.findMany({
       orderBy: {
         brokerIndex: "asc",
@@ -231,6 +234,7 @@ export async function deleteBrokerIndex(
   brokerId: string
 ): Promise<Result<void>> {
   try {
+    const prisma = await getPrisma();
     const deletedBroker = await prisma.brokerIndex.delete({
       where: { brokerId },
     });
