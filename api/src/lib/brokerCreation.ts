@@ -12,11 +12,13 @@ import {
   FeeManager__factory,
   SolConnector__factory,
 } from "../../types/index";
+import { addBrokerToBothDatabases, getBrokerFromOrderlyDb } from "./orderlyDb";
 import {
-  addBrokerToBothDatabases,
-  getBrokerFromOrderlyDb,
   getNextBrokerIndex,
-} from "./orderlyDb";
+  createBrokerIndex,
+  getBrokerByBrokerId,
+  deleteBrokerIndex,
+} from "./brokerIndex";
 import { getSecret } from "./secretManager";
 import { createProvider } from "./fallbackProvider";
 
@@ -374,6 +376,10 @@ async function createAutomatedBrokerIdInternal(
     }
     const brokerIndex = nextBrokerIndexResult.data.brokerIndex;
 
+    console.log(
+      `📍 Using broker index: ${brokerIndex} for broker ID: ${brokerId}`
+    );
+
     const simulationPromises: Array<
       Promise<{ chainName: string; result: SimulationResult }>
     > = [];
@@ -525,34 +531,49 @@ async function createAutomatedBrokerIdInternal(
 
     console.log("💾 Adding broker to databases...");
 
-    const orderlyDbResult = await addBrokerToBothDatabases(
-      {
-        brokerId: brokerId,
-        brokerName: brokerData.brokerName,
-        makerFee: brokerData.makerFee,
-        takerFee: brokerData.takerFee,
-      },
+    const localBrokerIndexResult = await createBrokerIndex(
+      brokerId,
       brokerIndex
     );
-
-    if (!orderlyDbResult.success) {
+    if (!localBrokerIndexResult.success) {
       console.error(
-        `❌ Failed to add broker to databases: ${orderlyDbResult.error}`
+        `❌ Failed to create broker index entry: ${localBrokerIndexResult.error}`
       );
       return {
         success: false,
         brokerId,
         transactionHashes,
         errors: [
-          `Blockchain transactions succeeded but database operation failed: ${orderlyDbResult.error}`,
+          `Blockchain transactions succeeded but local broker index creation failed: ${localBrokerIndexResult.error}`,
           "Manual database intervention may be required to sync with blockchain state",
         ],
       };
     }
 
-    console.log(
-      `✅ Broker added to databases with index: ${orderlyDbResult.data.orderlyBrokerIndex}`
-    );
+    const orderlyDbResult = await addBrokerToBothDatabases({
+      brokerId: brokerId,
+      brokerName: brokerData.brokerName,
+      makerFee: brokerData.makerFee,
+      takerFee: brokerData.takerFee,
+    });
+
+    if (!orderlyDbResult.success) {
+      console.error(
+        `❌ Failed to add broker to Orderly databases: ${orderlyDbResult.error}`
+      );
+      return {
+        success: false,
+        brokerId,
+        transactionHashes,
+        errors: [
+          `Blockchain transactions succeeded but Orderly database operation failed: ${orderlyDbResult.error}`,
+          "Local broker index was created successfully",
+          "Manual database intervention may be required to sync with Orderly state",
+        ],
+      };
+    }
+
+    console.log(`✅ Broker added to all databases with index: ${brokerIndex}`);
 
     return {
       success: true,
@@ -1762,14 +1783,26 @@ export async function deleteBrokerId(
     );
 
     if (solanaDeletionChains.length > 0) {
-      const brokerResult = await getBrokerFromOrderlyDb(brokerId);
-      if (!brokerResult.success) {
-        throw new Error(
-          `Failed to get broker index for Solana deletion: ${brokerResult.error}`
-        );
-      }
+      const localBrokerResult = await getBrokerByBrokerId(brokerId);
+      let solanaBrokerIndex: number;
 
-      const solanaBrokerIndex = brokerResult.data.brokerIndex;
+      if (localBrokerResult.success) {
+        solanaBrokerIndex = localBrokerResult.data!.brokerIndex;
+        console.log(
+          `📍 Using broker index from local database: ${solanaBrokerIndex}`
+        );
+      } else {
+        console.log(
+          "⚠️ Broker not found in local database, falling back to Orderly DB"
+        );
+        const brokerResult = await getBrokerFromOrderlyDb(brokerId);
+        if (!brokerResult.success) {
+          throw new Error(
+            `Failed to get broker index for Solana deletion: ${brokerResult.error}`
+          );
+        }
+        solanaBrokerIndex = brokerResult.data.brokerIndex;
+      }
 
       for (const { chainName } of solanaDeletionChains) {
         const chainConfig = config[
@@ -1812,6 +1845,18 @@ export async function deleteBrokerId(
 
     if (errors.length > 0) {
       console.warn("⚠️ Some executions failed:", errors);
+    }
+
+    if (successCount > 0) {
+      console.log("🧹 Cleaning up local broker index entry...");
+      const cleanupResult = await deleteBrokerIndex(brokerId);
+      if (!cleanupResult.success) {
+        console.warn(
+          `⚠️ Failed to clean up local broker index: ${cleanupResult.error}`
+        );
+      } else {
+        console.log("✅ Local broker index entry cleaned up successfully");
+      }
     }
 
     return {
@@ -1983,13 +2028,23 @@ async function simulateSolanaDeletion(
         systemProgram: anchor.web3.SystemProgram.programId,
       })
       .simulate();
-    const brokerResult = await getBrokerFromOrderlyDb(brokerId);
-    if (!brokerResult.success) {
-      throw new Error(
-        `Failed to get broker index for simulation: ${brokerResult.error}`
+    const localBrokerResult = await getBrokerByBrokerId(brokerId);
+    let simulationBrokerIndex: number;
+
+    if (localBrokerResult.success) {
+      simulationBrokerIndex = localBrokerResult.data!.brokerIndex;
+    } else {
+      console.log(
+        "⚠️ Broker not found in local database for simulation, falling back to Orderly DB"
       );
+      const brokerResult = await getBrokerFromOrderlyDb(brokerId);
+      if (!brokerResult.success) {
+        throw new Error(
+          `Failed to get broker index for simulation: ${brokerResult.error}`
+        );
+      }
+      simulationBrokerIndex = brokerResult.data.brokerIndex;
     }
-    const simulationBrokerIndex = brokerResult.data.brokerIndex;
     const withdrawBrokerPda = getSolanaWithdrawBrokerPda(
       program.programId,
       simulationBrokerIndex

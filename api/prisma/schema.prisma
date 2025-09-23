@@ -118,3 +118,14 @@ model UsedTransactionHash {
   @@index([txHash])
   @@index([userId])
 }
+
+// Track broker indices and broker IDs in our own database
+model BrokerIndex {
+  id          String   @id @default(uuid())
+  brokerIndex Int      @unique // The broker index number
+  brokerId    String   @unique // The broker ID that was assigned this index
+  createdAt   DateTime @default(now())
+  
+  @@index([brokerIndex])
+  @@index([brokerId])
+}

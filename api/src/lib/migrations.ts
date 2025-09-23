@@ -23,7 +23,6 @@ export async function runDatabaseMigrations(): Promise<{
       stdio: "inherit",
     });
 
-    console.log("✅ Database migrations completed successfully");
     return { success: true };
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
