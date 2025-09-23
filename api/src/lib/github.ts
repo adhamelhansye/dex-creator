@@ -649,8 +649,8 @@ function prepareDexConfigContent(
     // Network settings
     VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
     VITE_DISABLE_TESTNET: String(config.disableTestnet ?? false),
-    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains,
-    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains,
+    VITE_ORDERLY_MAINNET_CHAINS: selectedMainnetChains.join(","),
+    VITE_ORDERLY_TESTNET_CHAINS: selectedTestnetChains.join(","),
     VITE_DEFAULT_CHAIN: config.defaultChain ? String(config.defaultChain) : "",
 
     // Wallet settings
