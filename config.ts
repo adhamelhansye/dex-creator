@@ -5,6 +5,8 @@
  * frontend and backend applications.
  */
 
+export const MAX_BROKER_COUNT = 40;
+
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
 
 export type ChainNameTestnet =
@@ -13,8 +15,8 @@ export type ChainNameTestnet =
   | "bnbTestnet"
   | "optimism-sepolia"
   | "base-sepolia"
-  | "orderlyTestnet";
-// | "solana-devnet";
+  | "orderlyTestnet"
+  | "solana-devnet";
 
 export type ChainNameMainnet =
   | "ethereum"
@@ -33,8 +35,8 @@ export type ChainNameMainnet =
   // | "mode"
   // | "plume"
   // | "abstract"
-  | "orderlyL2";
-// | "solana-mainnet-beta";
+  | "orderlyL2"
+  | "solana-mainnet-beta";
 
 export type ChainName = ChainNameTestnet | ChainNameMainnet;
 
@@ -304,27 +306,27 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     rpcUrl: "https://testnet-rpc.orderly.org",
     blockExplorerUrl: "https://testnet-explorer.orderly.org",
   },
-  // "solana-mainnet-beta": {
-  //   id: "solana-mainnet-beta",
-  //   name: "Solana",
-  //   chainId: 900_900_900,
-  //   isTestnet: false,
-  //   chainType: "SOL",
-  //   rpcUrl:
-  //     process.env.SOLANA_MAINNET_RPC_URL ||
-  //     "https://api.mainnet-beta.solana.com",
-  //   blockExplorerUrl: "https://solscan.io",
-  // },
-  // "solana-devnet": {
-  //   id: "solana-devnet",
-  //   name: "Solana Devnet",
-  //   chainId: 901_901_901,
-  //   isTestnet: true,
-  //   chainType: "SOL",
-  //   rpcUrl:
-  //     process.env.SOLANA_DEVNET_RPC_URL || "https://api.devnet.solana.com",
-  //   blockExplorerUrl: "https://solscan.io",
-  // },
+  "solana-mainnet-beta": {
+    id: "solana-mainnet-beta",
+    name: "Solana",
+    chainId: 900_900_900,
+    isTestnet: false,
+    chainType: "SOL",
+    rpcUrl:
+      process.env.SOLANA_MAINNET_RPC_URL ||
+      "https://api.mainnet-beta.solana.com",
+    blockExplorerUrl: "https://solscan.io",
+  },
+  "solana-devnet": {
+    id: "solana-devnet",
+    name: "Solana Devnet",
+    chainId: 901_901_901,
+    isTestnet: true,
+    chainType: "SOL",
+    rpcUrl:
+      process.env.SOLANA_DEVNET_RPC_URL || "https://api.devnet.solana.com",
+    blockExplorerUrl: "https://solscan.io",
+  },
 };
 
 export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
@@ -437,9 +439,9 @@ export const ENVIRONMENT_CONFIGS: {
     // abstract: {
     //   vaultAddress: "0xE80F2396A266e898FBbD251b89CFE65B3e41fD18",
     // },
-    // "solana-mainnet-beta": {
-    //   vaultAddress: "ErBmAD61mGFKvrFNaTJuxoPwqrS8GgtwtqJTJVjFWx9Q",
-    // },
+    "solana-mainnet-beta": {
+      vaultAddress: "ErBmAD61mGFKvrFNaTJuxoPwqrS8GgtwtqJTJVjFWx9Q",
+    },
     orderlyL2: {
       vaultManagerAddress: "0x14a6342A8C1Ef9856898F510FcCE377e46668F33",
       feeManagerAddress: "0x343Ca787e960cB2cCA0ce8cfB2f38c3739E28a1E",
@@ -462,9 +464,9 @@ export const ENVIRONMENT_CONFIGS: {
     "base-sepolia": {
       vaultAddress: "0xdc7348975aE9334DbdcB944DDa9163Ba8406a0ec",
     },
-    // "solana-devnet": {
-    //   vaultAddress: "9shwxWDUNhtwkHocsUAmrNAQfBH2DHh4njdAEdHZZkF2",
-    // },
+    "solana-devnet": {
+      vaultAddress: "9shwxWDUNhtwkHocsUAmrNAQfBH2DHh4njdAEdHZZkF2",
+    },
     orderlyTestnet: {
       vaultManagerAddress: "0x873c120b42C80D528389d85cEA9d4dC0197974aD",
       feeManagerAddress: "0x0B98ba78DDb29937d895c718ED167DD8f5B2972d",
@@ -478,9 +480,9 @@ export const ENVIRONMENT_CONFIGS: {
     "arbitrum-sepolia": {
       vaultAddress: "0xB15a3a4D451311e03e34d9331C695078Ad5Cf5F1",
     },
-    // "solana-devnet": {
-    //   vaultAddress: "5zBjLor7vEraAt4zp2H82sy9MSqFoDnNa1Lx6EYKTYRZ",
-    // },
+    "solana-devnet": {
+      vaultAddress: "5zBjLor7vEraAt4zp2H82sy9MSqFoDnNa1Lx6EYKTYRZ",
+    },
     orderlyTestnet: {
       vaultManagerAddress: "0x3B092aEe40Cb99174E8C73eF90935F9F35943B22",
       feeManagerAddress: "0x8A929891DE9a648B6A3D05d21362418f756cf728",
@@ -494,9 +496,9 @@ export const ENVIRONMENT_CONFIGS: {
     "arbitrum-sepolia": {
       vaultAddress: "0x3ac2ba11ca2f9f109d50fb1a46d4c23fcadbbef6",
     },
-    // "solana-devnet": {
-    //   vaultAddress: "EYJq9eU4GMRUriUJBgGoZ8YLQBXcWaciXuSsEXE7ieQS",
-    // },
+    "solana-devnet": {
+      vaultAddress: "EYJq9eU4GMRUriUJBgGoZ8YLQBXcWaciXuSsEXE7ieQS",
+    },
     orderlyTestnet: {
       vaultManagerAddress: "0x4922872C26Befa37AdcA287fF68106013C82FeeD",
       feeManagerAddress: "0x835E970110E4a46BCA21A7551FEaA5F532F72701",

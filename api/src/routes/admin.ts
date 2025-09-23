@@ -10,9 +10,9 @@ import {
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 
-import { getCurrentEnvironment } from "../models/dex";
-import { deleteBrokerId } from "../lib/brokerCreation";
-import { deleteBrokerFromBothDatabases } from "../lib/orderlyDb";
+// import { getCurrentEnvironment } from "../models/dex";
+// import { deleteBrokerId } from "../lib/brokerCreation";
+// import { deleteBrokerFromBothDatabases } from "../lib/orderlyDb";
 import {
   setupRepositoryWithSingleCommit,
   renameRepository,
@@ -334,108 +334,109 @@ adminRoutes.post(
 );
 
 adminRoutes.post("/broker/delete", async (c: AdminContext) => {
-  try {
-    const deleteBrokerSchema = z.object({
-      brokerId: z.string().min(1).max(50),
-    });
+  return c.json({ message: "Not implemented" }, 500);
+  // try {
+  //   const deleteBrokerSchema = z.object({
+  //     brokerId: z.string().min(1).max(50),
+  //   });
 
-    const result = deleteBrokerSchema.safeParse(await c.req.json());
-    if (!result.success) {
-      return c.json(
-        {
-          message: "Invalid request body",
-          error: JSON.stringify(result.error.issues),
-        },
-        { status: 400 }
-      );
-    }
+  //   const result = deleteBrokerSchema.safeParse(await c.req.json());
+  //   if (!result.success) {
+  //     return c.json(
+  //       {
+  //         message: "Invalid request body",
+  //         error: JSON.stringify(result.error.issues),
+  //       },
+  //       { status: 400 }
+  //     );
+  //   }
 
-    const { brokerId } = result.data;
-    const env = getCurrentEnvironment();
+  //   const { brokerId } = result.data;
+  //   const env = getCurrentEnvironment();
 
-    console.log(
-      `Admin attempting to delete broker ID: ${brokerId} on environment: ${env}`
-    );
+  //   console.log(
+  //     `Admin attempting to delete broker ID: ${brokerId} on environment: ${env}`
+  //   );
 
-    const prismaClient = await getPrisma();
-    const dex = await prismaClient.dex.findFirst({
-      where: { brokerId },
-    });
+  //   const prismaClient = await getPrisma();
+  //   const dex = await prismaClient.dex.findFirst({
+  //     where: { brokerId },
+  //   });
 
-    const deletionResult = await deleteBrokerId(brokerId, env);
+  //   const deletionResult = await deleteBrokerId(brokerId, env);
 
-    if (!deletionResult.success) {
-      return c.json(
-        {
-          success: false,
-          message: `Failed to delete broker ID from blockchain: ${deletionResult.errors?.join(", ")}`,
-        },
-        { status: 500 }
-      );
-    }
+  //   if (!deletionResult.success) {
+  //     return c.json(
+  //       {
+  //         success: false,
+  //         message: `Failed to delete broker ID from blockchain: ${deletionResult.errors?.join(", ")}`,
+  //       },
+  //       { status: 500 }
+  //     );
+  //   }
 
-    try {
-      console.log(
-        `🗑️ Attempting to delete broker ${brokerId} from Orderly database...`
-      );
-      const orderlyDeletionResult =
-        await deleteBrokerFromBothDatabases(brokerId);
+  //   try {
+  //     console.log(
+  //       `🗑️ Attempting to delete broker ${brokerId} from Orderly database...`
+  //     );
+  //     const orderlyDeletionResult =
+  //       await deleteBrokerFromBothDatabases(brokerId);
 
-      if (!orderlyDeletionResult.success) {
-        console.warn(
-          `⚠️ Failed to delete broker ${brokerId} from Orderly database: ${orderlyDeletionResult.error}`
-        );
-      }
-    } catch (orderlyDbError) {
-      console.error(
-        `❌ Error deleting broker ${brokerId} from Orderly database:`,
-        orderlyDbError
-      );
-    }
+  //     if (!orderlyDeletionResult.success) {
+  //       console.warn(
+  //         `⚠️ Failed to delete broker ${brokerId} from Orderly database: ${orderlyDeletionResult.error}`
+  //       );
+  //     }
+  //   } catch (orderlyDbError) {
+  //     console.error(
+  //       `❌ Error deleting broker ${brokerId} from Orderly database:`,
+  //       orderlyDbError
+  //     );
+  //   }
 
-    let updatedDex = null;
-    if (dex) {
-      updatedDex = await prismaClient.dex.update({
-        where: { id: dex.id },
-        data: {
-          brokerId: "demo",
-          isGraduated: false,
-        },
-      });
-      console.log(
-        `Successfully deleted broker ID ${brokerId} and reset DEX ${dex.id} to demo status with isGraduated=false`
-      );
-    } else {
-      console.log(
-        `No DEX found with broker ID ${brokerId}, but on-chain deletion succeeded.`
-      );
-    }
+  //   let updatedDex = null;
+  //   if (dex) {
+  //     updatedDex = await prismaClient.dex.update({
+  //       where: { id: dex.id },
+  //       data: {
+  //         brokerId: "demo",
+  //         isGraduated: false,
+  //       },
+  //     });
+  //     console.log(
+  //       `Successfully deleted broker ID ${brokerId} and reset DEX ${dex.id} to demo status with isGraduated=false`
+  //     );
+  //   } else {
+  //     console.log(
+  //       `No DEX found with broker ID ${brokerId}, but on-chain deletion succeeded.`
+  //     );
+  //   }
 
-    return c.json({
-      success: true,
-      message:
-        `Broker ID '${brokerId}' deleted successfully from all chains` +
-        (dex ? " and DEX reset to demo" : " (no DEX found in DB)"),
-      brokerId,
-      transactionHashes: deletionResult.transactionHashes || {},
-      dex: updatedDex
-        ? {
-            id: updatedDex.id,
-            brokerName: updatedDex.brokerName,
-            brokerId: updatedDex.brokerId,
-          }
-        : null,
-    });
-  } catch (error) {
-    console.error("Error deleting broker ID:", error);
-    return c.json(
-      {
-        success: false,
-        message: `Error deleting broker ID: ${error instanceof Error ? error.message : String(error)}`,
-      },
-      { status: 500 }
-    );
-  }
+  //   return c.json({
+  //     success: true,
+  //     message:
+  //       `Broker ID '${brokerId}' deleted successfully from all chains` +
+  //       (dex ? " and DEX reset to demo" : " (no DEX found in DB)"),
+  //     brokerId,
+  //     transactionHashes: deletionResult.transactionHashes || {},
+  //     dex: updatedDex
+  //       ? {
+  //           id: updatedDex.id,
+  //           brokerName: updatedDex.brokerName,
+  //           brokerId: updatedDex.brokerId,
+  //         }
+  //       : null,
+  //   });
+  // } catch (error) {
+  //   console.error("Error deleting broker ID:", error);
+  //   return c.json(
+  //     {
+  //       success: false,
+  //       message: `Error deleting broker ID: ${error instanceof Error ? error.message : String(error)}`,
+  //     },
+  //     { status: 500 }
+  //   );
+  // }
 });
 
 adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {

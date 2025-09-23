@@ -4,6 +4,7 @@ import { PrismaClient as NexusPrismaClient } from "../lib/generated/nexus-client
 import { Decimal } from "../lib/generated/orderly-client/runtime/library";
 import { getSecret } from "./secretManager";
 import { Result } from "./types";
+import { MAX_BROKER_COUNT } from "../../../config";
 
 interface OrderlyBrokerData {
   brokerId: string;
@@ -189,8 +190,9 @@ function convertBasisPointsToDecimal(basisPoints: number): Decimal {
 }
 
 export async function addBrokerToOrderlyDb(
-  data: OrderlyBrokerData
-): Promise<Result<{ message: string; brokerIndex: number }>> {
+  data: OrderlyBrokerData,
+  brokerIndex: number
+): Promise<Result<{ message: string }>> {
   const orderlyPrisma = await getOrderlyPrismaClient();
 
   try {
@@ -200,8 +202,9 @@ export async function addBrokerToOrderlyDb(
     const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
 
-    const createdBroker = await orderlyPrisma.orderlyBroker.create({
+    await orderlyPrisma.orderlyBroker.create({
       data: {
+        id: brokerIndex,
         brokerId: data.brokerId,
         brokerName: data.brokerName,
         brokerHash: brokerHash,
@@ -217,7 +220,6 @@ export async function addBrokerToOrderlyDb(
       },
     });
 
-    const brokerIndex = Number(createdBroker.id);
     console.log(
       `✅ Successfully added broker ${data.brokerId} to Orderly database with index ${brokerIndex}`
     );
@@ -226,7 +228,6 @@ export async function addBrokerToOrderlyDb(
       success: true,
       data: {
         message: `Broker ${data.brokerId} successfully added to Orderly database`,
-        brokerIndex,
       },
     };
   } catch (error) {
@@ -357,7 +358,15 @@ export async function getNextBrokerIndex(): Promise<
       },
     });
 
-    const nextBrokerIndex = lastBroker ? Number(lastBroker.id) + 1 : 1;
+    let nextBrokerIndex = lastBroker ? Number(lastBroker.id) + 1 : 1;
+    if (nextBrokerIndex < 18_000) {
+      nextBrokerIndex = 18_000;
+    } else if (nextBrokerIndex >= 18_000 + MAX_BROKER_COUNT) {
+      return {
+        success: false,
+        error: `Only a maximum broker count of ${MAX_BROKER_COUNT} can be set up`,
+      };
+    }
 
     console.log(
       `📍 Last broker ID: ${lastBroker?.id || "none"}, next broker index will be: ${nextBrokerIndex}`
@@ -428,7 +437,7 @@ export async function deleteBrokerFromOrderlyDb(
 export async function addBrokerToNexusDb(
   data: OrderlyBrokerData,
   brokerIndex: number
-): Promise<Result<{ message: string; brokerIndex: number }>> {
+): Promise<Result<{ message: string }>> {
   const nexusPrisma = await getNexusPrismaClient();
 
   try {
@@ -438,27 +447,18 @@ export async function addBrokerToNexusDb(
     const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
 
-    await nexusPrisma.$executeRaw`
-      INSERT INTO broker_info (
-        id,
-        broker_id, 
-        broker_name, 
-        broker_hash,
-        base_maker_fee_rate,
-        base_taker_fee_rate,
-        default_maker_fee_rate,
-        default_taker_fee_rate
-      ) VALUES (
-        ${brokerIndex},
-        ${data.brokerId},
-        ${data.brokerName},
-        ${brokerHash},
-        ${baseMakerFee},
-        ${baseTakerFee},
-        ${defaultMakerFee},
-        ${defaultTakerFee}
-      )
-    `;
+    await nexusPrisma.nexusBroker.create({
+      data: {
+        id: brokerIndex,
+        brokerId: data.brokerId,
+        brokerName: data.brokerName,
+        brokerHash: brokerHash,
+        baseMakerFeeRate: baseMakerFee,
+        baseTakerFeeRate: baseTakerFee,
+        defaultMakerFeeRate: defaultMakerFee,
+        defaultTakerFeeRate: defaultTakerFee,
+      },
+    });
 
     console.log(
       `✅ Successfully added broker ${data.brokerId} to Nexus database with matching index ${brokerIndex}`
@@ -468,7 +468,6 @@ export async function addBrokerToNexusDb(
       success: true,
       data: {
         message: `Broker ${data.brokerId} successfully added to Nexus database with matching ID`,
-        brokerIndex,
       },
     };
   } catch (error) {
@@ -535,7 +534,8 @@ export async function deleteBrokerFromNexusDb(
 }
 
 export async function addBrokerToBothDatabases(
-  data: OrderlyBrokerData
+  data: OrderlyBrokerData,
+  brokerIndex: number
 ): Promise<
   Result<{
     message: string;
@@ -544,10 +544,10 @@ export async function addBrokerToBothDatabases(
   }>
 > {
   console.log(
-    `🔄 Adding broker ${data.brokerId} to both Orderly and Nexus databases`
+    `🔄 Adding broker ${data.brokerId} to both Orderly and Nexus databases with fixed index ${brokerIndex}`
   );
 
-  const orderlyResult = await addBrokerToOrderlyDb(data);
+  const orderlyResult = await addBrokerToOrderlyDb(data, brokerIndex);
   if (!orderlyResult.success) {
     return {
       success: false,
@@ -555,10 +555,7 @@ export async function addBrokerToBothDatabases(
     };
   }
 
-  const nexusResult = await addBrokerToNexusDb(
-    data,
-    orderlyResult.data.brokerIndex
-  );
+  const nexusResult = await addBrokerToNexusDb(data, brokerIndex);
   if (!nexusResult.success) {
     console.log(
       `🔄 Rolling back Orderly database insertion due to Nexus failure`
@@ -577,15 +574,15 @@ export async function addBrokerToBothDatabases(
   }
 
   console.log(
-    `✅ Successfully added broker ${data.brokerId} to both databases with matching ID: ${orderlyResult.data.brokerIndex}`
+    `✅ Successfully added broker ${data.brokerId} to both databases with matching ID: ${brokerIndex}`
   );
 
   return {
     success: true,
     data: {
       message: `Broker ${data.brokerId} successfully added to both Orderly and Nexus databases`,
-      orderlyBrokerIndex: orderlyResult.data.brokerIndex,
-      nexusBrokerIndex: nexusResult.data.brokerIndex,
+      orderlyBrokerIndex: brokerIndex,
+      nexusBrokerIndex: brokerIndex,
     },
   };
 }

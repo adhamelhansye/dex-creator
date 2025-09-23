@@ -49,13 +49,13 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
     //   type: "L1",
     //   network: "mainnet",
     // },
-    // {
-    //   id: 900900900,
-    //   name: "Solana",
-    //   symbol: "SOL",
-    //   type: "L1",
-    //   network: "mainnet",
-    // },
+    {
+      id: 900900900,
+      name: "Solana",
+      symbol: "SOL",
+      type: "L1",
+      network: "mainnet",
+    },
     // { id: 2818, name: "Morph", symbol: "ETH", type: "L2", network: "mainnet" },
     // { id: 146, name: "Sonic", symbol: "S", type: "L1", network: "mainnet" },
     // {
@@ -98,13 +98,13 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
       type: "L1",
       network: "testnet",
     },
-    // {
-    //   id: 901901901,
-    //   name: "Solana Devnet",
-    //   symbol: "SOL",
-    //   type: "L1",
-    //   network: "testnet",
-    // },
+    {
+      id: 901901901,
+      name: "Solana Devnet",
+      symbol: "SOL",
+      type: "L1",
+      network: "testnet",
+    },
     {
       id: 11124,
       name: "Abstract Sepolia",
