@@ -125,9 +125,7 @@ if (process.env.NODE_ENV !== "test") {
     }
 
     try {
-      console.log("🚀 Initializing broker creation system...");
       await initializeBrokerCreation();
-      console.log("✅ Broker creation system initialized successfully");
     } catch (error) {
       console.error("❌ Failed to initialize broker creation system:", error);
       process.exit(1);

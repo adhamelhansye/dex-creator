@@ -366,6 +366,14 @@ async function createAutomatedBrokerIdInternal(
       `📊 Found ${evmChains.length} EVM chains and ${solanaChains.length} Solana chains`
     );
 
+    const nextBrokerIndexResult = await getNextBrokerIndex();
+    if (!nextBrokerIndexResult.success) {
+      throw new Error(
+        `Failed to get next broker index: ${nextBrokerIndexResult.error}`
+      );
+    }
+    const brokerIndex = nextBrokerIndexResult.data.brokerIndex;
+
     const simulationPromises: Array<
       Promise<{ chainName: string; result: SimulationResult }>
     > = [];
@@ -395,9 +403,12 @@ async function createAutomatedBrokerIdInternal(
     for (const [chainName, chainConfig] of solanaChains) {
       if (chainConfig.vaultAddress) {
         simulationPromises.push(
-          simulateSolanaVaultTransaction(chainConfig, brokerId, chainName).then(
-            result => ({ chainName, result })
-          )
+          simulateSolanaVaultTransaction(
+            chainConfig,
+            brokerId,
+            brokerIndex,
+            chainName
+          ).then(result => ({ chainName, result }))
         );
       }
     }
@@ -405,9 +416,12 @@ async function createAutomatedBrokerIdInternal(
     for (const [chainName, chainConfig] of evmChains) {
       if (chainConfig.solConnectorAddress) {
         simulationPromises.push(
-          simulateSolConnectorSetup(chainConfig, brokerId, chainName).then(
-            result => ({ chainName, result })
-          )
+          simulateSolConnectorSetup(
+            chainConfig,
+            brokerId,
+            brokerIndex,
+            chainName
+          ).then(result => ({ chainName, result }))
         );
       }
     }
@@ -430,14 +444,6 @@ async function createAutomatedBrokerIdInternal(
     }
 
     console.log("🚀 Executing on-chain transactions...");
-
-    const nextBrokerIndexResult = await getNextBrokerIndex();
-    if (!nextBrokerIndexResult.success) {
-      throw new Error(
-        `Failed to get next broker index: ${nextBrokerIndexResult.error}`
-      );
-    }
-    const brokerIndex = nextBrokerIndexResult.data.brokerIndex;
 
     const initialExecutionPromises: Array<
       Promise<{ chainId: number; txHash: string }>
@@ -611,19 +617,8 @@ export async function setBrokerAccountId(
 
     const brokerHash = getBrokerHash(brokerId);
 
-    const feeData = await provider.getFeeData();
-    const gasPrice = feeData.gasPrice;
-
-    if (!gasPrice) {
-      throw new Error("Unable to get gas price from network");
-    }
-
-    const increasedGasPrice = (gasPrice * 120n) / 100n;
-
     const txHash = await retryTransaction(async () => {
-      const tx = await feeManager.setBrokerAccountId(brokerHash, accountId, {
-        gasPrice: increasedGasPrice,
-      });
+      const tx = await feeManager.setBrokerAccountId(brokerHash, accountId);
       await tx.wait();
       return tx.hash;
     });
@@ -787,20 +782,13 @@ async function simulateFeeManagerTransaction(
 async function simulateSolanaVaultTransaction(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
+  brokerIndex: number,
   chainName: string
 ): Promise<SimulationResult> {
   try {
     if (!chainConfig.vaultAddress) {
       throw new Error("Vault address not configured for this chain");
     }
-
-    const nextBrokerIndexResult = await getNextBrokerIndex();
-    if (!nextBrokerIndexResult.success) {
-      throw new Error(
-        `Failed to get next broker index: ${nextBrokerIndexResult.error}`
-      );
-    }
-    const brokerIndex = nextBrokerIndexResult.data.brokerIndex;
 
     const env = getCurrentEnvironment();
     const program = getSolanaVaultProgram(env);
@@ -895,6 +883,7 @@ async function simulateSolanaVaultTransaction(
 async function simulateSolConnectorSetup(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
+  brokerIndex: number,
   chainName: string
 ): Promise<SimulationResult> {
   try {
@@ -931,7 +920,7 @@ async function simulateSolConnectorSetup(
 
     const gasEstimate = await solConnector.setBrokerHash2Index.estimateGas(
       brokerHash,
-      1
+      brokerIndex
     );
 
     const balance = await provider.getBalance(wallet.address);
@@ -998,18 +987,7 @@ async function executeVaultManagerTransaction(
 
     const brokerHash = getBrokerHash(brokerId);
 
-    const feeData = await provider.getFeeData();
-    const gasPrice = feeData.gasPrice;
-
-    if (!gasPrice) {
-      throw new Error("Unable to get gas price from network");
-    }
-
-    const increasedGasPrice = (gasPrice * 120n) / 100n;
-
-    const tx = await vaultManager.setAllowedBroker(brokerHash, true, {
-      gasPrice: increasedGasPrice,
-    });
+    const tx = await vaultManager.setAllowedBroker(brokerHash, true);
     await tx.wait();
 
     return tx.hash;
@@ -2139,18 +2117,7 @@ async function executeOrderlyDeletion(
 
     const brokerHash = getBrokerHash(brokerId);
 
-    const feeData = await provider.getFeeData();
-    const gasPrice = feeData.gasPrice;
-
-    if (!gasPrice) {
-      throw new Error("Unable to get gas price from network");
-    }
-
-    const increasedGasPrice = (gasPrice * 120n) / 100n;
-
-    const tx = await vaultManager.setAllowedBroker(brokerHash, false, {
-      gasPrice: increasedGasPrice,
-    });
+    const tx = await vaultManager.setAllowedBroker(brokerHash, false);
     await tx.wait();
 
     return tx.hash;
