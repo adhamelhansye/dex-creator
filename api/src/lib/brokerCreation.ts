@@ -132,7 +132,6 @@ function getEvmPrivateKey(): string {
 
 function parseSolanaPrivateKey(privateKeyInput: string): anchor.web3.Keypair {
   const trimmedInput = privateKeyInput.trim();
-  console.log("trimmedInput", trimmedInput);
 
   if (!trimmedInput.startsWith("[") && !trimmedInput.startsWith("{")) {
     try {
