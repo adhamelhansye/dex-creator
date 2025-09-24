@@ -832,130 +832,135 @@ export default function ImageCropModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center h-screen">
+    <div className="fixed inset-0 z-[1000] overflow-y-auto">
       {/* Backdrop */}
       <div
         className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-[1001]"
         onClick={isLoading ? undefined : onClose}
       ></div>
 
-      {/* Modal */}
-      <div className="relative z-[1002] w-full max-w-4xl p-6 rounded-xl bg-background-light border border-light/10 shadow-2xl slide-fade-in">
-        <h3 className="text-xl font-bold mb-4">Crop Image</h3>
+      {/* Modal Container */}
+      <div className="relative z-[1002] min-h-screen flex items-center justify-center p-2 sm:p-4">
+        {/* Modal */}
+        <div className="w-full max-w-4xl p-4 sm:p-6 rounded-xl bg-background-light border border-light/10 shadow-2xl slide-fade-in my-4 sm:my-8 max-h-[calc(100vh-2rem)] overflow-y-auto">
+          <h3 className="text-xl font-bold mb-4">Crop Image</h3>
 
-        <div className="flex flex-col md:flex-row gap-6">
-          {/* Crop preview */}
-          <div className="flex-grow flex justify-center">
-            <div ref={cropPreviewRef} className="relative">
-              <canvas
-                ref={cropCanvasRef}
-                className="border border-light/20 rounded-md max-w-full"
-                width={300}
-                height={300}
-                onMouseDown={handleMouseDown}
-                style={{ cursor: getCursor() }}
-              ></canvas>
-              <div className="text-xs text-gray-400 text-center mt-2">
-                Drag to move, handles to resize
-              </div>
-            </div>
-          </div>
-
-          {/* Crop controls */}
-          <div className="flex flex-col gap-3 min-w-[200px]">
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Position</label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-gray-400 block">X</label>
-                  <input
-                    type="number"
-                    value={cropDimensions.x}
-                    onChange={e =>
-                      handleCropChange("x", parseInt(e.target.value))
-                    }
-                    className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block">Y</label>
-                  <input
-                    type="number"
-                    value={cropDimensions.y}
-                    onChange={e =>
-                      handleCropChange("y", parseInt(e.target.value))
-                    }
-                    className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
-                  />
+          <div className="flex flex-col md:flex-row gap-4 lg:gap-6">
+            {/* Crop preview */}
+            <div className="flex-grow flex justify-center">
+              <div ref={cropPreviewRef} className="relative">
+                <canvas
+                  ref={cropCanvasRef}
+                  className="border border-light/20 rounded-md max-w-full max-h-[300px]"
+                  width={300}
+                  height={300}
+                  onMouseDown={handleMouseDown}
+                  style={{ cursor: getCursor() }}
+                ></canvas>
+                <div className="text-xs text-gray-400 text-center mt-2">
+                  Drag to move, handles to resize
                 </div>
               </div>
             </div>
 
-            <div className="space-y-2">
-              <label className="text-xs text-gray-400">Size</label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <label className="text-xs text-gray-400 block">Width</label>
-                  <input
-                    type="number"
-                    value={cropDimensions.width}
-                    onChange={e =>
-                      handleCropChange("width", parseInt(e.target.value))
-                    }
-                    className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-gray-400 block">Height</label>
-                  <input
-                    type="number"
-                    value={cropDimensions.height}
-                    onChange={e =>
-                      handleCropChange("height", parseInt(e.target.value))
-                    }
-                    className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
-                    disabled={enforceSquare}
-                  />
+            {/* Crop controls */}
+            <div className="flex flex-col gap-3 min-w-[150px] lg:min-w-[200px]">
+              <div className="space-y-2">
+                <label className="text-xs text-gray-400">Position</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-400 block">X</label>
+                    <input
+                      type="number"
+                      value={cropDimensions.x}
+                      onChange={e =>
+                        handleCropChange("x", parseInt(e.target.value))
+                      }
+                      className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block">Y</label>
+                    <input
+                      type="number"
+                      value={cropDimensions.y}
+                      onChange={e =>
+                        handleCropChange("y", parseInt(e.target.value))
+                      }
+                      className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
+                    />
+                  </div>
                 </div>
               </div>
-              {enforceSquare && (
-                <p className="text-xs text-gray-400">
-                  This image type requires a square aspect ratio
+
+              <div className="space-y-2">
+                <label className="text-xs text-gray-400">Size</label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-xs text-gray-400 block">Width</label>
+                    <input
+                      type="number"
+                      value={cropDimensions.width}
+                      onChange={e =>
+                        handleCropChange("width", parseInt(e.target.value))
+                      }
+                      className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-gray-400 block">
+                      Height
+                    </label>
+                    <input
+                      type="number"
+                      value={cropDimensions.height}
+                      onChange={e =>
+                        handleCropChange("height", parseInt(e.target.value))
+                      }
+                      className="w-full px-2 py-1 bg-dark/50 border border-light/10 rounded-lg text-xs"
+                      disabled={enforceSquare}
+                    />
+                  </div>
+                </div>
+                {enforceSquare && (
+                  <p className="text-xs text-gray-400">
+                    This image type requires a square aspect ratio
+                  </p>
+                )}
+              </div>
+
+              <div className="text-xs text-gray-400 mt-3">
+                <p>
+                  Original size: {originalDimensions.width}x
+                  {originalDimensions.height}px
                 </p>
-              )}
-            </div>
-
-            <div className="text-xs text-gray-400 mt-3">
-              <p>
-                Original size: {originalDimensions.width}x
-                {originalDimensions.height}px
-              </p>
-              <p>
-                Crop size: {cropDimensions.width}x{cropDimensions.height}px
-              </p>
-              <p>
-                Final output size: {finalDimensions.width}x
-                {finalDimensions.height}px
-              </p>
-              <p className="text-xs text-gray-500 mt-1">
-                Max size: {targetDimensions.width}x{targetDimensions.height}px
-              </p>
+                <p>
+                  Crop size: {cropDimensions.width}x{cropDimensions.height}px
+                </p>
+                <p>
+                  Final output size: {finalDimensions.width}x
+                  {finalDimensions.height}px
+                </p>
+                <p className="text-xs text-gray-500 mt-1">
+                  Max size: {targetDimensions.width}x{targetDimensions.height}px
+                </p>
+              </div>
             </div>
           </div>
-        </div>
 
-        <div className="flex gap-3 justify-end mt-6">
-          <Button variant="ghost" onClick={onClose} disabled={isLoading}>
-            Cancel
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleApply}
-            isLoading={isLoading}
-            loadingText="Applying"
-          >
-            Apply Crop
-          </Button>
+          <div className="flex gap-3 justify-end mt-6">
+            <Button variant="ghost" onClick={onClose} disabled={isLoading}>
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleApply}
+              isLoading={isLoading}
+              loadingText="Applying"
+            >
+              Apply Crop
+            </Button>
+          </div>
         </div>
       </div>
     </div>
