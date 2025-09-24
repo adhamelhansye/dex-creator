@@ -1685,7 +1685,8 @@ export default function DexRoute() {
                     <p className="text-gray-300">
                       Configure how your DEX appears on the board page. Set up
                       description, banner, logo, and token information for
-                      better visibility.
+                      better visibility. Note: Your DEX card will only appear on
+                      the board after graduation.
                     </p>
                   </div>
                 </div>

@@ -377,10 +377,28 @@ export default function DexCardRoute() {
       <Card>
         <div className="mb-6">
           <h2 className="text-lg font-semibold mb-2">Board Page Display</h2>
-          <p className="text-gray-400 text-sm">
+          <p className="text-gray-400 text-sm mb-4">
             This information will be displayed on the board page to showcase
             your DEX alongside others.
           </p>
+
+          <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+            <div className="flex items-start gap-3">
+              <div className="bg-warning/20 p-1.5 rounded-full flex-shrink-0">
+                <div className="i-mdi:information text-warning w-4 h-4"></div>
+              </div>
+              <div>
+                <h3 className="text-sm font-medium text-warning mb-1">
+                  Graduation Required
+                </h3>
+                <p className="text-xs text-gray-300">
+                  Your DEX card will only appear on the board page after you
+                  have graduated your DEX. Complete the graduation process to
+                  start earning fees and make your DEX visible on the board.
+                </p>
+              </div>
+            </div>
+          </div>
         </div>
 
         <Form
