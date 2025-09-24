@@ -97,8 +97,23 @@ jobs:
           echo "needs_build=true" >> $GITHUB_OUTPUT
         id: force-build
 
+      - name: Validate cached build integrity
+        id: validate-cache
+        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit == 'true'
+        run: |
+          # Check if essential build files exist
+          if [ ! -d "./build/client" ] || [ ! -f "./build/client/index.html" ]; then
+            echo "❌ Cached build is incomplete or corrupted"
+            echo "cache_valid=false" >> $GITHUB_OUTPUT
+            echo "needs_build=true" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Cached build appears valid"
+            echo "cache_valid=true" >> $GITHUB_OUTPUT
+          fi
+        continue-on-error: true
+
       - name: Cache node_modules
-        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
+        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true' || steps.fallback-build.outputs.needs_build == 'true'
         uses: actions/cache@v4
         with:
           path: |
@@ -109,11 +124,11 @@ jobs:
             ${{ runner.os }}-deps-
 
       - name: Install dependencies
-        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
+        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true' || steps.fallback-build.outputs.needs_build == 'true'
         run: yarn install --frozen-lockfile --prefer-offline
 
       - name: Build with repository base path
-        if: ${{ steps.check-custom-domain.outputs.has_custom_domain == 'false' && (steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true') }}
+        if: ${{ steps.check-custom-domain.outputs.has_custom_domain == 'false' && (steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true' || steps.fallback-build.outputs.needs_build == 'true') }}
         run: yarn build:spa
         env:
           # Set the base path for GitHub Pages using repo name
@@ -123,7 +138,7 @@ jobs:
           VITE_BASE_URL: /${{ env.REPO_NAME }}
 
       - name: Build with root base path (for custom domain)
-        if: ${{ steps.check-custom-domain.outputs.has_custom_domain == 'true' && (steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true') }}
+        if: ${{ steps.check-custom-domain.outputs.has_custom_domain == 'true' && (steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true' || steps.fallback-build.outputs.needs_build == 'true') }}
         run: yarn build:spa
         env:
           # For custom domains, use root path
@@ -132,26 +147,44 @@ jobs:
           VITE_BASE_URL: ""
 
       - name: Copy updated public files to build (if using cached build)
-        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit == 'true'
+        id: copy-public-files
+        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit == 'true' && steps.validate-cache.outputs.cache_valid == 'true'
         run: |
           if [ ! -d "./build/client" ]; then
             echo "❌ Build directory not found in cache, this should not happen"
+            echo "copy_success=false" >> $GITHUB_OUTPUT
+            echo "needs_build=true" >> $GITHUB_OUTPUT
             exit 1
           fi
           
           # Copy the entire public folder - existing files will be overwritten
-          cp -r public/* ./build/client/
-          echo "✅ Copied all public files to build output"
+          if cp -r public/* ./build/client/; then
+            echo "✅ Copied all public files to build output"
+            echo "copy_success=true" >> $GITHUB_OUTPUT
+          else
+            echo "❌ Failed to copy public files"
+            echo "copy_success=false" >> $GITHUB_OUTPUT
+            echo "needs_build=true" >> $GITHUB_OUTPUT
+            exit 1
+          fi
+        continue-on-error: true
+
+      - name: Fallback to full build if copy failed
+        id: fallback-build
+        if: steps.copy-public-files.outputs.copy_success == 'false' || steps.validate-cache.outputs.cache_valid == 'false'
+        run: |
+          echo "🔄 Cached build step failed, falling back to full build"
+          echo "needs_build=true" >> $GITHUB_OUTPUT
 
       - name: Cache build artifacts
-        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
+        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true' || steps.fallback-build.outputs.needs_build == 'true'
         uses: actions/cache/save@v4
         with:
           path: ./build
           key: ${{ runner.os }}-build-${{ github.repository }}-${{ github.sha }}
 
       - name: Cache build artifacts as latest
-        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
+        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true' || steps.fallback-build.outputs.needs_build == 'true'
         uses: actions/cache/save@v4
         with:
           path: ./build
