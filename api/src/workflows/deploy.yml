@@ -73,7 +73,6 @@ jobs:
           fi
 
       - name: Restore previous build (if only config changed)
-        id: restore-build
         if: steps.check-changes.outputs.needs_build == 'false'
         uses: actions/cache/restore@v4
         with:
@@ -83,11 +82,15 @@ jobs:
             ${{ runner.os }}-build-${{ github.repository }}
         continue-on-error: true
 
-      - name: Force build if cache restore failed
-        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit != 'true'
+      - name: Check if build directory exists
+        if: steps.check-changes.outputs.needs_build == 'false'
         run: |
-          echo "No previous build found, forcing full build"
-          echo "needs_build=true" >> $GITHUB_OUTPUT
+          if [ -d "./build" ] && [ "$(ls -A ./build)" ]; then
+            echo "Build directory found with content"
+          else
+            echo "needs_build=true" >> $GITHUB_OUTPUT
+            echo "Build directory empty or missing, forcing full build"
+          fi
         id: force-build
 
       - name: Install dependencies
@@ -114,7 +117,7 @@ jobs:
           VITE_BASE_URL: ""
 
       - name: Copy updated config to build (if using cached build)
-        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit == 'true'
+        if: steps.check-changes.outputs.needs_build == 'false' && steps.force-build.outputs.needs_build != 'true'
         run: |
           cp public/config.js ./build/client/config.js
           echo "✅ Updated config.js copied to build output"
