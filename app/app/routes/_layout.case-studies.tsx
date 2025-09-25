@@ -26,7 +26,7 @@ const caseStudies = [
         type: "paragraph",
         title: "How Aden Turns Trading into Community Value",
         description:
-          "With Aden, INBUM set his own fees, branding, and user experience while eliminating the middleman. This move also gave his BGCS token new utility, as revenue from the DEX will be used for buybacks and burns, directly benefiting token holders.",
+          "With Aden, INBUM set his own fees, branding, and user experience while eliminating the middleman. This move also gave his BGSC token new utility, as revenue from the DEX will be used for buybacks and burns, directly benefiting token holders.",
         description2:
           "Through this DEX, Aden is building a self-sustaining ecosystem while giving his community a familiar trading environment they can trust, all under his own brand, Aden. Aden currently plays a key role within the Orderly ecosystem, responsible for the highest trading volume.",
       },
