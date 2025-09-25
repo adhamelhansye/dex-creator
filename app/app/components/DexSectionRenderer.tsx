@@ -318,7 +318,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     key: "navigationMenus",
     title: "Navigation Menus",
     description:
-      "Customize which navigation links appear in your DEX. This is optional - your DEX will include all navigation menus by default.",
+      "Customize which navigation links appear in your DEX. This is optional - if you don't select any menus, the default menus will be displayed.",
     isOptional: true,
     component: NavigationMenuSection,
     getProps: props => ({
