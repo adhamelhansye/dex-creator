@@ -259,7 +259,7 @@ The application requires several environment variables for proper operation. Bel
 
 ## DEX Graduation System
 
-Orderly One includes a graduation system that allows DEX owners to upgrade their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
+Orderly One includes a graduation system that allows DEX owners to graduate their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
 
 1. Users choosing between USDC or ORDER token payment
 2. Sending the required amount based on their choice

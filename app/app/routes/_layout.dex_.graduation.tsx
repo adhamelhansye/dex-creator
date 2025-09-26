@@ -33,10 +33,10 @@ export default function GraduationRoute() {
             Back to DEX Dashboard
           </Link>
           <div className="text-center md:text-left">
-            <h1 className="text-3xl font-bold mb-4">Upgrade Your DEX</h1>
+            <h1 className="text-3xl font-bold mb-4">Graduate Your DEX</h1>
             <p className="text-gray-300 max-w-2xl">
-              By sending ORDER tokens, you can graduate your DEX to the next
-              tier, allowing you to earn fee splits.
+              By sending ORDER tokens, you can graduate your DEX to earn fee
+              splits and unlock additional features.
             </p>
           </div>
         </div>

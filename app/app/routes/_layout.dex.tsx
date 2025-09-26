@@ -1624,7 +1624,7 @@ export default function DexRoute() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold mb-1">
-                      Ready to Upgrade?
+                      Ready to Graduate?
                     </h3>
                     <p className="text-gray-300">
                       Graduate your DEX to earn fee splits.
@@ -1636,7 +1636,7 @@ export default function DexRoute() {
                   href="/dex/graduation"
                   className="whitespace-nowrap flex-shrink-0"
                 >
-                  Upgrade Now
+                  Graduate Now
                 </Button>
               </div>
             </Card>
