@@ -441,6 +441,36 @@ export default function DexRoute() {
     }
   }, [dexData, isLoading, isDexLoading]);
 
+  useEffect(() => {
+    if (
+      dexData &&
+      dexData.customDomain &&
+      !isGraduated &&
+      isAuthenticated &&
+      !isLoading &&
+      !isDexLoading
+    ) {
+      const popupShownKey = `graduation-popup-shown-${dexData.id}`;
+      const hasShownPopup = localStorage.getItem(popupShownKey);
+
+      if (!hasShownPopup) {
+        const timer = setTimeout(() => {
+          openModal("graduationExplanation");
+          localStorage.setItem(popupShownKey, "true");
+        }, 1000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [
+    dexData,
+    isGraduated,
+    isAuthenticated,
+    isLoading,
+    isDexLoading,
+    openModal,
+  ]);
+
   const handleGenerateTheme = async () => {
     if (!themePrompt.trim()) {
       toast.error("Please enter a theme description");
