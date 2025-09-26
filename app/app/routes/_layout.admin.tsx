@@ -96,9 +96,19 @@ interface DexesResponse {
 }
 
 interface DexStatsResponse {
-  total: number;
-  graduated: number;
-  demo: number;
+  total: {
+    allTime: number;
+    new: number;
+  };
+  graduated: {
+    allTime: number;
+    new: number;
+  };
+  demo: {
+    allTime: number;
+    new: number;
+  };
+  period: string;
 }
 
 interface DeleteBrokerIdResponse {
@@ -307,7 +317,7 @@ export default function AdminRoute() {
   const loadDexStats = async () => {
     try {
       const response = await get<DexStatsResponse>(
-        "api/admin/dexes/stats",
+        "api/stats?period=30d",
         token
       );
       setDexStats(response);
@@ -775,7 +785,7 @@ export default function AdminRoute() {
                         Active Broker IDs
                       </span>
                       <span className="text-2xl font-medium text-success">
-                        {dexStats?.graduated || 0}
+                        {dexStats?.graduated?.allTime || 0}
                       </span>
                     </div>
                   </div>
@@ -783,7 +793,7 @@ export default function AdminRoute() {
               </div>
 
               {/* Fee Configurations */}
-              {dexStats?.graduated && dexStats.graduated > 0 && (
+              {dexStats?.graduated && dexStats.graduated.allTime > 0 && (
                 <div className="mt-4">
                   <h3 className="text-sm font-medium mb-2 flex items-center">
                     <div className="i-mdi:percent-outline text-primary-light mr-1.5 h-4 w-4"></div>

@@ -66,38 +66,6 @@ adminRoutes.get(
   }
 );
 
-adminRoutes.get("/dexes/stats", async c => {
-  try {
-    const prismaClient = await getPrisma();
-    const stats = await prismaClient.$transaction(async tx => {
-      const totalDexes = await tx.dex.count();
-      const graduatedDexes = await tx.dex.count({
-        where: {
-          brokerId: {
-            not: "demo",
-          },
-        },
-      });
-      const demoDexes = await tx.dex.count({
-        where: {
-          brokerId: "demo",
-        },
-      });
-
-      return {
-        total: totalDexes,
-        graduated: graduatedDexes,
-        demo: demoDexes,
-      };
-    });
-
-    return c.json(stats);
-  } catch (error) {
-    console.error("Error getting DEX statistics:", error);
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
-});
-
 function extractRepoInfoFromUrl(
   repoUrl: string
 ): { owner: string; repo: string } | null {

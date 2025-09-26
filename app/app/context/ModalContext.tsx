@@ -9,7 +9,6 @@ import OrderlyKeyLoginModal from "../components/OrderlyKeyLoginModal";
 import AdminLoginModal from "../components/AdminLoginModal";
 import GraduationExplanationModal from "../components/GraduationExplanationModal";
 
-// Define types for our modals
 type ModalType =
   | "login"
   | "deleteConfirm"
