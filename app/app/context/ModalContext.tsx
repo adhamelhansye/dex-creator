@@ -7,6 +7,7 @@ import ThemePreviewModal from "../components/ThemePreviewModal";
 import TradingViewLicenseModal from "../components/TradingViewLicenseModal";
 import OrderlyKeyLoginModal from "../components/OrderlyKeyLoginModal";
 import AdminLoginModal from "../components/AdminLoginModal";
+import GraduationExplanationModal from "../components/GraduationExplanationModal";
 
 // Define types for our modals
 type ModalType =
@@ -18,6 +19,7 @@ type ModalType =
   | "tradingViewLicense"
   | "orderlyKeyLogin"
   | "adminLogin"
+  | "graduationExplanation"
   | null;
 
 interface ModalContextType {
@@ -189,6 +191,10 @@ function ModalManager() {
           orderlyKey={currentModalProps.orderlyKey}
           accountId={currentModalProps.accountId}
         />
+      );
+    case "graduationExplanation":
+      return (
+        <GraduationExplanationModal isOpen={isModalOpen} onClose={closeModal} />
       );
     default:
       return null;

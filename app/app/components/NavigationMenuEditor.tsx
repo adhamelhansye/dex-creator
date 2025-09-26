@@ -6,13 +6,38 @@ interface NavigationMenuEditorProps {
   className?: string;
 }
 
-// Available navigation menu items
 const AVAILABLE_MENUS = [
-  { id: "Trading", label: "Trading", icon: "i-mdi:chart-line" },
+  {
+    id: "Trading",
+    label: "Trading",
+    icon: "i-mdi:chart-line",
+    isDefault: true,
+  },
   { id: "Portfolio", label: "Portfolio", icon: "i-mdi:wallet-outline" },
-  { id: "Markets", label: "Markets", icon: "i-mdi:chart-box-outline" },
-  { id: "Leaderboard", label: "Leaderboard", icon: "i-mdi:trophy-outline" },
-  { id: "Rewards", label: "Rewards", icon: "i-mdi:gift-outline" },
+  {
+    id: "Markets",
+    label: "Markets",
+    icon: "i-mdi:chart-box-outline",
+    isDefault: true,
+  },
+  {
+    id: "Leaderboard",
+    label: "Leaderboard",
+    icon: "i-mdi:trophy-outline",
+    isDefault: true,
+  },
+  {
+    id: "Rewards",
+    label: "Rewards",
+    icon: "i-mdi:gift-outline",
+    isDefault: false,
+  },
+  {
+    id: "Vaults",
+    label: "Vaults",
+    icon: "i-mdi:shield-outline",
+    isDefault: false,
+  },
 ];
 
 const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
@@ -20,7 +45,6 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
   onChange,
   className = "",
 }) => {
-  // Parse the comma-separated string into an ordered array of enabled menu items
   const parseMenus = useCallback((menuString: string): string[] => {
     if (!menuString) return [];
     return menuString
@@ -29,19 +53,15 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
       .filter(Boolean);
   }, []);
 
-  // State for the currently enabled and ordered menu items
   const [enabledMenus, setEnabledMenus] = useState<string[]>(() =>
     parseMenus(value)
   );
 
-  // Track the item being dragged
   const [draggedItem, setDraggedItem] = useState<string | null>(null);
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
 
-  // Need to track if this is an internal update to prevent loops
   const [isInternalUpdate, setIsInternalUpdate] = useState(false);
 
-  // Effect to update parent when enabledMenus changes, but only for internal updates
   useEffect(() => {
     if (isInternalUpdate) {
       onChange(enabledMenus.join(","));
@@ -49,60 +69,48 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
     }
   }, [enabledMenus, onChange, isInternalUpdate]);
 
-  // Effect to update local state when the value prop changes significantly
   useEffect(() => {
     const parsedValue = parseMenus(value);
-    // Only update internal state if the parsed values are different
-    // This prevents unnecessary rerenders and potential loops
     if (JSON.stringify(parsedValue) !== JSON.stringify(enabledMenus)) {
       setEnabledMenus(parsedValue);
     }
   }, [value, parseMenus, enabledMenus]);
 
-  // Toggle a menu item on/off
   const toggleMenu = (menuId: string) => {
     setIsInternalUpdate(true);
     setEnabledMenus(current => {
       if (current.includes(menuId)) {
-        // Remove it if already enabled
         return current.filter(id => id !== menuId);
       } else {
-        // Add it if not enabled
         return [...current, menuId];
       }
     });
   };
 
-  // Handle drag start
   const handleDragStart = (e: React.DragEvent, menuId: string) => {
     e.dataTransfer.effectAllowed = "move";
     setDraggedItem(menuId);
   };
 
-  // Handle drag over another item
   const handleDragOver = (e: React.DragEvent, menuId: string) => {
     e.preventDefault();
     e.dataTransfer.dropEffect = "move";
 
     if (!draggedItem || draggedItem === menuId) return;
 
-    // Set the item being dragged over for visual feedback
     setDraggedOverItem(menuId);
   };
 
-  // Handle drop
   const handleDrop = (e: React.DragEvent, menuId: string) => {
     e.preventDefault();
     if (!draggedItem || draggedItem === menuId) return;
 
-    // Find the indices of the dragged item and the item being dragged over
     const draggedIndex = enabledMenus.indexOf(draggedItem);
     const targetIndex = enabledMenus.indexOf(menuId);
 
     if (draggedIndex === -1 || targetIndex === -1) return;
 
     setIsInternalUpdate(true);
-    // Reorder the enabled menus array
     const newMenus = [...enabledMenus];
     newMenus.splice(draggedIndex, 1);
     newMenus.splice(targetIndex, 0, draggedItem);
@@ -111,12 +119,10 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
     setDraggedOverItem(null);
   };
 
-  // Handle drag leave
   const handleDragLeave = () => {
     setDraggedOverItem(null);
   };
 
-  // Handle drag end
   const handleDragEnd = () => {
     setDraggedItem(null);
     setDraggedOverItem(null);
@@ -160,6 +166,26 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
         </div>
       </div>
 
+      {/* Vaults page explanation */}
+      <div className="bg-success/10 border border-success/20 rounded-lg p-3 text-sm flex items-start">
+        <div className="i-mdi:shield-outline h-5 w-5 mr-2 text-success flex-shrink-0 mt-0.5"></div>
+        <div className="text-gray-300">
+          <p className="mb-1">
+            <span className="text-success font-medium">
+              Vaults Page Features:
+            </span>{" "}
+            The Vaults page enables users to earn passive yield through
+            automated trading strategies and yield farming.
+          </p>
+          <p className="text-xs text-gray-400">
+            Users can deposit USDC into curated vault strategies that deploy
+            market-making strategies, handle liquidations, and accrue platform
+            fees. This feature works across multiple blockchains with no gas
+            fees for deposits from your DEX account.
+          </p>
+        </div>
+      </div>
+
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 mb-4">
         {AVAILABLE_MENUS.map(menu => (
           <label
@@ -176,7 +202,9 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
             />
             <div className="flex items-center space-x-2">
               <div className={`${menu.icon} h-5 w-5`}></div>
-              <span>{menu.label}</span>
+              <span>
+                {menu.label} {menu.isDefault && "(Default)"}
+              </span>
             </div>
           </label>
         ))}

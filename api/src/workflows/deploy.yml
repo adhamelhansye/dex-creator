@@ -13,7 +13,7 @@ permissions:
   pages: write
   id-token: write
 
-# Allow only one concurrent deployment, queue subsequent runs
+# Allow only one concurrent deployment
 concurrency:
   group: "pages"
   cancel-in-progress: false
@@ -34,34 +34,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "20"
+          cache: "yarn"
+          cache-dependency-path: |
+            yarn.lock
 
-      - name: Check if only public files changed
+      - name: Cache node_modules
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules
+            ~/.yarn/cache
+          key: ${{ runner.os }}-deps-${{ hashFiles('**/yarn.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-deps-
+
+      - name: Check if only config changed
         id: check-changes
         run: |
-          # For manual workflow dispatch, always do full build
-          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
-            echo "Manual trigger detected, forcing full build"
-            echo "needs_build=true" >> $GITHUB_OUTPUT
-          elif [ -z "${{ github.event.before }}" ]; then
-            echo "No previous commit available, forcing full build"
+          if git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -q -v "^public/config\.js$"; then
             echo "needs_build=true" >> $GITHUB_OUTPUT
           else
-            # Check if there are any changes outside of public/ folder
-            changed_files=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
-            echo "Changed files:"
-            echo "$changed_files"
-            
-            # Filter out public/ files and see if anything else changed
-            non_public_changes=$(echo "$changed_files" | grep -v "^public/" || true)
-            
-            if [ -n "$non_public_changes" ]; then
-              echo "Code changes detected outside public/ folder:"
-              echo "$non_public_changes"
-              echo "needs_build=true" >> $GITHUB_OUTPUT
-            else
-              echo "Only public/ files changed, attempting cached build"
-              echo "needs_build=false" >> $GITHUB_OUTPUT
-            fi
+            echo "needs_build=false" >> $GITHUB_OUTPUT
           fi
         continue-on-error: true
 
@@ -80,33 +73,25 @@ jobs:
           fi
 
       - name: Restore previous build (if only config changed)
-        id: restore-build
         if: steps.check-changes.outputs.needs_build == 'false'
         uses: actions/cache/restore@v4
         with:
           path: ./build
-          key: ${{ runner.os }}-build-${{ github.repository }}-latest
+          key: ${{ runner.os }}-build-${{ github.repository }}
           restore-keys: |
-            ${{ runner.os }}-build-${{ github.repository }}-
+            ${{ runner.os }}-build-${{ github.repository }}
         continue-on-error: true
 
-      - name: Force build if cache restore failed
-        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit != 'true'
+      - name: Check if build directory exists
+        if: steps.check-changes.outputs.needs_build == 'false'
         run: |
-          echo "No previous build found, forcing full build"
-          echo "needs_build=true" >> $GITHUB_OUTPUT
+          if [ -d "./build" ] && [ "$(ls -A ./build)" ]; then
+            echo "Build directory found with content"
+          else
+            echo "needs_build=true" >> $GITHUB_OUTPUT
+            echo "Build directory empty or missing, forcing full build"
+          fi
         id: force-build
-
-      - name: Cache node_modules
-        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
-        uses: actions/cache@v4
-        with:
-          path: |
-            node_modules
-            ~/.yarn/cache
-          key: ${{ runner.os }}-deps-${{ hashFiles('**/yarn.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-deps-
 
       - name: Install dependencies
         if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
@@ -131,17 +116,11 @@ jobs:
           VITE_PUBLIC_PATH: /
           VITE_BASE_URL: ""
 
-      - name: Copy updated public files to build (if using cached build)
-        if: steps.check-changes.outputs.needs_build == 'false' && steps.restore-build.outputs.cache-hit == 'true'
+      - name: Copy updated config to build (if using cached build)
+        if: steps.check-changes.outputs.needs_build == 'false' && steps.force-build.outputs.needs_build != 'true'
         run: |
-          if [ ! -d "./build/client" ]; then
-            echo "❌ Build directory not found in cache, this should not happen"
-            exit 1
-          fi
-          
-          # Copy the entire public folder - existing files will be overwritten
-          cp -r public/* ./build/client/
-          echo "✅ Copied all public files to build output"
+          cp public/config.js ./build/client/config.js
+          echo "✅ Updated config.js copied to build output"
 
       - name: Cache build artifacts
         if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
@@ -149,13 +128,6 @@ jobs:
         with:
           path: ./build
           key: ${{ runner.os }}-build-${{ github.repository }}-${{ github.sha }}
-
-      - name: Cache build artifacts as latest
-        if: steps.check-changes.outputs.needs_build == 'true' || steps.force-build.outputs.needs_build == 'true'
-        uses: actions/cache/save@v4
-        with:
-          path: ./build
-          key: ${{ runner.os }}-build-${{ github.repository }}-latest
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

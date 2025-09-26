@@ -4,6 +4,7 @@ import { Card } from "./Card";
 import FormInput from "./FormInput";
 import PreviewButton from "./PreviewButton";
 import ThemeColorSwatches from "./ThemeColorSwatches";
+import ThemeFontControls from "./ThemeFontControls";
 import ThemeRoundedControls from "./ThemeRoundedControls";
 import ThemeSpacingControls from "./ThemeSpacingControls";
 import TradingViewColorConfig from "./TradingViewColorConfig";
@@ -27,7 +28,12 @@ const Textarea = ({
   />
 );
 
-export type ThemeTabType = "colors" | "rounded" | "spacing" | "tradingview";
+export type ThemeTabType =
+  | "colors"
+  | "fonts"
+  | "rounded"
+  | "spacing"
+  | "tradingview";
 
 export interface ThemeCustomizationProps {
   currentTheme: string | null;
@@ -196,6 +202,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
         <div className="border-b border-light/10 mt-4">
           <div className="flex overflow-x-auto">
             <ThemeTabButton tab="colors" label="Color Palette" />
+            <ThemeTabButton tab="fonts" label="Fonts" />
             <ThemeTabButton tab="rounded" label="Border Radius" />
             <ThemeTabButton tab="spacing" label="Spacing" />
             <ThemeTabButton tab="tradingview" label="TradingView" />
@@ -215,6 +222,21 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
                 onColorChange={updateCssColor}
                 selectedColors={selectedColors}
                 onSelectionChange={setSelectedColors}
+              />
+            </div>
+          )}
+          {activeThemeTab === "fonts" && (
+            <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
+              <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
+                <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
+                <span>
+                  Customize the font family and base font size used throughout
+                  your DEX interface
+                </span>
+              </div>
+              <ThemeFontControls
+                css={currentTheme || defaultTheme}
+                onValueChange={updateCssValue}
               />
             </div>
           )}

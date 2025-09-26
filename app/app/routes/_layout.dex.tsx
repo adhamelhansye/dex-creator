@@ -28,6 +28,7 @@ import DexSectionRenderer, {
 } from "../components/DexSectionRenderer";
 import DexCreationStatus from "../components/DexCreationStatus";
 import CustomDomainSection from "../components/CustomDomainSection";
+import { useThemeCSS } from "../hooks/useThemeCSS";
 
 interface DexData {
   id: string;
@@ -74,12 +75,13 @@ interface ThemeResponse {
   theme: string;
 }
 
-type ThemeTabType = "colors" | "rounded" | "spacing" | "tradingview";
+type ThemeTabType = "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
 
 const TOTAL_STEPS = DEX_SECTIONS.length;
 
 const defaultTheme = `:root {
   --oui-font-family: 'Manrope', sans-serif;
+  --oui-font-size-base: 16px;
 
   /* colors */
   --oui-color-primary: 176 132 233;
@@ -171,6 +173,11 @@ const defaultTheme = `:root {
   --oui-spacing-md: 26.25rem;
   --oui-spacing-lg: 30rem;
   --oui-spacing-xl: 33.75rem;
+}
+
+html, body {
+  font-family: 'Manrope', sans-serif !important;
+  font-size: 16px !important;
 }`;
 
 export default function DexRoute() {
@@ -433,6 +440,36 @@ export default function DexRoute() {
       return () => clearTimeout(timer);
     }
   }, [dexData, isLoading, isDexLoading]);
+
+  useEffect(() => {
+    if (
+      dexData &&
+      dexData.customDomain &&
+      !isGraduated &&
+      isAuthenticated &&
+      !isLoading &&
+      !isDexLoading
+    ) {
+      const popupShownKey = `graduation-popup-shown-${dexData.id}`;
+      const hasShownPopup = localStorage.getItem(popupShownKey);
+
+      if (!hasShownPopup) {
+        const timer = setTimeout(() => {
+          openModal("graduationExplanation");
+          localStorage.setItem(popupShownKey, "true");
+        }, 1000);
+
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [
+    dexData,
+    isGraduated,
+    isAuthenticated,
+    isLoading,
+    isDexLoading,
+    openModal,
+  ]);
 
   const handleGenerateTheme = async () => {
     if (!themePrompt.trim()) {
@@ -714,8 +751,8 @@ export default function DexRoute() {
       handleThemeEditorChange,
       setViewCssCode,
       ThemeTabButton,
-      updateCssColor,
-      updateCssValue,
+      updateCssColor: handleUpdateCssColor,
+      updateCssValue: handleUpdateCssValue,
       handleGenerateTheme,
       setTradingViewColorConfig,
       pnlPosters,
@@ -1110,58 +1147,22 @@ export default function DexRoute() {
     });
   };
 
-  const hexToRgbSpaceSeparated = (hex: string) => {
-    hex = hex.replace("#", "");
+  const { updateCssValue, updateCssColor } = useThemeCSS(defaultTheme);
 
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-
-    return `${r} ${g} ${b}`;
-  };
-
-  const updateCssColor = useCallback(
-    (variableName: string, newColorHex: string) => {
-      const newColorRgb = hexToRgbSpaceSeparated(newColorHex);
-
-      setCurrentTheme(prevTheme => {
-        const baseTheme = prevTheme || defaultTheme;
-        let updatedCss = baseTheme;
-
-        if (variableName.startsWith("oui-color")) {
-          const regex = new RegExp(
-            `(--${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
-            "g"
-          );
-          updatedCss = updatedCss.replace(regex, `$1${newColorRgb}`);
-        } else if (variableName.startsWith("gradient")) {
-          const regex = new RegExp(
-            `(--oui-${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
-            "g"
-          );
-          updatedCss = updatedCss.replace(regex, `$1${newColorRgb}`);
-        }
-
-        return updatedCss;
-      });
-
+  const handleUpdateCssValue = useCallback(
+    (variableName: string, newValue: string) => {
+      updateCssValue(variableName, newValue, setCurrentTheme);
       setThemeApplied(true);
     },
-    [defaultTheme]
+    [updateCssValue]
   );
 
-  const updateCssValue = useCallback(
-    (variableName: string, newValue: string) => {
-      setCurrentTheme(prevTheme => {
-        if (!prevTheme) return prevTheme;
-
-        const regex = new RegExp(`(--${variableName}:\\s*)([^;]+)`, "g");
-        return prevTheme.replace(regex, `$1${newValue}`);
-      });
-
+  const handleUpdateCssColor = useCallback(
+    (variableName: string, newColorHex: string) => {
+      updateCssColor(variableName, newColorHex, setCurrentTheme);
       setThemeApplied(true);
     },
-    []
+    [updateCssColor]
   );
 
   const ThemeTabButton = ({
@@ -1492,8 +1493,8 @@ export default function DexRoute() {
               handleThemeEditorChange,
               setViewCssCode,
               ThemeTabButton,
-              updateCssColor,
-              updateCssValue,
+              updateCssColor: handleUpdateCssColor,
+              updateCssValue: handleUpdateCssValue,
               handleGenerateTheme,
               setTradingViewColorConfig,
               pnlPosters,
@@ -1653,7 +1654,7 @@ export default function DexRoute() {
                   </div>
                   <div>
                     <h3 className="text-lg font-semibold mb-1">
-                      Ready to Upgrade?
+                      Ready to Graduate?
                     </h3>
                     <p className="text-gray-300">
                       Graduate your DEX to earn fee splits.
@@ -1665,7 +1666,7 @@ export default function DexRoute() {
                   href="/dex/graduation"
                   className="whitespace-nowrap flex-shrink-0"
                 >
-                  Upgrade Now
+                  Graduate Now
                 </Button>
               </div>
             </Card>
@@ -1685,7 +1686,8 @@ export default function DexRoute() {
                     <p className="text-gray-300">
                       Configure how your DEX appears on the board page. Set up
                       description, banner, logo, and token information for
-                      better visibility.
+                      better visibility. Note: Your DEX card will only appear on
+                      the board after graduation.
                     </p>
                   </div>
                 </div>

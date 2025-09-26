@@ -4,6 +4,7 @@ import { previewConfig } from "../utils/config";
 import { FooterProps, MainNavWidgetProps } from "@orderly.network/ui-scaffold";
 import { TradingPageProps } from "@orderly.network/trading";
 import { AppLogos } from "@orderly.network/react-app";
+import { extractFontValues } from "../utils/cssParser";
 
 export const DEX_PREVIEW_CONFIG_KEY = "dex-preview-config";
 
@@ -23,6 +24,8 @@ export interface DexPreviewConfig {
   secondaryLogo?: string | null;
   favicon?: string | null;
   customStyles?: string;
+  fontFamily?: string;
+  fontSize?: string;
 }
 
 /**
@@ -123,6 +126,8 @@ export function usePreviewConfig(
     sharePnLConfig.backgroundImages = pnlPosterUrls;
   }
 
+  const { fontFamily, fontSize } = extractFontValues(themeCSS || null);
+
   const currentConfig: DexPreviewConfig = {
     brokerId: DEMO_BROKER_ID,
     brokerName,
@@ -136,6 +141,8 @@ export function usePreviewConfig(
     primaryLogo: primaryLogoUrl,
     secondaryLogo: secondaryLogoUrl,
     customStyles: themeCSS || undefined,
+    fontFamily,
+    fontSize,
   };
 
   useEffect(() => {
@@ -157,6 +164,8 @@ export function usePreviewConfig(
     secondaryLogoUrl,
     themeCSS,
     pnlPosterUrls,
+    fontFamily,
+    fontSize,
   ]);
 
   const getStoredConfig = (): DexPreviewConfig | null => {

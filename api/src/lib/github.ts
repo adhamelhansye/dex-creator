@@ -38,6 +38,16 @@ const etagCache = new Map<string, { etag: string; data: any }>();
 let cacheHits = 0;
 let cacheMisses = 0;
 
+const workflowsDir = path.resolve(__dirname, "../workflows");
+const deployYmlContent = fs.readFileSync(
+  path.join(workflowsDir, "deploy.yml"),
+  "utf-8"
+);
+const syncForkYmlContent = fs.readFileSync(
+  path.join(workflowsDir, "sync-fork.yml"),
+  "utf-8"
+);
+
 /**
  * Returns stats about the GitHub ETag cache
  */
@@ -877,6 +887,8 @@ export async function updateDexConfig(
     );
 
     const fileContents = new Map<string, string>();
+    fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
+    fileContents.set(".github/workflows/sync-fork.yml", syncForkYmlContent);
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -985,21 +997,6 @@ export async function setupRepositoryWithSingleCommit(
   console.log(`Setting up repository ${owner}/${repo} with a single commit...`);
 
   try {
-    const workflowsDir = path.resolve(__dirname, "../workflows");
-
-    if (!fs.existsSync(workflowsDir)) {
-      throw new Error(`Workflows directory not found at ${workflowsDir}`);
-    }
-
-    const deployYmlContent = fs.readFileSync(
-      path.join(workflowsDir, "deploy.yml"),
-      "utf-8"
-    );
-    const syncForkYmlContent = fs.readFileSync(
-      path.join(workflowsDir, "sync-fork.yml"),
-      "utf-8"
-    );
-
     const {
       configJsContent,
       envContent,

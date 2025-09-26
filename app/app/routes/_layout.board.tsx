@@ -50,14 +50,14 @@ export default function BoardRoute() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>("volume");
-  const [timePeriod, setTimePeriod] = useState<TimePeriod>("weekly");
+  const [timePeriod, setTimePeriod] = useState<TimePeriod>("30d");
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
 
   const fetchLeaderboard = async (
     sort: SortOption = "volume",
-    period: TimePeriod = "weekly",
+    period: TimePeriod = "30d",
     page: number = 1
   ) => {
     try {

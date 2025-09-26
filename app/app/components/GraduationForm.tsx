@@ -685,7 +685,6 @@ export function GraduationForm({
     return getBlockExplorerUrlByChainId(txHash, chain.chainId);
   };
 
-  // Show finalize admin wallet step if broker ID is created but not graduated
   if (
     graduationStatus?.success &&
     graduationStatus.brokerId !== "demo" &&
@@ -770,7 +769,6 @@ export function GraduationForm({
     );
   }
 
-  // Show fully graduated state
   if (graduationStatus?.isGraduated) {
     return (
       <Card className="w-full max-w-lg mx-auto slide-fade-in">
@@ -789,7 +787,6 @@ export function GraduationForm({
             is now active and your DEX is fully ready for users!
           </p>
 
-          {/* DEX is Ready Section */}
           {dexData?.repoUrl && (
             <div className="bg-success/10 rounded-lg p-4 mb-6 text-left">
               <h3 className="font-medium flex items-center mb-2">
@@ -847,10 +844,8 @@ export function GraduationForm({
             </ul>
           </div>
 
-          {/* Base Fee Explanation */}
           <BaseFeeExplanation />
 
-          {/* Current Fee Settings - Read Only */}
           <FeeConfigWithCalculator
             makerFee={makerFee}
             takerFee={takerFee}
@@ -863,10 +858,9 @@ export function GraduationForm({
     );
   }
 
-  // Default form UI for initial submission
   return (
     <Card className="w-full max-w-lg mx-auto slide-fade-in">
-      <h2 className="text-xl font-bold mb-4">Upgrade Your DEX</h2>
+      <h2 className="text-xl font-bold mb-4">Graduate Your DEX</h2>
 
       <div className="bg-light/5 rounded-lg p-4 mb-6">
         <h3 className="text-md font-medium mb-3">What is DEX Graduation?</h3>
@@ -912,10 +906,8 @@ export function GraduationForm({
         <p className="text-gray-300 mb-4">Loading graduation options...</p>
       )}
 
-      {/* Base Fee Explanation - Add here */}
       <BaseFeeExplanation />
 
-      {/* Fee Configuration Section */}
       <div className="mb-6">
         <div className="bg-light/5 rounded-xl p-4 mb-4">
           <h3 className="text-md font-medium mb-2 flex items-center">
@@ -1009,7 +1001,6 @@ export function GraduationForm({
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              {/* USDC Option */}
               <div
                 className={`border rounded-xl p-4 cursor-pointer transition-colors ${
                   paymentType === "usdc"
@@ -1030,7 +1021,6 @@ export function GraduationForm({
                 <p className="text-sm text-gray-400">Fixed USD amount</p>
               </div>
 
-              {/* ORDER Option */}
               <div
                 className={`border rounded-xl p-4 cursor-pointer transition-colors ${
                   paymentType === "order"
@@ -1085,7 +1075,6 @@ export function GraduationForm({
         )}
 
         <div className="space-y-4 mt-6">
-          {/* Direct transfer button */}
           <div className="border rounded-xl p-4 bg-primary/10 border-primary/20">
             <h3 className="text-md font-medium mb-2 flex items-center">
               <div className="w-5 h-5 mr-2 i-mdi:rocket-launch text-primary"></div>

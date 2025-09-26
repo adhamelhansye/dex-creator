@@ -45,7 +45,7 @@ export interface DexSectionAllProps {
   defaultTheme: string;
   showThemeEditor: boolean;
   viewCssCode: boolean;
-  activeThemeTab: "colors" | "rounded" | "spacing" | "tradingview";
+  activeThemeTab: "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
   themePrompt: string;
   isGeneratingTheme: boolean;
   themeApplied: boolean;
@@ -58,7 +58,7 @@ export interface DexSectionAllProps {
   handleThemeEditorChange: (value: string) => void;
   setViewCssCode: (value: boolean) => void;
   ThemeTabButton: React.FC<{
-    tab: "colors" | "rounded" | "spacing" | "tradingview";
+    tab: "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
     label: string;
   }>;
   updateCssColor: (variableName: string, newColorHex: string) => void;
@@ -318,7 +318,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     key: "navigationMenus",
     title: "Navigation Menus",
     description:
-      "Customize which navigation links appear in your DEX. This is optional - your DEX will include all navigation menus by default.",
+      "Customize which navigation links appear in your DEX. This is optional - if you don't select any menus, the default menus will be displayed.",
     isOptional: true,
     component: NavigationMenuSection,
     getProps: props => ({

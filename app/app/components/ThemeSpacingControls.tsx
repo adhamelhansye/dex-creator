@@ -9,10 +9,8 @@ interface SpacingValues {
   [key: string]: string;
 }
 
-// The order in which we want to display the spacing variables
 const SPACING_ORDER = ["xs", "sm", "md", "lg", "xl"];
 
-// Map variable keys to display names
 const SPACING_DISPLAY_NAMES: { [key: string]: string } = {
   xs: "Extra Small",
   sm: "Small",
@@ -27,13 +25,11 @@ export default function ThemeSpacingControls({
 }: ThemeSpacingControlsProps) {
   const [spacingValues, setSpacingValues] = useState<SpacingValues>({});
 
-  // Extract spacing values from CSS when component mounts or CSS changes
   useEffect(() => {
     const extractedValues = extractSpacingValues(css);
     setSpacingValues(extractedValues);
   }, [css]);
 
-  // Extract spacing values from CSS string
   const extractSpacingValues = (cssString: string): SpacingValues => {
     const values: SpacingValues = {};
     const regex = /--oui-spacing-([^:]*)?:\s*([^;]+);/g;
@@ -48,7 +44,6 @@ export default function ThemeSpacingControls({
     return values;
   };
 
-  // Parse CSS value to get numeric value and unit
   const parseCssValue = (value: string): { value: number; unit: string } => {
     const match = value.match(/^([\d.]+)(.*)$/);
     if (match) {
@@ -60,12 +55,10 @@ export default function ThemeSpacingControls({
     return { value: 0, unit: "rem" };
   };
 
-  // Format CSS value
   const formatCssValue = (value: number, unit: string): string => {
     return `${value}${unit}`;
   };
 
-  // Handle slider change
   const handleSliderChange = (
     key: string,
     e: React.ChangeEvent<HTMLInputElement>
@@ -82,7 +75,6 @@ export default function ThemeSpacingControls({
     onValueChange(`oui-spacing-${key}`, newValue);
   };
 
-  // Handle direct input change
   const handleInputChange = (
     key: string,
     e: React.ChangeEvent<HTMLInputElement>
@@ -100,25 +92,17 @@ export default function ThemeSpacingControls({
     }
   };
 
-  // Get the maximum slider value based on the current value
   const getMaxSliderValue = (key: string): number => {
     const { value } = parseCssValue(spacingValues[key] || "0rem");
 
-    // If value is already greater than 40, set max to value + 10
     if (value > 40) return Math.ceil(value + 10);
 
-    // Otherwise use 40 as the default max
     return 40;
   };
 
-  // Render a preview of the spacing
   const renderSpacingPreview = (_key: string, value: string) => {
-    // Create a visual representation of the spacing
     const { value: numValue } = parseCssValue(value);
 
-    // Use a logarithmic scale for better visualization
-    // This gives smaller increments for small values and larger increments for big values
-    // but keeps everything in a reasonable display range
     const scaledSize = Math.min(Math.max(Math.log2(numValue + 1) * 9, 6), 60);
 
     return (
@@ -148,7 +132,6 @@ export default function ThemeSpacingControls({
             className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 py-2 border-b border-light/5"
           >
             <div className="flex items-center gap-3">
-              {/* Mobile-friendly preview box */}
               <div className="w-16 h-16 flex-shrink-0">
                 {renderSpacingPreview(key, value)}
               </div>

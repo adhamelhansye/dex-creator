@@ -487,7 +487,7 @@ export const FeeConfigWithCalculator: React.FC<
                 <span className="font-medium">Note:</span> These are the total
                 fees that traders will pay on your DEX. The Orderly base fee
                 varies by tier (Public: 3.00 bps taker, Diamond: 1.00 bps
-                taker). Your revenue = Your Custom Fee - Base Fee. Upgrade your
+                taker). Your revenue = Your Custom Fee - Base Fee. Improve your
                 tier through the{" "}
                 <a
                   href="https://app.orderly.network/"
