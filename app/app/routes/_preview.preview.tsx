@@ -39,6 +39,8 @@ const PreviewConfigSchema = z.object({
   secondaryLogo: z.string().nullable().optional(),
   favicon: z.string().nullable().optional(),
   customStyles: z.string().optional(),
+  fontFamily: z.string().optional(),
+  fontSize: z.string().optional(),
 });
 
 export const meta: MetaFunction = () => {
@@ -145,10 +147,8 @@ export default function PreviewRoute() {
   const previewCustomStyles = `
     ${config.customStyles || ""}
     
-    /* Override font family for preview to use Inter */
-    html, body, * {
-      font-family: 'Inter', ui-sans-serif, system-ui, sans-serif !important;
-      font-feature-settings: normal !important;
+    * {
+      font-family: ${config.fontFamily || "'Manrope', sans-serif"} !important;
     }
   `;
 
@@ -164,6 +164,8 @@ export default function PreviewRoute() {
       sharePnLConfig={config.sharePnLConfig}
       appIcons={config.appIcons}
       customStyles={previewCustomStyles}
+      fontFamily={config.fontFamily}
+      fontSize={config.fontSize}
       className="h-screen w-full"
     />
   );

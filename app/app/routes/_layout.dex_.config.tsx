@@ -18,6 +18,7 @@ import { useNavigate, Link } from "@remix-run/react";
 import DexSectionRenderer, {
   DEX_SECTIONS,
 } from "../components/DexSectionRenderer";
+import { useThemeCSS } from "../hooks/useThemeCSS";
 
 interface DexData {
   id: string;
@@ -64,10 +65,11 @@ interface ThemeResponse {
   theme: string;
 }
 
-type ThemeTabType = "colors" | "rounded" | "spacing" | "tradingview";
+type ThemeTabType = "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
 
 const defaultTheme = `:root {
   --oui-font-family: 'Manrope', sans-serif;
+  --oui-font-size-base: 16px;
 
   /* colors */
   --oui-color-primary: 176 132 233;
@@ -159,6 +161,11 @@ const defaultTheme = `:root {
   --oui-spacing-md: 26.25rem;
   --oui-spacing-lg: 30rem;
   --oui-spacing-xl: 33.75rem;
+}
+
+html, body {
+  font-family: 'Manrope', sans-serif !important;
+  font-size: 16px !important;
 }`;
 
 export default function DexConfigRoute() {
@@ -615,8 +622,8 @@ export default function DexConfigRoute() {
       handleThemeEditorChange,
       setViewCssCode,
       ThemeTabButton,
-      updateCssColor,
-      updateCssValue,
+      updateCssColor: handleUpdateCssColor,
+      updateCssValue: handleUpdateCssValue,
       handleGenerateTheme,
       setTradingViewColorConfig,
       pnlPosters,
@@ -885,58 +892,22 @@ export default function DexConfigRoute() {
     }
   };
 
-  const hexToRgbSpaceSeparated = (hex: string) => {
-    hex = hex.replace("#", "");
+  const { updateCssValue, updateCssColor } = useThemeCSS(defaultTheme);
 
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-
-    return `${r} ${g} ${b}`;
-  };
-
-  const updateCssColor = useCallback(
-    (variableName: string, newColorHex: string) => {
-      const newColorRgb = hexToRgbSpaceSeparated(newColorHex);
-
-      setCurrentTheme(prevTheme => {
-        const baseTheme = prevTheme || defaultTheme;
-        let updatedCss = baseTheme;
-
-        if (variableName.startsWith("oui-color")) {
-          const regex = new RegExp(
-            `(--${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
-            "g"
-          );
-          updatedCss = updatedCss.replace(regex, `$1${newColorRgb}`);
-        } else if (variableName.startsWith("gradient")) {
-          const regex = new RegExp(
-            `(--oui-${variableName}:\\s*)(\\d+\\s+\\d+\\s+\\d+)`,
-            "g"
-          );
-          updatedCss = updatedCss.replace(regex, `$1${newColorRgb}`);
-        }
-
-        return updatedCss;
-      });
-
+  const handleUpdateCssValue = useCallback(
+    (variableName: string, newValue: string) => {
+      updateCssValue(variableName, newValue, setCurrentTheme);
       setThemeApplied(true);
     },
-    [defaultTheme]
+    [updateCssValue]
   );
 
-  const updateCssValue = useCallback(
-    (variableName: string, newValue: string) => {
-      setCurrentTheme(prevTheme => {
-        if (!prevTheme) return prevTheme;
-
-        const regex = new RegExp(`(--${variableName}:\\s*)([^;]+)`, "g");
-        return prevTheme.replace(regex, `$1${newValue}`);
-      });
-
+  const handleUpdateCssColor = useCallback(
+    (variableName: string, newColorHex: string) => {
+      updateCssColor(variableName, newColorHex, setCurrentTheme);
       setThemeApplied(true);
     },
-    []
+    [updateCssColor]
   );
 
   const urlValidator = validateUrl();
@@ -1086,8 +1057,8 @@ export default function DexConfigRoute() {
             handleThemeEditorChange,
             setViewCssCode,
             ThemeTabButton,
-            updateCssColor,
-            updateCssValue,
+            updateCssColor: handleUpdateCssColor,
+            updateCssValue: handleUpdateCssValue,
             handleGenerateTheme,
             setTradingViewColorConfig,
             pnlPosters,

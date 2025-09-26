@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Button } from "./Button";
 import ThemeColorSwatches from "./ThemeColorSwatches";
+import ThemeFontControls from "./ThemeFontControls";
 import ThemeRoundedControls from "./ThemeRoundedControls";
 import ThemeSpacingControls from "./ThemeSpacingControls";
 import { Card } from "./Card";
@@ -13,7 +14,7 @@ interface ThemePreviewModalProps {
   css: string;
 }
 
-type TabType = "colors" | "rounded" | "spacing";
+type TabType = "colors" | "fonts" | "rounded" | "spacing";
 
 export default function ThemePreviewModal({
   isOpen,
@@ -153,6 +154,7 @@ export default function ThemePreviewModal({
           <div className="border-b border-light/10">
             <div className="flex">
               <TabButton tab="colors" label="Color Palette" />
+              <TabButton tab="fonts" label="Fonts" />
               <TabButton tab="rounded" label="Border Radius" />
               <TabButton tab="spacing" label="Spacing" />
             </div>
@@ -170,6 +172,19 @@ export default function ThemePreviewModal({
                 </h4>
 
                 <ThemeColorSwatches css={css} onColorChange={updateCssColor} />
+              </div>
+            )}
+
+            {activeTab === "fonts" && (
+              <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10">
+                <h4 className="font-semibold mb-2 flex justify-between items-center">
+                  <span>Fonts</span>
+                  <span className="text-xs text-gray-400">
+                    Customize font family and size
+                  </span>
+                </h4>
+
+                <ThemeFontControls css={css} onValueChange={updateCssValue} />
               </div>
             )}
 
