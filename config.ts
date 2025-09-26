@@ -5,7 +5,7 @@
  * frontend and backend applications.
  */
 
-export const MAX_BROKER_COUNT = 40;
+export const MAX_BROKER_COUNT = 100;
 
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
 

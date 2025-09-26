@@ -42,6 +42,22 @@ interface LeaderboardResponse {
   };
 }
 
+interface DexStats {
+  total: {
+    allTime: number;
+    new: number;
+  };
+  graduated: {
+    allTime: number;
+    new: number;
+  };
+  demo: {
+    allTime: number;
+    new: number;
+  };
+  period: string;
+}
+
 type SortOption = "volume" | "pnl" | "brokerFee";
 type TimePeriod = "daily" | "weekly" | "30d";
 
@@ -54,6 +70,8 @@ export default function BoardRoute() {
   const [currentPage, setCurrentPage] = useState(1);
   const [pageSize] = useState(20);
   const [totalItems, setTotalItems] = useState(0);
+  const [dexStats, setDexStats] = useState<DexStats | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
 
   const fetchLeaderboard = async (
     sort: SortOption = "volume",
@@ -83,8 +101,25 @@ export default function BoardRoute() {
     }
   };
 
+  const fetchDexStats = async (period: TimePeriod = "30d") => {
+    try {
+      setStatsLoading(true);
+      const stats = await apiClient<DexStats>({
+        endpoint: `/api/stats?period=${period}`,
+        method: "GET",
+        showToastOnError: false,
+      });
+      setDexStats(stats);
+    } catch (err) {
+      console.error("Error fetching DEX stats:", err);
+    } finally {
+      setStatsLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchLeaderboard(sortBy, timePeriod, 1);
+    fetchDexStats(timePeriod);
   }, [sortBy, timePeriod]);
 
   const handleSortChange = (newSort: SortOption) => {
@@ -124,6 +159,49 @@ export default function BoardRoute() {
             Discover the top performing DEXes on Orderly One
           </p>
         </div>
+
+        {/* DEX Stats */}
+        {dexStats && (
+          <div className="mb-6 slide-fade-in-delayed">
+            <div className="flex justify-center gap-6">
+              <div className="bg-background-card rounded-lg border border-light/10 px-4 py-3 text-center">
+                <div className="text-lg font-bold text-primary mb-1">
+                  {statsLoading ? (
+                    <Icon
+                      icon="svg-spinners:pulse-rings-multiple"
+                      width={16}
+                      className="mx-auto"
+                    />
+                  ) : (
+                    dexStats.total.allTime.toLocaleString()
+                  )}
+                </div>
+                <div className="text-xs text-gray-300 mb-1">Total DEXes</div>
+                <div className="text-xs text-primary/70">
+                  +{dexStats.total.new.toLocaleString()} new ({dexStats.period})
+                </div>
+              </div>
+              <div className="bg-background-card rounded-lg border border-light/10 px-4 py-3 text-center">
+                <div className="text-lg font-bold text-green-400 mb-1">
+                  {statsLoading ? (
+                    <Icon
+                      icon="svg-spinners:pulse-rings-multiple"
+                      width={16}
+                      className="mx-auto"
+                    />
+                  ) : (
+                    dexStats.graduated.allTime.toLocaleString()
+                  )}
+                </div>
+                <div className="text-xs text-gray-300 mb-1">Graduated</div>
+                <div className="text-xs text-green-400/70">
+                  +{dexStats.graduated.new.toLocaleString()} new (
+                  {dexStats.period})
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Sort Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 slide-fade-in-delayed">

@@ -8,6 +8,7 @@ import adminRoutes from "./routes/admin";
 import themeRoutes from "./routes/theme";
 import graduationRoutes from "./routes/graduation";
 import { leaderboard } from "./routes/leaderboard";
+import { stats } from "./routes/stats";
 import { leaderboardService } from "./services/leaderboardService";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
 import {
@@ -52,6 +53,7 @@ app.route("/api/admin", adminRoutes);
 app.route("/api/theme", themeRoutes);
 app.route("/api/graduation", graduationRoutes);
 app.route("/api/leaderboard", leaderboard);
+app.route("/api/stats", stats);
 
 app.notFound(c => {
   return c.json(
