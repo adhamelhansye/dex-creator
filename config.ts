@@ -339,7 +339,7 @@ export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
 };
 
 export const USDC_ADDRESSES: Record<OrderTokenChainName, string> = {
-  ethereum: "0xA0b86a33E6441b8C4C8C8C8C8C8C8C8C8C8C8C8C",
+  ethereum: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
   arbitrum: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
   sepolia: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   "arbitrum-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",

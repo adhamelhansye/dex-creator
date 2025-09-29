@@ -4,6 +4,7 @@ import {
   useEffect,
   ChangeEvent,
   useCallback,
+  useMemo,
 } from "react";
 import FormInput from "./FormInput";
 import { Button } from "./Button";
@@ -170,11 +171,14 @@ export function GraduationForm({
     }
   };
 
-  const preferredChain = getPreferredChain(chain);
-  const currentTokenAddress =
-    paymentType === "usdc"
-      ? USDC_ADDRESSES[preferredChain as OrderTokenChainName]
-      : ORDER_ADDRESSES[preferredChain as OrderTokenChainName];
+  const preferredChain = useMemo(() => getPreferredChain(chain), [chain]);
+  const currentTokenAddress = useMemo(
+    () =>
+      paymentType === "usdc"
+        ? USDC_ADDRESSES[preferredChain as OrderTokenChainName]
+        : ORDER_ADDRESSES[preferredChain as OrderTokenChainName],
+    [preferredChain, paymentType]
+  );
 
   const currentChainId =
     SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
@@ -218,9 +222,14 @@ export function GraduationForm({
     address,
     token: currentTokenAddress as `0x${string}`,
     chainId: currentChainId,
+    query: {
+      enabled: !!address && !!currentChainId,
+      retry: 3,
+      staleTime: 60_000,
+    },
   });
 
-  const { data: tokenDecimals } = useReadContract({
+  const { data: tokenDecimals, error: decimalsError } = useReadContract({
     address: currentTokenAddress as `0x${string}`,
     abi: [
       {
@@ -233,6 +242,11 @@ export function GraduationForm({
     ],
     functionName: "decimals",
     chainId: currentChainId,
+    query: {
+      enabled: !!currentChainId,
+      retry: 3,
+      staleTime: 60_000,
+    },
   });
 
   const { data: hash, isPending, writeContract } = useWriteContract();
@@ -242,6 +256,12 @@ export function GraduationForm({
       hash,
       confirmations: 1,
     });
+
+  useEffect(() => {
+    if (decimalsError) {
+      console.warn("Token decimals read failed:", decimalsError);
+    }
+  }, [decimalsError]);
 
   useEffect(() => {
     if (isConfirmed && hash) {
