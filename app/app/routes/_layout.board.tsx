@@ -165,7 +165,7 @@ export default function BoardRoute() {
           <div className="mb-6 slide-fade-in-delayed">
             <div className="flex justify-center gap-6">
               <div className="bg-background-card rounded-lg border border-light/10 px-4 py-3 text-center">
-                <div className="text-lg font-bold text-primary mb-1">
+                <div className="text-lg font-bold text-primary-light mb-1">
                   {statsLoading ? (
                     <Icon
                       icon="svg-spinners:pulse-rings-multiple"
@@ -177,7 +177,7 @@ export default function BoardRoute() {
                   )}
                 </div>
                 <div className="text-xs text-gray-300 mb-1">Total DEXes</div>
-                <div className="text-xs text-primary/70">
+                <div className="text-xs text-primary-light">
                   +{dexStats.total.new.toLocaleString()} new ({dexStats.period})
                 </div>
               </div>
