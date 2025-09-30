@@ -129,9 +129,9 @@ export const dexSchema = z.object({
     .array(z.string().max(250000, "Each PnL poster must be smaller than 250KB"))
     .optional()
     .default([]),
-  telegramLink: z.string().url().nullish(),
-  discordLink: z.string().url().nullish(),
-  xLink: z.string().url().nullish(),
+  telegramLink: z.string().url().or(z.literal("")).nullish(),
+  discordLink: z.string().url().or(z.literal("")).nullish(),
+  xLink: z.string().url().or(z.literal("")).nullish(),
   walletConnectProjectId: z.string().nullish(),
   privyAppId: z.string().nullish(),
   privyTermsOfUse: z.string().nullish(),
@@ -188,10 +188,12 @@ export const dexSchema = z.object({
       /^[a-z]{2}(-[A-Z]{2})?$/,
       "Site language must be in format 'en' or 'en-US'"
     )
+    .or(z.literal(""))
     .nullish(),
   seoSiteLocale: z
     .string()
     .regex(/^[a-z]{2}_[A-Z]{2}$/, "Site locale must be in format 'en_US'")
+    .or(z.literal(""))
     .nullish(),
   seoTwitterHandle: z
     .string()
@@ -199,6 +201,7 @@ export const dexSchema = z.object({
       /^@[a-zA-Z0-9_]+$/,
       "Twitter handle must start with @ and contain only alphanumeric characters and underscores"
     )
+    .or(z.literal(""))
     .nullish(),
   seoThemeColor: z
     .string()
@@ -206,6 +209,7 @@ export const dexSchema = z.object({
       /^#[0-9a-fA-F]{6}$/,
       "Theme color must be a valid hex color (e.g., #1a1b23)"
     )
+    .or(z.literal(""))
     .nullish(),
   seoKeywords: z
     .string()

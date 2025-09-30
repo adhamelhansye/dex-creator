@@ -337,7 +337,7 @@ export default function DexRoute() {
       setDisableTestnet(dexData.disableTestnet || false);
       setDisableEvmWallets(dexData.disableEvmWallets || false);
       setDisableSolanaWallets(dexData.disableSolanaWallets || false);
-      setTradingViewColorConfig(dexData.tradingViewColorConfig || null);
+      setTradingViewColorConfig(dexData.tradingViewColorConfig ?? null);
       setAvailableLanguages(dexData.availableLanguages || []);
       setSeoSiteName(dexData.seoSiteName || "");
       setSeoSiteDescription(dexData.seoSiteDescription || "");
@@ -359,7 +359,7 @@ export default function DexRoute() {
       setOriginalValues({
         ...dexData,
         chainIds: dexData.chainIds || [],
-        defaultChain: dexData.defaultChain || null,
+        defaultChain: dexData.defaultChain,
         enableAbstractWallet: dexData.enableAbstractWallet || false,
         enableCampaigns: dexData.enableCampaigns || false,
         disableMainnet: dexData.disableMainnet || false,
@@ -367,14 +367,14 @@ export default function DexRoute() {
         disableEvmWallets: dexData.disableEvmWallets || false,
         disableSolanaWallets: dexData.disableSolanaWallets || false,
         availableLanguages: dexData.availableLanguages || [],
-        privyLoginMethods: dexData.privyLoginMethods || null,
-        seoSiteName: dexData.seoSiteName || null,
-        seoSiteDescription: dexData.seoSiteDescription || null,
-        seoSiteLanguage: dexData.seoSiteLanguage || null,
-        seoSiteLocale: dexData.seoSiteLocale || null,
-        seoTwitterHandle: dexData.seoTwitterHandle || null,
-        seoThemeColor: dexData.seoThemeColor || null,
-        seoKeywords: dexData.seoKeywords || null,
+        privyLoginMethods: dexData.privyLoginMethods,
+        seoSiteName: dexData.seoSiteName,
+        seoSiteDescription: dexData.seoSiteDescription,
+        seoSiteLanguage: dexData.seoSiteLanguage,
+        seoSiteLocale: dexData.seoSiteLocale,
+        seoTwitterHandle: dexData.seoTwitterHandle,
+        seoThemeColor: dexData.seoThemeColor,
+        seoKeywords: dexData.seoKeywords,
       });
 
       setActiveThemeTab("colors");
@@ -531,9 +531,9 @@ export default function DexRoute() {
   };
 
   const handleResetTheme = () => {
-    setCurrentTheme(originalValues.themeCSS || null);
+    setCurrentTheme(originalValues.themeCSS ?? null);
     setThemeApplied(!!originalValues.themeCSS);
-    setTradingViewColorConfig(originalValues.tradingViewColorConfig || null);
+    setTradingViewColorConfig(originalValues.tradingViewColorConfig ?? null);
     setThemePrompt("");
     setShowThemeEditor(false);
     setViewCssCode(false);
@@ -862,56 +862,6 @@ export default function DexRoute() {
       ),
     ]);
 
-    if (dexData && dexData.id) {
-      const hasChanges =
-        trimmedBrokerName !== (originalValues.brokerName || "") ||
-        trimmedTelegramLink !== (originalValues.telegramLink || "") ||
-        trimmedDiscordLink !== (originalValues.discordLink || "") ||
-        trimmedXLink !== (originalValues.xLink || "") ||
-        trimmedWalletConnectProjectId !==
-          (originalValues.walletConnectProjectId || "") ||
-        trimmedPrivyAppId !== (originalValues.privyAppId || "") ||
-        trimmedPrivyTermsOfUse !== (originalValues.privyTermsOfUse || "") ||
-        JSON.stringify(privyLoginMethods) !==
-          JSON.stringify(originalValues.privyLoginMethods || ["email"]) ||
-        enabledMenus !== (originalValues.enabledMenus || "") ||
-        customMenus !== (originalValues.customMenus || "") ||
-        primaryLogoBase64 !== (originalValues.primaryLogo || null) ||
-        secondaryLogoBase64 !== (originalValues.secondaryLogo || null) ||
-        faviconBase64 !== (originalValues.favicon || null) ||
-        JSON.stringify(pnlPostersBase64) !==
-          JSON.stringify(originalValues.pnlPosters || []) ||
-        themeApplied ||
-        JSON.stringify(chainIds) !==
-          JSON.stringify(originalValues.chainIds || []) ||
-        defaultChain !== (originalValues.defaultChain || undefined) ||
-        enableAbstractWallet !==
-          (originalValues.enableAbstractWallet || false) ||
-        enableCampaigns !== (originalValues.enableCampaigns || false) ||
-        disableMainnet !== (originalValues.disableMainnet || false) ||
-        disableTestnet !== (originalValues.disableTestnet || false) ||
-        disableEvmWallets !== (originalValues.disableEvmWallets || false) ||
-        disableSolanaWallets !==
-          (originalValues.disableSolanaWallets || false) ||
-        JSON.stringify(tradingViewColorConfig || null) !==
-          JSON.stringify(originalValues.tradingViewColorConfig || null) ||
-        JSON.stringify(availableLanguages) !==
-          JSON.stringify(originalValues.availableLanguages || []) ||
-        trimmedSeoSiteName !== (originalValues.seoSiteName || "") ||
-        trimmedSeoSiteDescription !==
-          (originalValues.seoSiteDescription || "") ||
-        trimmedSeoSiteLanguage !== (originalValues.seoSiteLanguage || "") ||
-        trimmedSeoSiteLocale !== (originalValues.seoSiteLocale || "") ||
-        trimmedSeoTwitterHandle !== (originalValues.seoTwitterHandle || "") ||
-        trimmedSeoThemeColor !== (originalValues.seoThemeColor || "") ||
-        trimmedSeoKeywords !== (originalValues.seoKeywords || "");
-
-      if (!hasChanges) {
-        toast.info("No changes to save");
-        return;
-      }
-    }
-
     setIsSaving(true);
 
     if (!dexData || !dexData.id) {
@@ -935,12 +885,12 @@ export default function DexRoute() {
 
       const dexData_ToSend = {
         brokerName: trimmedBrokerName,
-        telegramLink: trimmedTelegramLink || null,
-        discordLink: trimmedDiscordLink || null,
-        xLink: trimmedXLink || null,
-        walletConnectProjectId: trimmedWalletConnectProjectId || null,
-        privyAppId: trimmedPrivyAppId || null,
-        privyTermsOfUse: trimmedPrivyTermsOfUse || null,
+        telegramLink: trimmedTelegramLink,
+        discordLink: trimmedDiscordLink,
+        xLink: trimmedXLink,
+        walletConnectProjectId: trimmedWalletConnectProjectId,
+        privyAppId: trimmedPrivyAppId,
+        privyTermsOfUse: trimmedPrivyTermsOfUse,
         privyLoginMethods: privyLoginMethods.join(","),
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
@@ -955,13 +905,13 @@ export default function DexRoute() {
         disableSolanaWallets,
         tradingViewColorConfig,
         availableLanguages,
-        seoSiteName: trimmedSeoSiteName || null,
-        seoSiteDescription: trimmedSeoSiteDescription || null,
-        seoSiteLanguage: trimmedSeoSiteLanguage || null,
-        seoSiteLocale: trimmedSeoSiteLocale || null,
-        seoTwitterHandle: trimmedSeoTwitterHandle || null,
-        seoThemeColor: trimmedSeoThemeColor || null,
-        seoKeywords: trimmedSeoKeywords || null,
+        seoSiteName: trimmedSeoSiteName,
+        seoSiteDescription: trimmedSeoSiteDescription,
+        seoSiteLanguage: trimmedSeoSiteLanguage,
+        seoSiteLocale: trimmedSeoSiteLocale,
+        seoTwitterHandle: trimmedSeoTwitterHandle,
+        seoThemeColor: trimmedSeoThemeColor,
+        seoKeywords: trimmedSeoKeywords,
       };
 
       const formData = createDexFormData(dexData_ToSend, imageBlobs);
@@ -999,13 +949,13 @@ export default function DexRoute() {
           disableEvmWallets,
           disableSolanaWallets,
           tradingViewColorConfig,
-          seoSiteName: trimmedSeoSiteName || null,
-          seoSiteDescription: trimmedSeoSiteDescription || null,
-          seoSiteLanguage: trimmedSeoSiteLanguage || null,
-          seoSiteLocale: trimmedSeoSiteLocale || null,
-          seoTwitterHandle: trimmedSeoTwitterHandle || null,
-          seoThemeColor: trimmedSeoThemeColor || null,
-          seoKeywords: trimmedSeoKeywords || null,
+          seoSiteName: trimmedSeoSiteName,
+          seoSiteDescription: trimmedSeoSiteDescription,
+          seoSiteLanguage: trimmedSeoSiteLanguage,
+          seoSiteLocale: trimmedSeoSiteLocale,
+          seoTwitterHandle: trimmedSeoTwitterHandle,
+          seoThemeColor: trimmedSeoThemeColor,
+          seoKeywords: trimmedSeoKeywords,
         });
 
         toast.success("DEX information updated successfully!");
@@ -1042,13 +992,13 @@ export default function DexRoute() {
           disableSolanaWallets,
           tradingViewColorConfig,
           availableLanguages,
-          seoSiteName: trimmedSeoSiteName || null,
-          seoSiteDescription: trimmedSeoSiteDescription || null,
-          seoSiteLanguage: trimmedSeoSiteLanguage || null,
-          seoSiteLocale: trimmedSeoSiteLocale || null,
-          seoTwitterHandle: trimmedSeoTwitterHandle || null,
-          seoThemeColor: trimmedSeoThemeColor || null,
-          seoKeywords: trimmedSeoKeywords || null,
+          seoSiteName: trimmedSeoSiteName,
+          seoSiteDescription: trimmedSeoSiteDescription,
+          seoSiteLanguage: trimmedSeoSiteLanguage,
+          seoSiteLocale: trimmedSeoSiteLocale,
+          seoTwitterHandle: trimmedSeoTwitterHandle,
+          seoThemeColor: trimmedSeoThemeColor,
+          seoKeywords: trimmedSeoKeywords,
         });
 
         if (savedData.repoUrl) {
@@ -1289,12 +1239,12 @@ export default function DexRoute() {
 
       const dexData_ToSend = {
         brokerName: brokerName.trim(),
-        telegramLink: telegramLink.trim() || null,
-        discordLink: discordLink.trim() || null,
-        xLink: xLink.trim() || null,
-        walletConnectProjectId: walletConnectProjectId.trim() || null,
-        privyAppId: privyAppId.trim() || null,
-        privyTermsOfUse: privyTermsOfUse.trim() || null,
+        telegramLink: telegramLink.trim(),
+        discordLink: discordLink.trim(),
+        xLink: xLink.trim(),
+        walletConnectProjectId: walletConnectProjectId.trim(),
+        privyAppId: privyAppId.trim(),
+        privyTermsOfUse: privyTermsOfUse.trim(),
         privyLoginMethods: privyLoginMethods.join(","),
         themeCSS: themeApplied ? currentTheme : defaultTheme,
         enabledMenus: enabledMenus,
@@ -1309,13 +1259,13 @@ export default function DexRoute() {
         disableSolanaWallets: disableSolanaWallets,
         tradingViewColorConfig: tradingViewColorConfig,
         availableLanguages: availableLanguages,
-        seoSiteName: seoSiteName.trim() || null,
-        seoSiteDescription: seoSiteDescription.trim() || null,
-        seoSiteLanguage: seoSiteLanguage.trim() || null,
-        seoSiteLocale: seoSiteLocale.trim() || null,
-        seoTwitterHandle: seoTwitterHandle.trim() || null,
-        seoThemeColor: seoThemeColor.trim() || null,
-        seoKeywords: seoKeywords.trim() || null,
+        seoSiteName: seoSiteName.trim(),
+        seoSiteDescription: seoSiteDescription.trim(),
+        seoSiteLanguage: seoSiteLanguage.trim(),
+        seoSiteLocale: seoSiteLocale.trim(),
+        seoTwitterHandle: seoTwitterHandle.trim(),
+        seoThemeColor: seoThemeColor.trim(),
+        seoKeywords: seoKeywords.trim(),
       };
 
       const formData = createDexFormData(dexData_ToSend, imageBlobs);
@@ -1353,13 +1303,13 @@ export default function DexRoute() {
         disableSolanaWallets: disableSolanaWallets,
         tradingViewColorConfig: tradingViewColorConfig,
         availableLanguages: availableLanguages,
-        seoSiteName: seoSiteName.trim() || null,
-        seoSiteDescription: seoSiteDescription.trim() || null,
-        seoSiteLanguage: seoSiteLanguage.trim() || null,
-        seoSiteLocale: seoSiteLocale.trim() || null,
-        seoTwitterHandle: seoTwitterHandle.trim() || null,
-        seoThemeColor: seoThemeColor.trim() || null,
-        seoKeywords: seoKeywords.trim() || null,
+        seoSiteName: seoSiteName.trim(),
+        seoSiteDescription: seoSiteDescription.trim(),
+        seoSiteLanguage: seoSiteLanguage.trim(),
+        seoSiteLocale: seoSiteLocale.trim(),
+        seoTwitterHandle: seoTwitterHandle.trim(),
+        seoThemeColor: seoThemeColor.trim(),
+        seoKeywords: seoKeywords.trim(),
       });
 
       if (savedData.repoUrl) {
