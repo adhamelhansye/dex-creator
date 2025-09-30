@@ -298,20 +298,62 @@ leaderboard.get(
       );
 
       if (!dailyStats || !aggregatedStats) {
-        return c.json(
-          { error: "No trading data available for this broker" },
-          404
-        );
+        let dexUrl = null;
+        if (dex.customDomain) {
+          dexUrl = `https://${dex.customDomain}`;
+        } else if (dex.repoUrl) {
+          const match = dex.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
+          if (match) {
+            dexUrl = `https://dex.orderly.network/${match[1]}`;
+          }
+        }
+
+        const fallbackData = {
+          dex: {
+            id: dex.id,
+            brokerId: dex.brokerId,
+            brokerName: dex.brokerName,
+            primaryLogo: dex.primaryLogo,
+            dexUrl,
+            description: dex.description,
+            banner: dex.banner,
+            logo: dex.logo,
+            tokenAddress: dex.tokenAddress,
+            tokenChain: dex.tokenChain,
+            telegramLink: dex.telegramLink,
+            discordLink: dex.discordLink,
+            xLink: dex.xLink,
+            websiteUrl: dex.websiteUrl,
+          },
+          aggregated: {
+            brokerId: dex.brokerId,
+            brokerName: dex.brokerName,
+            totalVolume: 0,
+            totalPnl: 0,
+            totalBrokerFee: 0,
+            lastUpdated: new Date(),
+            tokenAddress: dex.tokenAddress || undefined,
+            tokenChain: dex.tokenChain || undefined,
+          },
+          daily: [],
+        };
+
+        const nextMinute = dayjs().endOf("minute").valueOf();
+        brokerCache.set(cacheKey, {
+          data: fallbackData,
+          expires: nextMinute,
+        });
+
+        return c.json({ data: fallbackData });
       }
 
       let dexUrl = null;
       if (dex.customDomain) {
         dexUrl = `https://${dex.customDomain}`;
       } else if (dex.repoUrl) {
-        const match = dex.repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
+        const match = dex.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
         if (match) {
-          const [, owner, repo] = match;
-          dexUrl = `https://${owner}.github.io/${repo}`;
+          dexUrl = `https://dex.orderly.network/${match[1]}`;
         }
       }
 
