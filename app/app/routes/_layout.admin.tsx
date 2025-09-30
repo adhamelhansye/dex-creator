@@ -176,7 +176,8 @@ export default function AdminRoute() {
     new Set()
   );
 
-  const [manualUserId, setManualUserId] = useState("");
+  const [manualDexId, setManualDexId] = useState("");
+  const [selectedDexName, setSelectedDexName] = useState("");
   const [manualBrokerId, setManualBrokerId] = useState("");
   const [manualMakerFee, setManualMakerFee] = useState(30);
   const [manualTakerFee, setManualTakerFee] = useState(60);
@@ -477,7 +478,8 @@ export default function AdminRoute() {
   };
 
   const handleSelectManualDex = (dex: Dex) => {
-    setManualUserId(dex.id);
+    setManualDexId(dex.id);
+    setSelectedDexName(dex.brokerName || "Unknown DEX");
     setFilteredManualDexes([]);
     setManualSearchQuery("");
   };
@@ -694,8 +696,8 @@ export default function AdminRoute() {
   const handleManualBrokerCreation = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!manualUserId.trim()) {
-      toast.error("Please select a user");
+    if (!manualDexId.trim()) {
+      toast.error("Please select a DEX");
       return;
     }
 
@@ -709,13 +711,7 @@ export default function AdminRoute() {
       return;
     }
 
-    const selectedDex = allDexes.find(dex => dex.user.address === manualUserId);
-    if (!selectedDex) {
-      toast.error("User not found");
-      return;
-    }
-
-    const dexName = selectedDex.brokerName || "Selected DEX";
+    const dexName = selectedDexName || "Selected DEX";
 
     openModal("confirmation", {
       title: "Create Broker ID Manually",
@@ -729,7 +725,7 @@ export default function AdminRoute() {
         setManualBrokerResult(null);
         try {
           const response = await post<ManualBrokerCreationResponse>(
-            `api/admin/dex/${selectedDex.id}/create-broker`,
+            `api/admin/dex/${manualDexId}/create-broker`,
             {
               brokerId: manualBrokerId.trim(),
               makerFee: manualMakerFee,
@@ -744,7 +740,8 @@ export default function AdminRoute() {
           setManualBrokerResult(response);
           loadAllDexes(currentPage, pageSize, searchTerm);
           loadDexStats();
-          setManualUserId("");
+          setManualDexId("");
+          setSelectedDexName("");
           setManualBrokerId("");
           setManualMakerFee(30);
           setManualTakerFee(60);
@@ -1372,12 +1369,16 @@ export default function AdminRoute() {
             </div>
 
             <FormInput
-              id="manualUserId"
+              id="manualDexId"
               label="DEX ID"
-              value={manualUserId}
-              onChange={e => setManualUserId(e.target.value)}
+              value={manualDexId}
+              onChange={e => setManualDexId(e.target.value)}
               placeholder="dex-..."
-              helpText="DEX ID (auto-filled when selecting a DEX from search)"
+              helpText={
+                selectedDexName
+                  ? `DEX ID for: ${selectedDexName}`
+                  : "DEX ID (auto-filled when selecting a DEX from search)"
+              }
               required
             />
 
@@ -1485,7 +1486,7 @@ export default function AdminRoute() {
               loadingText="Creating broker ID..."
               className="mt-2 text-base font-semibold py-3"
               disabled={
-                !manualUserId ||
+                !manualDexId ||
                 !manualBrokerId ||
                 !manualTxHash ||
                 !!manualBrokerIdError ||
