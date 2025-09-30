@@ -166,6 +166,18 @@ vi.mock("../../src/lib/rateLimiter", () => ({
 }));
 
 vi.mock("../../src/models/graduation", () => ({
+  TransactionVerificationError: {
+    TRANSACTION_NOT_FOUND: "Transaction not found",
+    TRANSACTION_FAILED: "Transaction failed",
+    WRONG_SENDER: "was not sent from your wallet",
+    CHAIN_NOT_SUPPORTED: "Chain not supported",
+    TX_ALREADY_USED:
+      "This transaction hash has already been used for graduation",
+    INSUFFICIENT_AMOUNT: "Insufficient amount transferred",
+    NO_TRANSFERS_FOUND:
+      "No ORDER token transfers to the required address found",
+    CONFIGURATION_ERROR: "Graduation fee configuration is incomplete",
+  },
   verifyOrderTransaction: vi.fn().mockImplementation(txHash => {
     if (
       txHash &&
