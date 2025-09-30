@@ -8,9 +8,7 @@ import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 import Pagination from "../components/Pagination";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
-import { getBlockExplorerUrlByChainId } from "../../../config";
-import { getCurrentEnvironment } from "../utils/config";
-import { getChainById } from "../../../config";
+import { getBlockExplorerUrlByChainId, getChainById } from "../../../config";
 
 const formatFee = (fee: number | null | undefined): string => {
   if (fee === null || fee === undefined) return "-";
@@ -111,15 +109,18 @@ interface DexStatsResponse {
   period: string;
 }
 
-interface DeleteBrokerIdResponse {
+interface ManualBrokerCreationResponse {
   success: boolean;
   message: string;
-  brokerId: string;
-  transactionHashes: Record<number, string>;
+  brokerCreationData: {
+    brokerId: string;
+    transactionHashes: Record<number, string>;
+  };
   dex: {
     id: string;
-    brokerName: string;
     brokerId: string;
+    brokerName: string;
+    isGraduated: boolean;
   };
 }
 
@@ -174,11 +175,17 @@ export default function AdminRoute() {
     new Set()
   );
 
-  const [brokerIdToDelete, setBrokerIdToDelete] = useState("");
-  const currentEnvironment = getCurrentEnvironment();
-  const [isDeletingBrokerId, setIsDeletingBrokerId] = useState(false);
-  const [deleteBrokerIdResult, setDeleteBrokerIdResult] =
-    useState<DeleteBrokerIdResponse | null>(null);
+  const [manualUserId, setManualUserId] = useState("");
+  const [manualBrokerId, setManualBrokerId] = useState("");
+  const [manualMakerFee, setManualMakerFee] = useState(30);
+  const [manualTakerFee, setManualTakerFee] = useState(60);
+  const [manualTxHash, setManualTxHash] = useState("");
+  const [isCreatingManualBroker, setIsCreatingManualBroker] = useState(false);
+  const [filteredManualDexes, setFilteredManualDexes] = useState<Dex[]>([]);
+  const [manualSearchQuery, setManualSearchQuery] = useState("");
+  const [isSearchingManual, setIsSearchingManual] = useState(false);
+  const [manualBrokerResult, setManualBrokerResult] =
+    useState<ManualBrokerCreationResponse | null>(null);
 
   const toggleThemeVisibility = (dexId: string) => {
     setExpandedThemes(prev => {
@@ -412,11 +419,30 @@ export default function AdminRoute() {
     setIsSearchingRepo(true);
     try {
       const searchResults = await searchAllDexes(query);
-      // Filter to only show DEXes with repositories
       const filtered = searchResults.filter(dex => dex.repoUrl);
       setFilteredRepoDexes(filtered);
     } finally {
       setIsSearchingRepo(false);
+    }
+  };
+
+  const handleManualSearch = async (query: string) => {
+    setManualSearchQuery(query);
+    if (!query) {
+      setFilteredManualDexes([]);
+      setIsSearchingManual(false);
+      return;
+    }
+
+    setIsSearchingManual(true);
+    try {
+      const searchResults = await searchAllDexes(query);
+      const filtered = searchResults.filter(
+        dex => dex.repoUrl && (dex.brokerId === "demo" || !dex.brokerId)
+      );
+      setFilteredManualDexes(filtered);
+    } finally {
+      setIsSearchingManual(false);
     }
   };
 
@@ -443,6 +469,12 @@ export default function AdminRoute() {
     }
     setFilteredRepoDexes([]);
     setRepoSearchQuery("");
+  };
+
+  const handleSelectManualDex = (dex: Dex) => {
+    setManualUserId(dex.id);
+    setFilteredManualDexes([]);
+    setManualSearchQuery("");
   };
 
   const handleDeleteDex = async (e: FormEvent) => {
@@ -596,49 +628,74 @@ export default function AdminRoute() {
     });
   };
 
-  const handleDeleteBrokerId = async (e: FormEvent) => {
+  const handleManualBrokerCreation = async (e: FormEvent) => {
     e.preventDefault();
 
-    if (!brokerIdToDelete.trim()) {
-      toast.error("Please enter a broker ID to delete");
+    if (!manualUserId.trim()) {
+      toast.error("Please select a user");
       return;
     }
 
+    if (!manualBrokerId.trim()) {
+      toast.error("Please enter a broker ID");
+      return;
+    }
+
+    if (!manualTxHash.trim()) {
+      toast.error("Please enter a transaction hash");
+      return;
+    }
+
+    const selectedDex = allDexes.find(dex => dex.user.address === manualUserId);
+    if (!selectedDex) {
+      toast.error("User not found");
+      return;
+    }
+
+    const dexName = selectedDex.brokerName || "Selected DEX";
+
     openModal("confirmation", {
-      title: "⚠️ Delete Broker ID",
-      message: `Are you absolutely sure you want to delete broker ID "${brokerIdToDelete.trim()}" on-chain? This is an extremely destructive action.`,
-      warningMessage: `This will permanently delete the broker ID on-chain and reset any DEX using it to demo mode. This action CANNOT be undone and will affect all trading functionality for associated DEXes. Current environment: ${currentEnvironment}`,
-      confirmButtonText: "Delete Broker ID",
-      confirmButtonVariant: "danger",
-      isDestructive: true,
+      title: "Create Broker ID Manually",
+      message: `Are you sure you want to manually create broker ID "${manualBrokerId.trim()}" for "${dexName}"?`,
+      warningMessage:
+        "This will create the broker ID on-chain without requiring payment verification. The DEX will be graduated automatically and fees will be set as specified.",
+      confirmButtonText: "Create Broker ID",
+      confirmButtonVariant: "primary",
       onConfirm: async () => {
-        setIsDeletingBrokerId(true);
-        setDeleteBrokerIdResult(null);
+        setIsCreatingManualBroker(true);
+        setManualBrokerResult(null);
         try {
-          const response = await post<DeleteBrokerIdResponse>(
-            "api/admin/broker/delete",
+          const response = await post<ManualBrokerCreationResponse>(
+            `api/admin/dex/${selectedDex.id}/create-broker`,
             {
-              brokerId: brokerIdToDelete.trim(),
+              brokerId: manualBrokerId.trim(),
+              makerFee: manualMakerFee,
+              takerFee: manualTakerFee,
+              txHash: manualTxHash.trim(),
             },
             token,
             { showToastOnError: false }
           );
 
           toast.success(response.message);
-          setDeleteBrokerIdResult(response);
+          setManualBrokerResult(response);
           loadAllDexes(currentPage, pageSize, searchTerm);
           loadDexStats();
-          setBrokerIdToDelete("");
+          setManualUserId("");
+          setManualBrokerId("");
+          setManualMakerFee(30);
+          setManualTakerFee(60);
+          setManualTxHash("");
         } catch (error) {
-          setDeleteBrokerIdResult(null);
-          console.error("Error deleting broker ID:", error);
+          setManualBrokerResult(null);
+          console.error("Error creating manual broker ID:", error);
           if (error instanceof Error) {
             toast.error(error.message);
           } else {
             toast.error("An unknown error occurred");
           }
         } finally {
-          setIsDeletingBrokerId(false);
+          setIsCreatingManualBroker(false);
         }
       },
     });
@@ -1170,106 +1227,238 @@ export default function AdminRoute() {
           </form>
         </div>
 
-        {/* Delete Broker ID Section */}
-        <div className="bg-error/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-error/20">
+        {/* Manual Broker Creation Section */}
+        <div className="bg-success/10 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-success/20">
           <div className="flex items-center mb-4">
-            <div className="i-mdi:alert-octagon text-error mr-2 h-6 w-6" />
-            <h2 className="text-xl font-medium text-error">Delete Broker ID</h2>
+            <div className="i-mdi:plus-circle text-success mr-2 h-6 w-6" />
+            <h2 className="text-xl font-medium text-success">
+              Manual Broker Creation
+            </h2>
           </div>
           <p className="text-gray-400 text-sm mb-6">
-            Danger zone! This tool will{" "}
-            <span className="text-error font-semibold">
-              delete a broker ID on-chain
-            </span>{" "}
-            and reset any DEX using it to demo mode. This action{" "}
-            <span className="font-semibold">cannot be undone</span>.
+            Create a broker ID manually for any user without requiring payment
+            verification. A transaction hash must be provided as proof of some
+            transaction, but it won't be validated.
           </p>
 
-          <form onSubmit={handleDeleteBrokerId} className="space-y-4">
-            <div>
+          <form onSubmit={handleManualBrokerCreation} className="space-y-4">
+            <div className="mb-4">
               <label
-                htmlFor="brokerIdToDelete"
-                className="block text-sm font-medium mb-1 text-error"
+                htmlFor="manualSearch"
+                className="block text-sm font-medium mb-1"
               >
-                Broker ID
+                Search DEX
               </label>
-              <input
-                type="text"
-                id="brokerIdToDelete"
-                value={brokerIdToDelete}
-                onChange={e => setBrokerIdToDelete(e.target.value)}
-                placeholder="Enter broker ID to delete"
-                className="w-full bg-dark rounded px-4 py-3 text-base border border-error/30 focus:border-error outline-none placeholder:text-gray-500"
+              <FuzzySearchInput
+                placeholder="Search by DEX ID, broker name, or wallet address..."
+                onSearch={handleManualSearch}
+                initialValue={manualSearchQuery}
+                className="mb-2"
               />
-              <div className="text-xs text-gray-400 mt-1">
-                Enter the broker ID to delete
+
+              {filteredManualDexes.length > 0 && (
+                <div className="mt-2 border border-success/30 rounded-lg overflow-hidden">
+                  <div className="max-h-48 overflow-y-auto">
+                    {filteredManualDexes.map(dex => (
+                      <div
+                        key={dex.id}
+                        className="p-2 hover:bg-success/10 cursor-pointer flex justify-between border-b border-success/20 last:border-b-0"
+                        onClick={() => handleSelectManualDex(dex)}
+                      >
+                        <div>
+                          <div className="font-medium">
+                            {dex.brokerName || "Unnamed DEX"}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            DEX ID: {dex.id.substring(0, 8)}...
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Wallet: {dex.user.address.substring(0, 8)}...
+                            {dex.user.address.substring(
+                              dex.user.address.length - 6
+                            )}
+                          </div>
+                          <div className="text-xs text-gray-400">
+                            Broker ID: {dex.brokerId || "None"}
+                          </div>
+                        </div>
+                        <div className="text-xs text-gray-500">
+                          {new Date(dex.createdAt).toLocaleDateString()}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {manualSearchQuery &&
+                filteredManualDexes.length === 0 &&
+                !isSearchingManual && (
+                  <div className="text-sm text-gray-400 p-2">
+                    No eligible DEXes found. DEX must have a repository and no
+                    existing broker ID.
+                  </div>
+                )}
+
+              {isSearchingManual && (
+                <div className="text-center py-2">
+                  <div className="i-svg-spinners:pulse-rings h-6 w-6 mx-auto text-success/80"></div>
+                  <p className="text-xs text-gray-300 mt-1">Searching...</p>
+                </div>
+              )}
+            </div>
+
+            <FormInput
+              id="manualUserId"
+              label="DEX ID"
+              value={manualUserId}
+              onChange={e => setManualUserId(e.target.value)}
+              placeholder="dex-..."
+              helpText="DEX ID (auto-filled when selecting a DEX from search)"
+              required
+            />
+
+            <FormInput
+              id="manualBrokerId"
+              label="Broker ID"
+              value={manualBrokerId}
+              onChange={e => setManualBrokerId(e.target.value)}
+              placeholder="new-broker-id"
+              helpText="5-15 characters, lowercase letters, numbers, hyphens, and underscores only. Cannot contain 'orderly'"
+              required
+              minLength={5}
+              maxLength={15}
+              pattern="^[a-z0-9_-]+$"
+            />
+
+            <FormInput
+              id="manualTxHash"
+              label="Transaction Hash"
+              value={manualTxHash}
+              onChange={e => setManualTxHash(e.target.value)}
+              placeholder="0x..."
+              helpText="Transaction hash as proof (will not be validated for payment)"
+              required
+              minLength={10}
+              maxLength={100}
+            />
+
+            <div className="bg-light/5 rounded-xl p-4 mb-4">
+              <h3 className="text-md font-medium mb-2 flex items-center">
+                <div className="i-mdi:cog text-gray-400 w-5 h-5 mr-2"></div>
+                Trading Fee Configuration
+              </h3>
+              <p className="text-sm text-gray-300 mb-4">
+                Configure the trading fees for this DEX. Values are in 0.1 basis
+                point units (e.g., 30 = 3 basis points).
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <FormInput
+                  id="manualMakerFee"
+                  label="Maker Fee"
+                  type="number"
+                  value={manualMakerFee.toString()}
+                  onChange={e =>
+                    setManualMakerFee(parseInt(e.target.value) || 0)
+                  }
+                  placeholder="30"
+                  helpText="0-150 (0-15 basis points)"
+                  required
+                />
+
+                <FormInput
+                  id="manualTakerFee"
+                  label="Taker Fee"
+                  type="number"
+                  value={manualTakerFee.toString()}
+                  onChange={e =>
+                    setManualTakerFee(parseInt(e.target.value) || 0)
+                  }
+                  placeholder="60"
+                  helpText="30-150 (3-15 basis points)"
+                  required
+                />
+              </div>
+
+              <div className="mt-4 p-3 bg-info/10 rounded-lg border border-info/20">
+                <div className="flex items-start space-x-2">
+                  <div className="i-mdi:information-outline text-info mt-0.5 h-4 w-4 flex-shrink-0"></div>
+                  <div className="text-xs text-gray-300">
+                    <p className="font-medium text-info mb-1">
+                      Fee Calculation:
+                    </p>
+                    <p>
+                      • Maker Fee: {manualMakerFee / 10} basis points (
+                      {(manualMakerFee / 10) * 0.01}%)
+                    </p>
+                    <p>
+                      • Taker Fee: {manualTakerFee / 10} basis points (
+                      {(manualTakerFee / 10) * 0.01}%)
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1 text-error">
-                Environment
-              </label>
-              <div className="w-full bg-dark rounded px-4 py-3 text-base border border-error/30">
-                <span className="text-gray-300 capitalize">
-                  {currentEnvironment}
-                </span>
-              </div>
-              <div className="text-xs text-gray-400 mt-1">
-                Current deployment environment
-              </div>
-            </div>
+
             <Button
               type="submit"
-              variant="danger"
-              isLoading={isDeletingBrokerId}
-              loadingText="Deleting..."
+              variant="primary"
+              isLoading={isCreatingManualBroker}
+              loadingText="Creating broker ID..."
               className="mt-2 text-base font-semibold py-3"
+              disabled={
+                !manualUserId ||
+                !manualBrokerId ||
+                !manualTxHash ||
+                manualMakerFee < 0 ||
+                manualMakerFee > 150 ||
+                manualTakerFee < 30 ||
+                manualTakerFee > 150
+              }
             >
-              Delete Broker ID
+              Create Broker ID Manually
             </Button>
           </form>
 
-          {deleteBrokerIdResult && (
+          {manualBrokerResult && (
             <div className="mt-6 bg-dark/40 border border-success/30 rounded-lg p-4">
               <div className="flex items-center mb-2">
                 <div className="i-mdi:check-circle text-success mr-2 h-5 w-5" />
                 <span className="text-success font-medium">
-                  Broker ID deleted on-chain
+                  Broker ID created successfully
                 </span>
               </div>
               <div className="text-xs text-gray-300 mb-1">
-                <strong>Broker ID:</strong> {deleteBrokerIdResult.brokerId}
+                <strong>Broker ID:</strong>{" "}
+                {manualBrokerResult.brokerCreationData.brokerId}
               </div>
-
-              {deleteBrokerIdResult.dex && (
-                <div className="text-xs text-gray-300 mb-1">
-                  <strong>DEX Reset:</strong>{" "}
-                  {deleteBrokerIdResult.dex.brokerName} (ID:{" "}
-                  {deleteBrokerIdResult.dex.id})
-                </div>
-              )}
+              <div className="text-xs text-gray-300 mb-1">
+                <strong>DEX:</strong> {manualBrokerResult.dex.brokerName} (ID:{" "}
+                {manualBrokerResult.dex.id})
+              </div>
               <div className="text-xs text-gray-300">
                 <strong>Transaction Hashes:</strong>
                 <ul className="list-disc ml-6 mt-1">
-                  {Object.entries(deleteBrokerIdResult.transactionHashes).map(
-                    ([chainId, txHash]) => (
-                      <li key={txHash} className="break-all">
-                        <a
-                          href={
-                            getBlockExplorerUrlByChainId(
-                              txHash,
-                              parseInt(chainId)
-                            ) || "#"
-                          }
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-primary-light hover:underline"
-                        >
-                          {getChainName(parseInt(chainId))}: {txHash}
-                        </a>
-                      </li>
-                    )
-                  )}
+                  {Object.entries(
+                    manualBrokerResult.brokerCreationData.transactionHashes
+                  ).map(([chainId, txHash]) => (
+                    <li key={txHash} className="break-all">
+                      <a
+                        href={
+                          getBlockExplorerUrlByChainId(
+                            txHash,
+                            parseInt(chainId)
+                          ) || "#"
+                        }
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary-light hover:underline"
+                      >
+                        {getChainName(parseInt(chainId))}: {txHash}
+                      </a>
+                    </li>
+                  ))}
                 </ul>
               </div>
             </div>
