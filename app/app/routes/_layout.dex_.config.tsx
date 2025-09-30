@@ -315,7 +315,7 @@ export default function DexConfigRoute() {
           setDisableTestnet(response.disableTestnet || false);
           setDisableEvmWallets(response.disableEvmWallets || false);
           setDisableSolanaWallets(response.disableSolanaWallets || false);
-          setTradingViewColorConfig(response.tradingViewColorConfig || null);
+          setTradingViewColorConfig(response.tradingViewColorConfig ?? null);
           setAvailableLanguages(response.availableLanguages || []);
           setSeoSiteName(response.seoSiteName || "");
           setSeoSiteDescription(response.seoSiteDescription || "");
@@ -337,7 +337,7 @@ export default function DexConfigRoute() {
           setOriginalValues({
             ...response,
             chainIds: response.chainIds || [],
-            defaultChain: response.defaultChain || null,
+            defaultChain: response.defaultChain,
             enableAbstractWallet: response.enableAbstractWallet || false,
             enableCampaigns: response.enableCampaigns || false,
             disableMainnet: response.disableMainnet || false,
@@ -345,14 +345,14 @@ export default function DexConfigRoute() {
             disableEvmWallets: response.disableEvmWallets || false,
             disableSolanaWallets: response.disableSolanaWallets || false,
             availableLanguages: response.availableLanguages || [],
-            privyLoginMethods: response.privyLoginMethods || null,
-            seoSiteName: response.seoSiteName || null,
-            seoSiteDescription: response.seoSiteDescription || null,
-            seoSiteLanguage: response.seoSiteLanguage || null,
-            seoSiteLocale: response.seoSiteLocale || null,
-            seoTwitterHandle: response.seoTwitterHandle || null,
-            seoThemeColor: response.seoThemeColor || null,
-            seoKeywords: response.seoKeywords || null,
+            privyLoginMethods: response.privyLoginMethods,
+            seoSiteName: response.seoSiteName,
+            seoSiteDescription: response.seoSiteDescription,
+            seoSiteLanguage: response.seoSiteLanguage,
+            seoSiteLocale: response.seoSiteLocale,
+            seoTwitterHandle: response.seoTwitterHandle,
+            seoThemeColor: response.seoThemeColor,
+            seoKeywords: response.seoKeywords,
           });
 
           setActiveThemeTab("colors");
@@ -453,9 +453,9 @@ export default function DexConfigRoute() {
   };
 
   const handleResetTheme = () => {
-    setCurrentTheme(originalValues.themeCSS || null);
+    setCurrentTheme(originalValues.themeCSS ?? null);
     setThemeApplied(!!originalValues.themeCSS);
-    setTradingViewColorConfig(originalValues.tradingViewColorConfig || null);
+    setTradingViewColorConfig(originalValues.tradingViewColorConfig ?? null);
     setThemePrompt("");
     setShowThemeEditor(false);
     setViewCssCode(false);
@@ -733,56 +733,6 @@ export default function DexConfigRoute() {
       ),
     ]);
 
-    if (dexData && dexData.id) {
-      const hasChanges =
-        trimmedBrokerName !== (originalValues.brokerName || "") ||
-        trimmedTelegramLink !== (originalValues.telegramLink || "") ||
-        trimmedDiscordLink !== (originalValues.discordLink || "") ||
-        trimmedXLink !== (originalValues.xLink || "") ||
-        trimmedWalletConnectProjectId !==
-          (originalValues.walletConnectProjectId || "") ||
-        trimmedPrivyAppId !== (originalValues.privyAppId || "") ||
-        trimmedPrivyTermsOfUse !== (originalValues.privyTermsOfUse || "") ||
-        JSON.stringify(privyLoginMethods) !==
-          JSON.stringify(originalValues.privyLoginMethods || ["email"]) ||
-        enabledMenus !== (originalValues.enabledMenus || "") ||
-        customMenus !== (originalValues.customMenus || "") ||
-        primaryLogoBase64 !== (originalValues.primaryLogo || null) ||
-        secondaryLogoBase64 !== (originalValues.secondaryLogo || null) ||
-        faviconBase64 !== (originalValues.favicon || null) ||
-        JSON.stringify(pnlPostersBase64) !==
-          JSON.stringify(originalValues.pnlPosters || []) ||
-        themeApplied ||
-        JSON.stringify(chainIds) !==
-          JSON.stringify(originalValues.chainIds || []) ||
-        defaultChain !== (originalValues.defaultChain || undefined) ||
-        enableAbstractWallet !==
-          (originalValues.enableAbstractWallet || false) ||
-        enableCampaigns !== (originalValues.enableCampaigns || false) ||
-        disableMainnet !== (originalValues.disableMainnet || false) ||
-        disableTestnet !== (originalValues.disableTestnet || false) ||
-        disableEvmWallets !== (originalValues.disableEvmWallets || false) ||
-        disableSolanaWallets !==
-          (originalValues.disableSolanaWallets || false) ||
-        JSON.stringify(tradingViewColorConfig || null) !==
-          JSON.stringify(originalValues.tradingViewColorConfig || null) ||
-        JSON.stringify(availableLanguages) !==
-          JSON.stringify(originalValues.availableLanguages || []) ||
-        trimmedSeoSiteName !== (originalValues.seoSiteName || "") ||
-        trimmedSeoSiteDescription !==
-          (originalValues.seoSiteDescription || "") ||
-        trimmedSeoSiteLanguage !== (originalValues.seoSiteLanguage || "") ||
-        trimmedSeoSiteLocale !== (originalValues.seoSiteLocale || "") ||
-        trimmedSeoTwitterHandle !== (originalValues.seoTwitterHandle || "") ||
-        trimmedSeoThemeColor !== (originalValues.seoThemeColor || "") ||
-        trimmedSeoKeywords !== (originalValues.seoKeywords || "");
-
-      if (!hasChanges) {
-        toast.info("No changes to save");
-        return;
-      }
-    }
-
     setIsSaving(true);
 
     try {
@@ -800,12 +750,12 @@ export default function DexConfigRoute() {
 
       const dexData_ToSend = {
         brokerName: trimmedBrokerName,
-        telegramLink: trimmedTelegramLink || null,
-        discordLink: trimmedDiscordLink || null,
-        xLink: trimmedXLink || null,
-        walletConnectProjectId: trimmedWalletConnectProjectId || null,
-        privyAppId: trimmedPrivyAppId || null,
-        privyTermsOfUse: trimmedPrivyTermsOfUse || null,
+        telegramLink: trimmedTelegramLink,
+        discordLink: trimmedDiscordLink,
+        xLink: trimmedXLink,
+        walletConnectProjectId: trimmedWalletConnectProjectId,
+        privyAppId: trimmedPrivyAppId,
+        privyTermsOfUse: trimmedPrivyTermsOfUse,
         privyLoginMethods: privyLoginMethods.join(","),
         themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
         enabledMenus: enabledMenus,
@@ -820,13 +770,13 @@ export default function DexConfigRoute() {
         disableSolanaWallets,
         tradingViewColorConfig,
         availableLanguages,
-        seoSiteName: trimmedSeoSiteName || null,
-        seoSiteDescription: trimmedSeoSiteDescription || null,
-        seoSiteLanguage: trimmedSeoSiteLanguage || null,
-        seoSiteLocale: trimmedSeoSiteLocale || null,
-        seoTwitterHandle: trimmedSeoTwitterHandle || null,
-        seoThemeColor: trimmedSeoThemeColor || null,
-        seoKeywords: trimmedSeoKeywords || null,
+        seoSiteName: trimmedSeoSiteName,
+        seoSiteDescription: trimmedSeoSiteDescription,
+        seoSiteLanguage: trimmedSeoSiteLanguage,
+        seoSiteLocale: trimmedSeoSiteLocale,
+        seoTwitterHandle: trimmedSeoTwitterHandle,
+        seoThemeColor: trimmedSeoThemeColor,
+        seoKeywords: trimmedSeoKeywords,
       };
 
       const formData = createDexFormData(dexData_ToSend, imageBlobs);
@@ -865,13 +815,13 @@ export default function DexConfigRoute() {
           disableEvmWallets,
           disableSolanaWallets,
           tradingViewColorConfig,
-          seoSiteName: trimmedSeoSiteName || null,
-          seoSiteDescription: trimmedSeoSiteDescription || null,
-          seoSiteLanguage: trimmedSeoSiteLanguage || null,
-          seoSiteLocale: trimmedSeoSiteLocale || null,
-          seoTwitterHandle: trimmedSeoTwitterHandle || null,
-          seoThemeColor: trimmedSeoThemeColor || null,
-          seoKeywords: trimmedSeoKeywords || null,
+          seoSiteName: trimmedSeoSiteName,
+          seoSiteDescription: trimmedSeoSiteDescription,
+          seoSiteLanguage: trimmedSeoSiteLanguage,
+          seoSiteLocale: trimmedSeoSiteLocale,
+          seoTwitterHandle: trimmedSeoTwitterHandle,
+          seoThemeColor: trimmedSeoThemeColor,
+          seoKeywords: trimmedSeoKeywords,
         });
 
         setDexData(savedData);
