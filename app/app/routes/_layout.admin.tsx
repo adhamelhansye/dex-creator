@@ -9,6 +9,7 @@ import FuzzySearchInput from "../components/FuzzySearchInput";
 import Pagination from "../components/Pagination";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 import { getBlockExplorerUrlByChainId, getChainById } from "../../../config";
+import { getBaseUrl } from "../utils/orderly";
 
 const formatFee = (fee: number | null | undefined): string => {
   if (fee === null || fee === undefined) return "-";
@@ -186,6 +187,10 @@ export default function AdminRoute() {
   const [isSearchingManual, setIsSearchingManual] = useState(false);
   const [manualBrokerResult, setManualBrokerResult] =
     useState<ManualBrokerCreationResponse | null>(null);
+  const [existingBrokerIds, setExistingBrokerIds] = useState<string[]>([]);
+  const [manualBrokerIdError, setManualBrokerIdError] = useState<string | null>(
+    null
+  );
 
   const toggleThemeVisibility = (dexId: string) => {
     setExpandedThemes(prev => {
@@ -476,6 +481,64 @@ export default function AdminRoute() {
     setFilteredManualDexes([]);
     setManualSearchQuery("");
   };
+
+  const fetchExistingBrokerIds = async () => {
+    try {
+      const response = await fetch(`${getBaseUrl()}/v1/public/broker/name`);
+      if (!response.ok) {
+        throw new Error("Failed to fetch broker IDs");
+      }
+
+      const data = await response.json();
+
+      if (data.success && data.data?.rows) {
+        const brokerIds = data.data.rows.map(
+          (row: { broker_id: string }) => row.broker_id
+        );
+        setExistingBrokerIds(brokerIds);
+      }
+    } catch (error) {
+      console.error("Error fetching broker IDs:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (!manualBrokerId) {
+      setManualBrokerIdError(null);
+      return;
+    }
+
+    const isValidFormat = /^[a-z0-9_-]+$/.test(manualBrokerId);
+    if (!isValidFormat) {
+      setManualBrokerIdError(
+        "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
+      );
+      return;
+    }
+
+    if (manualBrokerId.includes("orderly")) {
+      setManualBrokerIdError("Broker ID cannot contain 'orderly'");
+      return;
+    }
+
+    if (manualBrokerId.length < 5 || manualBrokerId.length > 15) {
+      setManualBrokerIdError("Broker ID must be between 5-15 characters");
+      return;
+    }
+
+    if (existingBrokerIds.includes(manualBrokerId)) {
+      setManualBrokerIdError(
+        "This broker ID is already taken. Please choose another one."
+      );
+      return;
+    }
+
+    setManualBrokerIdError(null);
+  }, [manualBrokerId, existingBrokerIds]);
+
+  useEffect(() => {
+    fetchExistingBrokerIds();
+  }, []);
 
   const handleDeleteDex = async (e: FormEvent) => {
     e.preventDefault();
@@ -1331,6 +1394,20 @@ export default function AdminRoute() {
               pattern="^[a-z0-9_-]+$"
             />
 
+            {manualBrokerIdError && (
+              <div className="mt-1 text-xs text-error flex items-center">
+                <span className="i-mdi:alert-circle mr-1"></span>
+                {manualBrokerIdError}
+              </div>
+            )}
+
+            {!manualBrokerIdError && manualBrokerId && (
+              <div className="mt-1 text-xs text-success flex items-center">
+                <span className="i-mdi:check-circle mr-1"></span>
+                Broker ID is available
+              </div>
+            )}
+
             <FormInput
               id="manualTxHash"
               label="Transaction Hash"
@@ -1411,6 +1488,7 @@ export default function AdminRoute() {
                 !manualUserId ||
                 !manualBrokerId ||
                 !manualTxHash ||
+                !!manualBrokerIdError ||
                 manualMakerFee < 0 ||
                 manualMakerFee > 150 ||
                 manualTakerFee < 30 ||

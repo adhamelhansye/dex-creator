@@ -27,6 +27,17 @@ export interface BrokerCreationData {
   transactionHashes: Record<number, string>; // chainId -> txHash
 }
 
+export enum TransactionVerificationError {
+  TRANSACTION_NOT_FOUND = "Transaction not found",
+  TRANSACTION_FAILED = "Transaction failed",
+  WRONG_SENDER = "was not sent from your wallet",
+  CHAIN_NOT_SUPPORTED = "Chain not supported",
+  TX_ALREADY_USED = "This transaction hash has already been used for graduation",
+  INSUFFICIENT_AMOUNT = "Insufficient amount transferred",
+  NO_TRANSFERS_FOUND = "No ORDER token transfers to the required address found",
+  CONFIGURATION_ERROR = "Graduation fee configuration is incomplete",
+}
+
 function getOrderReceiverAddress(): Promise<string> {
   return getSecret("orderReceiverAddress");
 }
@@ -56,7 +67,7 @@ export async function verifyOrderTransaction(
   if (!ACCEPTED_CHAINS.includes(chain)) {
     return {
       success: false,
-      message: `Chain not supported. Supported chains: ${ACCEPTED_CHAINS.join(", ")}`,
+      message: `${TransactionVerificationError.CHAIN_NOT_SUPPORTED}. Supported chains: ${ACCEPTED_CHAINS.join(", ")}`,
     };
   }
 
@@ -71,8 +82,7 @@ export async function verifyOrderTransaction(
   if (existingUsedTx) {
     return {
       success: false,
-      message:
-        "This transaction hash has already been used for graduation. Please use a different transaction.",
+      message: TransactionVerificationError.TX_ALREADY_USED,
     };
   }
 
@@ -108,11 +118,17 @@ export async function verifyOrderTransaction(
       "Transaction receipt timeout"
     );
     if (!receipt) {
-      return { success: false, message: "Transaction not found" };
+      return {
+        success: false,
+        message: TransactionVerificationError.TRANSACTION_NOT_FOUND,
+      };
     }
 
     if (receipt.status === 0) {
-      return { success: false, message: "Transaction failed" };
+      return {
+        success: false,
+        message: TransactionVerificationError.TRANSACTION_FAILED,
+      };
     }
 
     const transaction = await withRPCTimeout(
@@ -121,13 +137,16 @@ export async function verifyOrderTransaction(
       "Transaction details timeout"
     );
     if (!transaction) {
-      return { success: false, message: "Transaction details not found" };
+      return {
+        success: false,
+        message: TransactionVerificationError.TRANSACTION_NOT_FOUND,
+      };
     }
 
     if (transaction.from.toLowerCase() !== userWalletAddress.toLowerCase()) {
       return {
         success: false,
-        message: "Transaction was not sent from your wallet address",
+        message: `Transaction ${TransactionVerificationError.WRONG_SENDER}`,
       };
     }
 
@@ -159,7 +178,7 @@ export async function verifyOrderTransaction(
     if (validTransfers.length === 0) {
       return {
         success: false,
-        message: `No ${paymentType.toUpperCase()} token transfers to the required address found in this transaction`,
+        message: `No ${paymentType.toUpperCase()} ${TransactionVerificationError.NO_TRANSFERS_FOUND} in this transaction`,
       };
     }
 
@@ -199,7 +218,7 @@ export async function verifyOrderTransaction(
     if (!usdcAmount || !orderRequiredPrice) {
       return {
         success: false,
-        message: "Graduation fee configuration is incomplete",
+        message: TransactionVerificationError.CONFIGURATION_ERROR,
       };
     }
 
@@ -216,7 +235,7 @@ export async function verifyOrderTransaction(
     if (transferredAmount < requiredAmountFloat) {
       return {
         success: false,
-        message: `Insufficient amount transferred. Required: ${requiredAmount} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
+        message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredAmount} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
         amount: totalTransferredDecimal,
       };
     }
