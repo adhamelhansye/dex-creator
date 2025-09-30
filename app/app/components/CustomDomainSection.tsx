@@ -158,7 +158,6 @@ export default function CustomDomainSection({
         to GitHub Pages.
       </p>
 
-      {/* Mobile Feature Warning - Only show if no custom domain is configured */}
       {!dexData.customDomain && (
         <div className="mb-4 p-3 bg-warning/10 rounded-lg border border-warning/30">
           <h5 className="text-sm font-bold mb-2 flex items-center">
@@ -177,7 +176,6 @@ export default function CustomDomainSection({
         </div>
       )}
 
-      {/* TradingView license warning */}
       <div className="mb-4 p-3 bg-red-900/30 rounded-lg border border-red-500/30">
         <h5 className="text-sm font-bold mb-2 flex items-center">
           <div className="i-mdi:alert h-4 w-4 mr-2 text-red-400"></div>
@@ -373,7 +371,31 @@ export default function CustomDomainSection({
         </div>
       )}
 
-      {/* DNS Setup Instructions - Always show */}
+      <div className="mb-4 p-4 bg-primary-light/5 rounded-lg border border-primary-light/20">
+        <h5 className="text-sm font-bold mb-2 flex items-center">
+          <div className="i-mdi:shopping-cart h-4 w-4 mr-2 text-primary-light"></div>
+          Need to Purchase a Domain?
+        </h5>
+        <p className="text-sm text-gray-300 mb-3">
+          Don't have a domain yet? We've created step-by-step guides to help you
+          purchase and configure your domain with popular providers.
+        </p>
+        <Button
+          onClick={() =>
+            openModal("domainSetupGuide", {
+              customDomain: dexData.customDomain,
+            })
+          }
+          variant="primary"
+          size="sm"
+        >
+          <span className="flex items-center gap-1">
+            <div className="i-mdi:book-open-variant h-4 w-4"></div>
+            Show Step-by-Step Guide
+          </span>
+        </Button>
+      </div>
+
       <div className="rounded-lg border border-light/10 p-4 bg-base-8/50">
         <h5 className="text-sm font-bold mb-3 flex items-center">
           <div className="i-mdi:dns h-4 w-4 mr-2 text-primary-light"></div>

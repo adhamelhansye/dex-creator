@@ -8,6 +8,7 @@ import TradingViewLicenseModal from "../components/TradingViewLicenseModal";
 import OrderlyKeyLoginModal from "../components/OrderlyKeyLoginModal";
 import AdminLoginModal from "../components/AdminLoginModal";
 import GraduationExplanationModal from "../components/GraduationExplanationModal";
+import DomainSetupGuideModal from "../components/DomainSetupGuideModal";
 
 type ModalType =
   | "login"
@@ -19,6 +20,7 @@ type ModalType =
   | "orderlyKeyLogin"
   | "adminLogin"
   | "graduationExplanation"
+  | "domainSetupGuide"
   | null;
 
 interface ModalContextType {
@@ -194,6 +196,14 @@ function ModalManager() {
     case "graduationExplanation":
       return (
         <GraduationExplanationModal isOpen={isModalOpen} onClose={closeModal} />
+      );
+    case "domainSetupGuide":
+      return (
+        <DomainSetupGuideModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          customDomain={currentModalProps.customDomain}
+        />
       );
     default:
       return null;
