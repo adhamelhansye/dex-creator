@@ -11,6 +11,7 @@ import { leaderboard } from "./routes/leaderboard";
 import { stats } from "./routes/stats";
 import { leaderboardService } from "./services/leaderboardService";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
+import { errorLoggerMiddleware } from "./lib/errorLogger";
 import {
   initializeBrokerCreation,
   checkBrokerCreationPermissions,
@@ -33,6 +34,7 @@ let globalPrisma: import("@prisma/client").PrismaClient | null = null;
 
 app.use("*", logger());
 app.use("*", cors());
+app.use("*", errorLoggerMiddleware);
 
 app.use("/api/dex/*", authMiddleware);
 app.use("/api/theme/*", authMiddleware);
