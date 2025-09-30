@@ -11,11 +11,7 @@ import {
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { createAutomatedBrokerId } from "../lib/brokerCreation";
-import {
-  updateDexFees,
-  verifyOrderTransaction,
-  TransactionVerificationError,
-} from "../models/graduation";
+import { updateDexFees } from "../models/graduation";
 import {
   setupRepositoryWithSingleCommit,
   renameRepository,
@@ -470,49 +466,6 @@ adminRoutes.post(
             success: false,
             message:
               "This transaction hash has already been used for graduation. Please use a different transaction.",
-          },
-          { status: 400 }
-        );
-      }
-
-      try {
-        const verificationResult = await verifyOrderTransaction(
-          txHash,
-          "ethereum",
-          dex.user.address,
-          "order"
-        );
-
-        if (!verificationResult.success) {
-          const message = verificationResult.message;
-          if (
-            message.includes(
-              TransactionVerificationError.TRANSACTION_NOT_FOUND
-            ) ||
-            message.includes(TransactionVerificationError.TRANSACTION_FAILED) ||
-            message.includes(TransactionVerificationError.WRONG_SENDER)
-          ) {
-            return c.json(
-              {
-                success: false,
-                message: `Transaction validation failed: ${message}`,
-              },
-              { status: 400 }
-            );
-          }
-          console.log(
-            `⚠️ Admin bypassing payment validation for tx: ${txHash}, reason: ${message}`
-          );
-        }
-      } catch (verificationError) {
-        console.error(
-          "Error validating transaction for admin:",
-          verificationError
-        );
-        return c.json(
-          {
-            success: false,
-            message: `Error validating transaction: ${verificationError instanceof Error ? verificationError.message : String(verificationError)}`,
           },
           { status: 400 }
         );
