@@ -243,7 +243,7 @@ adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
 const renameSchema = z.object({
   newName: z
     .string()
-    .min(5)
+    .min(4)
     .max(50)
     .regex(
       /^[a-z0-9-]+$/,
