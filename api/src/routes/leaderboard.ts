@@ -141,6 +141,7 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
         primaryLogo: true,
         repoUrl: true,
         customDomain: true,
+        customDomainOverride: true,
         description: true,
         banner: true,
         logo: true,
@@ -162,7 +163,9 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
         if (!cachedStats) return null;
 
         let dexUrl = null;
-        if (dex.customDomain) {
+        if (dex.customDomainOverride) {
+          dexUrl = `https://${dex.customDomainOverride}`;
+        } else if (dex.customDomain) {
           dexUrl = `https://${dex.customDomain}`;
         } else if (dex.repoUrl) {
           const match = dex.repoUrl.match(/github\.com\/([^\/]+)\/([^\/]+)/);
@@ -275,6 +278,7 @@ leaderboard.get(
           primaryLogo: true,
           repoUrl: true,
           customDomain: true,
+          customDomainOverride: true,
           description: true,
           banner: true,
           logo: true,
@@ -299,7 +303,9 @@ leaderboard.get(
 
       if (!dailyStats || !aggregatedStats) {
         let dexUrl = null;
-        if (dex.customDomain) {
+        if (dex.customDomainOverride) {
+          dexUrl = `https://${dex.customDomainOverride}`;
+        } else if (dex.customDomain) {
           dexUrl = `https://${dex.customDomain}`;
         } else if (dex.repoUrl) {
           const match = dex.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
@@ -348,7 +354,9 @@ leaderboard.get(
       }
 
       let dexUrl = null;
-      if (dex.customDomain) {
+      if (dex.customDomainOverride) {
+        dexUrl = `https://${dex.customDomainOverride}`;
+      } else if (dex.customDomain) {
         dexUrl = `https://${dex.customDomain}`;
       } else if (dex.repoUrl) {
         const match = dex.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
