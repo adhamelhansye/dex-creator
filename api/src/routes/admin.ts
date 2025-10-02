@@ -8,6 +8,7 @@ import {
   updateDexRepoUrl,
   getAllDexes,
   getCurrentEnvironment,
+  updateDexCustomDomainOverride,
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { createAutomatedBrokerId } from "../lib/brokerCreation";
@@ -114,6 +115,29 @@ const manualBrokerCreationSchema = z.object({
     .string()
     .min(10)
     .max(100, "Transaction hash must be between 10-100 characters"),
+});
+
+const customDomainOverrideSchema = z.object({
+  customDomainOverride: z
+    .string()
+    .max(200, "Domain override must be 200 characters or less")
+    .refine(
+      value => {
+        if (!value || value.trim() === "") return true;
+
+        const domainRegex =
+          /^[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$/;
+        const urlRegex = /^https?:\/\/.+/;
+
+        return domainRegex.test(value) || urlRegex.test(value);
+      },
+      {
+        message:
+          "Must be a valid domain (e.g., 'example.com') or URL (e.g., 'https://example.com')",
+      }
+    )
+    .or(z.literal(""))
+    .nullish(),
 });
 
 adminRoutes.post(
@@ -634,6 +658,46 @@ adminRoutes.post(
           message: `Error processing request: ${error instanceof Error ? error.message : String(error)}`,
         },
         { status: 500 }
+      );
+    }
+  }
+);
+
+adminRoutes.post(
+  "/dex/:id/custom-domain-override",
+  zValidator("json", customDomainOverrideSchema),
+  async c => {
+    const id = c.req.param("id");
+    const { customDomainOverride } = c.req.valid("json");
+
+    try {
+      const dex = await getDexById(id);
+      if (!dex) {
+        return c.json({ message: "DEX not found" }, 404);
+      }
+
+      const updatedDex = await updateDexCustomDomainOverride(
+        id,
+        customDomainOverride || null
+      );
+
+      return c.json({
+        message: "Custom domain override updated successfully",
+        dex: {
+          id: updatedDex.id,
+          brokerId: updatedDex.brokerId,
+          brokerName: updatedDex.brokerName,
+          customDomainOverride: updatedDex.customDomainOverride,
+        },
+      });
+    } catch (error) {
+      console.error("Error updating custom domain override:", error);
+      return c.json(
+        {
+          message: "Error updating custom domain override",
+          error: String(error),
+        },
+        500
       );
     }
   }

@@ -1188,3 +1188,17 @@ export async function updateDexSocialCard(
     data: updateData,
   });
 }
+
+export async function updateDexCustomDomainOverride(
+  id: string,
+  customDomainOverride: string | null
+): Promise<Dex> {
+  const prismaClient = await getPrisma();
+  return prismaClient.dex.update({
+    where: { id },
+    data: {
+      customDomainOverride,
+      updatedAt: new Date(),
+    },
+  });
+}

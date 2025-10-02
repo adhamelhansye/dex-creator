@@ -69,6 +69,7 @@ model Dex {
   customMenus          String?  // Semicolon-separated list of custom menu items (format: "Name,URL;Name2,URL2")
   repoUrl              String?  // GitHub repository URL after forking
   customDomain         String?  // Custom domain for GitHub Pages
+  customDomainOverride String?  // Admin-only override for domain display in leaderboard
   makerFee             Int?     // Maker fee in 0.1 basis points (0.001% precision, 1 bps = 10 units)
   takerFee             Int?     // Taker fee in 0.1 basis points (0.001% precision, 1 bps = 10 units)
   availableLanguages   String[] @default(["en"]) // Array of language codes that the DEX should support

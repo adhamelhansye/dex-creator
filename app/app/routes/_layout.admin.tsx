@@ -76,6 +76,7 @@ interface Dex {
   brokerId: string;
   repoUrl: string | null;
   customDomain?: string | null;
+  customDomainOverride?: string | null;
   createdAt: string;
   makerFee?: number | null;
   takerFee?: number | null;
@@ -193,6 +194,12 @@ export default function AdminRoute() {
     null
   );
 
+  const [customDomainOverrideDexId, setCustomDomainOverrideDexId] =
+    useState("");
+  const [customDomainOverride, setCustomDomainOverride] = useState("");
+  const [isUpdatingCustomDomainOverride, setIsUpdatingCustomDomainOverride] =
+    useState(false);
+
   const toggleThemeVisibility = (dexId: string) => {
     setExpandedThemes(prev => {
       const newSet = new Set(prev);
@@ -234,6 +241,36 @@ export default function AdminRoute() {
         }
       },
     });
+  };
+
+  const handleCustomDomainOverride = async (
+    dexId: string,
+    domainOverride: string
+  ) => {
+    setIsUpdatingCustomDomainOverride(true);
+    try {
+      const response = await post(
+        `api/admin/dex/${dexId}/custom-domain-override`,
+        { customDomainOverride: domainOverride || null },
+        token
+      );
+
+      if (response.message) {
+        toast.success(response.message);
+        await loadAllDexes();
+      }
+    } catch (error) {
+      console.error("Error updating custom domain override:", error);
+      if (error instanceof Error) {
+        toast.error(
+          `Failed to update custom domain override: ${error.message}`
+        );
+      } else {
+        toast.error("Failed to update custom domain override");
+      }
+    } finally {
+      setIsUpdatingCustomDomainOverride(false);
+    }
   };
 
   useEffect(() => {
@@ -1693,6 +1730,92 @@ export default function AdminRoute() {
                         </button>
                       </div>
                     )}
+
+                    {/* Custom Domain Override Section */}
+                    <div className="md:col-span-2">
+                      <div className="flex items-center justify-between mb-2">
+                        <strong className="text-xs">
+                          Custom Domain Override:
+                        </strong>
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="text"
+                            placeholder="example.com"
+                            value={
+                              customDomainOverrideDexId === dex.id
+                                ? customDomainOverride
+                                : dex.customDomainOverride || ""
+                            }
+                            onChange={e => {
+                              if (customDomainOverrideDexId !== dex.id) {
+                                setCustomDomainOverrideDexId(dex.id);
+                                setCustomDomainOverride(
+                                  dex.customDomainOverride || ""
+                                );
+                              }
+                              setCustomDomainOverride(e.target.value);
+                            }}
+                            className="text-xs bg-dark/50 border border-light/20 rounded px-2 py-1 text-white placeholder-gray-400 focus:border-primary focus:outline-none min-w-0 flex-1"
+                            disabled={isUpdatingCustomDomainOverride}
+                          />
+                          <Button
+                            onClick={() =>
+                              handleCustomDomainOverride(
+                                dex.id,
+                                customDomainOverride
+                              )
+                            }
+                            disabled={
+                              isUpdatingCustomDomainOverride ||
+                              customDomainOverrideDexId !== dex.id
+                            }
+                            variant="primary"
+                            size="sm"
+                            className="text-xs px-2 py-1 flex items-center gap-1"
+                          >
+                            {isUpdatingCustomDomainOverride &&
+                            customDomainOverrideDexId === dex.id ? (
+                              <>
+                                <div className="i-svg-spinners:pulse-rings h-3 w-3"></div>
+                                Updating...
+                              </>
+                            ) : (
+                              <>
+                                <div className="i-mdi:check h-3 w-3"></div>
+                                Update
+                              </>
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                      {dex.customDomainOverride && (
+                        <div className="flex items-center justify-between">
+                          <div className="flex-1 min-w-0">
+                            <strong>Override URL:</strong>{" "}
+                            <a
+                              href={dex.customDomainOverride}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="text-primary-light hover:underline break-all"
+                            >
+                              {dex.customDomainOverride}
+                            </a>
+                          </div>
+                          <button
+                            onClick={() =>
+                              copyToClipboard(
+                                dex.customDomainOverride!,
+                                "Custom Domain Override URL"
+                              )
+                            }
+                            className="text-gray-400 hover:text-primary-light p-1 rounded ml-2 flex-shrink-0"
+                            title="Copy Override URL"
+                          >
+                            <div className="i-mdi:content-copy h-3 w-3"></div>
+                          </button>
+                        </div>
+                      )}
+                    </div>
 
                     {dex.repoUrl && (
                       <div className="md:col-span-2 flex items-center justify-between">
