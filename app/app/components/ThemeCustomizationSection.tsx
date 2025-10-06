@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from "react";
+import React, { ChangeEvent } from "react";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import FormInput from "./FormInput";
@@ -51,8 +51,6 @@ export interface ThemeCustomizationProps {
   toggleThemeEditor: () => void;
   handleResetTheme: () => void;
   handleResetToDefault: () => void;
-  handleResetSelectedColors?: (selectedColors: string[]) => void;
-  handleResetSelectedColorsToDefault?: (selectedColors: string[]) => void;
   handleThemeEditorChange: (value: string) => void;
   setViewCssCode: (value: boolean) => void;
   ThemeTabButton: React.FC<{ tab: ThemeTabType; label: string }>;
@@ -82,8 +80,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   toggleThemeEditor,
   handleResetTheme,
   handleResetToDefault,
-  handleResetSelectedColors,
-  handleResetSelectedColorsToDefault,
   handleThemeEditorChange,
   setViewCssCode,
   ThemeTabButton,
@@ -94,26 +90,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   setTradingViewColorConfig,
   idPrefix = "",
 }) => {
-  const [selectedColors, setSelectedColors] = useState<string[]>([]);
-
-  const handleResetSelected = () => {
-    if (handleResetSelectedColors && selectedColors.length > 0) {
-      handleResetSelectedColors(selectedColors);
-      setSelectedColors([]);
-    } else {
-      handleResetTheme();
-    }
-  };
-
-  const handleResetSelectedToDefault = () => {
-    if (handleResetSelectedColorsToDefault && selectedColors.length > 0) {
-      handleResetSelectedColorsToDefault(selectedColors);
-      setSelectedColors([]);
-    } else {
-      handleResetToDefault();
-    }
-  };
-
   return (
     <>
       <div className="mt-4 rounded-lg overflow-hidden border border-light/10 p-4 bg-base-7/50">
@@ -141,26 +117,22 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
               </span>
             </Button>
             <Button
-              onClick={handleResetSelected}
+              onClick={handleResetTheme}
               variant="danger"
               size="xs"
               className="w-full sm:w-auto"
               type="button"
             >
-              {selectedColors.length > 0
-                ? `Reset Selected (${selectedColors.length})`
-                : "Reset"}
+              Reset
             </Button>
             <Button
-              onClick={handleResetSelectedToDefault}
+              onClick={handleResetToDefault}
               variant="danger"
               size="xs"
               className="w-full sm:w-auto"
               type="button"
             >
-              {selectedColors.length > 0
-                ? `Reset Selected to Default (${selectedColors.length})`
-                : "Reset to Default"}
+              Reset to Default
             </Button>
           </div>
         </div>
@@ -220,8 +192,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
               <ThemeColorSwatches
                 css={currentTheme || defaultTheme}
                 onColorChange={updateCssColor}
-                selectedColors={selectedColors}
-                onSelectionChange={setSelectedColors}
               />
             </div>
           )}

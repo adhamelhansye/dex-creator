@@ -1,34 +1,15 @@
-import React, { useState, useRef, useEffect } from "react";
-import ColorSwatch from "./ColorSwatch";
+import React, { useState } from "react";
 
 interface ThemeColorSwatchesProps {
   css: string;
   onColorChange: (variableName: string, newColorHex: string) => void;
-  selectedColors?: string[];
-  onSelectionChange?: (selectedColors: string[]) => void;
 }
 
 export default function ThemeColorSwatches({
   css,
   onColorChange,
-  selectedColors = [],
-  onSelectionChange,
 }: ThemeColorSwatchesProps) {
-  const [selectedVariable, setSelectedVariable] = useState<string | null>(null);
-  const [inputPosition, setInputPosition] = useState({ top: 0, left: 0 });
-  const colorInputRef = useRef<HTMLInputElement>(null);
   const [syncBrandWithPrimary, setSyncBrandWithPrimary] = useState(true);
-
-  useEffect(() => {
-    const handleClickOutside = () => {
-      setSelectedVariable(null);
-    };
-
-    window.addEventListener("click", handleClickOutside);
-    return () => {
-      window.removeEventListener("click", handleClickOutside);
-    };
-  }, []);
 
   const extractRgbValues = (cssText: string) => {
     const colorVariables: Record<string, string | null> = {};
@@ -69,61 +50,6 @@ export default function ThemeColorSwatches({
     const [r, g, b] = rgb.replace(/,/g, " ").split(/\s+/).map(Number);
 
     return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-  };
-
-  const hexToRgbSpaceSeparated = (hex: string) => {
-    hex = hex.replace("#", "");
-
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-
-    return `${r} ${g} ${b}`;
-  };
-
-  const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!selectedVariable) return;
-
-    const newColorHex = e.target.value;
-
-    onColorChange(`oui-color-${selectedVariable}`, newColorHex);
-
-    if (syncBrandWithPrimary && selectedVariable.includes("primary")) {
-      const rgbValue = hexToRgbSpaceSeparated(newColorHex);
-
-      if (selectedVariable === "primary") {
-        updateBrandGradient(null, rgbValue);
-      } else if (selectedVariable === "primary-light") {
-        updateBrandGradient(rgbValue, null);
-      }
-    }
-  };
-
-  const updateBrandGradient = (
-    startRgb: string | null,
-    endRgb: string | null
-  ) => {
-    if (startRgb) {
-      setTimeout(() => {
-        onColorChange("gradient-brand-start", rgbToHex(startRgb));
-      }, 500);
-    }
-
-    if (endRgb) {
-      onColorChange("gradient-brand-end", rgbToHex(endRgb));
-    }
-  };
-
-  const handleCheckboxChange = (colorName: string, checked: boolean) => {
-    if (!onSelectionChange) return;
-
-    let newSelection: string[];
-    if (checked) {
-      newSelection = [...selectedColors, colorName];
-    } else {
-      newSelection = selectedColors.filter(color => color !== colorName);
-    }
-    onSelectionChange(newSelection);
   };
 
   const rgbColors = extractRgbValues(css);
@@ -216,49 +142,72 @@ export default function ThemeColorSwatches({
     const textColor = isDark ? "white" : "black";
     const needsShadow = isDark;
 
-    const handleClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      e.stopPropagation();
-
-      const rect = e.currentTarget.getBoundingClientRect();
-      setInputPosition({
-        top: rect.top + window.scrollY,
-        left: rect.left + window.scrollX,
-      });
-
-      setSelectedVariable(name);
-
-      if (colorInputRef.current) {
-        colorInputRef.current.value = isValid ? rgbToHex(commaRgb) : "#FF0000";
-        setTimeout(() => {
-          colorInputRef.current?.click();
-        }, 10);
-      }
-    };
-
-    const handleSwatchClick = (e: React.MouseEvent<HTMLDivElement>) => {
-      if (
-        e.target === e.currentTarget ||
-        !(e.target as HTMLElement).closest('input[type="checkbox"]')
-      ) {
-        handleClick(e);
-      }
+    const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const newColorHex = e.target.value;
+      onColorChange(`oui-color-${name}`, newColorHex);
     };
 
     return (
-      <ColorSwatch
-        key={name}
-        name={name}
-        displayName={displayName}
-        storedValue={storedValue}
-        isValid={isValid}
-        commaRgb={commaRgb}
-        textColor={textColor}
-        needsShadow={needsShadow}
-        selectedColors={selectedColors}
-        onSelectionChange={onSelectionChange}
-        handleCheckboxChange={handleCheckboxChange}
-        handleSwatchClick={handleSwatchClick}
-      />
+      <div key={name} className="relative flex-[0_1_160px]">
+        <div
+          className={`h-16 w-full rounded-md flex items-center justify-between px-3 py-2 border ${!isValid ? "border-error/50" : "border-light/10"} cursor-pointer hover:ring-2 hover:ring-primary transition-all`}
+          style={{
+            backgroundColor: isValid
+              ? `rgb(${commaRgb})`
+              : storedValue === null
+                ? "rgba(255,255,255,0.05)"
+                : "rgba(255,0,0,0.15)",
+          }}
+          title={
+            isValid
+              ? `Click to edit ${displayName} Color, use checkbox to select`
+              : storedValue === null
+                ? `Click to set ${displayName} Color`
+                : `Invalid CSS format for ${displayName}`
+          }
+        >
+          <div className="flex flex-col items-start">
+            <span
+              className="font-medium text-[0.8rem]"
+              style={{
+                color: isValid ? textColor : "white",
+                textShadow:
+                  needsShadow || !isValid ? "0 0 2px rgba(0,0,0,0.8)" : "none",
+              }}
+            >
+              {displayName}
+            </span>
+            <span
+              className="text-[0.65rem] opacity-80"
+              style={{
+                color: isValid ? textColor : "white",
+                textShadow:
+                  needsShadow || !isValid ? "0 0 2px rgba(0,0,0,0.8)" : "none",
+              }}
+            >
+              {isValid
+                ? `RGB(${storedValue?.replace(/\s+/g, ", ")})`
+                : storedValue === null
+                  ? "Not set"
+                  : "Invalid format"}
+            </span>
+          </div>
+
+          {!isValid && storedValue != null && (
+            <div className="absolute -right-3 -top-3 text-error bg-background-dark/90 rounded-full p-0.5 h-5 w-5 flex items-center justify-center">
+              <span className="i-mdi:alert-circle text-xs"></span>
+            </div>
+          )}
+
+          <input
+            type="color"
+            className="absolute top-0 left-0 w-full h-full opacity-0 cursor-pointer"
+            value={isValid ? rgbToHex(commaRgb) : "#FF0000"}
+            onChange={handleColorChange}
+            onClick={e => e.stopPropagation()}
+          />
+        </div>
+      </div>
     );
   };
 
@@ -317,50 +266,6 @@ export default function ThemeColorSwatches({
 
   return (
     <div className="space-y-6">
-      {/* Hidden color input that will be triggered programmatically */}
-      <input
-        ref={colorInputRef}
-        type="color"
-        className="fixed opacity-0 pointer-events-none h-8 w-8 z-50"
-        style={{
-          top: `${inputPosition.top + 8}px`,
-          left: `${inputPosition.left + 8}px`,
-        }}
-        onChange={handleColorChange}
-        aria-hidden="true"
-        onClick={e => e.stopPropagation()}
-      />
-
-      {/* Selection Info */}
-      {onSelectionChange && (
-        <div className="bg-background-dark/30 p-3 rounded-lg border border-light/10">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="i-mdi:information-outline h-4 w-4 text-primary"></div>
-              <span className="text-sm text-gray-300">
-                {selectedColors.length > 0
-                  ? `${selectedColors.length} color${selectedColors.length > 1 ? "s" : ""} selected`
-                  : "No colors selected"}
-              </span>
-            </div>
-            {selectedColors.length > 0 && (
-              <button
-                onClick={() => onSelectionChange([])}
-                className="text-xs text-gray-400 hover:text-gray-300 transition-colors"
-                type="button"
-              >
-                Clear selection
-              </button>
-            )}
-          </div>
-          <div className="text-xs text-gray-400 mt-1">
-            <span className="font-medium">Tips:</span> Click to edit colors, use
-            checkboxes to select colors
-          </div>
-        </div>
-      )}
-
-      {/* Brand Gradient Preview */}
       {renderGradientPreview()}
 
       {nonEmptyCategories.map(category => (

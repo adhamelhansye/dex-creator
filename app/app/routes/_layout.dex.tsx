@@ -550,55 +550,6 @@ export default function DexRoute() {
     toast.success("Theme reset to default");
   };
 
-  const handleResetSelectedColors = (selectedColors: string[]) => {
-    if (!currentTheme) return;
-
-    let updatedTheme = currentTheme;
-
-    selectedColors.forEach(colorName => {
-      const originalValue = originalValues.themeCSS;
-      if (originalValue) {
-        const regex = new RegExp(`--oui-color-${colorName}:\\s*([^;]+);`, "g");
-        const match = originalValue.match(regex);
-        if (match) {
-          updatedTheme = updatedTheme.replace(
-            new RegExp(`--oui-color-${colorName}:\\s*[^;]+;`, "g"),
-            match[0]
-          );
-        }
-      }
-    });
-
-    setCurrentTheme(updatedTheme);
-    setThemeApplied(true);
-    toast.success(
-      `${selectedColors.length} color${selectedColors.length > 1 ? "s" : ""} reset to original`
-    );
-  };
-
-  const handleResetSelectedColorsToDefault = (selectedColors: string[]) => {
-    if (!currentTheme) return;
-
-    let updatedTheme = currentTheme;
-
-    selectedColors.forEach(colorName => {
-      const regex = new RegExp(`--oui-color-${colorName}:\\s*([^;]+);`, "g");
-      const match = defaultTheme.match(regex);
-      if (match) {
-        updatedTheme = updatedTheme.replace(
-          new RegExp(`--oui-color-${colorName}:\\s*[^;]+;`, "g"),
-          match[0]
-        );
-      }
-    });
-
-    setCurrentTheme(updatedTheme);
-    setThemeApplied(true);
-    toast.success(
-      `${selectedColors.length} color${selectedColors.length > 1 ? "s" : ""} reset to default`
-    );
-  };
-
   const toggleThemeEditor = () => {
     setShowThemeEditor(!showThemeEditor);
   };
@@ -746,8 +697,6 @@ export default function DexRoute() {
       toggleThemeEditor,
       handleResetTheme,
       handleResetToDefault,
-      handleResetSelectedColors,
-      handleResetSelectedColorsToDefault,
       handleThemeEditorChange,
       setViewCssCode,
       ThemeTabButton,
@@ -1438,8 +1387,6 @@ export default function DexRoute() {
               toggleThemeEditor,
               handleResetTheme,
               handleResetToDefault,
-              handleResetSelectedColors,
-              handleResetSelectedColorsToDefault,
               handleThemeEditorChange,
               setViewCssCode,
               ThemeTabButton,
