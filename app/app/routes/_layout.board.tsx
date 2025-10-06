@@ -285,21 +285,27 @@ export default function BoardRoute() {
           </div>
         )}
 
-        {/* DEX Cards Grid */}
         {!isLoading && leaderboard.length > 0 && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 slide-fade-in items-stretch">
-            {leaderboard.map((broker, index) => (
-              <Link
-                key={broker.brokerId}
-                to={`/board/${broker.brokerId}`}
-                className="staggered-item block h-full"
-                style={{
-                  animation: `slideFadeIn 0.25s ease ${index * 0.05}s forwards`,
-                }}
-              >
-                <DexCard broker={broker} rank={index} timePeriod={timePeriod} />
-              </Link>
-            ))}
+            {leaderboard.map((broker, index) => {
+              const globalRank = (currentPage - 1) * pageSize + index;
+              return (
+                <Link
+                  key={broker.brokerId}
+                  to={`/board/${broker.brokerId}`}
+                  className="staggered-item block h-full"
+                  style={{
+                    animation: `slideFadeIn 0.25s ease ${index * 0.05}s forwards`,
+                  }}
+                >
+                  <DexCard
+                    broker={broker}
+                    rank={globalRank}
+                    timePeriod={timePeriod}
+                  />
+                </Link>
+              );
+            })}
           </div>
         )}
 
