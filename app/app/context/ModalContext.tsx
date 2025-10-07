@@ -9,6 +9,7 @@ import OrderlyKeyLoginModal from "../components/OrderlyKeyLoginModal";
 import AdminLoginModal from "../components/AdminLoginModal";
 import GraduationExplanationModal from "../components/GraduationExplanationModal";
 import DomainSetupGuideModal from "../components/DomainSetupGuideModal";
+import { TokenSelectionModal } from "../components/TokenSelectionModal";
 
 type ModalType =
   | "login"
@@ -21,6 +22,7 @@ type ModalType =
   | "adminLogin"
   | "graduationExplanation"
   | "domainSetupGuide"
+  | "tokenSelection"
   | null;
 
 interface ModalContextType {
@@ -203,6 +205,16 @@ function ModalManager() {
           isOpen={isModalOpen}
           onClose={closeModal}
           customDomain={currentModalProps.customDomain}
+        />
+      );
+    case "tokenSelection":
+      return (
+        <TokenSelectionModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSelect={currentModalProps.onSelect}
+          currentChain={currentModalProps.currentChain}
+          currentPaymentType={currentModalProps.currentPaymentType}
         />
       );
     default:

@@ -28,6 +28,7 @@ import { BrowserProvider } from "ethers";
 import clsx from "clsx";
 import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "./BaseFeeExplanation";
+import { useModal } from "../context/ModalContext";
 import {
   getBaseUrl,
   registerAccount,
@@ -38,7 +39,6 @@ import { getBlockExplorerUrlByChainId } from "../../../config";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 import {
   getSupportedChains,
-  getOrderTokenSupportedChains,
   getPreferredChain,
   getCurrentEnvironment,
 } from "../utils/config";
@@ -46,6 +46,7 @@ import {
   ORDER_ADDRESSES,
   USDC_ADDRESSES,
   OrderTokenChainName,
+  getChainIcon,
 } from "../../../config";
 
 const ERC20_ABI = [
@@ -62,7 +63,6 @@ const ERC20_ABI = [
 ];
 
 const SUPPORTED_CHAINS = getSupportedChains();
-const ORDER_TOKEN_CHAINS = getOrderTokenSupportedChains();
 
 const validateAddress = (address: string): boolean => {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
@@ -159,7 +159,7 @@ export function GraduationForm({
   const [dexData, setDexData] = useState<{ repoUrl?: string } | null>(null);
   const [feeOptions, setFeeOptions] = useState<FeeOptionsResponse | null>(null);
   const [paymentType, setPaymentType] = useState<"usdc" | "order">("order");
-  const [isLoadingFeeOptions, setIsLoadingFeeOptions] = useState(false);
+  const { openModal } = useModal();
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -199,25 +199,6 @@ export function GraduationForm({
     });
   }, []);
 
-  const handleChainChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const newChain = e.target.value as OrderTokenChainName;
-    setChain(newChain);
-
-    const preferredChain = getPreferredChain(newChain);
-
-    const chainId = SUPPORTED_CHAINS.find(
-      c => c.id === preferredChain
-    )?.chainId;
-
-    if (chainId) {
-      try {
-        switchChain({ chainId });
-      } catch (error) {
-        console.error("Chain switch error:", error);
-      }
-    }
-  };
-
   const { data: tokenBalance } = useBalance({
     address,
     token: currentTokenAddress as `0x${string}`,
@@ -228,6 +209,14 @@ export function GraduationForm({
       staleTime: 60_000,
     },
   });
+
+  const handleTokenSelection = (
+    selectedChain: OrderTokenChainName,
+    selectedPaymentType: "usdc" | "order"
+  ) => {
+    setChain(selectedChain);
+    setPaymentType(selectedPaymentType);
+  };
 
   const { data: tokenDecimals, error: decimalsError } = useReadContract({
     address: currentTokenAddress as `0x${string}`,
@@ -334,7 +323,6 @@ export function GraduationForm({
   }, [token, setMakerFee, setTakerFee]);
 
   const loadFeeOptions = useCallback(async () => {
-    setIsLoadingFeeOptions(true);
     try {
       const response = await get<FeeOptionsResponse>(
         "api/graduation/fee-options",
@@ -344,8 +332,6 @@ export function GraduationForm({
     } catch (error) {
       console.error("Error loading fee options:", error);
       toast.error("Failed to load graduation fee options");
-    } finally {
-      setIsLoadingFeeOptions(false);
     }
   }, [token]);
 
@@ -916,16 +902,6 @@ export function GraduationForm({
         </p>
       </div>
 
-      {isLoadingFeeOptions ? (
-        <div className="flex items-center justify-center py-4">
-          <div className="i-svg-spinners:three-dots text-2xl text-primary"></div>
-        </div>
-      ) : feeOptions ? (
-        <p className="text-gray-300 mb-4">Loading graduation options...</p>
-      ) : (
-        <p className="text-gray-300 mb-4">Loading graduation options...</p>
-      )}
-
       <BaseFeeExplanation />
 
       <div className="mb-6">
@@ -957,31 +933,6 @@ export function GraduationForm({
       </div>
 
       <div className="mb-6">
-        <div className="mb-4">
-          <label htmlFor="chain" className="block text-sm font-medium mb-1">
-            Blockchain
-          </label>
-          <div className="text-xs text-gray-400 mb-2">
-            Select which blockchain you'll use to send ORDER tokens. This
-            doesn't affect where your DEX will operate, as Orderly is an
-            omnichain infrastructure. The ORDER token requirement is simply a
-            commitment fee.
-          </div>
-          <select
-            id="chain"
-            value={chain}
-            onChange={handleChainChange}
-            className="w-full px-3 py-2 bg-background-card border border-light/10 rounded-lg"
-            required
-          >
-            {ORDER_TOKEN_CHAINS.map(c => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </div>
-
         <FormInput
           id="brokerId"
           label="Broker ID"
@@ -1020,65 +971,124 @@ export function GraduationForm({
               Choose your graduation payment method:
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-              <div
-                className={`border rounded-xl p-4 cursor-pointer transition-colors ${
-                  paymentType === "usdc"
-                    ? "border-primary bg-primary/10"
-                    : "border-light/10 bg-background-card hover:border-light/20"
-                }`}
-                onClick={() => setPaymentType("usdc")}
+            {/* Payment Method Selection Button */}
+            <div className="mb-4">
+              <button
+                onClick={() =>
+                  openModal("tokenSelection", {
+                    onSelect: handleTokenSelection,
+                    currentChain: chain,
+                    currentPaymentType: paymentType,
+                  })
+                }
+                className="w-full p-4 border border-light/10 bg-background-card hover:border-light/20 rounded-xl transition-colors text-left"
               >
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="font-medium">USDC</h3>
-                  <div className="bg-success/20 text-success px-2 py-1 rounded-full text-xs">
-                    Stable
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-full bg-background-card flex items-center justify-center overflow-hidden">
+                      <img
+                        src={
+                          paymentType === "usdc"
+                            ? "https://assets.coingecko.com/coins/images/6319/standard/usdc.png"
+                            : "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png"
+                        }
+                        alt={paymentType === "usdc" ? "USDC" : "ORDER"}
+                        className="w-6 h-6 rounded-full"
+                        onError={e => {
+                          const target = e.currentTarget as HTMLImageElement;
+                          target.style.display = "none";
+                          const nextElement =
+                            target.nextElementSibling as HTMLElement;
+                          if (nextElement) {
+                            nextElement.style.display = "block";
+                          }
+                        }}
+                      />
+                      <span className="text-lg hidden">
+                        {paymentType === "usdc" ? "💵" : "🪙"}
+                      </span>
+                    </div>
+                    <div>
+                      <div className="font-medium">
+                        {paymentType === "usdc" ? "USDC" : "ORDER"}
+                      </div>
+                      <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
+                        <img
+                          src={getChainIcon(preferredChain)}
+                          alt={
+                            SUPPORTED_CHAINS.find(c => c.id === preferredChain)
+                              ?.name || preferredChain
+                          }
+                          className="w-3 h-3 rounded-full"
+                          onError={e => {
+                            const target = e.currentTarget as HTMLImageElement;
+                            target.style.display = "none";
+                            const nextElement =
+                              target.nextElementSibling as HTMLElement;
+                            if (nextElement) {
+                              nextElement.style.display = "block";
+                            }
+                          }}
+                        />
+                        <div className="w-2 h-2 rounded-full bg-primary hidden"></div>
+                        {SUPPORTED_CHAINS.find(c => c.id === preferredChain)
+                          ?.name || preferredChain}
+                      </div>
+                      <div className="text-sm text-gray-400 mt-1">
+                        {paymentType === "usdc" ? (
+                          `$${feeOptions.usdc.amount.toLocaleString()} USDC`
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <span>
+                              {feeOptions.order.amount.toLocaleString()} ORDER{" "}
+                              (~$
+                              {(
+                                feeOptions.order.amount *
+                                feeOptions.order.currentPrice
+                              ).toFixed(2)}
+                              )
+                            </span>
+                            <div className="bg-warning/20 text-warning px-2 py-1 rounded-full text-xs font-medium">
+                              25% OFF
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-primary-light">
+                    <div className="i-mdi:chevron-right w-5 h-5"></div>
                   </div>
                 </div>
-                <p className="text-2xl font-bold text-success">
-                  ${feeOptions.usdc.amount.toLocaleString()}
-                </p>
-                <p className="text-sm text-gray-400">Fixed USD amount</p>
-              </div>
+                {tokenBalance && (
+                  <div className="mt-2 text-xs text-gray-400">
+                    Your balance:{" "}
+                    {parseFloat(tokenBalance.formatted).toFixed(2)}{" "}
+                    {paymentType === "usdc" ? "USDC" : "ORDER"}
+                  </div>
+                )}
+              </button>
+            </div>
 
-              <div
-                className={`border rounded-xl p-4 cursor-pointer transition-colors ${
-                  paymentType === "order"
-                    ? "border-primary bg-primary/10"
-                    : "border-light/10 bg-background-card hover:border-light/20"
-                }`}
-                onClick={() => setPaymentType("order")}
-              >
-                <div className="flex items-center justify-between gap-1 mb-2">
-                  <h3 className="font-medium">ORDER</h3>
-                  <div className="bg-warning/20 text-warning px-2 py-1 rounded-full text-xs">
-                    25% Off
-                  </div>
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-4 mb-4">
+              <div className="flex items-start gap-3">
+                <div className="i-mdi:alert-circle text-warning w-5 h-5 mt-0.5 flex-shrink-0"></div>
+                <div>
+                  <h4 className="text-warning font-medium text-sm mb-1">
+                    Do NOT send tokens manually
+                  </h4>
+                  <p className="text-xs text-gray-400">
+                    The system will handle the token transfer automatically when
+                    you click the button below. Do not send tokens to any
+                    address manually - this will not complete your graduation.
+                  </p>
                 </div>
-                <p className="text-2xl font-bold text-warning">
-                  {new Intl.NumberFormat("en-US").format(
-                    feeOptions.order.amount
-                  )}{" "}
-                  ORDER
-                </p>
-                <p className="text-sm text-gray-400">
-                  ~$
-                  {new Intl.NumberFormat("en-US", {
-                    minimumFractionDigits: 2,
-                    maximumFractionDigits: 2,
-                  }).format(
-                    feeOptions.order.amount * feeOptions.order.currentPrice
-                  )}{" "}
-                  <span className="text-warning font-medium">
-                    (25% off USD)
-                  </span>
-                </p>
               </div>
             </div>
 
             <p className="text-gray-300 text-sm">
-              Send the selected amount to the address below and submit the
-              transaction hash.
+              The system will automatically transfer the required tokens when
+              you click the button below.
               {paymentType === "order" && (
                 <a
                   href={getSwapUrl(preferredChain)}
@@ -1152,19 +1162,52 @@ export function GraduationForm({
               )}
             </div>
 
+            {paymentType === "order" && (
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
+                <div className="flex items-center gap-2">
+                  <div className="i-mdi:tag text-warning w-4 h-4"></div>
+                  <span className="text-warning font-medium text-sm">
+                    Save 25% by paying with ORDER tokens!
+                  </span>
+                </div>
+                <div className="text-xs text-gray-400 mt-1">
+                  Instead of ${feeOptions?.usdc.amount.toLocaleString()} USDC,
+                  pay only {feeOptions?.order.amount.toLocaleString()} ORDER (~$
+                  {(
+                    (feeOptions?.order.amount || 0) *
+                    (feeOptions?.order.currentPrice || 0)
+                  ).toFixed(2)}
+                  )
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center gap-2 mb-4">
               <div className="text-sm">Amount:</div>
-              <div className="font-medium">
-                {feeOptions
-                  ? paymentType === "usdc"
-                    ? `${feeOptions.usdc.amount.toLocaleString()} USDC`
-                    : `${feeOptions.order.amount.toLocaleString()} ORDER`
-                  : "Loading..."}
+              <div className="font-medium flex items-center gap-2">
+                {feeOptions ? (
+                  paymentType === "usdc" ? (
+                    `${feeOptions.usdc.amount.toLocaleString()} USDC`
+                  ) : (
+                    <>
+                      {feeOptions.order.amount.toLocaleString()} ORDER
+                      <div className="bg-warning/20 text-warning px-2 py-1 rounded-full text-xs font-medium">
+                        25% OFF
+                      </div>
+                    </>
+                  )
+                ) : (
+                  "Loading..."
+                )}
               </div>
             </div>
 
             <Button
-              onClick={handleTransferOrder}
+              onClick={
+                isCorrectChain
+                  ? handleTransferOrder
+                  : () => switchChain({ chainId: currentChainId })
+              }
               isLoading={isPending || isConfirming || isLoading}
               loadingText={
                 isPending
@@ -1174,16 +1217,17 @@ export function GraduationForm({
                     : "Verifying transaction... This may take 1-2 minutes"
               }
               disabled={
-                !!brokerIdError ||
-                !brokerId ||
-                !feeOptions ||
-                isLoading ||
-                (tokenBalance
-                  ? parseFloat(tokenBalance?.formatted || "0") <
-                    (paymentType === "usdc"
-                      ? feeOptions.usdc.amount
-                      : feeOptions.order.amount)
-                  : false)
+                isCorrectChain &&
+                (!!brokerIdError ||
+                  !brokerId ||
+                  !feeOptions ||
+                  isLoading ||
+                  (feeOptions && tokenBalance
+                    ? parseFloat(tokenBalance?.formatted || "0") <
+                      (paymentType === "usdc"
+                        ? feeOptions.usdc.amount
+                        : feeOptions.order.amount)
+                    : false))
               }
               variant="primary"
               className="w-full justify-center"
@@ -1292,7 +1336,7 @@ export function GraduationForm({
                 </div>
               </div>
 
-              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 mb-4">
+              <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4 my-4">
                 <div className="flex items-start space-x-3">
                   <div className="i-mdi:information-outline text-blue-400 mt-0.5 h-5 w-5 flex-shrink-0"></div>
                   <div>

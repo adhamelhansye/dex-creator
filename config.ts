@@ -377,6 +377,22 @@ export function getBlockExplorerUrlByChainId(
   return `${chain.blockExplorerUrl}/tx/${txHash}`;
 }
 
+export function getChainIcon(chain: string): string {
+  const chainMap: Record<string, string> = {
+    ethereum:
+      "https://assets.coingecko.com/asset_platforms/images/279/small/ethereum.png",
+    base: "https://assets.coingecko.com/asset_platforms/images/131/small/base-network.png",
+    arbitrum:
+      "https://assets.coingecko.com/asset_platforms/images/33/small/AO_logomark.png?1706606717",
+    "arbitrum-sepolia":
+      "https://assets.coingecko.com/asset_platforms/images/33/small/AO_logomark.png?1706606717",
+  };
+  return (
+    chainMap[chain] ||
+    "https://assets.coingecko.com/asset_platforms/images/279/small/ethereum.png"
+  );
+}
+
 export interface EnvironmentChainConfig {
   vaultAddress?: string;
   vaultManagerAddress?: string;
