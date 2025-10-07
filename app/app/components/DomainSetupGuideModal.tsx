@@ -166,7 +166,6 @@ export default function DomainSetupGuideModal({
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-[9999] p-0 sm:p-4">
       <div className="bg-background-dark rounded-none sm:rounded-lg border-0 sm:border border-light/10 w-full h-full sm:w-full sm:max-w-4xl lg:max-w-6xl xl:max-w-7xl sm:max-h-[90vh] overflow-hidden flex flex-col">
-        {/* Header */}
         <div className="flex items-center justify-between p-4 sm:p-6 border-b border-light/10">
           <div className="flex-1 min-w-0">
             <h2 className="text-lg sm:text-xl font-bold">
@@ -186,7 +185,6 @@ export default function DomainSetupGuideModal({
         </div>
 
         <div className="flex flex-col lg:flex-row flex-1 min-h-0 relative">
-          {/* Mobile Sidebar Toggle */}
           <div className="lg:hidden flex items-center justify-between p-4 border-b border-light/10">
             <button
               onClick={() => setShowSidebar(!showSidebar)}
@@ -198,7 +196,6 @@ export default function DomainSetupGuideModal({
             </button>
           </div>
 
-          {/* Sidebar - Provider Selection */}
           <div
             className={`lg:w-80 border-r border-light/10 p-4 lg:p-6 overflow-y-auto ${
               showSidebar
@@ -236,7 +233,6 @@ export default function DomainSetupGuideModal({
               </button>
             </div>
 
-            {/* Step Navigation */}
             <div>
               <h4 className="text-sm font-bold mb-2">
                 Steps ({currentStep}/{steps.length})
@@ -264,9 +260,7 @@ export default function DomainSetupGuideModal({
             </div>
           </div>
 
-          {/* Main Content */}
           <div className="flex-1 flex flex-col min-h-0">
-            {/* Step Content */}
             <div className="flex-1 p-4 lg:p-6 overflow-y-auto min-h-0">
               {currentStepData && (
                 <div>
@@ -286,7 +280,6 @@ export default function DomainSetupGuideModal({
                     </h3>
                   </div>
 
-                  {/* Image */}
                   <div className="mb-6">
                     {currentStepData.imageUrl ? (
                       <div className="bg-base-8/50 border border-light/10 rounded-lg overflow-hidden">
@@ -309,14 +302,12 @@ export default function DomainSetupGuideModal({
                     )}
                   </div>
 
-                  {/* Description */}
                   <div className="prose prose-invert max-w-none">
                     <p className="text-gray-300 leading-relaxed">
                       {currentStepData.description}
                     </p>
                   </div>
 
-                  {/* Link */}
                   {currentStepData.link && (
                     <div className="mt-4">
                       <a
@@ -331,7 +322,6 @@ export default function DomainSetupGuideModal({
                     </div>
                   )}
 
-                  {/* DNS Records - Show on DNS configuration steps */}
                   {(currentStepData.title.includes("Configure DNS Records") ||
                     currentStepData.title.includes("DNS")) && (
                     <div className="mt-6 p-4 bg-success/10 rounded-lg border border-success/20">
@@ -344,7 +334,6 @@ export default function DomainSetupGuideModal({
 
                       {customDomain ? (
                         customDomain.split(".").length === 2 ? (
-                          // Apex domain - show A records and www CNAME
                           <div className="space-y-4">
                             <div>
                               <h5 className="text-xs font-bold mb-2 text-success">
@@ -380,7 +369,6 @@ export default function DomainSetupGuideModal({
                               </div>
                             </div>
 
-                            {/* CloudFlare Proxy Instructions */}
                             {selectedProvider === "cloudflare" && (
                               <div className="mt-4 p-3 bg-primary-light/10 rounded-lg border border-primary-light/20">
                                 <h6 className="text-xs font-bold mb-2 flex items-center">
@@ -403,9 +391,51 @@ export default function DomainSetupGuideModal({
                                 </div>
                               </div>
                             )}
+
+                            <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                              <h6 className="text-xs font-bold mb-2 flex items-center">
+                                <div className="i-mdi:security h-3.5 w-3.5 mr-1.5 text-warning"></div>
+                                Recommended: Email Security Records
+                              </h6>
+                              <p className="text-xs text-gray-300 mb-3">
+                                Add these TXT records to protect your domain
+                                from email spoofing attacks. Without these,
+                                attackers could send phishing emails appearing
+                                to come from your domain, which may cause your
+                                site to be flagged by Google Safe Browsing.
+                              </p>
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="text-xs font-semibold mb-1 text-warning">
+                                    SPF Record:
+                                  </div>
+                                  <div className="bg-base-9/70 rounded p-2 font-mono text-xs">
+                                    <div>
+                                      Type: TXT | Name: @ | Value: v=spf1 -all
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-semibold mb-1 text-warning">
+                                    DMARC Record:
+                                  </div>
+                                  <div className="bg-base-9/70 rounded p-2 font-mono text-xs">
+                                    <div>
+                                      Type: TXT | Name: _dmarc | Value:
+                                      v=DMARC1; p=reject; sp=reject; aspf=s;
+                                      adkim=s
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-2">
+                                These records tell email servers that your
+                                domain doesn't send emails and to reject any
+                                emails claiming to be from your domain.
+                              </p>
+                            </div>
                           </div>
                         ) : (
-                          // Subdomain - show CNAME record
                           <div className="space-y-4">
                             <div>
                               <h5 className="text-xs font-bold mb-2 text-success">
@@ -420,7 +450,6 @@ export default function DomainSetupGuideModal({
                               </div>
                             </div>
 
-                            {/* CloudFlare Proxy Instructions for Subdomain */}
                             {selectedProvider === "cloudflare" && (
                               <div className="p-3 bg-primary-light/10 rounded-lg border border-primary-light/20">
                                 <h6 className="text-xs font-bold mb-2 flex items-center">
@@ -443,10 +472,53 @@ export default function DomainSetupGuideModal({
                                 </div>
                               </div>
                             )}
+
+                            <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                              <h6 className="text-xs font-bold mb-2 flex items-center">
+                                <div className="i-mdi:security h-3.5 w-3.5 mr-1.5 text-warning"></div>
+                                Recommended: Email Security Records
+                              </h6>
+                              <p className="text-xs text-gray-300 mb-3">
+                                Add these TXT records to your root domain to
+                                protect it from email spoofing attacks. Without
+                                these, attackers could send phishing emails
+                                appearing to come from your domain, which may
+                                cause your site to be flagged by Google Safe
+                                Browsing.
+                              </p>
+                              <div className="space-y-3">
+                                <div>
+                                  <div className="text-xs font-semibold mb-1 text-warning">
+                                    SPF Record:
+                                  </div>
+                                  <div className="bg-base-9/70 rounded p-2 font-mono text-xs">
+                                    <div>
+                                      Type: TXT | Name: @ | Value: v=spf1 -all
+                                    </div>
+                                  </div>
+                                </div>
+                                <div>
+                                  <div className="text-xs font-semibold mb-1 text-warning">
+                                    DMARC Record:
+                                  </div>
+                                  <div className="bg-base-9/70 rounded p-2 font-mono text-xs">
+                                    <div>
+                                      Type: TXT | Name: _dmarc | Value:
+                                      v=DMARC1; p=reject; sp=reject; aspf=s;
+                                      adkim=s
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                              <p className="text-xs text-gray-400 mt-2">
+                                These records tell email servers that your
+                                domain doesn't send emails and to reject any
+                                emails claiming to be from your domain.
+                              </p>
+                            </div>
                           </div>
                         )
                       ) : (
-                        // Generic instructions when no domain is configured
                         <div className="space-y-4">
                           <div>
                             <h5 className="text-xs font-bold mb-2 text-success">
@@ -486,7 +558,6 @@ export default function DomainSetupGuideModal({
                             </div>
                           </div>
 
-                          {/* CloudFlare Proxy Instructions for Generic Examples */}
                           {selectedProvider === "cloudflare" && (
                             <div className="mt-4 p-3 bg-primary-light/10 rounded-lg border border-primary-light/20">
                               <h6 className="text-xs font-bold mb-2 flex items-center">
@@ -509,6 +580,48 @@ export default function DomainSetupGuideModal({
                               </div>
                             </div>
                           )}
+
+                          <div className="mt-4 p-3 bg-warning/10 rounded-lg border border-warning/20">
+                            <h6 className="text-xs font-bold mb-2 flex items-center">
+                              <div className="i-mdi:security h-3.5 w-3.5 mr-1.5 text-warning"></div>
+                              Recommended: Email Security Records
+                            </h6>
+                            <p className="text-xs text-gray-300 mb-3">
+                              Add these TXT records to protect your domain from
+                              email spoofing attacks. Without these, attackers
+                              could send phishing emails appearing to come from
+                              your domain, which may cause your site to be
+                              flagged by Google Safe Browsing.
+                            </p>
+                            <div className="space-y-3">
+                              <div>
+                                <div className="text-xs font-semibold mb-1 text-warning">
+                                  SPF Record:
+                                </div>
+                                <div className="bg-base-9/70 rounded p-2 font-mono text-xs">
+                                  <div>
+                                    Type: TXT | Name: @ | Value: v=spf1 -all
+                                  </div>
+                                </div>
+                              </div>
+                              <div>
+                                <div className="text-xs font-semibold mb-1 text-warning">
+                                  DMARC Record:
+                                </div>
+                                <div className="bg-base-9/70 rounded p-2 font-mono text-xs">
+                                  <div>
+                                    Type: TXT | Name: _dmarc | Value: v=DMARC1;
+                                    p=reject; sp=reject; aspf=s; adkim=s
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-2">
+                              These records tell email servers that your domain
+                              doesn't send emails and to reject any emails
+                              claiming to be from your domain.
+                            </p>
+                          </div>
                         </div>
                       )}
 
@@ -527,7 +640,6 @@ export default function DomainSetupGuideModal({
               )}
             </div>
 
-            {/* Navigation Footer */}
             <div className="border-t border-light/10 p-3 sm:p-4 lg:p-6 flex-shrink-0">
               <div className="flex items-center justify-between gap-3">
                 <Button

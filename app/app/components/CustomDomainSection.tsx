@@ -700,7 +700,6 @@ export default function CustomDomainSection({
           </div>
         )}
 
-        {/* Deployment info card */}
         <div className="mb-3 p-3 bg-info/10 rounded-lg border border-info/20">
           <h6 className="text-xs font-medium mb-2 flex items-center">
             <div className="i-mdi:information-outline h-3.5 w-3.5 mr-1.5 text-info"></div>
@@ -754,6 +753,168 @@ export default function CustomDomainSection({
               DNS changes can take up to 24 hours to propagate globally, though
               they often complete within a few hours.
             </span>
+          </div>
+        </div>
+      </div>
+
+      <div className="mt-4 rounded-lg border border-warning/20 p-4 bg-warning/5">
+        <h5 className="text-sm font-bold mb-3 flex items-center">
+          <div className="i-mdi:security h-4 w-4 mr-2 text-warning"></div>
+          Recommended: Email Security Records
+        </h5>
+        <p className="text-sm text-gray-300 mb-4">
+          Add these TXT records to protect your domain from email spoofing
+          attacks. Without these records, attackers could send phishing emails
+          that appear to come from your domain, which may cause your site to be
+          flagged by Google Safe Browsing.
+        </p>
+
+        <div className="space-y-4">
+          <div>
+            <div className="text-xs font-bold mb-2 text-warning flex items-center">
+              <div className="i-mdi:shield-lock h-3.5 w-3.5 mr-1"></div>
+              SPF Record (Sender Policy Framework)
+            </div>
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto">
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <span className="text-gray-400">Type:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white ml-1">TXT</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("TXT", "Copied to clipboard")
+                      }
+                      aria-label="Copy record type to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">Name:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white ml-1">@</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("@", "Copied to clipboard")
+                      }
+                      aria-label="Copy @ symbol to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">Value:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white ml-1">v=spf1 -all</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("v=spf1 -all", "Copied to clipboard")
+                      }
+                      aria-label="Copy SPF record value to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div className="text-xs font-bold mb-2 text-warning flex items-center">
+              <div className="i-mdi:email-lock h-3.5 w-3.5 mr-1"></div>
+              DMARC Record (Email Authentication)
+            </div>
+            <div className="bg-base-9/70 rounded p-3 font-mono text-xs overflow-x-auto">
+              <div className="space-y-1">
+                <div className="flex items-center">
+                  <span className="text-gray-400">Type:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white ml-1">TXT</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("TXT", "Copied to clipboard")
+                      }
+                      aria-label="Copy record type to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-center">
+                  <span className="text-gray-400">Name:</span>{" "}
+                  <div className="flex items-center">
+                    <span className="text-white ml-1">_dmarc</span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors"
+                      onClick={() =>
+                        copyToClipboard("_dmarc", "Copied to clipboard")
+                      }
+                      aria-label="Copy _dmarc to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+                <div className="flex items-start">
+                  <span className="text-gray-400 flex-shrink-0">Value:</span>{" "}
+                  <div className="flex items-start ml-1">
+                    <span className="text-white break-all">
+                      v=DMARC1; p=reject; sp=reject; aspf=s; adkim=s
+                    </span>
+                    <button
+                      className="ml-1.5 text-gray-400 hover:text-primary-light transition-colors flex-shrink-0"
+                      onClick={() =>
+                        copyToClipboard(
+                          "v=DMARC1; p=reject; sp=reject; aspf=s; adkim=s",
+                          "Copied to clipboard"
+                        )
+                      }
+                      aria-label="Copy DMARC record value to clipboard"
+                    >
+                      <div className="i-mdi:content-copy h-3.5 w-3.5"></div>
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 p-3 bg-info/10 rounded-lg border border-info/20">
+          <div className="text-xs text-gray-300 space-y-1.5">
+            <div className="flex items-start gap-1.5">
+              <div className="i-mdi:information-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-info"></div>
+              <span>
+                <strong>What these records do:</strong> They tell email servers
+                that your domain doesn't send emails and to reject any emails
+                claiming to be from your domain.
+              </span>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <div className="i-mdi:shield-check h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-success"></div>
+              <span>
+                <strong>Why this matters:</strong> Prevents attackers from
+                spoofing your domain to send phishing emails, which could get
+                your site flagged by Google Safe Browsing.
+              </span>
+            </div>
+            <div className="flex items-start gap-1.5">
+              <div className="i-mdi:alert-circle-outline h-3.5 w-3.5 mt-0.5 flex-shrink-0 text-warning"></div>
+              <span>
+                <strong>Note:</strong> Only add these records if your domain
+                won't be used for sending legitimate emails. If you plan to send
+                emails from this domain, consult your email provider for proper
+                SPF/DMARC configuration.
+              </span>
+            </div>
           </div>
         </div>
       </div>
