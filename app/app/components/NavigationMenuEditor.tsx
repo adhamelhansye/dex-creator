@@ -13,6 +13,12 @@ const AVAILABLE_MENUS = [
     icon: "i-mdi:chart-line",
     isDefault: true,
   },
+  {
+    id: "Swap",
+    label: "Swap",
+    icon: "i-mdi:swap-horizontal",
+    isDefault: false,
+  },
   { id: "Portfolio", label: "Portfolio", icon: "i-mdi:wallet-outline" },
   {
     id: "Markets",
@@ -143,6 +149,24 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
             Default navigation includes: Trading, Portfolio, Markets, and
             Leaderboard pages. The Rewards page includes referral management and
             trader incentives.
+          </p>
+        </div>
+      </div>
+
+      {/* Swap page explanation */}
+      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm flex items-start">
+        <div className="i-mdi:swap-horizontal h-5 w-5 mr-2 text-blue-400 flex-shrink-0 mt-0.5"></div>
+        <div className="text-gray-300">
+          <p className="mb-1">
+            <span className="text-blue-400 font-medium">
+              Swap Page Features:
+            </span>{" "}
+            The Swap page allows users to exchange tokens seamlessly across
+            multiple chains.
+          </p>
+          <p className="text-xs text-gray-400">
+            Powered by Woofi, this feature provides efficient token swapping
+            with competitive rates and deep liquidity across supported networks.
           </p>
         </div>
       </div>
