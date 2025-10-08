@@ -53,31 +53,68 @@ export function TokenSelectionModal({
     );
   };
 
-  const preferredChain = useMemo(
-    () => getPreferredChain(currentChain),
-    [currentChain]
-  );
-  const currentTokenAddress = useMemo(
-    () =>
-      currentPaymentType === "usdc"
-        ? USDC_ADDRESSES[preferredChain as OrderTokenChainName]
-        : ORDER_ADDRESSES[preferredChain as OrderTokenChainName],
-    [preferredChain, currentPaymentType]
+  const balanceQueries = useMemo(() => {
+    const queries: Array<{
+      chain: OrderTokenChainName;
+      paymentType: "usdc" | "order";
+      chainId: number;
+      tokenAddress: string;
+    }> = [];
+
+    ORDER_TOKEN_CHAINS.forEach(chain => {
+      const preferredChain = getPreferredChain(chain.id as OrderTokenChainName);
+      const chainId =
+        SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
+
+      const usdcAddress = USDC_ADDRESSES[preferredChain as OrderTokenChainName];
+      const orderAddress =
+        ORDER_ADDRESSES[preferredChain as OrderTokenChainName];
+
+      if (usdcAddress) {
+        queries.push({
+          chain: chain.id as OrderTokenChainName,
+          paymentType: "usdc",
+          chainId,
+          tokenAddress: usdcAddress,
+        });
+      }
+
+      if (orderAddress) {
+        queries.push({
+          chain: chain.id as OrderTokenChainName,
+          paymentType: "order",
+          chainId,
+          tokenAddress: orderAddress,
+        });
+      }
+    });
+
+    return queries;
+  }, [ORDER_TOKEN_CHAINS, SUPPORTED_CHAINS]);
+
+  const balances = balanceQueries.map(query =>
+    useBalance({
+      address,
+      token: query.tokenAddress as `0x${string}`,
+      chainId: query.chainId,
+      query: {
+        enabled: !!address && !!query.tokenAddress,
+        retry: 3,
+        staleTime: 60_000,
+      },
+    })
   );
 
-  const currentChainId =
-    SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
-
-  const { data: tokenBalance } = useBalance({
-    address,
-    token: currentTokenAddress as `0x${string}`,
-    chainId: currentChainId,
-    query: {
-      enabled: !!address && !!currentTokenAddress,
-      retry: 3,
-      staleTime: 60_000,
-    },
-  });
+  const getBalance = (
+    chain: OrderTokenChainName,
+    paymentType: "usdc" | "order"
+  ) => {
+    const index = balanceQueries.findIndex(
+      q => q.chain === chain && q.paymentType === paymentType
+    );
+    if (index === -1) return null;
+    return balances[index]?.data;
+  };
 
   const tokenOptions: TokenOption[] = useMemo(() => {
     const options: TokenOption[] = [];
@@ -88,6 +125,9 @@ export function TokenSelectionModal({
         SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.name ||
         preferredChain;
 
+      const usdcBalance = getBalance(chain.id as OrderTokenChainName, "usdc");
+      const orderBalance = getBalance(chain.id as OrderTokenChainName, "order");
+
       options.push({
         id: `usdc-${chain.id}`,
         name: `USD Coin on ${chainName}`,
@@ -95,12 +135,9 @@ export function TokenSelectionModal({
         icon: "https://assets.coingecko.com/coins/images/6319/standard/usdc.png",
         chain: chain.id as OrderTokenChainName,
         paymentType: "usdc",
-        balance:
-          chain.id === currentChain &&
-          currentPaymentType === "usdc" &&
-          tokenBalance
-            ? `${parseFloat(tokenBalance.formatted).toFixed(2)} USDC`
-            : "0 USDC",
+        balance: usdcBalance
+          ? `${parseFloat(usdcBalance.formatted).toFixed(2)} USDC`
+          : "0 USDC",
         value: "$0.00",
       });
 
@@ -111,24 +148,15 @@ export function TokenSelectionModal({
         icon: "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png",
         chain: chain.id as OrderTokenChainName,
         paymentType: "order",
-        balance:
-          chain.id === currentChain &&
-          currentPaymentType === "order" &&
-          tokenBalance
-            ? `${parseFloat(tokenBalance.formatted).toFixed(2)} ORDER`
-            : "0 ORDER",
+        balance: orderBalance
+          ? `${parseFloat(orderBalance.formatted).toFixed(2)} ORDER`
+          : "0 ORDER",
         value: "$0.00",
       });
     });
 
     return options;
-  }, [
-    currentChain,
-    currentPaymentType,
-    tokenBalance,
-    ORDER_TOKEN_CHAINS,
-    SUPPORTED_CHAINS,
-  ]);
+  }, [ORDER_TOKEN_CHAINS, SUPPORTED_CHAINS, balances]);
 
   const handleTokenSelect = async (token: TokenOption) => {
     const preferredChain = getPreferredChain(token.chain);

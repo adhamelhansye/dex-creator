@@ -318,10 +318,20 @@ export async function createAutomatedBrokerId(
     environment,
     brokerData
   );
-  brokerCreationLock = creationPromise;
+
+  const timeoutPromise = new Promise<BrokerCreationResult>((_, reject) => {
+    setTimeout(
+      () => {
+        reject(new Error("Broker creation timed out after 2 minutes"));
+      },
+      2 * 60 * 1_000
+    );
+  });
+
+  brokerCreationLock = Promise.race([creationPromise, timeoutPromise]);
 
   try {
-    const result = await creationPromise;
+    const result = await brokerCreationLock;
     return result;
   } finally {
     brokerCreationLock = null;
@@ -985,6 +995,10 @@ async function executeVaultTransaction(
     const tx = await vault.setAllowedBroker(brokerHash, true);
     await tx.wait();
 
+    console.log(
+      `🚀 Vault setAllowedBroker transaction executed for broker ${brokerId} on ${chainName}: ${tx.hash}`
+    );
+
     return tx.hash;
   });
 }
@@ -1010,6 +1024,10 @@ async function executeVaultManagerTransaction(
 
     const tx = await vaultManager.setAllowedBroker(brokerHash, true);
     await tx.wait();
+
+    console.log(
+      `🚀 VaultManager setAllowedBroker transaction executed for broker ${brokerId} on ${chainName}: ${tx.hash}`
+    );
 
     return tx.hash;
   });
