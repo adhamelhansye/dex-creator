@@ -43,8 +43,10 @@ export type ChainName = ChainNameTestnet | ChainNameMainnet;
 export type OrderTokenChainName =
   | "ethereum"
   | "arbitrum"
+  | "base"
   | "sepolia"
   | "arbitrum-sepolia"
+  | "base-sepolia"
   | "solana-mainnet-beta"
   | "solana-devnet";
 
@@ -332,8 +334,10 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
 export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
   ethereum: "0xABD4C63d2616A5201454168269031355f4764337",
   arbitrum: "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8",
+  base: "0x4E200fE2f3eFb977d5fd9c430A41531FB04d97B8",
   sepolia: "0x779877A7B0D9E8603169DdbD7836e478b4624789",
   "arbitrum-sepolia": "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
+  "base-sepolia": "0xb1D4538B4571d411F07960EF2838Ce337FE1E80E",
   "solana-mainnet-beta": "ABt79MkRXUsoHuV2CVQT32YMXQhTparKFjmidQxgiQ6E",
   "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
@@ -341,8 +345,10 @@ export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
 export const USDC_ADDRESSES: Record<OrderTokenChainName, string> = {
   ethereum: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
   arbitrum: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  base: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
   sepolia: "0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238",
   "arbitrum-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
+  "base-sepolia": "0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d",
   "solana-mainnet-beta": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
   "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
@@ -381,7 +387,11 @@ export function getChainIcon(chain: string): string {
   const chainMap: Record<string, string> = {
     ethereum:
       "https://assets.coingecko.com/asset_platforms/images/279/small/ethereum.png",
+    sepolia:
+      "https://assets.coingecko.com/asset_platforms/images/279/small/ethereum.png",
     base: "https://assets.coingecko.com/asset_platforms/images/131/small/base-network.png",
+    "base-sepolia":
+      "https://assets.coingecko.com/asset_platforms/images/131/small/base-network.png",
     arbitrum:
       "https://assets.coingecko.com/asset_platforms/images/33/small/AO_logomark.png?1706606717",
     "arbitrum-sepolia":

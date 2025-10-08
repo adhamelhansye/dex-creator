@@ -102,8 +102,8 @@ export function getOrderTokenSupportedChains(): ChainConfig[] {
     deploymentEnv === "dev";
 
   const supportedChainIds = isTestnet
-    ? ["sepolia", "arbitrum-sepolia"]
-    : ["ethereum", "arbitrum"];
+    ? ["sepolia", "arbitrum-sepolia", "base-sepolia"]
+    : ["ethereum", "arbitrum", "base"];
 
   return Object.values(ALL_CHAINS).filter(chain =>
     supportedChainIds.includes(chain.id)
@@ -123,8 +123,10 @@ export function getPreferredChain(
     const testnetMap: Record<OrderTokenChainName, OrderTokenChainName> = {
       arbitrum: "arbitrum-sepolia",
       ethereum: "sepolia",
+      base: "base-sepolia",
       "arbitrum-sepolia": "arbitrum-sepolia",
       sepolia: "sepolia",
+      "base-sepolia": "base-sepolia",
       "solana-devnet": "solana-devnet",
       "solana-mainnet-beta": "solana-devnet",
     };
@@ -133,8 +135,10 @@ export function getPreferredChain(
     const mainnetMap: Record<OrderTokenChainName, OrderTokenChainName> = {
       "arbitrum-sepolia": "arbitrum",
       sepolia: "ethereum",
+      "base-sepolia": "base",
       arbitrum: "arbitrum",
       ethereum: "ethereum",
+      base: "base",
       "solana-devnet": "solana-mainnet-beta",
       "solana-mainnet-beta": "solana-mainnet-beta",
     };
