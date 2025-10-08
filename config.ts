@@ -94,8 +94,9 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainId: 56,
     isTestnet: false,
     chainType: "EVM",
-    rpcUrl: "https://binance.llamarpc.com",
-    fallbackRpcUrls: ["https://1rpc.io/bnb", "https://bsc-rpc.publicnode.com"],
+    rpcUrl: "https://bsc-dataseed.bnbchain.org",
+    // rpcUrl: "https://binance.llamarpc.com",
+    // fallbackRpcUrls: ["https://1rpc.io/bnb", "https://bsc-rpc.publicnode.com"],
     blockExplorerUrl: "https://bscscan.com",
   },
   optimism: {
