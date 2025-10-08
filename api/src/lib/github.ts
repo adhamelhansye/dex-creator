@@ -43,10 +43,6 @@ const deployYmlContent = fs.readFileSync(
   path.join(workflowsDir, "deploy.yml"),
   "utf-8"
 );
-const syncForkYmlContent = fs.readFileSync(
-  path.join(workflowsDir, "sync-fork.yml"),
-  "utf-8"
-);
 
 /**
  * Returns stats about the GitHub ETag cache
@@ -735,6 +731,7 @@ function prepareDexConfigContent(
  * @param repo The repository name
  * @param fileContents Map of file paths to their contents
  * @param binaryFiles Map of file paths to their binary contents
+ * @param filesToDelete Array of file paths to delete
  * @param commitMessage The commit message
  */
 async function createSingleCommit(
@@ -742,6 +739,7 @@ async function createSingleCommit(
   repo: string,
   fileContents: Map<string, string>,
   binaryFiles: Map<string, Buffer> = new Map(),
+  filesToDelete: string[] = [],
   commitMessage: string
 ): Promise<void> {
   console.log(`Getting latest commit for ${owner}/${repo}...`);
@@ -794,6 +792,12 @@ async function createSingleCommit(
       mode: "100644" as const,
       type: "blob" as const,
       sha,
+    })),
+    ...filesToDelete.map(path => ({
+      path,
+      mode: "100644" as const,
+      type: "blob" as const,
+      sha: null as unknown as string,
     })),
   ];
 
@@ -888,7 +892,6 @@ export async function updateDexConfig(
 
     const fileContents = new Map<string, string>();
     fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
-    fileContents.set(".github/workflows/sync-fork.yml", syncForkYmlContent);
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -916,11 +919,14 @@ export async function updateDexConfig(
       });
     }
 
+    const filesToDelete = [".github/workflows/sync-fork.yml"];
+
     await createSingleCommit(
       owner,
       repo,
       fileContents,
       binaryFiles,
+      filesToDelete,
       "Update DEX configuration and branding"
     );
   } catch (error: unknown) {
@@ -1014,7 +1020,6 @@ export async function setupRepositoryWithSingleCommit(
 
     const fileContents = new Map<string, string>();
     fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
-    fileContents.set(".github/workflows/sync-fork.yml", syncForkYmlContent);
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -1047,6 +1052,7 @@ export async function setupRepositoryWithSingleCommit(
       repo,
       fileContents,
       binaryFiles,
+      [],
       "Setup DEX with workflow files and configuration"
     );
   } catch (error) {
@@ -1361,6 +1367,7 @@ export async function setCustomDomain(
       repo,
       fileContents,
       new Map(),
+      [],
       "Add CNAME file for custom domain"
     );
 
