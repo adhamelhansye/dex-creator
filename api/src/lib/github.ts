@@ -751,6 +751,20 @@ async function createSingleCommit(
   });
   const latestCommitSha = refData.object.sha;
 
+  const verifiedFilesToDelete: string[] = [];
+  for (const filePath of filesToDelete) {
+    try {
+      await octokit.rest.repos.getContent({
+        owner,
+        repo,
+        path: filePath,
+        ref: "heads/main",
+      });
+      verifiedFilesToDelete.push(filePath);
+      console.log(`Will delete: ${filePath}`);
+    } catch {}
+  }
+
   console.log("Creating blobs for text files...");
   const textBlobPromises = Array.from(fileContents.entries()).map(
     ([path, content]) =>
@@ -793,7 +807,7 @@ async function createSingleCommit(
       type: "blob" as const,
       sha,
     })),
-    ...filesToDelete.map(path => ({
+    ...verifiedFilesToDelete.map(path => ({
       path,
       mode: "100644" as const,
       type: "blob" as const,
