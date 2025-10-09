@@ -12,7 +12,7 @@ import {
   FeeManager__factory,
   SolConnector__factory,
 } from "../../types/index";
-import { addBrokerToBothDatabases, getBrokerFromOrderlyDb } from "./orderlyDb";
+import { addBrokerToAllDatabases, getBrokerFromOrderlyDb } from "./orderlyDb";
 import {
   getNextBrokerIndex,
   createBrokerIndex,
@@ -560,7 +560,7 @@ async function createAutomatedBrokerIdInternal(
       };
     }
 
-    const orderlyDbResult = await addBrokerToBothDatabases({
+    const orderlyDbResult = await addBrokerToAllDatabases({
       brokerId: brokerId,
       brokerName: brokerData.brokerName,
       makerFee: brokerData.makerFee,
