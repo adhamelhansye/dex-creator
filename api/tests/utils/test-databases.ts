@@ -7,13 +7,16 @@ import { execSync } from "node:child_process";
 import { PrismaClient } from "@prisma/client";
 import type { PrismaClient as OrderlyPrismaClient } from "../../src/lib/generated/orderly-client";
 import type { PrismaClient as NexusPrismaClient } from "../../src/lib/generated/nexus-client";
+import type { PrismaClient as SvPrismaClient } from "../../src/lib/generated/sv-client";
 
 let postgresContainer: StartedPostgreSqlContainer | null = null;
 let orderlyMysqlContainer: StartedMySqlContainer | null = null;
 let nexusMysqlContainer: StartedMySqlContainer | null = null;
+let svMysqlContainer: StartedMySqlContainer | null = null;
 let testPrismaClient: PrismaClient | null = null;
 let testOrderlyClient: OrderlyPrismaClient | null = null;
 let testNexusClient: NexusPrismaClient | null = null;
+let testSvClient: SvPrismaClient | null = null;
 
 export async function setupTestDatabases() {
   console.log("🚀 Starting test databases...");
@@ -39,15 +42,24 @@ export async function setupTestDatabases() {
     .withExposedPorts(3306)
     .start();
 
+  svMysqlContainer = await new MySqlContainer("mysql:8.0")
+    .withDatabase("sv_test")
+    .withUsername("test_user")
+    .withRootPassword("test_password")
+    .withExposedPorts(3306)
+    .start();
+
   const postgresUrl = postgresContainer.getConnectionUri();
   const orderlyMysqlUrl = orderlyMysqlContainer.getConnectionUri();
   const nexusMysqlUrl = nexusMysqlContainer.getConnectionUri();
+  const svMysqlUrl = svMysqlContainer.getConnectionUri();
 
   process.env.DATABASE_URL = postgresUrl;
   process.env.ORDERLY_DATABASE_URL = orderlyMysqlUrl;
   process.env.ORDERLY_DATABASE_USER = "test_user";
   process.env.ORDERLY_DATABASE_PASSWORD = "test_password";
   process.env.ORDERLY_DATABASE_URL_NEXUS = nexusMysqlUrl;
+  process.env.ORDERLY_DATABASE_URL_SV = svMysqlUrl;
 
   testPrismaClient = new PrismaClient({
     datasources: {
@@ -57,12 +69,13 @@ export async function setupTestDatabases() {
     },
   });
 
-  execSync("yarn orderly:generate && yarn nexus:generate", {
+  execSync("yarn orderly:generate && yarn nexus:generate && yarn sv:generate", {
     cwd: process.cwd(),
     env: {
       ...process.env,
       ORDERLY_DATABASE_URL: orderlyMysqlUrl,
       ORDERLY_DATABASE_URL_NEXUS: nexusMysqlUrl,
+      ORDERLY_DATABASE_URL_SV: svMysqlUrl,
     },
   });
 
@@ -84,6 +97,17 @@ export async function setupTestDatabases() {
     datasources: {
       db: {
         url: nexusMysqlUrl,
+      },
+    },
+  });
+
+  const { PrismaClient: SvPrismaClient } = await import(
+    "../../src/lib/generated/sv-client"
+  );
+  testSvClient = new SvPrismaClient({
+    datasources: {
+      db: {
+        url: svMysqlUrl,
       },
     },
   });
@@ -130,6 +154,17 @@ export async function setupTestDatabases() {
     )
   `;
 
+  await testSvClient.$executeRaw`
+    CREATE TABLE IF NOT EXISTS orderly_dex_broker (
+      id BIGINT AUTO_INCREMENT PRIMARY KEY,
+      broker_id VARCHAR(64) UNIQUE NOT NULL,
+      broker_name VARCHAR(64) NOT NULL,
+      broker_hash VARCHAR(256) UNIQUE DEFAULT '',
+      created_time TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3),
+      updated_time TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP(3) ON UPDATE CURRENT_TIMESTAMP(3)
+    )
+  `;
+
   console.log("✅ Test databases ready!");
 }
 
@@ -148,6 +183,10 @@ export async function cleanupTestDatabases() {
     await testNexusClient.$disconnect();
   }
 
+  if (testSvClient) {
+    await testSvClient.$disconnect();
+  }
+
   if (postgresContainer) {
     await postgresContainer.stop();
   }
@@ -158,6 +197,10 @@ export async function cleanupTestDatabases() {
 
   if (nexusMysqlContainer) {
     await nexusMysqlContainer.stop();
+  }
+
+  if (svMysqlContainer) {
+    await svMysqlContainer.stop();
   }
 
   console.log("✅ Test databases cleaned up!");
@@ -196,10 +239,20 @@ export function getTestNexusClient() {
   return testNexusClient;
 }
 
+export function getTestSvClient() {
+  if (!testSvClient) {
+    throw new Error(
+      "Test SV database not initialized. Call setupTestDatabases() first."
+    );
+  }
+  return testSvClient;
+}
+
 export async function cleanupTestData() {
   const prisma = getTestPrismaClient();
   const orderly = getTestOrderlyClient();
   const nexus = getTestNexusClient();
+  const sv = getTestSvClient();
 
   await prisma.token.deleteMany();
   await prisma.dex.deleteMany();
@@ -207,4 +260,5 @@ export async function cleanupTestData() {
 
   await orderly.orderlyBroker.deleteMany();
   await nexus.nexusBroker.deleteMany();
+  await sv.svBroker.deleteMany();
 }

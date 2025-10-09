@@ -65,18 +65,12 @@ vi.mock("../../src/lib/orderlyDb", () => ({
       message: "Broker deleted from Nexus database successfully",
     },
   }),
-  addBrokerToBothDatabases: vi.fn().mockResolvedValue({
+  addBrokerToAllDatabases: vi.fn().mockResolvedValue({
     success: true,
     data: {
-      message: "Broker added to both databases successfully",
+      message: "Broker added to all databases successfully",
       orderlyBrokerIndex: 1,
       nexusBrokerIndex: 1,
-    },
-  }),
-  deleteBrokerFromBothDatabases: vi.fn().mockResolvedValue({
-    success: true,
-    data: {
-      message: "Broker deleted from both databases successfully",
     },
   }),
 }));

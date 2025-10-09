@@ -1,0 +1,26 @@
+// This is your Prisma schema file for the Strategy Vault (SV) MySQL database
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider      = "prisma-client-js"
+  output        = "../src/lib/generated/sv-client"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "mysql"
+  url      = "mysql://dummy:dummy@localhost:3306/dummy"
+}
+
+// Strategy Vault broker model for the SV database
+model SvBroker {
+  id                      BigInt   @id @default(autoincrement()) @db.BigInt
+  brokerId                String   @unique @db.VarChar(64) @map("broker_id")
+  brokerName              String   @db.VarChar(64) @map("broker_name")
+  brokerHash              String   @unique @default("") @db.VarChar(256) @map("broker_hash")
+  createdTime             DateTime @default(now()) @db.Timestamp(3) @map("created_time")
+  updatedTime             DateTime @default(now()) @updatedAt @db.Timestamp(3) @map("updated_time")
+
+  @@map("orderly_dex_broker")
+}
+
