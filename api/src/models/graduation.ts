@@ -8,6 +8,10 @@ import {
 } from "../../../config";
 import { getSecret } from "../lib/secretManager.js";
 import { createProvider } from "../lib/fallbackProvider.js";
+import {
+  getBrokerFeesFromOrderlyDb,
+  updateBrokerFeesInOrderlyDb,
+} from "../lib/orderlyDb";
 
 async function withRPCTimeout<T>(
   promise: Promise<T>,
@@ -255,7 +259,7 @@ export async function verifyOrderTransaction(
 }
 
 /**
- * Set the maker and taker fees for a DEX
+ * Set the maker and taker fees for a DEX in the Orderly database
  * @param userId The user ID
  * @param makerFee The maker fee in 0.1 basis points (0.001% precision)
  * @param takerFee The taker fee in 0.1 basis points (0.001% precision)
@@ -315,13 +319,18 @@ export async function updateDexFees(
       };
     }
 
-    await prismaClient.dex.update({
-      where: { userId },
-      data: {
-        makerFee,
-        takerFee,
-      },
-    });
+    const result = await updateBrokerFeesInOrderlyDb(
+      dex.brokerId,
+      makerFee,
+      takerFee
+    );
+
+    if (!result.success) {
+      return {
+        success: false,
+        message: result.error || "Failed to update fees in Orderly database",
+      };
+    }
 
     return {
       success: true,
@@ -337,7 +346,7 @@ export async function updateDexFees(
 }
 
 /**
- * Get the current fee configuration for a DEX
+ * Get the current fee configuration for a DEX from the Orderly database
  * @param userId The user ID
  * @returns The current fee configuration or error message
  */
@@ -362,12 +371,31 @@ export async function getDexFees(userId: string): Promise<
       };
     }
 
-    const dexWithFees = dex;
+    if (!dex.brokerId || dex.brokerId === "demo") {
+      return {
+        success: true,
+        makerFee: DEFAULT_MAKER_FEE,
+        takerFee: DEFAULT_TAKER_FEE,
+      };
+    }
+
+    const result = await getBrokerFeesFromOrderlyDb(dex.brokerId);
+
+    if (!result.success) {
+      console.error(
+        `Failed to fetch fees from Orderly DB for broker ${dex.brokerId}: ${result.error}`
+      );
+      return {
+        success: true,
+        makerFee: DEFAULT_MAKER_FEE,
+        takerFee: DEFAULT_TAKER_FEE,
+      };
+    }
 
     return {
       success: true,
-      makerFee: dexWithFees.makerFee ?? DEFAULT_MAKER_FEE,
-      takerFee: dexWithFees.takerFee ?? DEFAULT_TAKER_FEE,
+      makerFee: result.data.makerFee,
+      takerFee: result.data.takerFee,
     };
   } catch (error) {
     console.error("Error getting DEX fees:", error);

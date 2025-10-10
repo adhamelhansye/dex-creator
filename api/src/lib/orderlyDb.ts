@@ -14,6 +14,18 @@ interface OrderlyBrokerData {
   takerFee: number;
 }
 
+interface BrokerFees {
+  makerFee: number;
+  takerFee: number;
+}
+
+interface CachedBrokerFees extends BrokerFees {
+  timestamp: number;
+}
+
+const brokerFeesCache = new Map<string, CachedBrokerFees>();
+const CACHE_TTL_MS = 5 * 60 * 1000;
+
 interface DatabaseConfig {
   url: string;
   username: string;
@@ -622,4 +634,138 @@ export async function addBrokerToAllDatabases(data: OrderlyBrokerData): Promise<
       message: `Broker ${data.brokerId} successfully added to Orderly, Nexus, and SV databases`,
     },
   };
+}
+
+function convertDecimalToFeeUnits(decimalFee: Decimal): number {
+  const basisPoints = parseFloat(decimalFee.toString());
+  return Math.round(basisPoints * 10);
+}
+
+export async function getBrokerFeesFromOrderlyDb(
+  brokerId: string
+): Promise<Result<BrokerFees>> {
+  const cached = brokerFeesCache.get(brokerId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+    return {
+      success: true,
+      data: {
+        makerFee: cached.makerFee,
+        takerFee: cached.takerFee,
+      },
+    };
+  }
+
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
+  try {
+    const broker = await orderlyPrisma.orderlyBroker.findUnique({
+      where: {
+        brokerId: brokerId,
+      },
+      select: {
+        defaultMakerFeeRate: true,
+        defaultTakerFeeRate: true,
+      },
+    });
+
+    if (!broker) {
+      return {
+        success: false,
+        error: `Broker ID ${brokerId} not found in Orderly database`,
+      };
+    }
+
+    const makerFee = convertDecimalToFeeUnits(broker.defaultMakerFeeRate);
+    const takerFee = convertDecimalToFeeUnits(broker.defaultTakerFeeRate);
+
+    brokerFeesCache.set(brokerId, {
+      makerFee,
+      takerFee,
+      timestamp: Date.now(),
+    });
+
+    return {
+      success: true,
+      data: {
+        makerFee,
+        takerFee,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error getting broker fees from Orderly database:", error);
+
+    return {
+      success: false,
+      error: `Failed to get broker fees from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await orderlyPrisma.$disconnect();
+  }
+}
+
+export async function updateBrokerFeesInOrderlyDb(
+  brokerId: string,
+  makerFee: number,
+  takerFee: number
+): Promise<Result<{ message: string }>> {
+  const orderlyPrisma = await getOrderlyPrismaClient();
+  const nexusPrisma = await getNexusPrismaClient();
+
+  try {
+    const defaultMakerFee = convertBasisPointsToDecimal(makerFee);
+    const defaultTakerFee = convertBasisPointsToDecimal(takerFee);
+
+    await orderlyPrisma.orderlyBroker.update({
+      where: {
+        brokerId: brokerId,
+      },
+      data: {
+        defaultMakerFeeRate: defaultMakerFee,
+        defaultTakerFeeRate: defaultTakerFee,
+      },
+    });
+
+    await nexusPrisma.nexusBroker.update({
+      where: {
+        brokerId: brokerId,
+      },
+      data: {
+        defaultMakerFeeRate: defaultMakerFee,
+        defaultTakerFeeRate: defaultTakerFee,
+      },
+    });
+
+    brokerFeesCache.delete(brokerId);
+
+    console.log(
+      `✅ Successfully updated fees for broker ${brokerId}: maker=${makerFee}, taker=${takerFee}`
+    );
+
+    return {
+      success: true,
+      data: {
+        message: `Broker fees updated successfully for ${brokerId}`,
+      },
+    };
+  } catch (error) {
+    console.error("❌ Error updating broker fees:", error);
+
+    if (
+      error instanceof Error &&
+      error.message.includes("Record to update not found")
+    ) {
+      return {
+        success: false,
+        error: `Broker ID ${brokerId} not found in database`,
+      };
+    }
+
+    return {
+      success: false,
+      error: `Failed to update broker fees: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await orderlyPrisma.$disconnect();
+    await nexusPrisma.$disconnect();
+  }
 }

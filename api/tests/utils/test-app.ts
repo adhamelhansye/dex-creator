@@ -229,11 +229,43 @@ vi.mock("../../src/models/graduation", () => ({
 
     return Promise.resolve({
       success: true,
-      makerFee: dex.makerFee || 20,
-      takerFee: dex.takerFee || 40,
+      makerFee: 30,
+      takerFee: 60,
     });
   }),
 }));
+
+vi.mock("../../src/lib/orderlyDb", async () => {
+  const actual = await vi.importActual("../../src/lib/orderlyDb");
+  return {
+    ...actual,
+    getBrokerFeesFromOrderlyDb: vi.fn().mockImplementation(async () => {
+      return Promise.resolve({
+        success: true,
+        data: {
+          makerFee: 30,
+          takerFee: 60,
+        },
+      });
+    }),
+    updateBrokerFeesInOrderlyDb: vi
+      .fn()
+      .mockImplementation(async (brokerId, makerFee, takerFee) => {
+        if (makerFee > 150 || takerFee < 30 || takerFee > 150) {
+          return Promise.resolve({
+            success: false,
+            error: "Invalid fee values",
+          });
+        }
+        return Promise.resolve({
+          success: true,
+          data: {
+            message: "Broker fees updated successfully",
+          },
+        });
+      }),
+  };
+});
 
 vi.mock("../../src/lib/auth", () => ({
   authMiddleware: vi.fn().mockImplementation((c, next) => {
