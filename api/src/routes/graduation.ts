@@ -96,12 +96,6 @@ graduationRoutes.post(
         return c.json(verificationResult, { status: 400 });
       }
 
-      const feeUpdateResult = await updateDexFees(userId, makerFee, takerFee);
-
-      if (!feeUpdateResult.success) {
-        return c.json(feeUpdateResult, { status: 400 });
-      }
-
       const existingDex = await prismaClient.dex.findFirst({
         where: {
           brokerId: brokerId,

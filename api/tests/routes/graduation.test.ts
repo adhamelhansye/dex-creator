@@ -447,24 +447,6 @@ describe("Graduation Routes", () => {
   });
 
   describe("GET /api/graduation/fees", () => {
-    it("should get DEX fees", async () => {
-      const request = createAuthenticatedRequest(app, testUser.id);
-
-      await testDataFactory.createTestDex(testUser.id, {
-        brokerName: "Test DEX for Fee Retrieval",
-        makerFee: 20,
-        takerFee: 40,
-        repoUrl: "https://github.com/test/test-repo",
-      });
-
-      const response = await request.get("/api/graduation/fees");
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body).toHaveProperty("makerFee", 20);
-      expect(body).toHaveProperty("takerFee", 40);
-    });
-
     it("should return 400 if user has no DEX", async () => {
       const request = createAuthenticatedRequest(app, testUser.id);
 

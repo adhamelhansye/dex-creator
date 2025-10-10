@@ -161,6 +161,9 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
             <span className="text-blue-400 font-medium">
               Swap Page Features:
             </span>{" "}
+            <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
+              BETA
+            </span>{" "}
             The Swap page allows users to exchange tokens seamlessly across
             multiple chains.
           </p>

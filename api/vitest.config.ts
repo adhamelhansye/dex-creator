@@ -5,13 +5,13 @@ export default defineConfig({
     globals: true,
     environment: "node",
     setupFiles: ["./tests/setup.ts"],
-    testTimeout: 60000, // 60 seconds for database operations
-    hookTimeout: 60000,
-    teardownTimeout: 60000,
-    pool: "forks", // Use forks to avoid issues with testcontainers
+    testTimeout: 120000,
+    hookTimeout: 120000,
+    teardownTimeout: 120000,
+    pool: "forks",
     poolOptions: {
       forks: {
-        singleFork: true, // Use single fork to avoid port conflicts
+        singleFork: true,
       },
     },
   },

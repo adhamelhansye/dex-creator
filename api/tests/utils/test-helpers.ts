@@ -28,8 +28,6 @@ export interface TestDex {
   customMenus?: string;
   repoUrl?: string;
   customDomain?: string;
-  makerFee?: number;
-  takerFee?: number;
   availableLanguages: string[];
   enableCampaigns: boolean;
   enableAbstractWallet: boolean;

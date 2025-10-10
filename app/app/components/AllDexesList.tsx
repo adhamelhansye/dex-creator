@@ -5,18 +5,6 @@ import { Button } from "./Button";
 import Pagination from "./Pagination";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
 
-const formatFee = (fee: number | null | undefined): string => {
-  if (fee === null || fee === undefined) return "-";
-  const displayFee = fee / 10;
-  const formatNumber = (value: number, maxDecimals: number = 1) =>
-    new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: 0,
-      maximumFractionDigits: maxDecimals,
-    }).format(value);
-
-  return `${formatNumber(displayFee)} bps (${formatNumber(displayFee * 0.01, 3)}%)`;
-};
-
 const copyToClipboard = async (text: string, label: string) => {
   try {
     await navigator.clipboard.writeText(text);
@@ -35,8 +23,6 @@ interface Dex {
   customDomain?: string | null;
   customDomainOverride?: string | null;
   createdAt: string;
-  makerFee?: number | null;
-  takerFee?: number | null;
   themeCSS?: string | null;
   user: {
     address: string;
@@ -435,13 +421,6 @@ export default function AllDexesList({
                     </button>
                   </div>
                 )}
-
-                <div>
-                  <strong>Maker Fee:</strong> {formatFee(dex.makerFee)}
-                </div>
-                <div>
-                  <strong>Taker Fee:</strong> {formatFee(dex.takerFee)}
-                </div>
               </div>
 
               {/* Redeployment Button - only show if DEX has a repository */}
