@@ -423,9 +423,17 @@ export async function getDexBrokerTier(
       console.error(
         `Failed to fetch tier from Orderly DB for broker ${dex.brokerId}: ${result.error}`
       );
+
       return {
-        success: false,
-        error: `No tier information available: ${result.error}`,
+        success: true,
+        data: {
+          tier: "PUBLIC",
+          stakingVolume: "0",
+          tradingVolume: "0",
+          makerFeeRate: "0",
+          takerFeeRate: "0",
+          logDate: new Date().toISOString().split("T")[0],
+        },
       };
     }
 
