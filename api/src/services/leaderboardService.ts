@@ -10,6 +10,7 @@ export interface BrokerStats {
   perp_maker_volume: number;
   realized_pnl: number;
   broker_fee: number;
+  total_fee: number;
 }
 
 export interface AggregatedBrokerStats {
@@ -18,6 +19,7 @@ export interface AggregatedBrokerStats {
   totalVolume: number;
   totalPnl: number;
   totalBrokerFee: number;
+  totalFee: number;
   lastUpdated: Date;
   tokenAddress?: string;
   tokenChain?: string;
@@ -38,6 +40,7 @@ interface OrderlyApiResponse {
       perp_maker_volume: number;
       realized_pnl: number;
       broker_fee: number;
+      total_fee: number;
     }>;
     meta: {
       total: number;
@@ -296,6 +299,7 @@ class LeaderboardService {
         perp_maker_volume: row.perp_maker_volume,
         realized_pnl: row.realized_pnl,
         broker_fee: row.broker_fee,
+        total_fee: row.total_fee,
       }));
 
       this.cache.set(brokerId, brokerStats);
@@ -318,6 +322,7 @@ class LeaderboardService {
       (sum, stat) => sum + stat.broker_fee,
       0
     );
+    const totalFee = stats.reduce((sum, stat) => sum + stat.total_fee, 0);
 
     const aggregated: AggregatedBrokerStats = {
       brokerId,
@@ -325,6 +330,7 @@ class LeaderboardService {
       totalVolume,
       totalPnl,
       totalBrokerFee,
+      totalFee,
       lastUpdated: new Date(),
     };
 
@@ -378,6 +384,7 @@ class LeaderboardService {
       (sum, stat) => sum + stat.broker_fee,
       0
     );
+    const totalFee = periodStats.reduce((sum, stat) => sum + stat.total_fee, 0);
 
     const tokenInfo = this.getTokenInfoForBroker(brokerId);
 
@@ -387,6 +394,7 @@ class LeaderboardService {
       totalVolume,
       totalPnl,
       totalBrokerFee,
+      totalFee,
       lastUpdated: new Date(),
       ...tokenInfo,
     };

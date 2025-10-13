@@ -14,6 +14,7 @@ interface BrokerStats {
   totalVolume: number;
   totalPnl: number;
   totalBrokerFee: number;
+  totalFee: number;
   lastUpdated: string;
   description?: string;
   banner?: string;
@@ -58,7 +59,7 @@ interface DexStats {
   period: string;
 }
 
-type SortOption = "volume" | "pnl" | "brokerFee";
+type SortOption = "volume" | "pnl" | "fee";
 type TimePeriod = "daily" | "weekly" | "30d";
 
 export default function BoardRoute() {
@@ -142,7 +143,7 @@ export default function BoardRoute() {
         return "Volume";
       case "pnl":
         return "PnL";
-      case "brokerFee":
+      case "fee":
         return "Fees";
     }
   };
@@ -206,7 +207,7 @@ export default function BoardRoute() {
         {/* Sort Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 slide-fade-in-delayed">
           <div className="flex flex-wrap gap-2">
-            {(["volume", "brokerFee", "pnl"] as SortOption[]).map(sort => (
+            {(["volume", "fee", "pnl"] as SortOption[]).map(sort => (
               <button
                 key={sort}
                 onClick={() => handleSortChange(sort)}
@@ -360,9 +361,8 @@ export default function BoardRoute() {
                   <strong>Volume:</strong> Sum of all perpetual trading volume
                 </li>
                 <li>
-                  <strong>Fees:</strong> Total broker fees collected from
-                  trading. This does only include the fee earned by the DEX.
-                  There are additional fees charged by Orderly
+                  <strong>Fees:</strong> Total fees paid by users from trading
+                  (includes both DEX revenue and infrastructure fees)
                 </li>
                 <li>
                   <strong>PnL:</strong> Realized profit and loss across all
