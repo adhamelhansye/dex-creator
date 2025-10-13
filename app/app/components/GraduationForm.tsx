@@ -124,6 +124,17 @@ interface FeeOptionsResponse {
   receiverAddress: string;
 }
 
+interface BrokerTierResponse {
+  tier: string;
+  stakingVolume: string;
+  tradingVolume: string;
+  stakingVolumeThreshold: string;
+  tradingVolumeThreshold: string;
+  makerFeeRate: string;
+  takerFeeRate: string;
+  logDate: string;
+}
+
 interface GraduationFormProps {
   onNoDexSetup?: () => void;
   onGraduationSuccess?: () => void;
@@ -159,6 +170,7 @@ export function GraduationForm({
   const [dexData, setDexData] = useState<{ repoUrl?: string } | null>(null);
   const [feeOptions, setFeeOptions] = useState<FeeOptionsResponse | null>(null);
   const [paymentType, setPaymentType] = useState<"usdc" | "order">("order");
+  const [brokerTier, setBrokerTier] = useState<BrokerTierResponse | null>(null);
   const { openModal } = useModal();
 
   const copyToClipboard = async (text: string, label: string) => {
@@ -383,9 +395,24 @@ export function GraduationForm({
       }
     }
 
+    async function loadBrokerTier() {
+      try {
+        const response = await get<BrokerTierResponse>(
+          "api/graduation/tier",
+          token,
+          { showToastOnError: false }
+        );
+        setBrokerTier(response);
+      } catch (error) {
+        console.error("Error loading broker tier:", error);
+        setBrokerTier(null);
+      }
+    }
+
     if (token) {
       loadGraduationStatus();
       loadDexData();
+      loadBrokerTier();
     }
   }, [token, hasSubmitted]);
 
@@ -850,7 +877,103 @@ export function GraduationForm({
             </ul>
           </div>
 
-          <BaseFeeExplanation />
+          {brokerTier && (
+            <div className="bg-light/5 rounded-lg p-5 mb-6">
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <div className="i-mdi:trophy text-warning mr-2 h-5 w-5"></div>
+                Your Broker Tier
+              </h3>
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <div className="text-2xl font-bold text-primary-light">
+                    {brokerTier.tier}
+                  </div>
+                  <div className="text-xs text-gray-400 mt-1">
+                    Current Tier Level
+                  </div>
+                </div>
+                <div className="bg-primary/20 p-3 rounded-full">
+                  <div className="i-mdi:star text-primary w-8 h-8"></div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="bg-background-card rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">
+                    Staking Volume
+                  </div>
+                  <div className="font-medium">
+                    $
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(parseFloat(brokerTier.stakingVolume))}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Threshold: $
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(parseFloat(brokerTier.stakingVolumeThreshold))}
+                  </div>
+                </div>
+                <div className="bg-background-card rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">
+                    Trading Volume
+                  </div>
+                  <div className="font-medium">
+                    $
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(parseFloat(brokerTier.tradingVolume))}
+                  </div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    Threshold: $
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2,
+                    }).format(parseFloat(brokerTier.tradingVolumeThreshold))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-success/10 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">
+                    Maker Fee Rate
+                  </div>
+                  <div className="font-medium text-success">
+                    {(parseFloat(brokerTier.makerFeeRate) * 100).toFixed(4)}%
+                  </div>
+                </div>
+                <div className="bg-info/10 rounded-lg p-3">
+                  <div className="text-xs text-gray-400 mb-1">
+                    Taker Fee Rate
+                  </div>
+                  <div className="font-medium text-info">
+                    {(parseFloat(brokerTier.takerFeeRate) * 100).toFixed(4)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-4 text-xs text-gray-400">
+                Last updated:{" "}
+                {new Date(brokerTier.logDate).toLocaleDateString()}
+              </div>
+
+              <div className="mt-4 pt-4 border-t border-light/10">
+                <p className="text-xs text-gray-400">
+                  <span className="text-primary-light font-medium">
+                    Tier Benefits:
+                  </span>{" "}
+                  Higher tiers unlock lower base fees and additional benefits.
+                  Stake more ORDER tokens or increase trading volume to upgrade
+                  your tier.
+                </p>
+              </div>
+            </div>
+          )}
 
           <FeeConfigWithCalculator
             makerFee={makerFee}
@@ -859,6 +982,8 @@ export function GraduationForm({
             defaultOpenCalculator={true}
             showSaveButton={false}
           />
+
+          <BaseFeeExplanation />
         </div>
       </Card>
     );
