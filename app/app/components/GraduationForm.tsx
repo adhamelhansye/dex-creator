@@ -985,9 +985,15 @@ export function GraduationForm({
           <FeeConfigWithCalculator
             makerFee={makerFee}
             takerFee={takerFee}
-            readOnly={true}
+            readOnly={false}
             defaultOpenCalculator={true}
-            showSaveButton={false}
+            showSaveButton={true}
+            useOrderlyApi={true}
+            brokerId={graduationStatus?.brokerId}
+            onFeesChange={(newMakerFee, newTakerFee) => {
+              setMakerFee(newMakerFee);
+              setTakerFee(newTakerFee);
+            }}
           />
 
           <BaseFeeExplanation />
