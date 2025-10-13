@@ -8,7 +8,7 @@ import dayjs from "dayjs";
 const leaderboard = new Hono();
 
 const leaderboardQuerySchema = z.object({
-  sort: z.enum(["volume", "pnl", "brokerFee"]).default("volume"),
+  sort: z.enum(["volume", "pnl", "fee"]).default("volume"),
   period: z.enum(["daily", "weekly", "30d"]).default("weekly"),
   limit: z.coerce.number().int().positive().max(20).default(20),
   offset: z.coerce.number().int().min(0).default(0),
@@ -23,6 +23,7 @@ interface LeaderboardItem {
   totalVolume: number;
   totalPnl: number;
   totalBrokerFee: number;
+  totalFee: number;
   lastUpdated: Date;
   description: string | null;
   banner: string | null;
@@ -79,6 +80,7 @@ interface BrokerCacheEntry {
       totalVolume: number;
       totalPnl: number;
       totalBrokerFee: number;
+      totalFee: number;
       lastUpdated: Date;
       tokenAddress?: string;
       tokenChain?: string;
@@ -97,6 +99,7 @@ interface BrokerCacheEntry {
       perp_maker_volume: number;
       realized_pnl: number;
       broker_fee: number;
+      total_fee: number;
     }>;
   };
   expires: number;
@@ -184,6 +187,7 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
           totalVolume: cachedStats.totalVolume,
           totalPnl: cachedStats.totalPnl,
           totalBrokerFee: cachedStats.totalBrokerFee,
+          totalFee: cachedStats.totalFee,
           lastUpdated: cachedStats.lastUpdated,
           description: dex.description,
           banner: dex.banner,
@@ -206,8 +210,8 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
         switch (sort) {
           case "pnl":
             return b!.totalPnl - a!.totalPnl;
-          case "brokerFee":
-            return b!.totalBrokerFee - a!.totalBrokerFee;
+          case "fee":
+            return b!.totalFee - a!.totalFee;
           case "volume":
           default:
             return b!.totalVolume - a!.totalVolume;
@@ -295,7 +299,10 @@ leaderboard.get(
         return c.json({ error: "DEX not found" }, 404);
       }
 
-      const dailyStats = leaderboardService.getBrokerStats(brokerId);
+      const dailyStats = leaderboardService.getDailyStatsForBroker(
+        brokerId,
+        period
+      );
       const aggregatedStats = leaderboardService.getAggregatedBrokerStats(
         brokerId,
         period
@@ -337,6 +344,7 @@ leaderboard.get(
             totalVolume: 0,
             totalPnl: 0,
             totalBrokerFee: 0,
+            totalFee: 0,
             lastUpdated: new Date(),
             tokenAddress: dex.tokenAddress || undefined,
             tokenChain: dex.tokenChain || undefined,

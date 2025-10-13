@@ -12,6 +12,7 @@ interface BrokerStats {
   totalVolume: number;
   totalPnl: number;
   totalBrokerFee: number;
+  totalFee: number;
   lastUpdated: string;
   description?: string | null;
   banner?: string | null;
@@ -36,6 +37,7 @@ interface DailyStats {
   perp_maker_volume: number;
   realized_pnl: number;
   broker_fee: number;
+  total_fee: number;
 }
 
 type TimePeriod = "daily" | "weekly" | "30d";
@@ -77,6 +79,7 @@ export default function DexDetailRoute() {
             perp_maker_volume: number;
             realized_pnl: number;
             broker_fee: number;
+            total_fee: number;
           }>;
         };
       }>({
@@ -124,7 +127,7 @@ export default function DexDetailRoute() {
     return num.toFixed(2);
   };
 
-  const formatBrokerFee = (num: number) => {
+  const formatFee = (num: number) => {
     if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
     if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
     if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
@@ -333,7 +336,7 @@ export default function DexDetailRoute() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 slide-fade-in-delayed">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 slide-fade-in-delayed">
           {/* Volume */}
           <div className="bg-background-card border border-gray-600 rounded-lg p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -370,7 +373,27 @@ export default function DexDetailRoute() {
               </div>
             </div>
             <div className="text-2xl font-bold text-white">
-              ${formatBrokerFee(dexData.totalBrokerFee)}
+              ${formatFee(dexData.totalFee)}
+            </div>
+          </div>
+
+          {/* Revenue */}
+          <div className="bg-background-card border border-gray-600 rounded-lg p-6">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-10 h-10 bg-green-500/20 rounded-lg flex items-center justify-center">
+                <Icon
+                  icon="mdi:cash-multiple"
+                  width={24}
+                  className="text-green-500"
+                />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-white">Revenue</h3>
+                <p className="text-sm text-gray-400">({timePeriodString})</p>
+              </div>
+            </div>
+            <div className="text-2xl font-bold text-white">
+              ${formatFee(dexData.totalBrokerFee)}
             </div>
           </div>
 
@@ -504,6 +527,9 @@ export default function DexDetailRoute() {
                         Fees
                       </th>
                       <th className="text-right py-3 px-2 text-gray-400">
+                        Revenue
+                      </th>
+                      <th className="text-right py-3 px-2 text-gray-400">
                         PnL
                       </th>
                     </tr>
@@ -523,7 +549,10 @@ export default function DexDetailRoute() {
                             ${formatVolume(stat.perp_volume)}
                           </td>
                           <td className="py-3 px-2 text-right text-white">
-                            ${formatBrokerFee(stat.broker_fee)}
+                            ${formatFee(stat.total_fee)}
+                          </td>
+                          <td className="py-3 px-2 text-right text-white">
+                            ${formatFee(stat.broker_fee)}
                           </td>
                           <td
                             className={`py-3 px-2 text-right font-medium ${

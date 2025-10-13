@@ -7,6 +7,7 @@ interface DexCardProps {
     totalVolume?: number;
     totalPnl?: number;
     totalBrokerFee?: number;
+    totalFee?: number;
     description?: string;
     banner?: string;
     logo?: string;
@@ -33,7 +34,7 @@ const formatVolume = (num: number) => {
   return num.toFixed(2);
 };
 
-const formatBrokerFee = (num: number) => {
+const formatFee = (num: number) => {
   if (num >= 1e9) return `${(num / 1e9).toFixed(2)}B`;
   if (num >= 1e6) return `${(num / 1e6).toFixed(2)}M`;
   if (num >= 1e3) return `${(num / 1e3).toFixed(2)}K`;
@@ -148,13 +149,13 @@ export default function DexCard({ broker, rank, timePeriod }: DexCardProps) {
                     ${formatVolume(broker.totalVolume)}
                   </div>
                 </div>
-                {broker.totalBrokerFee !== undefined && (
+                {broker.totalFee !== undefined && (
                   <div className="flex-1">
                     <div className="text-xs text-gray-400">
                       Fees ({timePeriodString})
                     </div>
                     <div className="font-medium text-white">
-                      ${formatBrokerFee(broker.totalBrokerFee)}
+                      ${formatFee(broker.totalFee)}
                     </div>
                   </div>
                 )}

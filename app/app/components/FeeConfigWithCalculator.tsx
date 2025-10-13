@@ -50,7 +50,7 @@ export const FeeConfigWithCalculator: React.FC<
   useOrderlyApi = false,
   brokerId,
 }) => {
-  const { orderlyKey, accountId, hasValidKey } = useOrderlyKey();
+  const { orderlyKey, accountId, hasValidKey, setOrderlyKey } = useOrderlyKey();
   const { openModal } = useModal();
   const [isUpdatingFees, setIsUpdatingFees] = useState(false);
   const [showFeeConfig, setShowFeeConfig] = useState(alwaysShowConfig);
@@ -488,7 +488,8 @@ export const FeeConfigWithCalculator: React.FC<
                             size="sm"
                             onClick={() =>
                               openModal("orderlyKeyLogin", {
-                                onSuccess: (_newKey: Uint8Array) => {
+                                onSuccess: (newKey: Uint8Array) => {
+                                  setOrderlyKey(newKey);
                                   toast.success(
                                     "Orderly key created successfully!"
                                   );
