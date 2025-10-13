@@ -84,6 +84,7 @@ describe("Leaderboard Routes", () => {
       expect(body.data.aggregated).toHaveProperty("totalVolume");
       expect(body.data.aggregated).toHaveProperty("totalPnl");
       expect(body.data.aggregated).toHaveProperty("totalBrokerFee");
+      expect(body.data.aggregated).toHaveProperty("totalFee");
       expect(body.data.aggregated).toHaveProperty("lastUpdated");
 
       expect(body.data.daily).toHaveProperty("length");
@@ -94,7 +95,9 @@ describe("Leaderboard Routes", () => {
         "../../src/services/leaderboardService"
       );
 
-      vi.mocked(leaderboardService.getBrokerStats).mockReturnValue(null);
+      vi.mocked(leaderboardService.getDailyStatsForBroker).mockReturnValue(
+        null
+      );
       vi.mocked(leaderboardService.getAggregatedBrokerStats).mockReturnValue(
         null
       );

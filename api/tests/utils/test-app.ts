@@ -108,7 +108,7 @@ vi.mock("../../src/services/geckoTerminalService", () => ({
 vi.mock("../../src/services/leaderboardService", () => ({
   leaderboardService: {
     getLeaderboardData: vi.fn().mockResolvedValue([]),
-    getBrokerStats: vi.fn(),
+    getDailyStatsForBroker: vi.fn(),
     getAggregatedBrokerStats: vi.fn(),
   },
 }));
