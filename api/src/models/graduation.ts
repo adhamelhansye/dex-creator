@@ -11,7 +11,10 @@ import { createProvider } from "../lib/fallbackProvider.js";
 import {
   getBrokerFeesFromOrderlyDb,
   updateBrokerFeesInOrderlyDb,
+  getBrokerTierFromOrderlyDb,
+  type BrokerTier,
 } from "../lib/orderlyDb";
+import { type Result } from "../lib/types";
 
 async function withRPCTimeout<T>(
   promise: Promise<T>,
@@ -59,9 +62,6 @@ const ERC20_TRANSFER_EVENT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
 ];
 
-/**
- * Verify if a transaction sent the required payment (ORDER tokens or USDC) to our address
- */
 export async function verifyOrderTransaction(
   txHash: string,
   chain: string,
@@ -258,13 +258,6 @@ export async function verifyOrderTransaction(
   }
 }
 
-/**
- * Set the maker and taker fees for a DEX in the Orderly database
- * @param userId The user ID
- * @param makerFee The maker fee in 0.1 basis points (0.001% precision)
- * @param takerFee The taker fee in 0.1 basis points (0.001% precision)
- * @returns Success status and message
- */
 export async function updateDexFees(
   userId: string,
   makerFee: number,
@@ -345,11 +338,6 @@ export async function updateDexFees(
   }
 }
 
-/**
- * Get the current fee configuration for a DEX from the Orderly database
- * @param userId The user ID
- * @returns The current fee configuration or error message
- */
 export async function getDexFees(userId: string): Promise<
   | {
       success: true;
@@ -402,6 +390,54 @@ export async function getDexFees(userId: string): Promise<
     return {
       success: false,
       message: `Error getting DEX fees: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+export async function getDexBrokerTier(
+  userId: string
+): Promise<Result<BrokerTier>> {
+  try {
+    const prismaClient = await getPrisma();
+    const dex = await prismaClient.dex.findFirst({
+      where: { userId },
+    });
+
+    if (!dex) {
+      return {
+        success: false,
+        error: "DEX not found",
+      };
+    }
+
+    if (!dex.brokerId || dex.brokerId === "demo") {
+      return {
+        success: false,
+        error: "No broker tier available for demo brokers",
+      };
+    }
+
+    const result = await getBrokerTierFromOrderlyDb(dex.brokerId);
+
+    if (!result.success) {
+      console.error(
+        `Failed to fetch tier from Orderly DB for broker ${dex.brokerId}: ${result.error}`
+      );
+      return {
+        success: false,
+        error: `No tier information available: ${result.error}`,
+      };
+    }
+
+    return {
+      success: true,
+      data: result.data,
+    };
+  } catch (error) {
+    console.error("Error getting broker tier:", error);
+    return {
+      success: false,
+      error: `Error getting broker tier: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }

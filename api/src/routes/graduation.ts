@@ -5,6 +5,7 @@ import {
   verifyOrderTransaction,
   updateDexFees,
   getDexFees,
+  getDexBrokerTier,
 } from "../models/graduation";
 import { getUserDex, getCurrentEnvironment } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
@@ -310,6 +311,33 @@ graduationRoutes.get("/fees", async c => {
       {
         success: false,
         message: `Error getting DEX fees: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+graduationRoutes.get("/tier", async c => {
+  try {
+    const userId = c.get("userId");
+
+    const result = await getDexBrokerTier(userId);
+
+    if (result.success) {
+      return c.json(result.data);
+    } else {
+      return c.json(
+        {
+          message: result.error,
+        },
+        { status: 400 }
+      );
+    }
+  } catch (error) {
+    console.error("Error getting broker tier:", error);
+    return c.json(
+      {
+        message: `Error getting broker tier: ${error instanceof Error ? error.message : String(error)}`,
       },
       { status: 500 }
     );

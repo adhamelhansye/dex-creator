@@ -23,8 +23,31 @@ interface CachedBrokerFees extends BrokerFees {
   timestamp: number;
 }
 
+export type BrokerTierLevel =
+  | "PUBLIC"
+  | "SILVER"
+  | "GOLD"
+  | "PLATINUM"
+  | "DIAMOND"
+  | "CUSTOM";
+
+export interface BrokerTier {
+  tier: string;
+  stakingVolume: string;
+  tradingVolume: string;
+  makerFeeRate: string;
+  takerFeeRate: string;
+  logDate: string;
+}
+
+interface CachedBrokerTier extends BrokerTier {
+  timestamp: number;
+}
+
 const brokerFeesCache = new Map<string, CachedBrokerFees>();
-const CACHE_TTL_MS = 5 * 60 * 1000;
+const brokerTierCache = new Map<string, CachedBrokerTier>();
+const CACHE_TTL_FEES_MS = 5 * 60 * 1000;
+const CACHE_TTL_TIER_MS = 30 * 60 * 1000;
 
 interface DatabaseConfig {
   url: string;
@@ -645,7 +668,7 @@ export async function getBrokerFeesFromOrderlyDb(
   brokerId: string
 ): Promise<Result<BrokerFees>> {
   const cached = brokerFeesCache.get(brokerId);
-  if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_FEES_MS) {
     return {
       success: true,
       data: {
@@ -767,5 +790,84 @@ export async function updateBrokerFeesInOrderlyDb(
   } finally {
     await orderlyPrisma.$disconnect();
     await nexusPrisma.$disconnect();
+  }
+}
+
+export async function getBrokerTierFromOrderlyDb(
+  brokerId: string
+): Promise<Result<BrokerTier>> {
+  const cached = brokerTierCache.get(brokerId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_TIER_MS) {
+    return {
+      success: true,
+      data: {
+        tier: cached.tier,
+        stakingVolume: cached.stakingVolume,
+        tradingVolume: cached.tradingVolume,
+        makerFeeRate: cached.makerFeeRate,
+        takerFeeRate: cached.takerFeeRate,
+        logDate: cached.logDate,
+      },
+    };
+  }
+
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
+  try {
+    const tierLog = await orderlyPrisma.brokerTieredFeeDailyLog.findFirst({
+      where: {
+        brokerId: brokerId,
+      },
+      orderBy: {
+        logDate: "desc",
+      },
+      select: {
+        typeFinal: true,
+        type: true,
+        stakingVolume: true,
+        tradingVolume: true,
+        stakingVolumeThreshold: true,
+        tradingVolumeThreshold: true,
+        makerFeeRate: true,
+        takerFeeRate: true,
+        logDate: true,
+      },
+    });
+
+    if (!tierLog) {
+      return {
+        success: false,
+        error: `No tier information found for broker ID ${brokerId}`,
+      };
+    }
+
+    const tier = tierLog.typeFinal || tierLog.type;
+    const brokerTier: BrokerTier = {
+      tier,
+      stakingVolume: tierLog.stakingVolume.toString(),
+      tradingVolume: tierLog.tradingVolume.toString(),
+      makerFeeRate: tierLog.makerFeeRate.toString(),
+      takerFeeRate: tierLog.takerFeeRate.toString(),
+      logDate: tierLog.logDate.toISOString().split("T")[0],
+    };
+
+    brokerTierCache.set(brokerId, {
+      ...brokerTier,
+      timestamp: Date.now(),
+    });
+
+    return {
+      success: true,
+      data: brokerTier,
+    };
+  } catch (error) {
+    console.error("❌ Error getting broker tier from Orderly database:", error);
+
+    return {
+      success: false,
+      error: `Failed to get broker tier from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await orderlyPrisma.$disconnect();
   }
 }
