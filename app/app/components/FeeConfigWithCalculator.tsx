@@ -1,25 +1,31 @@
 import { useEffect, useState, FormEvent, ChangeEvent } from "react";
 import { Button } from "./Button";
+import { toast } from "react-toastify";
+import { useOrderlyKey } from "../context/OrderlyKeyContext";
+import { updateBrokerFees } from "../utils/orderly";
+import { useModal } from "../context/ModalContext";
 
-const MIN_MAKER_FEE = 0; // 0 bps = 0 units
-const MIN_TAKER_FEE = 30; // 3 bps = 30 units
-const MAX_FEE = 150; // 15 bps = 150 units
+const MIN_MAKER_FEE = 0;
+const MIN_TAKER_FEE = 30;
+const MAX_FEE = 150;
 
 interface FeeConfigWithCalculatorProps {
-  makerFee: number; // In 0.1 bps precision (35 = 3.5 bps)
-  takerFee: number; // In 0.1 bps precision (35 = 3.5 bps)
+  makerFee: number;
+  takerFee: number;
   readOnly?: boolean;
   isSavingFees?: boolean;
   onSaveFees?: (
     e: FormEvent,
-    makerFee: number, // In 0.1 bps precision
-    takerFee: number // In 0.1 bps precision
+    makerFee: number,
+    takerFee: number
   ) => Promise<void>;
-  onFeesChange?: (makerFee: number, takerFee: number) => void; // Real-time callback
+  onFeesChange?: (makerFee: number, takerFee: number) => void;
   feeError?: string | null;
   defaultOpenCalculator?: boolean;
-  showSaveButton?: boolean; // Control whether to show save button
-  alwaysShowConfig?: boolean; // Control whether to always show config (no toggle)
+  showSaveButton?: boolean;
+  alwaysShowConfig?: boolean;
+  useOrderlyApi?: boolean;
+  brokerId?: string;
 }
 
 const formatNumber = (value: number, maxDecimals: number = 1) => {
@@ -41,8 +47,12 @@ export const FeeConfigWithCalculator: React.FC<
   defaultOpenCalculator = false,
   showSaveButton = true,
   alwaysShowConfig = false,
+  useOrderlyApi = false,
+  brokerId,
 }) => {
-  // State for fee configuration
+  const { orderlyKey, accountId, hasValidKey } = useOrderlyKey();
+  const { openModal } = useModal();
+  const [isUpdatingFees, setIsUpdatingFees] = useState(false);
   const [showFeeConfig, setShowFeeConfig] = useState(alwaysShowConfig);
   const [makerFee, setMakerFee] = useState<number>(initialMakerFee);
   const [takerFee, setTakerFee] = useState<number>(initialTakerFee);
@@ -61,7 +71,6 @@ export const FeeConfigWithCalculator: React.FC<
     setTakerFee(initialTakerFee);
   }, [initialMakerFee, initialTakerFee]);
 
-  // Fee validation functions
   const validateFees = (type: "maker" | "taker", value: number) => {
     if (type === "maker") {
       if (value < MIN_MAKER_FEE) {
@@ -77,7 +86,6 @@ export const FeeConfigWithCalculator: React.FC<
         return true;
       }
     } else {
-      // taker
       if (value < MIN_TAKER_FEE) {
         setTakerFeeError(
           `Taker fee must be at least ${MIN_TAKER_FEE / 10} bps`
@@ -189,7 +197,7 @@ export const FeeConfigWithCalculator: React.FC<
     }
   };
 
-  const handleSaveFees = (e: FormEvent) => {
+  const handleSaveFees = async (e: FormEvent) => {
     e.preventDefault();
     setFeeError(null);
 
@@ -206,12 +214,42 @@ export const FeeConfigWithCalculator: React.FC<
       return;
     }
 
-    if (onSaveFees) {
+    if (useOrderlyApi) {
+      if (!hasValidKey || !orderlyKey || !accountId) {
+        toast.error("Orderly key required to update fees");
+        return;
+      }
+
+      setIsUpdatingFees(true);
+
+      try {
+        const makerFeeRate = makerFee / 100_000;
+        const takerFeeRate = takerFee / 100_000;
+
+        await updateBrokerFees(
+          accountId,
+          orderlyKey,
+          makerFeeRate,
+          takerFeeRate
+        );
+        toast.success("Fees updated successfully!");
+
+        if (onFeesChange) {
+          onFeesChange(makerFee, takerFee);
+        }
+      } catch (error) {
+        console.error("Error updating fees:", error);
+        toast.error(
+          error instanceof Error ? error.message : "Failed to update fees"
+        );
+      } finally {
+        setIsUpdatingFees(false);
+      }
+    } else if (onSaveFees) {
       onSaveFees(e, makerFee, takerFee);
     }
   };
 
-  // Tier definitions
   const tierBaseFees = {
     public: { maker: 0, taker: 3.0 },
     silver: { maker: 0, taker: 2.75 },
@@ -244,30 +282,24 @@ export const FeeConfigWithCalculator: React.FC<
     },
   };
 
-  // Revenue calculator functions
   const calculateRevenue = (
     volume: number,
     makerFee: number,
     takerFee: number,
     tier: keyof typeof tierBaseFees = selectedTier
   ) => {
-    // Orderly base fees (retained by Orderly) - varies by tier
     const BASE_MAKER_FEE = tierBaseFees[tier].maker;
     const BASE_TAKER_FEE = tierBaseFees[tier].taker;
 
-    // Calculate actual revenue fees (custom fee - base fee)
     const actualMakerFee = Math.max(0, makerFee - BASE_MAKER_FEE);
     const actualTakerFee = Math.max(0, takerFee - BASE_TAKER_FEE);
 
-    // Assuming 50/50 split between maker and taker volume
     const makerVolume = volume * 0.5;
     const takerVolume = volume * 0.5;
 
-    // Convert bps to percentage (100 bps = 1%)
     const makerFeePercent = actualMakerFee / 10000;
     const takerFeePercent = actualTakerFee / 10000;
 
-    // Calculate revenue (after base fee deduction)
     const makerRevenue = makerVolume * makerFeePercent;
     const takerRevenue = takerVolume * takerFeePercent;
 
@@ -294,7 +326,6 @@ export const FeeConfigWithCalculator: React.FC<
     }).format(amount);
   };
 
-  // Calculate revenue based on current fees (convert to bps for calculation)
   const { makerRevenue, takerRevenue, totalRevenue } = calculateRevenue(
     tradingVolume,
     makerFee / 10,
@@ -438,16 +469,60 @@ export const FeeConfigWithCalculator: React.FC<
               </div>
 
               {!readOnly && showSaveButton && (
-                <Button
-                  type="submit"
-                  variant="primary"
-                  isLoading={isSavingFees}
-                  loadingText="Saving..."
-                  className="w-full"
-                  disabled={!!makerFeeError || !!takerFeeError}
-                >
-                  Save Fee Configuration
-                </Button>
+                <>
+                  {useOrderlyApi && !hasValidKey && (
+                    <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
+                      <div className="flex items-start gap-2">
+                        <div className="i-mdi:key text-warning w-5 h-5 mt-0.5 flex-shrink-0"></div>
+                        <div className="flex-1">
+                          <h4 className="text-warning font-medium text-sm mb-1">
+                            Orderly Key Required
+                          </h4>
+                          <p className="text-xs text-gray-400 mb-2">
+                            To update fees directly via Orderly API, you need to
+                            create an Orderly key first.
+                          </p>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={() =>
+                              openModal("orderlyKeyLogin", {
+                                onSuccess: (_newKey: Uint8Array) => {
+                                  toast.success(
+                                    "Orderly key created successfully!"
+                                  );
+                                },
+                                onCancel: () => {},
+                                brokerId: brokerId,
+                                accountId: accountId,
+                              })
+                            }
+                            className="flex items-center gap-2"
+                          >
+                            <div className="i-mdi:key-plus w-4 h-4"></div>
+                            Create Orderly Key
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    variant="primary"
+                    isLoading={isSavingFees || isUpdatingFees}
+                    loadingText="Saving..."
+                    className="w-full"
+                    disabled={
+                      !!makerFeeError ||
+                      !!takerFeeError ||
+                      (useOrderlyApi && !hasValidKey)
+                    }
+                  >
+                    Save Fee Configuration
+                  </Button>
+                </>
               )}
             </div>
           </form>

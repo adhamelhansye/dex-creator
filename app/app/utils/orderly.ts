@@ -295,6 +295,31 @@ export async function updateAutoReferral(
   }
 }
 
+export async function updateBrokerFees(
+  accountId: string,
+  orderlyKey: Uint8Array,
+  makerFeeRate: number,
+  takerFeeRate: number
+): Promise<void> {
+  const response = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/broker/fee_rate/default`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        maker_fee_rate: makerFeeRate,
+        taker_fee_rate: takerFeeRate,
+      }),
+    }
+  );
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(json.message || "Failed to update broker fees");
+  }
+}
+
 export async function getAutoReferralInfo(
   accountId: string,
   orderlyKey: Uint8Array

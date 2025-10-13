@@ -128,8 +128,6 @@ interface BrokerTierResponse {
   tier: string;
   stakingVolume: string;
   tradingVolume: string;
-  stakingVolumeThreshold: string;
-  tradingVolumeThreshold: string;
   makerFeeRate: string;
   takerFeeRate: string;
   logDate: string;
@@ -909,13 +907,6 @@ export function GraduationForm({
                       maximumFractionDigits: 2,
                     }).format(parseFloat(brokerTier.stakingVolume))}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Threshold: $
-                    {new Intl.NumberFormat("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }).format(parseFloat(brokerTier.stakingVolumeThreshold))}
-                  </div>
                 </div>
                 <div className="bg-background-card rounded-lg p-3">
                   <div className="text-xs text-gray-400 mb-1">
@@ -928,13 +919,6 @@ export function GraduationForm({
                       maximumFractionDigits: 2,
                     }).format(parseFloat(brokerTier.tradingVolume))}
                   </div>
-                  <div className="text-xs text-gray-500 mt-1">
-                    Threshold: $
-                    {new Intl.NumberFormat("en-US", {
-                      minimumFractionDigits: 2,
-                      maximumFractionDigits: 2,
-                    }).format(parseFloat(brokerTier.tradingVolumeThreshold))}
-                  </div>
                 </div>
               </div>
 
@@ -944,7 +928,11 @@ export function GraduationForm({
                     Maker Fee Rate
                   </div>
                   <div className="font-medium text-success">
-                    {(parseFloat(brokerTier.makerFeeRate) * 100).toFixed(4)}%
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 4,
+                    }).format(parseFloat(brokerTier.makerFeeRate) / 100)}
+                    %
                   </div>
                 </div>
                 <div className="bg-info/10 rounded-lg p-3">
@@ -952,7 +940,11 @@ export function GraduationForm({
                     Taker Fee Rate
                   </div>
                   <div className="font-medium text-info">
-                    {(parseFloat(brokerTier.takerFeeRate) * 100).toFixed(4)}%
+                    {new Intl.NumberFormat("en-US", {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 4,
+                    }).format(parseFloat(brokerTier.takerFeeRate) / 100)}
+                    %
                   </div>
                 </div>
               </div>
@@ -971,6 +963,21 @@ export function GraduationForm({
                   Stake more ORDER tokens or increase trading volume to upgrade
                   your tier.
                 </p>
+                <div className="mt-2 bg-info/10 border border-info/20 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="i-mdi:clock-outline text-info w-4 h-4 mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-xs text-info font-medium mb-1">
+                        Daily Tier Updates
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Tier information is updated once per day, so changes to
+                        your staking or trading volume may take up to 24 hours
+                        to reflect in your tier level.
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
           )}
@@ -978,9 +985,15 @@ export function GraduationForm({
           <FeeConfigWithCalculator
             makerFee={makerFee}
             takerFee={takerFee}
-            readOnly={true}
+            readOnly={false}
             defaultOpenCalculator={true}
-            showSaveButton={false}
+            showSaveButton={true}
+            useOrderlyApi={true}
+            brokerId={graduationStatus?.brokerId}
+            onFeesChange={(newMakerFee, newTakerFee) => {
+              setMakerFee(newMakerFee);
+              setTakerFee(newTakerFee);
+            }}
           />
 
           <BaseFeeExplanation />
