@@ -5,9 +5,19 @@
  * frontend and backend applications.
  */
 
-export const MAX_BROKER_COUNT = 100;
-
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
+
+const BROKER_COUNT_BY_ENVIRONMENT: Record<Environment, number> = {
+  mainnet: 2_000,
+  staging: 100,
+  qa: 20,
+  dev: 0,
+};
+
+export const MAX_BROKER_COUNT =
+  BROKER_COUNT_BY_ENVIRONMENT[
+    (process.env.DEPLOYMENT_ENV as Environment) || "staging"
+  ];
 
 export type ChainNameTestnet =
   | "sepolia"
