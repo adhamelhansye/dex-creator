@@ -25,6 +25,7 @@ export type ChainNameTestnet =
   | "bnbTestnet"
   | "optimism-sepolia"
   | "base-sepolia"
+  | "monadTestnet"
   | "orderlyTestnet"
   | "solana-devnet";
 
@@ -35,16 +36,16 @@ export type ChainNameMainnet =
   | "optimism"
   | "base"
   // | "polygon"
-  // | "mantle"
-  // | "avalanche"
-  // | "sei"
-  // | "morph"
-  // | "sonic"
-  // | "berachain"
-  // | "story"
-  // | "mode"
-  // | "plume"
-  // | "abstract"
+  | "mantle"
+  | "avalanche"
+  | "sei"
+  | "morph"
+  | "sonic"
+  | "berachain"
+  | "story"
+  | "mode"
+  | "plume"
+  | "abstract"
   | "orderlyL2"
   | "solana-mainnet-beta";
 
@@ -150,108 +151,108 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
   //   ],
   //   blockExplorerUrl: "https://polygonscan.com",
   // },
-  // mantle: {
-  //   id: "mantle",
-  //   name: "Mantle",
-  //   chainId: 5000,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://rpc.mantle.xyz",
-  //   fallbackRpcUrls: [
-  //     "https://1rpc.io/mantle",
-  //     "https://mantle-rpc.publicnode.com",
-  //   ],
-  //   blockExplorerUrl: "https://mantlescan.xyz",
-  // },
-  // avalanche: {
-  //   id: "avalanche",
-  //   name: "Avalanche",
-  //   chainId: 43114,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://avalanche-c-chain-rpc.publicnode.com",
-  //   fallbackRpcUrls: ["https://1rpc.io/avax/c"],
-  //   blockExplorerUrl: "https://avascan.info",
-  // },
-  // sei: {
-  //   id: "sei",
-  //   name: "Sei",
-  //   chainId: 1329,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://sei.drpc.org",
-  //   fallbackRpcUrls: ["https://sei-public.nodies.app"],
-  //   blockExplorerUrl: "https://seiscan.io",
-  // },
-  // morph: {
-  //   id: "morph",
-  //   name: "Morph",
-  //   chainId: 2818,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://rpc.morphl2.io",
-  //   fallbackRpcUrls: ["https://rpc-quicknode.morphl2.io"],
-  //   blockExplorerUrl: "https://morphscan.io",
-  // },
-  // sonic: {
-  //   id: "sonic",
-  //   name: "Sonic",
-  //   chainId: 146,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://rpc.soniclabs.com",
-  //   fallbackRpcUrls: ["https://sonic-rpc.publicnode.com"],
-  //   blockExplorerUrl: "https://sonicscan.org",
-  // },
-  // berachain: {
-  //   id: "berachain",
-  //   name: "Berachain",
-  //   chainId: 80094,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://rpc.berachain.com",
-  //   fallbackRpcUrls: ["https://berachain-rpc.publicnode.com"],
-  //   blockExplorerUrl: "https://berascan.com",
-  // },
-  // story: {
-  //   id: "story",
-  //   name: "Story",
-  //   chainId: 1514,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://mainnet.storyrpc.io",
-  //   fallbackRpcUrls: ["https://rpc.ankr.com/story_mainnet"],
-  //   blockExplorerUrl: "https://explorer.story.foundation",
-  // },
-  // mode: {
-  //   id: "mode",
-  //   name: "Mode",
-  //   chainId: 34443,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://mode.drpc.org",
-  //   fallbackRpcUrls: ["https://mainnet.mode.network"],
-  //   blockExplorerUrl: "https://modescan.io",
-  // },
-  // plume: {
-  //   id: "plume",
-  //   name: "Plume",
-  //   chainId: 98866,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://rpc.plume.org",
-  //   blockExplorerUrl: "https://explorer.plume.org",
-  // },
-  // abstract: {
-  //   id: "abstract",
-  //   name: "Abstract",
-  //   chainId: 2741,
-  //   isTestnet: false,
-  //   chainType: "EVM",
-  //   rpcUrl: "https://api.mainnet.abs.xyz",
-  //   fallbackRpcUrls: ["https://abstract.drpc.org"],
-  //   blockExplorerUrl: "https://explorer.mainnet.abs.xyz",
-  // },
+  mantle: {
+    id: "mantle",
+    name: "Mantle",
+    chainId: 5000,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://rpc.mantle.xyz",
+    fallbackRpcUrls: [
+      "https://1rpc.io/mantle",
+      "https://mantle-rpc.publicnode.com",
+    ],
+    blockExplorerUrl: "https://mantlescan.xyz",
+  },
+  avalanche: {
+    id: "avalanche",
+    name: "Avalanche",
+    chainId: 43114,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://avalanche-c-chain-rpc.publicnode.com",
+    fallbackRpcUrls: ["https://1rpc.io/avax/c"],
+    blockExplorerUrl: "https://avascan.info",
+  },
+  sei: {
+    id: "sei",
+    name: "Sei",
+    chainId: 1329,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://sei.drpc.org",
+    fallbackRpcUrls: ["https://sei-public.nodies.app"],
+    blockExplorerUrl: "https://seiscan.io",
+  },
+  morph: {
+    id: "morph",
+    name: "Morph",
+    chainId: 2818,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://rpc.morphl2.io",
+    fallbackRpcUrls: ["https://rpc-quicknode.morphl2.io"],
+    blockExplorerUrl: "https://morphscan.io",
+  },
+  sonic: {
+    id: "sonic",
+    name: "Sonic",
+    chainId: 146,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://rpc.soniclabs.com",
+    fallbackRpcUrls: ["https://sonic-rpc.publicnode.com"],
+    blockExplorerUrl: "https://sonicscan.org",
+  },
+  berachain: {
+    id: "berachain",
+    name: "Berachain",
+    chainId: 80094,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://rpc.berachain.com",
+    fallbackRpcUrls: ["https://berachain-rpc.publicnode.com"],
+    blockExplorerUrl: "https://berascan.com",
+  },
+  story: {
+    id: "story",
+    name: "Story",
+    chainId: 1514,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://mainnet.storyrpc.io",
+    fallbackRpcUrls: ["https://rpc.ankr.com/story_mainnet"],
+    blockExplorerUrl: "https://explorer.story.foundation",
+  },
+  mode: {
+    id: "mode",
+    name: "Mode",
+    chainId: 34443,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://mode.drpc.org",
+    fallbackRpcUrls: ["https://mainnet.mode.network"],
+    blockExplorerUrl: "https://modescan.io",
+  },
+  plume: {
+    id: "plume",
+    name: "Plume",
+    chainId: 98866,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://rpc.plume.org",
+    blockExplorerUrl: "https://explorer.plume.org",
+  },
+  abstract: {
+    id: "abstract",
+    name: "Abstract",
+    chainId: 2741,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://api.mainnet.abs.xyz",
+    fallbackRpcUrls: ["https://abstract.drpc.org"],
+    blockExplorerUrl: "https://explorer.mainnet.abs.xyz",
+  },
   sepolia: {
     id: "sepolia",
     name: "Sepolia",
@@ -300,6 +301,15 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainType: "EVM",
     rpcUrl: "https://base-sepolia-rpc.publicnode.com",
     blockExplorerUrl: "https://sepolia.basescan.org",
+  },
+  monadTestnet: {
+    id: "monadTestnet",
+    name: "Monad Testnet",
+    chainId: 10143,
+    isTestnet: true,
+    chainType: "EVM",
+    rpcUrl: "https://testnet-rpc.monad.xyz",
+    blockExplorerUrl: "https://testnet.monadexplorer.com",
   },
   orderlyL2: {
     id: "orderlyL2",
@@ -419,6 +429,7 @@ export interface EnvironmentChainConfig {
   vaultManagerAddress?: string;
   feeManagerAddress?: string;
   solConnectorAddress?: string;
+  ledgerAddress?: string;
 }
 
 export const ENVIRONMENT_CONFIGS: {
@@ -446,36 +457,36 @@ export const ENVIRONMENT_CONFIGS: {
     // polygon: {
     //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     // },
-    // mantle: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // avalanche: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // sei: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // morph: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // sonic: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // berachain: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // story: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // mode: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // plume: {
-    //   vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
-    // },
-    // abstract: {
-    //   vaultAddress: "0xE80F2396A266e898FBbD251b89CFE65B3e41fD18",
-    // },
+    mantle: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    avalanche: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    sei: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    morph: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    sonic: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    berachain: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    story: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    mode: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    plume: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
+    },
+    abstract: {
+      vaultAddress: "0xE80F2396A266e898FBbD251b89CFE65B3e41fD18",
+    },
     "solana-mainnet-beta": {
       vaultAddress: "ErBmAD61mGFKvrFNaTJuxoPwqrS8GgtwtqJTJVjFWx9Q",
     },
@@ -483,6 +494,7 @@ export const ENVIRONMENT_CONFIGS: {
       vaultManagerAddress: "0x14a6342A8C1Ef9856898F510FcCE377e46668F33",
       feeManagerAddress: "0x343Ca787e960cB2cCA0ce8cfB2f38c3739E28a1E",
       solConnectorAddress: "0xCecAe061aa078e13b5e70D5F9eCee90a3F2B6AeA",
+      ledgerAddress: "0x6F7a338F2aA472838dEFD3283eB360d4Dff5D203",
     },
   },
   staging: {
@@ -501,6 +513,9 @@ export const ENVIRONMENT_CONFIGS: {
     "base-sepolia": {
       vaultAddress: "0xdc7348975aE9334DbdcB944DDa9163Ba8406a0ec",
     },
+    monadTestnet: {
+      vaultAddress: "0x9442e24203e999db4aE87E35Dc0c8F3C610c29A0",
+    },
     "solana-devnet": {
       vaultAddress: "9shwxWDUNhtwkHocsUAmrNAQfBH2DHh4njdAEdHZZkF2",
     },
@@ -508,6 +523,7 @@ export const ENVIRONMENT_CONFIGS: {
       vaultManagerAddress: "0x873c120b42C80D528389d85cEA9d4dC0197974aD",
       feeManagerAddress: "0x0B98ba78DDb29937d895c718ED167DD8f5B2972d",
       solConnectorAddress: "0x5Bf771A65d057e778C5f0Ed52A0003316f94322D",
+      ledgerAddress: "0x1826B75e2ef249173FC735149AE4B8e9ea10abff",
     },
   },
   qa: {
@@ -524,6 +540,7 @@ export const ENVIRONMENT_CONFIGS: {
       vaultManagerAddress: "0x3B092aEe40Cb99174E8C73eF90935F9F35943B22",
       feeManagerAddress: "0x8A929891DE9a648B6A3D05d21362418f756cf728",
       solConnectorAddress: "0x45b6C6266A7A2170617d8A27A50C642fd68b91c4",
+      ledgerAddress: "0x50F59504D3623Ad99302835da367676d1f7E3D44",
     },
   },
   dev: {
@@ -540,6 +557,7 @@ export const ENVIRONMENT_CONFIGS: {
       vaultManagerAddress: "0x4922872C26Befa37AdcA287fF68106013C82FeeD",
       feeManagerAddress: "0x835E970110E4a46BCA21A7551FEaA5F532F72701",
       solConnectorAddress: "0x9Dc724b24146BeDD2dA28b8C4B74126169B8f312",
+      ledgerAddress: "0x8794E7260517B1766fc7b55cAfcd56e6bf08600e",
     },
   },
 };

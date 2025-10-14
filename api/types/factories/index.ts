@@ -2,6 +2,7 @@
 /* tslint:disable */
 /* eslint-disable */
 export { FeeManager__factory } from "./FeeManager__factory";
+export { Ledger__factory } from "./Ledger__factory";
 export { SolConnector__factory } from "./SolConnector__factory";
 export { Vault__factory } from "./Vault__factory";
 export { VaultManager__factory } from "./VaultManager__factory";
