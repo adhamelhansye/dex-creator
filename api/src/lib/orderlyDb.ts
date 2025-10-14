@@ -793,6 +793,10 @@ export async function updateBrokerFeesInOrderlyDb(
   }
 }
 
+export function invalidateBrokerFeesCache(brokerId: string): void {
+  brokerFeesCache.delete(brokerId);
+}
+
 export async function getBrokerTierFromOrderlyDb(
   brokerId: string
 ): Promise<Result<BrokerTier>> {
