@@ -6,6 +6,7 @@ import {
   updateDexFees,
   getDexFees,
   getDexBrokerTier,
+  invalidateDexFeesCache,
 } from "../models/graduation";
 import { getUserDex, getCurrentEnvironment } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
@@ -338,6 +339,28 @@ graduationRoutes.get("/tier", async c => {
     return c.json(
       {
         message: `Error getting broker tier: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+graduationRoutes.post("/fees/invalidate-cache", async c => {
+  try {
+    const userId = c.get("userId");
+
+    const result = await invalidateDexFeesCache(userId);
+
+    if (result.success) {
+      return c.json(result.data);
+    } else {
+      return c.json({ message: result.error }, { status: 400 });
+    }
+  } catch (error) {
+    console.error("Error invalidating fee cache:", error);
+    return c.json(
+      {
+        message: `Error invalidating fee cache: ${error instanceof Error ? error.message : String(error)}`,
       },
       { status: 500 }
     );

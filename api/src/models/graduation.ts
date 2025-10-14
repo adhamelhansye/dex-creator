@@ -11,6 +11,7 @@ import { createProvider } from "../lib/fallbackProvider.js";
 import {
   getBrokerFeesFromOrderlyDb,
   updateBrokerFeesInOrderlyDb,
+  invalidateBrokerFeesCache,
   getBrokerTierFromOrderlyDb,
   type BrokerTier,
 } from "../lib/orderlyDb";
@@ -446,6 +447,46 @@ export async function getDexBrokerTier(
     return {
       success: false,
       error: `Error getting broker tier: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  }
+}
+
+export async function invalidateDexFeesCache(
+  userId: string
+): Promise<Result<{ message: string }>> {
+  try {
+    const prismaClient = await getPrisma();
+    const dex = await prismaClient.dex.findFirst({
+      where: { userId },
+    });
+
+    if (!dex) {
+      return {
+        success: false,
+        error: "DEX not found",
+      };
+    }
+
+    if (!dex.brokerId || dex.brokerId === "demo") {
+      return {
+        success: false,
+        error: "Cannot invalidate cache for demo brokers",
+      };
+    }
+
+    invalidateBrokerFeesCache(dex.brokerId);
+
+    return {
+      success: true,
+      data: {
+        message: "Fee cache invalidated successfully",
+      },
+    };
+  } catch (error) {
+    console.error("Error invalidating fee cache:", error);
+    return {
+      success: false,
+      error: `Error invalidating fee cache: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }

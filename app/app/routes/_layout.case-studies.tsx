@@ -12,7 +12,7 @@ const caseStudies = [
     id: "aden",
     name: "ADEN",
     description:
-      "Aden, created by INBUM, the biggest Korean streamer with throusands of followers, saw a huge opportunity to keep his trading community’s activity within his own ecosystem. His community already generates over $50B in monthly trading volume on Gate and Bitget, so instead of directing that volume to third-party platforms, INBUM launched Aden, a fully branded perp DEX built with Orderly One’s no-code solution.",
+      "Aden, created by INBUM, the biggest Korean streamer with thousands of followers, saw a huge opportunity to keep his trading community’s activity within his own ecosystem. His community already generates over $50B in monthly trading volume on Gate and Bitget, so instead of directing that volume to third-party platforms, INBUM launched Aden, a fully branded perp DEX built with Orderly One’s no-code solution.",
     image: "/aden.webp",
     dexUrl: "https://aden.io",
     socialUrl: "https://x.com/aden",

@@ -4,6 +4,8 @@ import { toast } from "react-toastify";
 import { useOrderlyKey } from "../context/OrderlyKeyContext";
 import { updateBrokerFees } from "../utils/orderly";
 import { useModal } from "../context/ModalContext";
+import { post } from "../utils/apiClient";
+import { useAuth } from "../context/useAuth";
 
 const MIN_MAKER_FEE = 0;
 const MIN_TAKER_FEE = 30;
@@ -52,6 +54,7 @@ export const FeeConfigWithCalculator: React.FC<
 }) => {
   const { orderlyKey, accountId, hasValidKey, setOrderlyKey } = useOrderlyKey();
   const { openModal } = useModal();
+  const { token } = useAuth();
   const [isUpdatingFees, setIsUpdatingFees] = useState(false);
   const [showFeeConfig, setShowFeeConfig] = useState(alwaysShowConfig);
   const [makerFee, setMakerFee] = useState<number>(initialMakerFee);
@@ -233,6 +236,12 @@ export const FeeConfigWithCalculator: React.FC<
           takerFeeRate
         );
         toast.success("Fees updated successfully!");
+
+        try {
+          await post("api/graduation/fees/invalidate-cache", {}, token);
+        } catch (error) {
+          console.error("Error invalidating fee cache:", error);
+        }
 
         if (onFeesChange) {
           onFeesChange(makerFee, takerFee);
