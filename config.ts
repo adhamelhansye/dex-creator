@@ -26,6 +26,7 @@ export type ChainNameTestnet =
   | "optimism-sepolia"
   | "base-sepolia"
   | "monadTestnet"
+  | "abstractTestnet"
   | "orderlyTestnet"
   | "solana-devnet";
 
@@ -73,6 +74,33 @@ export interface ChainConfig {
   fallbackRpcUrls?: string[];
   blockExplorerUrl: string;
 }
+
+export const ALLOWED_MAINNET_CHAIN_IDS = [
+  42161, // Arbitrum One
+  10, // Optimism
+  8453, // Base
+  5000, // Mantle
+  1, // Ethereum
+  56, // BNB Chain
+  1329, // Sei
+  43114, // Avalanche
+  900900900, // Solana
+  2818, // Morph
+  146, // Sonic
+  80094, // Berachain
+  1514, // Story
+  34443, // Mode
+  98866, // Plume
+  2741, // Abstract
+];
+
+export const ALLOWED_TESTNET_CHAIN_IDS = [
+  421614, // Arbitrum Sepolia
+  97, // BSC Testnet
+  10143, // Monad Testnet
+  11124, // Abstract Sepolia
+  901901901, // Solana Devnet
+];
 
 export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
   ethereum: {
@@ -310,6 +338,15 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     chainType: "EVM",
     rpcUrl: "https://testnet-rpc.monad.xyz",
     blockExplorerUrl: "https://testnet.monadexplorer.com",
+  },
+  abstractTestnet: {
+    id: "abstractTestnet",
+    name: "Abstract Testnet",
+    chainId: 11124,
+    isTestnet: true,
+    chainType: "EVM",
+    rpcUrl: "https://api.testnet.abs.xyz",
+    blockExplorerUrl: "https://sepolia.abscan.org/",
   },
   orderlyL2: {
     id: "orderlyL2",

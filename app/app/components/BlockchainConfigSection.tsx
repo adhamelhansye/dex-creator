@@ -85,13 +85,6 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
       network: "testnet",
     },
     {
-      id: 84532,
-      name: "Base Sepolia",
-      symbol: "ETH",
-      type: "L2",
-      network: "testnet",
-    },
-    {
       id: 97,
       name: "BSC Testnet",
       symbol: "BNB",
@@ -102,6 +95,13 @@ const BlockchainConfigSection: React.FC<BlockchainConfigProps> = ({
       id: 10143,
       name: "Monad Testnet",
       symbol: "MON",
+      type: "L2",
+      network: "testnet",
+    },
+    {
+      id: 11124,
+      name: "Abstract Testnet",
+      symbol: "ETH",
       type: "L2",
       network: "testnet",
     },
