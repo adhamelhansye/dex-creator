@@ -23,6 +23,10 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { GitHubResult, GitHubError, GitHubErrorType } from "./types";
 import { getSecret } from "./secretManager.js";
+import {
+  ALLOWED_MAINNET_CHAIN_IDS,
+  ALLOWED_TESTNET_CHAIN_IDS,
+} from "../../../config";
 
 let __dirname: string;
 if (typeof import.meta !== "undefined" && import.meta.url) {
@@ -606,45 +610,18 @@ function prepareDexConfigContent(
     return "";
   };
 
-  const mainnetChainIds = [
-    42161, // Arbitrum One
-    10, // Optimism
-    8453, // Base
-    // 5000, // Mantle
-    1, // Ethereum
-    56, // BNB Chain
-    // 1329, // Sei
-    // 43114, // Avalanche
-    900900900, // Solana
-    // 2818, // Morph
-    // 146, // Sonic
-    // 80094, // Berachain
-    // 1514, // Story
-    // 34443, // Mode
-    // 98866, // Plume
-    // 2741, // Abstract
-  ];
-
-  const testnetChainIds = [
-    421614, // Arbitrum Sepolia
-    84532, // Base Sepolia
-    97, // BSC Testnet
-    901901901, // Solana Devnet
-    11124, // Abstract Sepolia
-  ];
-
   const selectedChainIds = config.chainIds || [];
   let selectedMainnetChains = selectedChainIds.filter(id =>
-    mainnetChainIds.includes(id)
+    ALLOWED_MAINNET_CHAIN_IDS.includes(id)
   );
   if (selectedMainnetChains.length === 0) {
-    selectedMainnetChains = mainnetChainIds;
+    selectedMainnetChains = ALLOWED_MAINNET_CHAIN_IDS;
   }
   let selectedTestnetChains = selectedChainIds.filter(id =>
-    testnetChainIds.includes(id)
+    ALLOWED_TESTNET_CHAIN_IDS.includes(id)
   );
   if (selectedTestnetChains.length === 0) {
-    selectedTestnetChains = testnetChainIds;
+    selectedTestnetChains = ALLOWED_TESTNET_CHAIN_IDS;
   }
 
   const runtimeConfig = {
