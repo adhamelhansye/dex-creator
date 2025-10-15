@@ -147,6 +147,8 @@ export default function AdminRoute() {
   const [manualBrokerId, setManualBrokerId] = useState("");
   const [manualMakerFee, setManualMakerFee] = useState(30);
   const [manualTakerFee, setManualTakerFee] = useState(60);
+  const [manualRwaMakerFee, setManualRwaMakerFee] = useState(0);
+  const [manualRwaTakerFee, setManualRwaTakerFee] = useState(50);
   const [manualTxHash, setManualTxHash] = useState("");
   const [isCreatingManualBroker, setIsCreatingManualBroker] = useState(false);
   const [filteredManualDexes, setFilteredManualDexes] = useState<Dex[]>([]);
@@ -641,6 +643,8 @@ export default function AdminRoute() {
               brokerId: manualBrokerId.trim(),
               makerFee: manualMakerFee,
               takerFee: manualTakerFee,
+              rwaMakerFee: manualRwaMakerFee,
+              rwaTakerFee: manualRwaTakerFee,
               txHash: manualTxHash.trim(),
             },
             token,
@@ -655,6 +659,8 @@ export default function AdminRoute() {
           setManualBrokerId("");
           setManualMakerFee(30);
           setManualTakerFee(60);
+          setManualRwaMakerFee(0);
+          setManualRwaTakerFee(50);
           setManualTxHash("");
         } catch (error) {
           setManualBrokerResult(null);
@@ -1271,32 +1277,71 @@ export default function AdminRoute() {
                 point units (e.g., 30 = 3 basis points).
               </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormInput
-                  id="manualMakerFee"
-                  label="Maker Fee"
-                  type="number"
-                  value={manualMakerFee.toString()}
-                  onChange={e =>
-                    setManualMakerFee(parseInt(e.target.value) || 0)
-                  }
-                  placeholder="30"
-                  helpText="0-150 (0-15 basis points)"
-                  required
-                />
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold mb-2 text-gray-200">
+                  Standard Fees
+                </h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormInput
+                    id="manualMakerFee"
+                    label="Maker Fee"
+                    type="number"
+                    value={manualMakerFee.toString()}
+                    onChange={e =>
+                      setManualMakerFee(parseInt(e.target.value) || 0)
+                    }
+                    placeholder="30"
+                    helpText="0-150 (0-15 basis points)"
+                    required
+                  />
 
-                <FormInput
-                  id="manualTakerFee"
-                  label="Taker Fee"
-                  type="number"
-                  value={manualTakerFee.toString()}
-                  onChange={e =>
-                    setManualTakerFee(parseInt(e.target.value) || 0)
-                  }
-                  placeholder="60"
-                  helpText="30-150 (3-15 basis points)"
-                  required
-                />
+                  <FormInput
+                    id="manualTakerFee"
+                    label="Taker Fee"
+                    type="number"
+                    value={manualTakerFee.toString()}
+                    onChange={e =>
+                      setManualTakerFee(parseInt(e.target.value) || 0)
+                    }
+                    placeholder="60"
+                    helpText="30-150 (3-15 basis points)"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold mb-2 text-gray-200">
+                  RWA Asset Fees
+                </h4>
+                <p className="text-xs text-gray-400 mb-3">
+                  Configure separate fees for Real World Asset (RWA) trading.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <FormInput
+                    id="manualRwaMakerFee"
+                    label="RWA Maker Fee"
+                    type="number"
+                    value={manualRwaMakerFee.toString()}
+                    onChange={e =>
+                      setManualRwaMakerFee(parseInt(e.target.value) || 0)
+                    }
+                    placeholder="0"
+                    helpText="0-150 (0-15 basis points)"
+                  />
+
+                  <FormInput
+                    id="manualRwaTakerFee"
+                    label="RWA Taker Fee"
+                    type="number"
+                    value={manualRwaTakerFee.toString()}
+                    onChange={e =>
+                      setManualRwaTakerFee(parseInt(e.target.value) || 0)
+                    }
+                    placeholder="50"
+                    helpText="0-150 (0-15 basis points)"
+                  />
+                </div>
               </div>
 
               <div className="mt-4 p-3 bg-info/10 rounded-lg border border-info/20">
@@ -1306,6 +1351,9 @@ export default function AdminRoute() {
                     <p className="font-medium text-info mb-1">
                       Fee Calculation:
                     </p>
+                    <p className="font-medium text-gray-200 mt-2 mb-1">
+                      Standard:
+                    </p>
                     <p>
                       • Maker Fee: {manualMakerFee / 10} basis points (
                       {(manualMakerFee / 10) * 0.01}%)
@@ -1313,6 +1361,15 @@ export default function AdminRoute() {
                     <p>
                       • Taker Fee: {manualTakerFee / 10} basis points (
                       {(manualTakerFee / 10) * 0.01}%)
+                    </p>
+                    <p className="font-medium text-gray-200 mt-2 mb-1">RWA:</p>
+                    <p>
+                      • RWA Maker Fee: {manualRwaMakerFee / 10} basis points (
+                      {(manualRwaMakerFee / 10) * 0.01}%)
+                    </p>
+                    <p>
+                      • RWA Taker Fee: {manualRwaTakerFee / 10} basis points (
+                      {(manualRwaTakerFee / 10) * 0.01}%)
                     </p>
                   </div>
                 </div>

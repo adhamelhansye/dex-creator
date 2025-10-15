@@ -300,7 +300,13 @@ interface BrokerCreationResult {
 export async function createAutomatedBrokerId(
   brokerId: string,
   environment: Environment,
-  brokerData: { brokerName: string; makerFee: number; takerFee: number }
+  brokerData: {
+    brokerName: string;
+    makerFee: number;
+    takerFee: number;
+    rwaMakerFee?: number;
+    rwaTakerFee?: number;
+  }
 ): Promise<BrokerCreationResult> {
   if (brokerCreationLock) {
     console.log(`⏳ Broker creation already in progress, waiting...`);
@@ -337,7 +343,13 @@ export async function createAutomatedBrokerId(
 async function createAutomatedBrokerIdInternal(
   brokerId: string,
   environment: Environment,
-  brokerData: { brokerName: string; makerFee: number; takerFee: number }
+  brokerData: {
+    brokerName: string;
+    makerFee: number;
+    takerFee: number;
+    rwaMakerFee?: number;
+    rwaTakerFee?: number;
+  }
 ): Promise<BrokerCreationResult> {
   try {
     const env = environment || getCurrentEnvironment();
@@ -524,6 +536,8 @@ async function createAutomatedBrokerIdInternal(
       brokerName: brokerData.brokerName,
       makerFee: brokerData.makerFee,
       takerFee: brokerData.takerFee,
+      rwaMakerFee: brokerData.rwaMakerFee,
+      rwaTakerFee: brokerData.rwaTakerFee,
     });
 
     if (!orderlyDbResult.success) {

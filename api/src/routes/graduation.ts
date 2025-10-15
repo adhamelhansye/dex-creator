@@ -42,6 +42,8 @@ const verifyTxSchema = z.object({
 const updateFeesSchema = z.object({
   makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
   takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
+  rwaMakerFee: z.number().min(0).max(150).optional(), // 0-15 bps in 0.1 bps units
+  rwaTakerFee: z.number().min(0).max(150).optional(), // 0-15 bps in 0.1 bps units
 });
 
 const graduationRoutes = new Hono();
@@ -371,9 +373,16 @@ graduationRoutes.put("/fees", zValidator("json", updateFeesSchema), async c => {
   try {
     const userId = c.get("userId");
 
-    const { makerFee, takerFee } = c.req.valid("json");
+    const { makerFee, takerFee, rwaMakerFee, rwaTakerFee } =
+      c.req.valid("json");
 
-    const result = await updateDexFees(userId, makerFee, takerFee);
+    const result = await updateDexFees(
+      userId,
+      makerFee,
+      takerFee,
+      rwaMakerFee,
+      rwaTakerFee
+    );
 
     if (result.success) {
       return c.json(result);

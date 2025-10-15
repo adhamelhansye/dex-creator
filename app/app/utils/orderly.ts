@@ -299,18 +299,35 @@ export async function updateBrokerFees(
   accountId: string,
   orderlyKey: Uint8Array,
   makerFeeRate: number,
-  takerFeeRate: number
+  takerFeeRate: number,
+  rwaMakerFeeRate?: number,
+  rwaTakerFeeRate?: number
 ): Promise<void> {
+  const body: {
+    maker_fee_rate: number;
+    taker_fee_rate: number;
+    rwa_maker_fee_rate?: number;
+    rwa_taker_fee_rate?: number;
+  } = {
+    maker_fee_rate: makerFeeRate,
+    taker_fee_rate: takerFeeRate,
+  };
+
+  if (rwaMakerFeeRate !== undefined) {
+    body.rwa_maker_fee_rate = rwaMakerFeeRate;
+  }
+
+  if (rwaTakerFeeRate !== undefined) {
+    body.rwa_taker_fee_rate = rwaTakerFeeRate;
+  }
+
   const response = await signAndSendRequest(
     accountId,
     orderlyKey,
     `${getBaseUrl()}/v1/broker/fee_rate/default`,
     {
       method: "POST",
-      body: JSON.stringify({
-        maker_fee_rate: makerFeeRate,
-        taker_fee_rate: takerFeeRate,
-      }),
+      body: JSON.stringify(body),
     }
   );
 

@@ -10,18 +10,30 @@ import { useAuth } from "../context/useAuth";
 const MIN_MAKER_FEE = 0;
 const MIN_TAKER_FEE = 30;
 const MAX_FEE = 150;
+const MIN_RWA_MAKER_FEE = 0;
+const MIN_RWA_TAKER_FEE = 0;
+const MAX_RWA_FEE = 150;
 
 interface FeeConfigWithCalculatorProps {
   makerFee: number;
   takerFee: number;
+  rwaMakerFee?: number;
+  rwaTakerFee?: number;
   readOnly?: boolean;
   isSavingFees?: boolean;
   onSaveFees?: (
     e: FormEvent,
     makerFee: number,
-    takerFee: number
+    takerFee: number,
+    rwaMakerFee?: number,
+    rwaTakerFee?: number
   ) => Promise<void>;
-  onFeesChange?: (makerFee: number, takerFee: number) => void;
+  onFeesChange?: (
+    makerFee: number,
+    takerFee: number,
+    rwaMakerFee?: number,
+    rwaTakerFee?: number
+  ) => void;
   feeError?: string | null;
   defaultOpenCalculator?: boolean;
   showSaveButton?: boolean;
@@ -42,6 +54,8 @@ export const FeeConfigWithCalculator: React.FC<
 > = ({
   makerFee: initialMakerFee,
   takerFee: initialTakerFee,
+  rwaMakerFee: initialRwaMakerFee = 0,
+  rwaTakerFee: initialRwaTakerFee = 50,
   readOnly = false,
   isSavingFees = false,
   onSaveFees,
@@ -59,8 +73,12 @@ export const FeeConfigWithCalculator: React.FC<
   const [showFeeConfig, setShowFeeConfig] = useState(alwaysShowConfig);
   const [makerFee, setMakerFee] = useState<number>(initialMakerFee);
   const [takerFee, setTakerFee] = useState<number>(initialTakerFee);
+  const [rwaMakerFee, setRwaMakerFee] = useState<number>(initialRwaMakerFee);
+  const [rwaTakerFee, setRwaTakerFee] = useState<number>(initialRwaTakerFee);
   const [makerFeeError, setMakerFeeError] = useState<string | null>(null);
   const [takerFeeError, setTakerFeeError] = useState<string | null>(null);
+  const [rwaMakerFeeError, setRwaMakerFeeError] = useState<string | null>(null);
+  const [rwaTakerFeeError, setRwaTakerFeeError] = useState<string | null>(null);
   const [feeError, setFeeError] = useState<string | null>(null);
 
   const [showCalculator, setShowCalculator] = useState(defaultOpenCalculator);
@@ -72,9 +90,19 @@ export const FeeConfigWithCalculator: React.FC<
   useEffect(() => {
     setMakerFee(initialMakerFee);
     setTakerFee(initialTakerFee);
-  }, [initialMakerFee, initialTakerFee]);
+    setRwaMakerFee(initialRwaMakerFee);
+    setRwaTakerFee(initialRwaTakerFee);
+  }, [
+    initialMakerFee,
+    initialTakerFee,
+    initialRwaMakerFee,
+    initialRwaTakerFee,
+  ]);
 
-  const validateFees = (type: "maker" | "taker", value: number) => {
+  const validateFees = (
+    type: "maker" | "taker" | "rwaMaker" | "rwaTaker",
+    value: number
+  ) => {
     if (type === "maker") {
       if (value < MIN_MAKER_FEE) {
         setMakerFeeError(
@@ -88,7 +116,7 @@ export const FeeConfigWithCalculator: React.FC<
         setMakerFeeError(null);
         return true;
       }
-    } else {
+    } else if (type === "taker") {
       if (value < MIN_TAKER_FEE) {
         setTakerFeeError(
           `Taker fee must be at least ${MIN_TAKER_FEE / 10} bps`
@@ -99,6 +127,36 @@ export const FeeConfigWithCalculator: React.FC<
         return false;
       } else {
         setTakerFeeError(null);
+        return true;
+      }
+    } else if (type === "rwaMaker") {
+      if (value < MIN_RWA_MAKER_FEE) {
+        setRwaMakerFeeError(
+          `RWA Maker fee must be at least ${MIN_RWA_MAKER_FEE / 10} bps`
+        );
+        return false;
+      } else if (value > MAX_RWA_FEE) {
+        setRwaMakerFeeError(
+          `RWA Maker fee cannot exceed ${MAX_RWA_FEE / 10} bps`
+        );
+        return false;
+      } else {
+        setRwaMakerFeeError(null);
+        return true;
+      }
+    } else {
+      if (value < MIN_RWA_TAKER_FEE) {
+        setRwaTakerFeeError(
+          `RWA Taker fee must be at least ${MIN_RWA_TAKER_FEE / 10} bps`
+        );
+        return false;
+      } else if (value > MAX_RWA_FEE) {
+        setRwaTakerFeeError(
+          `RWA Taker fee cannot exceed ${MAX_RWA_FEE / 10} bps`
+        );
+        return false;
+      } else {
+        setRwaTakerFeeError(null);
         return true;
       }
     }
@@ -128,7 +186,7 @@ export const FeeConfigWithCalculator: React.FC<
     validateFees("maker", internalValue);
 
     if (onFeesChange) {
-      onFeesChange(internalValue, takerFee);
+      onFeesChange(internalValue, takerFee, rwaMakerFee, rwaTakerFee);
     }
   };
 
@@ -156,7 +214,7 @@ export const FeeConfigWithCalculator: React.FC<
     validateFees("taker", internalValue);
 
     if (onFeesChange) {
-      onFeesChange(makerFee, internalValue);
+      onFeesChange(makerFee, internalValue, rwaMakerFee, rwaTakerFee);
     }
   };
 
@@ -200,19 +258,127 @@ export const FeeConfigWithCalculator: React.FC<
     }
   };
 
+  const handleRwaMakerFeeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    if (value === "") {
+      setRwaMakerFee(0);
+      setRwaMakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (value.includes(".") && value.split(".")[1].length > 1) {
+      setRwaMakerFeeError("Please enter only one decimal place (e.g., 3.5)");
+      return;
+    }
+
+    const internalValue = bpsValue * 10;
+    setRwaMakerFee(internalValue);
+    validateFees("rwaMaker", internalValue);
+
+    if (onFeesChange) {
+      onFeesChange(makerFee, takerFee, internalValue, rwaTakerFee);
+    }
+  };
+
+  const handleRwaTakerFeeChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+
+    if (value === "") {
+      setRwaTakerFee(0);
+      setRwaTakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (value.includes(".") && value.split(".")[1].length > 1) {
+      setRwaTakerFeeError("Please enter only one decimal place (e.g., 5.0)");
+      return;
+    }
+
+    const internalValue = bpsValue * 10;
+    setRwaTakerFee(internalValue);
+    validateFees("rwaTaker", internalValue);
+
+    if (onFeesChange) {
+      onFeesChange(makerFee, takerFee, rwaMakerFee, internalValue);
+    }
+  };
+
+  const handleRwaMakerFeeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "") {
+      setRwaMakerFee(0);
+      setRwaMakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (!(value.includes(".") && value.split(".")[1].length > 1)) {
+      const internalValue = bpsValue * 10;
+      setRwaMakerFee(internalValue);
+      validateFees("rwaMaker", internalValue);
+    }
+  };
+
+  const handleRwaTakerFeeBlur = (e: React.FocusEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    if (value === "") {
+      setRwaTakerFee(0);
+      setRwaTakerFeeError(null);
+      return;
+    }
+
+    const bpsValue = parseFloat(value);
+    if (isNaN(bpsValue)) {
+      return;
+    }
+
+    if (!(value.includes(".") && value.split(".")[1].length > 1)) {
+      const internalValue = bpsValue * 10;
+      setRwaTakerFee(internalValue);
+      validateFees("rwaTaker", internalValue);
+    }
+  };
+
   const handleSaveFees = async (e: FormEvent) => {
     e.preventDefault();
     setFeeError(null);
 
-    if (makerFeeError || takerFeeError) {
+    if (
+      makerFeeError ||
+      takerFeeError ||
+      rwaMakerFeeError ||
+      rwaTakerFeeError
+    ) {
       setFeeError("Please correct the errors before saving");
       return;
     }
 
     const isMakerValid = validateFees("maker", makerFee);
     const isTakerValid = validateFees("taker", takerFee);
+    const isRwaMakerValid = validateFees("rwaMaker", rwaMakerFee);
+    const isRwaTakerValid = validateFees("rwaTaker", rwaTakerFee);
 
-    if (!isMakerValid || !isTakerValid) {
+    if (
+      !isMakerValid ||
+      !isTakerValid ||
+      !isRwaMakerValid ||
+      !isRwaTakerValid
+    ) {
       setFeeError("Fee values are outside of allowed range");
       return;
     }
@@ -228,12 +394,16 @@ export const FeeConfigWithCalculator: React.FC<
       try {
         const makerFeeRate = makerFee / 100_000;
         const takerFeeRate = takerFee / 100_000;
+        const rwaMakerFeeRate = rwaMakerFee / 100_000;
+        const rwaTakerFeeRate = rwaTakerFee / 100_000;
 
         await updateBrokerFees(
           accountId,
           orderlyKey,
           makerFeeRate,
-          takerFeeRate
+          takerFeeRate,
+          rwaMakerFeeRate,
+          rwaTakerFeeRate
         );
         toast.success("Fees updated successfully!");
 
@@ -244,7 +414,7 @@ export const FeeConfigWithCalculator: React.FC<
         }
 
         if (onFeesChange) {
-          onFeesChange(makerFee, takerFee);
+          onFeesChange(makerFee, takerFee, rwaMakerFee, rwaTakerFee);
         }
       } catch (error) {
         console.error("Error updating fees:", error);
@@ -255,7 +425,7 @@ export const FeeConfigWithCalculator: React.FC<
         setIsUpdatingFees(false);
       }
     } else if (onSaveFees) {
-      onSaveFees(e, makerFee, takerFee);
+      onSaveFees(e, makerFee, takerFee, rwaMakerFee, rwaTakerFee);
     }
   };
 
@@ -464,6 +634,92 @@ export const FeeConfigWithCalculator: React.FC<
                 </div>
               </div>
 
+              <div className="mb-4">
+                <h4 className="text-sm font-semibold mb-2 text-gray-200">
+                  RWA Asset Fees
+                </h4>
+                <p className="text-xs text-gray-400 mb-3">
+                  Configure separate fees for Real World Asset (RWA) trading.
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label
+                      htmlFor="rwaMakerFee"
+                      className="block text-sm font-bold mb-1"
+                    >
+                      RWA Maker Fee (bps)
+                    </label>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        id="rwaMakerFee"
+                        value={
+                          rwaMakerFee === 0 ? "" : (rwaMakerFee / 10).toString()
+                        }
+                        onChange={handleRwaMakerFeeChange}
+                        onBlur={handleRwaMakerFeeBlur}
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        className={`w-full px-3 py-2 bg-background-dark border ${rwaMakerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
+                        placeholder="0.0"
+                      />
+                      <span className="ml-2 text-gray-400 text-sm">
+                        bps (0.01%)
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Minimum: {MIN_RWA_MAKER_FEE / 10} bps (0.00%), Maximum:{" "}
+                      {MAX_RWA_FEE / 10} bps (
+                      {((MAX_RWA_FEE / 10) * 0.01).toFixed(2)}%)
+                    </p>
+                    {rwaMakerFeeError && (
+                      <p className="text-xs text-error mt-1">
+                        {rwaMakerFeeError}
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="rwaTakerFee"
+                      className="block text-sm font-bold mb-1"
+                    >
+                      RWA Taker Fee (bps)
+                    </label>
+                    <div className="flex items-center">
+                      <input
+                        type="number"
+                        id="rwaTakerFee"
+                        value={
+                          rwaTakerFee === 0 ? "" : (rwaTakerFee / 10).toString()
+                        }
+                        onChange={handleRwaTakerFeeChange}
+                        onBlur={handleRwaTakerFeeBlur}
+                        step="0.1"
+                        min="0"
+                        max="50"
+                        className={`w-full px-3 py-2 bg-background-dark border ${rwaTakerFeeError ? "border-error" : "border-light/10"} rounded-lg`}
+                        placeholder="0.0"
+                      />
+                      <span className="ml-2 text-gray-400 text-sm">
+                        bps (0.01%)
+                      </span>
+                    </div>
+                    <p className="text-xs text-gray-400 mt-1">
+                      Minimum: {MIN_RWA_TAKER_FEE / 10} bps (0.00%), Maximum:{" "}
+                      {MAX_RWA_FEE / 10} bps (
+                      {((MAX_RWA_FEE / 10) * 0.01).toFixed(2)}%)
+                    </p>
+                    {rwaTakerFeeError && (
+                      <p className="text-xs text-error mt-1">
+                        {rwaTakerFeeError}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {feeError && (
                 <div className="mb-4 text-error text-sm">{feeError}</div>
               )}
@@ -527,6 +783,8 @@ export const FeeConfigWithCalculator: React.FC<
                     disabled={
                       !!makerFeeError ||
                       !!takerFeeError ||
+                      !!rwaMakerFeeError ||
+                      !!rwaTakerFeeError ||
                       (useOrderlyApi && !hasValidKey)
                     }
                   >
@@ -543,25 +801,66 @@ export const FeeConfigWithCalculator: React.FC<
                 {readOnly ? "Current Fee Structure" : "Current Fee Structure:"}
               </span>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div className="bg-background-dark/50 p-3 rounded">
-                <div className="text-sm text-gray-400">Maker Fee</div>
-                <div className="text-xl font-semibold">
-                  {formatNumber(makerFee / 10)}{" "}
-                  <span className="text-sm font-normal text-gray-400">bps</span>
+            <div className="mb-3">
+              <div className="text-xs font-semibold text-gray-400 mb-2">
+                Standard Fees
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-background-dark/50 p-3 rounded">
+                  <div className="text-sm text-gray-400">Maker Fee</div>
+                  <div className="text-xl font-semibold">
+                    {formatNumber(makerFee / 10)}{" "}
+                    <span className="text-sm font-normal text-gray-400">
+                      bps
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    ({formatNumber((makerFee / 10) * 0.01, 3)}%)
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  ({formatNumber((makerFee / 10) * 0.01, 3)}%)
+                <div className="bg-background-dark/50 p-3 rounded">
+                  <div className="text-sm text-gray-400">Taker Fee</div>
+                  <div className="text-xl font-semibold">
+                    {formatNumber(takerFee / 10)}{" "}
+                    <span className="text-sm font-normal text-gray-400">
+                      bps
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    ({formatNumber((takerFee / 10) * 0.01, 3)}%)
+                  </div>
                 </div>
               </div>
-              <div className="bg-background-dark/50 p-3 rounded">
-                <div className="text-sm text-gray-400">Taker Fee</div>
-                <div className="text-xl font-semibold">
-                  {formatNumber(takerFee / 10)}{" "}
-                  <span className="text-sm font-normal text-gray-400">bps</span>
+            </div>
+
+            <div>
+              <div className="text-xs font-semibold text-gray-400 mb-2">
+                RWA Asset Fees
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-background-dark/50 p-3 rounded">
+                  <div className="text-sm text-gray-400">RWA Maker Fee</div>
+                  <div className="text-xl font-semibold">
+                    {formatNumber(rwaMakerFee / 10)}{" "}
+                    <span className="text-sm font-normal text-gray-400">
+                      bps
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    ({formatNumber((rwaMakerFee / 10) * 0.01, 3)}%)
+                  </div>
                 </div>
-                <div className="text-xs text-gray-400">
-                  ({formatNumber((takerFee / 10) * 0.01, 3)}%)
+                <div className="bg-background-dark/50 p-3 rounded">
+                  <div className="text-sm text-gray-400">RWA Taker Fee</div>
+                  <div className="text-xl font-semibold">
+                    {formatNumber(rwaTakerFee / 10)}{" "}
+                    <span className="text-sm font-normal text-gray-400">
+                      bps
+                    </span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    ({formatNumber((rwaTakerFee / 10) * 0.01, 3)}%)
+                  </div>
                 </div>
               </div>
             </div>

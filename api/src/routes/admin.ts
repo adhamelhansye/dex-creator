@@ -111,6 +111,8 @@ const manualBrokerCreationSchema = z.object({
     ),
   makerFee: z.number().min(0).max(150),
   takerFee: z.number().min(30).max(150),
+  rwaMakerFee: z.number().min(0).max(150).optional(),
+  rwaTakerFee: z.number().min(0).max(150).optional(),
   txHash: z
     .string()
     .min(10)
@@ -431,7 +433,8 @@ adminRoutes.post(
   zValidator("json", manualBrokerCreationSchema),
   async c => {
     try {
-      const { brokerId, makerFee, takerFee, txHash } = c.req.valid("json");
+      const { brokerId, makerFee, takerFee, rwaMakerFee, rwaTakerFee, txHash } =
+        c.req.valid("json");
       const dexId = c.req.param("dexId");
 
       const prismaClient = await getPrisma();
@@ -498,7 +501,9 @@ adminRoutes.post(
       const feeUpdateResult = await updateDexFees(
         dex.userId,
         makerFee,
-        takerFee
+        takerFee,
+        rwaMakerFee,
+        rwaTakerFee
       );
       if (!feeUpdateResult.success) {
         return c.json(feeUpdateResult, { status: 400 });
@@ -511,6 +516,8 @@ adminRoutes.post(
           brokerName: dex.brokerName,
           makerFee: makerFee,
           takerFee: takerFee,
+          rwaMakerFee: rwaMakerFee,
+          rwaTakerFee: rwaTakerFee,
         }
       );
 

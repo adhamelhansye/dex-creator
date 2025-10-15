@@ -24,6 +24,8 @@ model NexusBroker {
   baseTakerFeeRate        Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("base_taker_fee_rate")
   defaultMakerFeeRate     Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("default_maker_fee_rate")
   defaultTakerFeeRate     Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("default_taker_fee_rate")
+  rwaDefaultMakerFeeRate  Decimal  @default(0.00000000) @db.Decimal(28, 8) @map("rwa_default_maker_fee_rate")
+  rwaDefaultTakerFeeRate  Decimal  @default(5.00000000) @db.Decimal(28, 8) @map("rwa_default_taker_fee_rate")
 
   @@map("broker_info")
 }
