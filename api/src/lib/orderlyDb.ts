@@ -12,11 +12,15 @@ interface OrderlyBrokerData {
   brokerName: string;
   makerFee: number;
   takerFee: number;
+  rwaMakerFee?: number;
+  rwaTakerFee?: number;
 }
 
 interface BrokerFees {
   makerFee: number;
   takerFee: number;
+  rwaMakerFee: number;
+  rwaTakerFee: number;
 }
 
 interface CachedBrokerFees extends BrokerFees {
@@ -218,6 +222,12 @@ export async function addBrokerToOrderlyDb(
     const baseTakerFee = convertBasisPointsToDecimal(25);
     const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
+    const rwaDefaultMakerFee = convertBasisPointsToDecimal(
+      data.rwaMakerFee ?? 0
+    );
+    const rwaDefaultTakerFee = convertBasisPointsToDecimal(
+      data.rwaTakerFee ?? 50
+    );
 
     await orderlyPrisma.orderlyBroker.create({
       data: {
@@ -228,6 +238,8 @@ export async function addBrokerToOrderlyDb(
         baseTakerFeeRate: baseTakerFee,
         defaultMakerFeeRate: defaultMakerFee,
         defaultTakerFeeRate: defaultTakerFee,
+        rwaDefaultMakerFeeRate: rwaDefaultMakerFee,
+        rwaDefaultTakerFeeRate: rwaDefaultTakerFee,
         adminAccountId: null,
         rebateCap: new Decimal("1.00"),
         grossFeeEnable: false,
@@ -461,6 +473,12 @@ export async function addBrokerToNexusDb(
     const baseTakerFee = convertBasisPointsToDecimal(25);
     const defaultMakerFee = convertBasisPointsToDecimal(data.makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(data.takerFee);
+    const rwaDefaultMakerFee = convertBasisPointsToDecimal(
+      data.rwaMakerFee ?? 0
+    );
+    const rwaDefaultTakerFee = convertBasisPointsToDecimal(
+      data.rwaTakerFee ?? 50
+    );
 
     await nexusPrisma.nexusBroker.create({
       data: {
@@ -471,6 +489,8 @@ export async function addBrokerToNexusDb(
         baseTakerFeeRate: baseTakerFee,
         defaultMakerFeeRate: defaultMakerFee,
         defaultTakerFeeRate: defaultTakerFee,
+        rwaDefaultMakerFeeRate: rwaDefaultMakerFee,
+        rwaDefaultTakerFeeRate: rwaDefaultTakerFee,
       },
     });
 
@@ -674,6 +694,8 @@ export async function getBrokerFeesFromOrderlyDb(
       data: {
         makerFee: cached.makerFee,
         takerFee: cached.takerFee,
+        rwaMakerFee: cached.rwaMakerFee,
+        rwaTakerFee: cached.rwaTakerFee,
       },
     };
   }
@@ -688,6 +710,8 @@ export async function getBrokerFeesFromOrderlyDb(
       select: {
         defaultMakerFeeRate: true,
         defaultTakerFeeRate: true,
+        rwaDefaultMakerFeeRate: true,
+        rwaDefaultTakerFeeRate: true,
       },
     });
 
@@ -700,10 +724,14 @@ export async function getBrokerFeesFromOrderlyDb(
 
     const makerFee = convertDecimalToFeeUnits(broker.defaultMakerFeeRate);
     const takerFee = convertDecimalToFeeUnits(broker.defaultTakerFeeRate);
+    const rwaMakerFee = convertDecimalToFeeUnits(broker.rwaDefaultMakerFeeRate);
+    const rwaTakerFee = convertDecimalToFeeUnits(broker.rwaDefaultTakerFeeRate);
 
     brokerFeesCache.set(brokerId, {
       makerFee,
       takerFee,
+      rwaMakerFee,
+      rwaTakerFee,
       timestamp: Date.now(),
     });
 
@@ -712,6 +740,8 @@ export async function getBrokerFeesFromOrderlyDb(
       data: {
         makerFee,
         takerFee,
+        rwaMakerFee,
+        rwaTakerFee,
       },
     };
   } catch (error) {
@@ -729,7 +759,9 @@ export async function getBrokerFeesFromOrderlyDb(
 export async function updateBrokerFeesInOrderlyDb(
   brokerId: string,
   makerFee: number,
-  takerFee: number
+  takerFee: number,
+  rwaMakerFee?: number,
+  rwaTakerFee?: number
 ): Promise<Result<{ message: string }>> {
   const orderlyPrisma = await getOrderlyPrismaClient();
   const nexusPrisma = await getNexusPrismaClient();
@@ -738,31 +770,59 @@ export async function updateBrokerFeesInOrderlyDb(
     const defaultMakerFee = convertBasisPointsToDecimal(makerFee);
     const defaultTakerFee = convertBasisPointsToDecimal(takerFee);
 
+    const orderlyUpdateData: {
+      defaultMakerFeeRate: Decimal;
+      defaultTakerFeeRate: Decimal;
+      rwaDefaultMakerFeeRate?: Decimal;
+      rwaDefaultTakerFeeRate?: Decimal;
+    } = {
+      defaultMakerFeeRate: defaultMakerFee,
+      defaultTakerFeeRate: defaultTakerFee,
+    };
+
+    const nexusUpdateData: {
+      defaultMakerFeeRate: Decimal;
+      defaultTakerFeeRate: Decimal;
+      rwaDefaultMakerFeeRate?: Decimal;
+      rwaDefaultTakerFeeRate?: Decimal;
+    } = {
+      defaultMakerFeeRate: defaultMakerFee,
+      defaultTakerFeeRate: defaultTakerFee,
+    };
+
+    if (rwaMakerFee !== undefined) {
+      const rwaDefaultMakerFee = convertBasisPointsToDecimal(rwaMakerFee);
+      orderlyUpdateData.rwaDefaultMakerFeeRate = rwaDefaultMakerFee;
+      nexusUpdateData.rwaDefaultMakerFeeRate = rwaDefaultMakerFee;
+    }
+
+    if (rwaTakerFee !== undefined) {
+      const rwaDefaultTakerFee = convertBasisPointsToDecimal(rwaTakerFee);
+      orderlyUpdateData.rwaDefaultTakerFeeRate = rwaDefaultTakerFee;
+      nexusUpdateData.rwaDefaultTakerFeeRate = rwaDefaultTakerFee;
+    }
+
     await orderlyPrisma.orderlyBroker.update({
       where: {
         brokerId: brokerId,
       },
-      data: {
-        defaultMakerFeeRate: defaultMakerFee,
-        defaultTakerFeeRate: defaultTakerFee,
-      },
+      data: orderlyUpdateData,
     });
 
     await nexusPrisma.nexusBroker.update({
       where: {
         brokerId: brokerId,
       },
-      data: {
-        defaultMakerFeeRate: defaultMakerFee,
-        defaultTakerFeeRate: defaultTakerFee,
-      },
+      data: nexusUpdateData,
     });
 
     brokerFeesCache.delete(brokerId);
 
-    console.log(
-      `✅ Successfully updated fees for broker ${brokerId}: maker=${makerFee}, taker=${takerFee}`
-    );
+    const logMessage =
+      rwaMakerFee !== undefined || rwaTakerFee !== undefined
+        ? `✅ Successfully updated fees for broker ${brokerId}: maker=${makerFee}, taker=${takerFee}, rwaMaker=${rwaMakerFee}, rwaTaker=${rwaTakerFee}`
+        : `✅ Successfully updated fees for broker ${brokerId}: maker=${makerFee}, taker=${takerFee}`;
+    console.log(logMessage);
 
     return {
       success: true,

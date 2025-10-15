@@ -52,10 +52,8 @@ function getOrderReceiverAddress(): Promise<string> {
 
 const DEFAULT_MAKER_FEE = 30; // Default maker fee (3 bps = 30 units)
 const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
-
-const MIN_MAKER_FEE = 0; // Minimum maker fee (0 bps = 0 units)
-const MIN_TAKER_FEE = 30; // Minimum taker fee (3 bps = 30 units)
-const MAX_FEE = 150; // Maximum fee (15 bps = 150 units)
+const DEFAULT_RWA_MAKER_FEE = 0; // Default RWA maker fee (0 bps = 0 units)
+const DEFAULT_RWA_TAKER_FEE = 50; // Default RWA taker fee (5 bps = 50 units)
 
 const ACCEPTED_CHAINS = ["ethereum", "arbitrum", "sepolia", "arbitrum-sepolia"];
 
@@ -262,37 +260,11 @@ export async function verifyOrderTransaction(
 export async function updateDexFees(
   userId: string,
   makerFee: number,
-  takerFee: number
+  takerFee: number,
+  rwaMakerFee?: number,
+  rwaTakerFee?: number
 ): Promise<{ success: boolean; message: string }> {
   try {
-    if (makerFee < MIN_MAKER_FEE) {
-      return {
-        success: false,
-        message: `Maker fee cannot be less than ${MIN_MAKER_FEE / 10} basis points`,
-      };
-    }
-
-    if (takerFee < MIN_TAKER_FEE) {
-      return {
-        success: false,
-        message: `Taker fee cannot be less than ${MIN_TAKER_FEE / 10} basis points`,
-      };
-    }
-
-    if (makerFee > MAX_FEE) {
-      return {
-        success: false,
-        message: `Maker fee cannot exceed ${MAX_FEE / 10} basis points`,
-      };
-    }
-
-    if (takerFee > MAX_FEE) {
-      return {
-        success: false,
-        message: `Taker fee cannot exceed ${MAX_FEE / 10} basis points`,
-      };
-    }
-
     const prismaClient = await getPrisma();
     const dex = await prismaClient.dex.findFirst({
       where: { userId },
@@ -316,7 +288,9 @@ export async function updateDexFees(
     const result = await updateBrokerFeesInOrderlyDb(
       dex.brokerId,
       makerFee,
-      takerFee
+      takerFee,
+      rwaMakerFee,
+      rwaTakerFee
     );
 
     if (!result.success) {
@@ -344,6 +318,8 @@ export async function getDexFees(userId: string): Promise<
       success: true;
       makerFee: number;
       takerFee: number;
+      rwaMakerFee: number;
+      rwaTakerFee: number;
     }
   | { success: false; message: string }
 > {
@@ -365,6 +341,8 @@ export async function getDexFees(userId: string): Promise<
         success: true,
         makerFee: DEFAULT_MAKER_FEE,
         takerFee: DEFAULT_TAKER_FEE,
+        rwaMakerFee: DEFAULT_RWA_MAKER_FEE,
+        rwaTakerFee: DEFAULT_RWA_TAKER_FEE,
       };
     }
 
@@ -378,6 +356,8 @@ export async function getDexFees(userId: string): Promise<
         success: true,
         makerFee: DEFAULT_MAKER_FEE,
         takerFee: DEFAULT_TAKER_FEE,
+        rwaMakerFee: DEFAULT_RWA_MAKER_FEE,
+        rwaTakerFee: DEFAULT_RWA_TAKER_FEE,
       };
     }
 
@@ -385,6 +365,8 @@ export async function getDexFees(userId: string): Promise<
       success: true,
       makerFee: result.data.makerFee,
       takerFee: result.data.takerFee,
+      rwaMakerFee: result.data.rwaMakerFee,
+      rwaTakerFee: result.data.rwaTakerFee,
     };
   } catch (error) {
     console.error("Error getting DEX fees:", error);
