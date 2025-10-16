@@ -1,9 +1,10 @@
-import { useState, useEffect, FormEvent, useCallback } from "react";
+import { useState, useEffect, FormEvent, useCallback, useMemo } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
 import { useModal } from "../context/ModalContext";
 import {
+  get,
   post,
   postFormData,
   putFormData,
@@ -240,6 +241,43 @@ export default function DexRoute() {
   const [viewCssCode, setViewCssCode] = useState(false);
   const [deploymentConfirmed, setDeploymentConfirmed] = useState(false);
 
+  const [upgradeStatus, setUpgradeStatus] = useState<{
+    hasUpdates: boolean;
+    behindBy: number;
+    commits?: Array<{
+      sha: string;
+      message: string;
+      author: string;
+      date: string;
+    }>;
+  } | null>(null);
+  const [isUpgrading, setIsUpgrading] = useState(false);
+
+  const filteredUpgradeCommits = useMemo(() => {
+    if (!upgradeStatus?.commits || upgradeStatus.commits.length === 0) {
+      return [];
+    }
+
+    const featCommits = upgradeStatus.commits.filter(c =>
+      c.message.toLowerCase().startsWith("feat:")
+    );
+    const fixCommits = upgradeStatus.commits.filter(c =>
+      c.message.toLowerCase().startsWith("fix:")
+    );
+
+    let displayCommits = [...featCommits];
+
+    if (displayCommits.length < 5) {
+      displayCommits = [...displayCommits, ...fixCommits].slice(0, 5);
+    }
+
+    if (displayCommits.length < 5) {
+      displayCommits = upgradeStatus.commits.slice(0, 5);
+    }
+
+    return displayCommits;
+  }, [upgradeStatus]);
+
   const [currentStep, setCurrentStep] = useState(1);
   const [completedSteps, setCompletedSteps] = useState<Record<number, boolean>>(
     {}
@@ -470,6 +508,30 @@ export default function DexRoute() {
     isDexLoading,
     openModal,
   ]);
+
+  useEffect(() => {
+    if (dexData && dexData.id && dexData.repoUrl && token) {
+      const checkUpgradeStatus = async () => {
+        try {
+          const response = await get<{
+            hasUpdates: boolean;
+            behindBy: number;
+            commits?: Array<{
+              sha: string;
+              message: string;
+              author: string;
+              date: string;
+            }>;
+          }>(`api/dex/${dexData.id}/upgrade-status`, token);
+          setUpgradeStatus(response);
+        } catch (error) {
+          console.error("Error checking upgrade status:", error);
+        }
+      };
+
+      checkUpgradeStatus();
+    }
+  }, [dexData, token]);
 
   const handleGenerateTheme = async () => {
     if (!themePrompt.trim()) {
@@ -1146,6 +1208,80 @@ export default function DexRoute() {
     }
   };
 
+  const handleUpgrade = async () => {
+    if (!dexData || !dexData.id) {
+      toast.error("No DEX data available");
+      return;
+    }
+
+    setIsUpgrading(true);
+
+    try {
+      const imageBlobs: {
+        primaryLogo?: Blob | null;
+        secondaryLogo?: Blob | null;
+        favicon?: Blob | null;
+        pnlPosters?: (Blob | null)[];
+      } = {
+        primaryLogo,
+        secondaryLogo,
+        favicon,
+        pnlPosters,
+      };
+
+      const dexDataToSend = {
+        brokerName: brokerName.trim(),
+        telegramLink: telegramLink.trim(),
+        discordLink: discordLink.trim(),
+        xLink: xLink.trim(),
+        walletConnectProjectId: walletConnectProjectId.trim(),
+        privyAppId: privyAppId.trim(),
+        privyTermsOfUse: privyTermsOfUse.trim(),
+        privyLoginMethods: privyLoginMethods.join(","),
+        themeCSS: themeApplied ? currentTheme : originalValues.themeCSS,
+        enabledMenus: enabledMenus,
+        customMenus,
+        enableAbstractWallet,
+        enableCampaigns,
+        chainIds,
+        defaultChain,
+        disableMainnet,
+        disableTestnet,
+        disableEvmWallets,
+        disableSolanaWallets,
+        tradingViewColorConfig,
+        availableLanguages,
+        seoSiteName: seoSiteName.trim(),
+        seoSiteDescription: seoSiteDescription.trim(),
+        seoSiteLanguage: seoSiteLanguage.trim(),
+        seoSiteLocale: seoSiteLocale.trim(),
+        seoTwitterHandle: seoTwitterHandle.trim(),
+        seoThemeColor: seoThemeColor.trim(),
+        seoKeywords: seoKeywords.trim(),
+      };
+
+      const formData = createDexFormData(dexDataToSend, imageBlobs);
+
+      const savedData = await putFormData<DexData>(
+        `api/dex/${dexData.id}`,
+        formData,
+        token
+      );
+
+      updateDexData(savedData);
+      toast.success(
+        "DEX upgraded successfully! New features are being deployed."
+      );
+
+      setUpgradeStatus(null);
+    } catch (error) {
+      console.error("Error upgrading DEX:", error);
+      toast.error("Failed to upgrade DEX. Please try again.");
+    } finally {
+      setIsUpgrading(false);
+    }
+  };
+
   const handleQuickSetup = async () => {
     const validationErrors = validateAllSections();
     if (validationErrors.length > 0) {
@@ -1514,6 +1650,66 @@ export default function DexRoute() {
         </div>
       ) : (
         <div className="space-y-8">
+          {upgradeStatus && upgradeStatus.hasUpdates && dexData && (
+            <Card className="my-6 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+                <div className="flex items-center gap-3">
+                  <div className="flex-shrink-0 bg-blue-500/20 p-2 rounded-full">
+                    <div className="i-mdi:arrow-up-circle text-blue-400 w-6 h-6"></div>
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
+                      DEX Upgrade Available
+                      <span className="text-xs bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded-full">
+                        New
+                      </span>
+                    </h3>
+                    <p className="text-gray-300 text-sm mb-2">
+                      New features and improvements are ready for your DEX.
+                      Click upgrade to get the latest updates.
+                    </p>
+                    {filteredUpgradeCommits.length > 0 && (
+                      <div className="mt-2 space-y-1">
+                        <p className="text-xs text-gray-400 font-medium mb-1">
+                          What's new:
+                        </p>
+                        {filteredUpgradeCommits.map((commit, idx) => (
+                          <div
+                            key={idx}
+                            className="text-xs text-gray-400 flex items-start gap-1"
+                          >
+                            <div className="i-mdi:check-circle h-4 w-4 flex-shrink-0 text-blue-400"></div>
+                            <span className="line-clamp-1">
+                              {commit.message}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <Button
+                  onClick={handleUpgrade}
+                  disabled={isUpgrading}
+                  className="whitespace-nowrap flex-shrink-0"
+                  variant="primary"
+                >
+                  {isUpgrading ? (
+                    <>
+                      <div className="i-svg-spinners:pulse-rings-multiple h-4 w-4 mr-2"></div>
+                      Upgrading...
+                    </>
+                  ) : (
+                    <>
+                      <div className="i-mdi:rocket-launch h-4 w-4 mr-2"></div>
+                      Upgrade DEX
+                    </>
+                  )}
+                </Button>
+              </div>
+            </Card>
+          )}
+
           {dexData && dexData.repoUrl && (
             <Card className="my-6 bg-gradient-to-r from-secondary/20 to-primary/20 border border-secondary/30">
               <div className="flex flex-col md:flex-row items-center justify-between gap-4">

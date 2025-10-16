@@ -23,6 +23,8 @@ import {
   getWorkflowRunStatus,
   getWorkflowRunDetails,
   updateDexConfig,
+  checkForTemplateUpdates,
+  invalidateTemplateUpdatesCache,
 } from "../lib/github";
 import {
   deploymentRateLimiter,
@@ -349,6 +351,8 @@ dexRoutes.put(
             console.log(
               `Successfully updated repository files for ${updatedDex.brokerName} with a single commit`
             );
+
+            invalidateTemplateUpdatesCache(repoInfo.owner, repoInfo.repo);
           } catch (configError) {
             console.error("Error updating repository files:", configError);
           }
@@ -509,6 +513,54 @@ dexRoutes.get("/:id/workflow-runs/:runId", async c => {
         error: String(error),
       },
       500
+    );
+  }
+});
+
+dexRoutes.get("/:id/upgrade-status", async c => {
+  const id = c.req.param("id");
+  const userId = c.get("userId");
+
+  try {
+    const dex = await getDexById(id);
+
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, { status: 404 });
+    }
+
+    if (dex.userId !== userId) {
+      return c.json(
+        { message: "Unauthorized to access this DEX" },
+        { status: 403 }
+      );
+    }
+
+    if (!dex.repoUrl) {
+      return c.json(
+        { message: "This DEX does not have a repository" },
+        { status: 400 }
+      );
+    }
+
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, { status: 400 });
+    }
+
+    const updateStatus = await checkForTemplateUpdates(
+      repoInfo.owner,
+      repoInfo.repo
+    );
+
+    return c.json(updateStatus, { status: 200 });
+  } catch (error) {
+    console.error("Error checking upgrade status:", error);
+    return c.json(
+      {
+        message: "Error checking upgrade status",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
     );
   }
 });
