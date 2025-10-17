@@ -15,6 +15,7 @@ import { updateBrokerAdminAccountId } from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
 import { createAutomatedBrokerId } from "../lib/brokerCreation.js";
 import { getSecret } from "../lib/secretManager.js";
+import { ALL_CHAINS, ChainName } from "../../../config";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -146,6 +147,7 @@ graduationRoutes.post(
             txHash,
             userId,
             dexId: updatedDex.id,
+            chainId: ALL_CHAINS[chain as ChainName]?.chainId,
           },
         });
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

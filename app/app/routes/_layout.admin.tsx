@@ -7,7 +7,12 @@ import { Button } from "../components/Button";
 import FormInput from "../components/FormInput";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 import AllDexesList from "../components/AllDexesList";
-import { getBlockExplorerUrlByChainId, getChainById } from "../../../config";
+import {
+  getBlockExplorerUrlByChainId,
+  getChainById,
+  ALL_CHAINS,
+  type OrderTokenChainName,
+} from "../../../config";
 import { getBaseUrl } from "../utils/orderly";
 
 interface DeleteDexResponse {
@@ -150,6 +155,9 @@ export default function AdminRoute() {
   const [manualRwaMakerFee, setManualRwaMakerFee] = useState(0);
   const [manualRwaTakerFee, setManualRwaTakerFee] = useState(50);
   const [manualTxHash, setManualTxHash] = useState("");
+  const [manualChainId, setManualChainId] = useState<number | undefined>(
+    undefined
+  );
   const [isCreatingManualBroker, setIsCreatingManualBroker] = useState(false);
   const [filteredManualDexes, setFilteredManualDexes] = useState<Dex[]>([]);
   const [manualSearchQuery, setManualSearchQuery] = useState("");
@@ -646,6 +654,7 @@ export default function AdminRoute() {
               rwaMakerFee: manualRwaMakerFee,
               rwaTakerFee: manualRwaTakerFee,
               txHash: manualTxHash.trim(),
+              chainId: manualChainId,
             },
             token,
             { showToastOnError: false }
@@ -662,6 +671,7 @@ export default function AdminRoute() {
           setManualRwaMakerFee(0);
           setManualRwaTakerFee(50);
           setManualTxHash("");
+          setManualChainId(undefined);
         } catch (error) {
           setManualBrokerResult(null);
           console.error("Error creating manual broker ID:", error);
@@ -1266,6 +1276,71 @@ export default function AdminRoute() {
               minLength={10}
               maxLength={100}
             />
+
+            <div className="mb-4">
+              <label
+                htmlFor="manualChainId"
+                className="block text-sm font-medium mb-1"
+              >
+                Chain (Optional)
+              </label>
+              <select
+                id="manualChainId"
+                value={manualChainId || ""}
+                onChange={e =>
+                  setManualChainId(
+                    e.target.value ? parseInt(e.target.value) : undefined
+                  )
+                }
+                className="w-full bg-dark rounded px-4 py-3 text-base border border-light/10 focus:border-primary-light outline-none"
+              >
+                <option value="">Select chain (optional)</option>
+                <optgroup label="Mainnet">
+                  {Object.values(ALL_CHAINS)
+                    .filter(
+                      chain =>
+                        !chain.isTestnet &&
+                        (
+                          [
+                            "ethereum",
+                            "arbitrum",
+                            "base",
+                            "solana-mainnet-beta",
+                          ] as OrderTokenChainName[]
+                        ).includes(chain.id as OrderTokenChainName)
+                    )
+                    .map(chain => (
+                      <option key={chain.chainId} value={chain.chainId}>
+                        {chain.name}
+                      </option>
+                    ))}
+                </optgroup>
+                <optgroup label="Testnet">
+                  {Object.values(ALL_CHAINS)
+                    .filter(
+                      chain =>
+                        chain.isTestnet &&
+                        (
+                          [
+                            "sepolia",
+                            "arbitrum-sepolia",
+                            "base-sepolia",
+                            "solana-devnet",
+                          ] as OrderTokenChainName[]
+                        ).includes(chain.id as OrderTokenChainName)
+                    )
+                    .map(chain => (
+                      <option key={chain.chainId} value={chain.chainId}>
+                        {chain.name}
+                      </option>
+                    ))}
+                </optgroup>
+              </select>
+              <div className="text-xs text-gray-400 mt-1">
+                Select the chain where the transaction occurred (ORDER/USDC
+                available chains)
+              </div>
+            </div>
 
             <div className="bg-light/5 rounded-xl p-4 mb-4">
               <h3 className="text-md font-medium mb-2 flex items-center">
