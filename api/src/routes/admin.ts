@@ -117,6 +117,7 @@ const manualBrokerCreationSchema = z.object({
     .string()
     .min(10)
     .max(100, "Transaction hash must be between 10-100 characters"),
+  chainId: z.number().int().optional(),
 });
 
 const customDomainOverrideSchema = z.object({
@@ -433,8 +434,15 @@ adminRoutes.post(
   zValidator("json", manualBrokerCreationSchema),
   async c => {
     try {
-      const { brokerId, makerFee, takerFee, rwaMakerFee, rwaTakerFee, txHash } =
-        c.req.valid("json");
+      const {
+        brokerId,
+        makerFee,
+        takerFee,
+        rwaMakerFee,
+        rwaTakerFee,
+        txHash,
+        chainId,
+      } = c.req.valid("json");
       const dexId = c.req.param("dexId");
 
       const prismaClient = await getPrisma();
@@ -541,6 +549,7 @@ adminRoutes.post(
             txHash,
             userId: dex.userId,
             dexId: updatedDex.id,
+            chainId: chainId ?? null,
           },
         });
       } catch (error: unknown) {

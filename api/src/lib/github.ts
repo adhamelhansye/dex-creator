@@ -42,6 +42,26 @@ const etagCache = new Map<string, { etag: string; data: any }>();
 let cacheHits = 0;
 let cacheMisses = 0;
 
+interface TemplateUpdateStatus {
+  hasUpdates: boolean;
+  behindBy: number;
+  templateCommitSha: string;
+  userCommitSha: string;
+  commits?: Array<{
+    sha: string;
+    message: string;
+    author: string;
+    date: string;
+  }>;
+}
+
+interface CachedTemplateUpdateStatus extends TemplateUpdateStatus {
+  timestamp: number;
+}
+
+const templateUpdatesCache = new Map<string, CachedTemplateUpdateStatus>();
+const CACHE_TTL_TEMPLATE_UPDATES_MS = 60 * 1000;
+
 const workflowsDir = path.resolve(__dirname, "../workflows");
 const deployYmlContent = fs.readFileSync(
   path.join(workflowsDir, "deploy.yml"),
@@ -1535,4 +1555,133 @@ export interface DexConfig {
   seoTwitterHandle?: string;
   seoThemeColor?: string;
   seoKeywords?: string;
+}
+
+/**
+ * Invalidate the template updates cache for a specific repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ */
+export function invalidateTemplateUpdatesCache(
+  owner: string,
+  repo: string
+): void {
+  const cacheKey = `${owner}/${repo}`;
+  templateUpdatesCache.delete(cacheKey);
+}
+
+/**
+ * Check if a repository has updates available from the template repository
+ * @param owner The repository owner (username or organization)
+ * @param repo The repository name
+ * @returns Information about available updates
+ */
+export async function checkForTemplateUpdates(
+  owner: string,
+  repo: string
+): Promise<TemplateUpdateStatus> {
+  const cacheKey = `${owner}/${repo}`;
+  const cached = templateUpdatesCache.get(cacheKey);
+
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_TEMPLATE_UPDATES_MS) {
+    return {
+      hasUpdates: cached.hasUpdates,
+      behindBy: cached.behindBy,
+      templateCommitSha: cached.templateCommitSha,
+      userCommitSha: cached.userCommitSha,
+      commits: cached.commits,
+    };
+  }
+
+  try {
+    const octokit = await getOctokit();
+
+    const [templateRef, userRef] = await Promise.all([
+      octokit.rest.git.getRef({
+        owner: templateOwner,
+        repo: templateRepoName,
+        ref: "heads/main",
+      }),
+      octokit.rest.git.getRef({
+        owner,
+        repo,
+        ref: "heads/main",
+      }),
+    ]);
+
+    const templateCommitSha = templateRef.data.object.sha;
+    const userCommitSha = userRef.data.object.sha;
+
+    const mergeBase = await octokit.rest.repos.compareCommitsWithBasehead({
+      owner: templateOwner,
+      repo: templateRepoName,
+      basehead: `${templateCommitSha}...${userCommitSha}`,
+    });
+
+    const mergeBaseSha = mergeBase.data.merge_base_commit.sha;
+    if (!mergeBaseSha) {
+      throw new Error(
+        `No common history found between ${owner}/${repo} and template repository`
+      );
+    }
+
+    if (mergeBaseSha === templateCommitSha) {
+      const result: TemplateUpdateStatus = {
+        hasUpdates: false,
+        behindBy: 0,
+        templateCommitSha,
+        userCommitSha,
+      };
+
+      templateUpdatesCache.set(cacheKey, {
+        ...result,
+        timestamp: Date.now(),
+      });
+
+      return result;
+    }
+
+    const comparison = await octokit.rest.repos.compareCommitsWithBasehead({
+      owner: templateOwner,
+      repo: templateRepoName,
+      basehead: `${mergeBaseSha}...${templateCommitSha}`,
+    });
+
+    const behindBy = comparison.data.ahead_by;
+    const hasUpdates = behindBy > 0;
+
+    const commits = comparison.data.commits.map(commit => ({
+      sha: commit.sha,
+      message: commit.commit.message,
+      author: commit.commit.author?.name || "Unknown",
+      date: commit.commit.author?.date || "",
+    }));
+
+    console.log(
+      `Repository ${owner}/${repo} is ${behindBy} commits behind template (merge base: ${mergeBaseSha.substring(0, 7)})`
+    );
+
+    const result: TemplateUpdateStatus = {
+      hasUpdates,
+      behindBy,
+      templateCommitSha,
+      userCommitSha,
+      commits,
+    };
+
+    templateUpdatesCache.set(cacheKey, {
+      ...result,
+      timestamp: Date.now(),
+    });
+
+    return result;
+  } catch (error) {
+    console.error(
+      `Error checking for template updates for ${owner}/${repo}:`,
+      error
+    );
+    throw new Error(
+      `Failed to check for template updates: ${error instanceof Error ? error.message : String(error)}`
+    );
+  }
 }

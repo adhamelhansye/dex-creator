@@ -112,6 +112,7 @@ model UsedTransactionHash {
   txHash    String   @unique // The transaction hash that was used
   userId    String   // User who used this transaction hash
   dexId     String?  // DEX ID that used this hash (null if DEX was deleted)
+  chainId   Int?     // Chain ID where the transaction occurred
   createdAt DateTime @default(now())
   
   @@index([txHash])

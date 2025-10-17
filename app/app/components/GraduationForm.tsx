@@ -93,6 +93,8 @@ interface FeeConfigResponse {
   success: boolean;
   makerFee: number;
   takerFee: number;
+  rwaMakerFee: number;
+  rwaTakerFee: number;
   message?: string;
 }
 
@@ -160,6 +162,8 @@ export function GraduationForm({
 
   const [makerFee, setMakerFee] = useState<number>(30); // 3 bps = 30 units
   const [takerFee, setTakerFee] = useState<number>(60); // 6 bps = 60 units
+  const [rwaMakerFee, setRwaMakerFee] = useState<number>(0); // 0 bps = 0 units
+  const [rwaTakerFee, setRwaTakerFee] = useState<number>(50); // 5 bps = 50 units
   const [isSavingFees, setIsSavingFees] = useState(false);
 
   const [graduationStatus, setGraduationStatus] =
@@ -326,11 +330,13 @@ export function GraduationForm({
       if (feeResponse.success) {
         setMakerFee(feeResponse.makerFee);
         setTakerFee(feeResponse.takerFee);
+        setRwaMakerFee(feeResponse.rwaMakerFee);
+        setRwaTakerFee(feeResponse.rwaTakerFee);
       }
     } catch (error) {
       console.error("Error loading fee configuration:", error);
     }
-  }, [token, setMakerFee, setTakerFee]);
+  }, [token, setMakerFee, setTakerFee, setRwaMakerFee, setRwaTakerFee]);
 
   const loadFeeOptions = useCallback(async () => {
     try {
@@ -501,7 +507,9 @@ export function GraduationForm({
   const handleSaveFees = async (
     e: FormEvent,
     newMakerFee: number,
-    newTakerFee: number
+    newTakerFee: number,
+    newRwaMakerFee?: number,
+    newRwaTakerFee?: number
   ) => {
     e.preventDefault();
 
@@ -510,13 +518,20 @@ export function GraduationForm({
     try {
       const response = await put<FeeConfigResponse>(
         "api/graduation/fees",
-        { makerFee: newMakerFee, takerFee: newTakerFee },
+        {
+          makerFee: newMakerFee,
+          takerFee: newTakerFee,
+          rwaMakerFee: newRwaMakerFee,
+          rwaTakerFee: newRwaTakerFee,
+        },
         token
       );
 
       if (response.success) {
         setMakerFee(newMakerFee);
         setTakerFee(newTakerFee);
+        setRwaMakerFee(newRwaMakerFee || 0);
+        setRwaTakerFee(newRwaTakerFee || 50);
 
         toast.success("Fee configuration updated successfully");
       } else {
@@ -985,14 +1000,23 @@ export function GraduationForm({
           <FeeConfigWithCalculator
             makerFee={makerFee}
             takerFee={takerFee}
+            rwaMakerFee={rwaMakerFee}
+            rwaTakerFee={rwaTakerFee}
             readOnly={false}
             defaultOpenCalculator={true}
             showSaveButton={true}
             useOrderlyApi={true}
             brokerId={graduationStatus?.brokerId}
-            onFeesChange={(newMakerFee, newTakerFee) => {
+            onFeesChange={(
+              newMakerFee,
+              newTakerFee,
+              newRwaMakerFee,
+              newRwaTakerFee
+            ) => {
               setMakerFee(newMakerFee);
               setTakerFee(newTakerFee);
+              setRwaMakerFee(newRwaMakerFee || 0);
+              setRwaTakerFee(newRwaTakerFee || 50);
             }}
           />
 
@@ -1056,12 +1080,21 @@ export function GraduationForm({
           <FeeConfigWithCalculator
             makerFee={makerFee}
             takerFee={takerFee}
+            rwaMakerFee={rwaMakerFee}
+            rwaTakerFee={rwaTakerFee}
             readOnly={false}
             isSavingFees={isSavingFees}
             onSaveFees={handleSaveFees}
-            onFeesChange={(newMakerFee, newTakerFee) => {
+            onFeesChange={(
+              newMakerFee,
+              newTakerFee,
+              newRwaMakerFee,
+              newRwaTakerFee
+            ) => {
               setMakerFee(newMakerFee);
               setTakerFee(newTakerFee);
+              setRwaMakerFee(newRwaMakerFee || 0);
+              setRwaTakerFee(newRwaTakerFee || 50);
             }}
             defaultOpenCalculator={false}
             alwaysShowConfig={true}
