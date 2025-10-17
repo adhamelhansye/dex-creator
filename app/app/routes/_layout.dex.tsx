@@ -522,7 +522,9 @@ export default function DexRoute() {
               author: string;
               date: string;
             }>;
-          }>(`api/dex/${dexData.id}/upgrade-status`, token);
+          }>(`api/dex/${dexData.id}/upgrade-status`, token, {
+            showToastOnError: false,
+          });
           setUpgradeStatus(response);
         } catch (error) {
           console.error("Error checking upgrade status:", error);
@@ -1262,13 +1264,8 @@ export default function DexRoute() {
 
       const formData = createDexFormData(dexDataToSend, imageBlobs);
 
-      const savedData = await putFormData<DexData>(
-        `api/dex/${dexData.id}`,
-        formData,
-        token
-      );
+      await putFormData<DexData>(`api/dex/${dexData.id}`, formData, token);
 
-      updateDexData(savedData);
       toast.success(
         "DEX upgraded successfully! New features are being deployed."
       );
