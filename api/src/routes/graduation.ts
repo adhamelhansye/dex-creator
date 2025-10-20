@@ -3,7 +3,6 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import {
   verifyOrderTransaction,
-  updateDexFees,
   getDexFees,
   getDexBrokerTier,
   invalidateDexFeesCache,
@@ -38,13 +37,6 @@ const verifyTxSchema = z.object({
   makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
   takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
   paymentType: z.enum(["usdc", "order"]).default("order"),
-});
-
-const updateFeesSchema = z.object({
-  makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
-  takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
-  rwaMakerFee: z.number().min(0).max(150).optional(), // 0-15 bps in 0.1 bps units
-  rwaTakerFee: z.number().min(0).max(150).optional(), // 0-15 bps in 0.1 bps units
 });
 
 const graduationRoutes = new Hono();
@@ -365,38 +357,6 @@ graduationRoutes.post("/fees/invalidate-cache", async c => {
     return c.json(
       {
         message: `Error invalidating fee cache: ${error instanceof Error ? error.message : String(error)}`,
-      },
-      { status: 500 }
-    );
-  }
-});
-
-graduationRoutes.put("/fees", zValidator("json", updateFeesSchema), async c => {
-  try {
-    const userId = c.get("userId");
-
-    const { makerFee, takerFee, rwaMakerFee, rwaTakerFee } =
-      c.req.valid("json");
-
-    const result = await updateDexFees(
-      userId,
-      makerFee,
-      takerFee,
-      rwaMakerFee,
-      rwaTakerFee
-    );
-
-    if (result.success) {
-      return c.json(result);
-    } else {
-      return c.json(result, { status: 400 });
-    }
-  } catch (error) {
-    console.error("Error updating DEX fees:", error);
-    return c.json(
-      {
-        success: false,
-        message: `Error updating DEX fees: ${error instanceof Error ? error.message : String(error)}`,
       },
       { status: 500 }
     );

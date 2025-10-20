@@ -21,13 +21,6 @@ interface FeeConfigWithCalculatorProps {
   rwaTakerFee?: number;
   readOnly?: boolean;
   isSavingFees?: boolean;
-  onSaveFees?: (
-    e: FormEvent,
-    makerFee: number,
-    takerFee: number,
-    rwaMakerFee?: number,
-    rwaTakerFee?: number
-  ) => Promise<void>;
   onFeesChange?: (
     makerFee: number,
     takerFee: number,
@@ -58,7 +51,6 @@ export const FeeConfigWithCalculator: React.FC<
   rwaTakerFee: initialRwaTakerFee = 50,
   readOnly = false,
   isSavingFees = false,
-  onSaveFees,
   onFeesChange,
   defaultOpenCalculator = false,
   showSaveButton = true,
@@ -424,8 +416,6 @@ export const FeeConfigWithCalculator: React.FC<
       } finally {
         setIsUpdatingFees(false);
       }
-    } else if (onSaveFees) {
-      onSaveFees(e, makerFee, takerFee, rwaMakerFee, rwaTakerFee);
     }
   };
 
