@@ -414,7 +414,7 @@ export async function getDexBrokerTier(
           stakingVolume: "0",
           tradingVolume: "0",
           makerFeeRate: "0",
-          takerFeeRate: "0",
+          takerFeeRate: "3",
           logDate: new Date().toISOString().split("T")[0],
         },
       };
