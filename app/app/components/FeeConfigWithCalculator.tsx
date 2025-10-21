@@ -21,13 +21,6 @@ interface FeeConfigWithCalculatorProps {
   rwaTakerFee?: number;
   readOnly?: boolean;
   isSavingFees?: boolean;
-  onSaveFees?: (
-    e: FormEvent,
-    makerFee: number,
-    takerFee: number,
-    rwaMakerFee?: number,
-    rwaTakerFee?: number
-  ) => Promise<void>;
   onFeesChange?: (
     makerFee: number,
     takerFee: number,
@@ -58,7 +51,6 @@ export const FeeConfigWithCalculator: React.FC<
   rwaTakerFee: initialRwaTakerFee = 50,
   readOnly = false,
   isSavingFees = false,
-  onSaveFees,
   onFeesChange,
   defaultOpenCalculator = false,
   showSaveButton = true,
@@ -424,8 +416,6 @@ export const FeeConfigWithCalculator: React.FC<
       } finally {
         setIsUpdatingFees(false);
       }
-    } else if (onSaveFees) {
-      onSaveFees(e, makerFee, takerFee, rwaMakerFee, rwaTakerFee);
     }
   };
 
@@ -578,7 +568,7 @@ export const FeeConfigWithCalculator: React.FC<
                     <input
                       type="number"
                       id="makerFee"
-                      value={makerFee === 0 ? "" : (makerFee / 10).toString()}
+                      value={(makerFee / 10).toString()}
                       onChange={handleMakerFeeChange}
                       onBlur={handleMakerFeeBlur}
                       step="0.1"
@@ -611,7 +601,7 @@ export const FeeConfigWithCalculator: React.FC<
                     <input
                       type="number"
                       id="takerFee"
-                      value={takerFee === 0 ? "" : (takerFee / 10).toString()}
+                      value={(takerFee / 10).toString()}
                       onChange={handleTakerFeeChange}
                       onBlur={handleTakerFeeBlur}
                       step="0.1"
@@ -653,9 +643,7 @@ export const FeeConfigWithCalculator: React.FC<
                       <input
                         type="number"
                         id="rwaMakerFee"
-                        value={
-                          rwaMakerFee === 0 ? "" : (rwaMakerFee / 10).toString()
-                        }
+                        value={(rwaMakerFee / 10).toString()}
                         onChange={handleRwaMakerFeeChange}
                         onBlur={handleRwaMakerFeeBlur}
                         step="0.1"
@@ -691,9 +679,7 @@ export const FeeConfigWithCalculator: React.FC<
                       <input
                         type="number"
                         id="rwaTakerFee"
-                        value={
-                          rwaTakerFee === 0 ? "" : (rwaTakerFee / 10).toString()
-                        }
+                        value={(rwaTakerFee / 10).toString()}
                         onChange={handleRwaTakerFeeChange}
                         onBlur={handleRwaTakerFeeBlur}
                         step="0.1"

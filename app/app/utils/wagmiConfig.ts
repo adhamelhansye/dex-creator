@@ -2,6 +2,8 @@ import { createAppKit } from "@reown/appkit/react";
 import {
   arbitrum,
   arbitrumSepolia,
+  base,
+  baseSepolia,
   mainnet,
   sepolia,
 } from "@reown/appkit/networks";
@@ -17,7 +19,14 @@ const metadata = {
   icons: ["https://dex.orderly.network/favicon.webp"],
 };
 
-const networks = [mainnet, arbitrum, sepolia, arbitrumSepolia];
+const networks = [
+  mainnet,
+  arbitrum,
+  base,
+  sepolia,
+  arbitrumSepolia,
+  baseSepolia,
+];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,
@@ -27,7 +36,7 @@ export const wagmiAdapter = new WagmiAdapter({
 
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [mainnet, arbitrum, sepolia, arbitrumSepolia],
+  networks: [mainnet, arbitrum, base, sepolia, arbitrumSepolia, baseSepolia],
   defaultNetwork: mainnet,
   projectId,
   metadata,

@@ -97,25 +97,22 @@ docker run --name dex-creator-postgres \
   -d postgres:16
 ```
 
-**Note on Docker Networking**: If you encounter network-related Docker errors, use host networking mode:
-
-```bash
-# Alternative setup with host networking
-docker run --name dex-creator-postgres \
-  -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_USER=postgres \
-  -e POSTGRES_DB=dex_creator \
-  -d postgres:16
-```
-
 Once PostgreSQL is running, initialize the database schema:
 
 ```bash
 # Generate Prisma client
-cd api && yarn db:generate
+yarn api db:generate
 
 # Create initial database migration and apply it
 yarn db:migrate:dev --name initial_migration
+```
+
+We also need to initialize other external database schemas via:
+
+```bash
+yarn api nexus:generate
+yarn api orderly:generate
+yarn api sv:generate
 ```
 
 #### Orderly MySQL Database (For Graduation Testing)

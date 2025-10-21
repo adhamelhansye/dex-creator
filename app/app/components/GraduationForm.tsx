@@ -9,7 +9,7 @@ import {
 import FormInput from "./FormInput";
 import { Button } from "./Button";
 import { toast } from "react-toastify";
-import { post, get, put } from "../utils/apiClient";
+import { post, get } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
 import { validateBrokerId } from "../utils/validation";
 import { Card } from "./Card";
@@ -164,7 +164,6 @@ export function GraduationForm({
   const [takerFee, setTakerFee] = useState<number>(60); // 6 bps = 60 units
   const [rwaMakerFee, setRwaMakerFee] = useState<number>(0); // 0 bps = 0 units
   const [rwaTakerFee, setRwaTakerFee] = useState<number>(50); // 5 bps = 50 units
-  const [isSavingFees, setIsSavingFees] = useState(false);
 
   const [graduationStatus, setGraduationStatus] =
     useState<NewGraduationStatusResponse | null>(null);
@@ -501,47 +500,6 @@ export function GraduationForm({
       );
     } finally {
       setIsFinalizingAdminWallet(false);
-    }
-  };
-
-  const handleSaveFees = async (
-    e: FormEvent,
-    newMakerFee: number,
-    newTakerFee: number,
-    newRwaMakerFee?: number,
-    newRwaTakerFee?: number
-  ) => {
-    e.preventDefault();
-
-    setIsSavingFees(true);
-
-    try {
-      const response = await put<FeeConfigResponse>(
-        "api/graduation/fees",
-        {
-          makerFee: newMakerFee,
-          takerFee: newTakerFee,
-          rwaMakerFee: newRwaMakerFee,
-          rwaTakerFee: newRwaTakerFee,
-        },
-        token
-      );
-
-      if (response.success) {
-        setMakerFee(newMakerFee);
-        setTakerFee(newTakerFee);
-        setRwaMakerFee(newRwaMakerFee || 0);
-        setRwaTakerFee(newRwaTakerFee || 50);
-
-        toast.success("Fee configuration updated successfully");
-      } else {
-        toast.error(response.message || "Failed to update fees");
-      }
-    } catch (error) {
-      console.error("Error updating fees:", error);
-      toast.error("Failed to update fee configuration");
-    } finally {
-      setIsSavingFees(false);
     }
   };
 
@@ -1083,8 +1041,6 @@ export function GraduationForm({
             rwaMakerFee={rwaMakerFee}
             rwaTakerFee={rwaTakerFee}
             readOnly={false}
-            isSavingFees={isSavingFees}
-            onSaveFees={handleSaveFees}
             onFeesChange={(
               newMakerFee,
               newTakerFee,
