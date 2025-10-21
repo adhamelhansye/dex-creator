@@ -1824,20 +1824,12 @@ export default function DexRoute() {
                         <>
                           Your DEX is earning fee share revenue!{" "}
                           <a
-                            href={
-                              dexData.customDomain
-                                ? `https://${dexData.customDomain}`
-                                : deploymentUrl || "#"
-                            }
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-primary-light hover:underline inline-flex items-center"
+                            href="/dex/graduation"
+                            className="text-primary-light hover:underline"
                           >
-                            Log in to your DEX
-                            <div className="i-mdi:open-in-new h-3.5 w-3.5 ml-1"></div>
+                            Visit the graduation page
                           </a>{" "}
-                          with your admin wallet to access and withdraw your
-                          earnings.
+                          to access your earnings and manage your DEX settings.
                         </>
                       ) : (
                         <>

@@ -570,6 +570,9 @@ export const ENVIRONMENT_CONFIGS: {
     "arbitrum-sepolia": {
       vaultAddress: "0xB15a3a4D451311e03e34d9331C695078Ad5Cf5F1",
     },
+    "base-sepolia": {
+      vaultAddress: "0xEcb4abe96113c9caA3204e96C63C5377D02cb636",
+    },
     "solana-devnet": {
       vaultAddress: "5zBjLor7vEraAt4zp2H82sy9MSqFoDnNa1Lx6EYKTYRZ",
     },

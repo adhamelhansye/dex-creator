@@ -10,7 +10,10 @@ import {
 import { getUserDex, getCurrentEnvironment } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
-import { updateBrokerAdminAccountId } from "../lib/orderlyDb.js";
+import {
+  updateBrokerAdminAccountId,
+  getAdminAccountIdFromOrderlyDb,
+} from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
 import { createAutomatedBrokerId } from "../lib/brokerCreation.js";
 import { getSecret } from "../lib/secretManager.js";
@@ -37,6 +40,10 @@ const verifyTxSchema = z.object({
   makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
   takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
   paymentType: z.enum(["usdc", "order"]).default("order"),
+});
+
+const finalizeAdminWalletSchema = z.object({
+  multisigAddress: z.string().optional(),
 });
 
 const graduationRoutes = new Hono();
@@ -363,112 +370,123 @@ graduationRoutes.post("/fees/invalidate-cache", async c => {
   }
 });
 
-graduationRoutes.post("/finalize-admin-wallet", async c => {
-  try {
-    const userId = c.get("userId");
-
-    const dex = await getUserDex(userId);
-    if (!dex) {
-      return c.json(
-        { success: false, message: "You must create a DEX first" },
-        { status: 400 }
-      );
-    }
-
-    if (!dex.brokerId || dex.brokerId === "demo") {
-      return c.json(
-        { success: false, message: "You must have a broker ID first" },
-        { status: 400 }
-      );
-    }
-
-    const prismaClient = await getPrisma();
-    const user = await prismaClient.user.findUnique({
-      where: { id: userId },
-    });
-
-    if (!user) {
-      return c.json(
-        { success: false, message: "User not found" },
-        { status: 404 }
-      );
-    }
-
-    const orderlyResponse = await fetch(
-      `${getOrderlyApiBaseUrl()}/v1/get_account?address=${user.address}&broker_id=${dex.brokerId}`
-    );
-
-    if (!orderlyResponse.ok) {
-      return c.json(
-        {
-          success: false,
-          message: "Failed to check registration status with Orderly API",
-        },
-        { status: 400 }
-      );
-    }
-
-    const orderlyData = await orderlyResponse.json();
-
-    if (!orderlyData.success || !orderlyData.data) {
-      return c.json(
-        {
-          success: false,
-          message: "You must register your EVM address with Orderly first",
-        },
-        { status: 400 }
-      );
-    }
-
+graduationRoutes.post(
+  "/finalize-admin-wallet",
+  zValidator("json", finalizeAdminWalletSchema),
+  async c => {
     try {
-      const adminAccountId = orderlyData.data.account_id;
-      console.log(
-        `🔄 Updating admin account ID for broker ${dex.brokerId} to ${adminAccountId}`
-      );
+      const userId = c.get("userId");
 
-      const updateResult = await updateBrokerAdminAccountId(
-        dex.brokerId,
-        adminAccountId
-      );
-
-      if (updateResult.success) {
-        console.log(
-          `✅ Successfully updated admin account ID for broker ${dex.brokerId}`
-        );
-      } else {
-        console.warn(
-          `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.error}`
+      const dex = await getUserDex(userId);
+      if (!dex) {
+        return c.json(
+          { success: false, message: "You must create a DEX first" },
+          { status: 400 }
         );
       }
-    } catch (orderlyDbError) {
-      console.error(
-        `❌ Error updating admin account ID for broker ${dex.brokerId}:`,
-        orderlyDbError
+
+      if (!dex.brokerId || dex.brokerId === "demo") {
+        return c.json(
+          { success: false, message: "You must have a broker ID first" },
+          { status: 400 }
+        );
+      }
+
+      const prismaClient = await getPrisma();
+      const user = await prismaClient.user.findUnique({
+        where: { id: userId },
+      });
+
+      if (!user) {
+        return c.json(
+          { success: false, message: "User not found" },
+          { status: 404 }
+        );
+      }
+
+      const { multisigAddress } = c.req.valid("json");
+      const addressToCheck = multisigAddress || user.address;
+
+      console.log(
+        `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
+      );
+      const orderlyResponse = await fetch(
+        `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
+      );
+
+      if (!orderlyResponse.ok) {
+        return c.json(
+          {
+            success: false,
+            message: "Failed to check registration status with Orderly API",
+          },
+          { status: 400 }
+        );
+      }
+
+      const orderlyData = await orderlyResponse.json();
+
+      if (!orderlyData.success || !orderlyData.data) {
+        console.log("orderlyData", orderlyData);
+        return c.json(
+          {
+            success: false,
+            message: "You must register your EVM address with Orderly first",
+          },
+          { status: 400 }
+        );
+      }
+
+      try {
+        const adminAccountId = orderlyData.data.account_id;
+        console.log(
+          `🔄 Updating admin account ID for broker ${dex.brokerId} to ${adminAccountId}`
+        );
+
+        const updateResult = await updateBrokerAdminAccountId(
+          dex.brokerId,
+          adminAccountId
+        );
+
+        if (updateResult.success) {
+          console.log(
+            `✅ Successfully updated admin account ID for broker ${dex.brokerId}`
+          );
+        } else {
+          console.warn(
+            `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.error}`
+          );
+        }
+      } catch (orderlyDbError) {
+        console.error(
+          `❌ Error updating admin account ID for broker ${dex.brokerId}:`,
+          orderlyDbError
+        );
+      }
+
+      await prismaClient.dex.update({
+        where: { userId },
+        data: { isGraduated: true },
+      });
+
+      return c.json({
+        success: true,
+        message:
+          "Admin wallet setup completed successfully. Your DEX has graduated!",
+        isGraduated: true,
+      });
+    } catch (error) {
+      console.error("Error finalizing admin wallet:", error);
+      return c.json(
+        {
+          success: false,
+          message: `Error finalizing admin wallet: ${error instanceof Error ? error.message : String(error)}`,
+        },
+        { status: 500 }
       );
     }
-
-    await prismaClient.dex.update({
-      where: { userId },
-      data: { isGraduated: true },
-    });
-
-    return c.json({
-      success: true,
-      message:
-        "Admin wallet setup completed successfully. Your DEX has graduated!",
-      isGraduated: true,
-    });
-  } catch (error) {
-    console.error("Error finalizing admin wallet:", error);
-    return c.json(
-      {
-        success: false,
-        message: `Error finalizing admin wallet: ${error instanceof Error ? error.message : String(error)}`,
-      },
-      { status: 500 }
-    );
   }
-});
+);
 
 graduationRoutes.get("/graduation-status", async c => {
   try {
@@ -482,10 +500,63 @@ graduationRoutes.get("/graduation-status", async c => {
       );
     }
 
+    const prismaClient = await getPrisma();
+    const user = await prismaClient.user.findUnique({
+      where: { id: userId },
+    });
+
+    let isMultisig = false;
+    let multisigAddress: string | null = null;
+
+    if (user && dex.isGraduated && dex.brokerId) {
+      try {
+        const adminResult = await getAdminAccountIdFromOrderlyDb(dex.brokerId);
+
+        if (adminResult.success && adminResult.data.adminAccountId) {
+          const orderlyResponse = await fetch(
+            `${getOrderlyApiBaseUrl()}/v1/get_account?address=${user.address}&broker_id=${dex.brokerId}`
+          );
+
+          if (orderlyResponse.ok) {
+            const orderlyData = await orderlyResponse.json();
+
+            if (orderlyData.success && orderlyData.data?.account_id) {
+              const userAccountId = orderlyData.data.account_id;
+
+              isMultisig = adminResult.data.adminAccountId !== userAccountId;
+
+              if (isMultisig) {
+                const accountResponse = await fetch(
+                  `${getOrderlyApiBaseUrl()}/v1/public/account?account_id=${adminResult.data.adminAccountId}`
+                );
+
+                if (accountResponse.ok) {
+                  const accountData = await accountResponse.json();
+                  if (
+                    accountData.success &&
+                    accountData.data?.address &&
+                    accountData.data?.broker_id === dex.brokerId
+                  ) {
+                    multisigAddress = accountData.data.address;
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Error checking multisig status:", error);
+        isMultisig = false;
+        multisigAddress = null;
+      }
+    }
+
     return c.json({
       success: true,
       isGraduated: dex.isGraduated,
       brokerId: dex.brokerId,
+      isMultisig,
+      multisigAddress,
     });
   } catch (error) {
     console.error("Error getting graduation status:", error);

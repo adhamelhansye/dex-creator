@@ -34,6 +34,7 @@ import {
   registerAccount,
   pollAccountRegistration,
   checkAccountRegistration,
+  getOffChainDomain,
 } from "../utils/orderly";
 import { getBlockExplorerUrlByChainId } from "../../../config";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
@@ -64,6 +65,18 @@ const ERC20_ABI = [
 
 const SUPPORTED_CHAINS = getSupportedChains();
 
+const CHAIN_PREFIXES = [
+  "eth:",
+  "base:",
+  "arb:",
+  "sepolia:",
+  "sep:",
+  "base-sep:",
+  "basesep:",
+  "arb-sep:",
+  "arbsep:",
+];
+
 const validateAddress = (address: string): boolean => {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
@@ -87,6 +100,8 @@ interface NewGraduationStatusResponse {
   success: boolean;
   isGraduated: boolean;
   brokerId: string;
+  isMultisig?: boolean;
+  multisigAddress?: string | null;
 }
 
 interface FeeConfigResponse {
@@ -173,6 +188,10 @@ export function GraduationForm({
   const [paymentType, setPaymentType] = useState<"usdc" | "order">("order");
   const [brokerTier, setBrokerTier] = useState<BrokerTierResponse | null>(null);
   const { openModal } = useModal();
+  const [walletType, setWalletType] = useState<"eoa" | "multisig">("eoa");
+  const [multisigAddress, setMultisigAddress] = useState("");
+  const [multisigTxHash, setMultisigTxHash] = useState("");
+  const [isRegisteringMultisig, setIsRegisteringMultisig] = useState(false);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -181,6 +200,189 @@ export function GraduationForm({
     } catch (error) {
       console.error("Failed to copy to clipboard:", error);
       toast.error("Failed to copy to clipboard");
+    }
+  };
+
+  const MESSAGE_TYPES = {
+    DelegateSigner: [
+      { name: "delegateContract", type: "address" },
+      { name: "brokerId", type: "string" },
+      { name: "chainId", type: "uint256" },
+      { name: "timestamp", type: "uint64" },
+      { name: "registrationNonce", type: "uint256" },
+      { name: "txHash", type: "bytes32" },
+    ],
+  };
+
+  const extractChainFromAddress = (address: string): number | null => {
+    const chainPrefixes: Record<string, number> = {
+      "eth:": 1,
+      "base:": 8453,
+      "arb:": 42161,
+      "sepolia:": 11155111,
+      "sep:": 11155111,
+      "base-sep:": 84532,
+      "basesep:": 84532,
+      "arb-sep:": 421614,
+      "arbsep:": 421614,
+    };
+
+    for (const [prefix, chainId] of Object.entries(chainPrefixes)) {
+      if (address.toLowerCase().startsWith(prefix)) {
+        return chainId;
+      }
+    }
+    return null;
+  };
+
+  const cleanMultisigAddress = (address: string): string => {
+    let cleanAddress = address;
+
+    for (const prefix of CHAIN_PREFIXES) {
+      if (cleanAddress.toLowerCase().startsWith(prefix)) {
+        cleanAddress = cleanAddress.substring(prefix.length);
+        break;
+      }
+    }
+
+    return cleanAddress;
+  };
+
+  const announceDelegateSigner = async (
+    delegateContract: string,
+    brokerId: string,
+    chainId: number,
+    txHash: string
+  ) => {
+    if (!walletClient) {
+      throw new Error("Wallet client not available");
+    }
+
+    const nonceRes = await fetch(`${getBaseUrl()}/v1/registration_nonce`);
+    const nonceJson = await nonceRes.json();
+    const registrationNonce = nonceJson.data.registration_nonce as string;
+
+    const delegateSignerMessage = {
+      delegateContract,
+      brokerId,
+      chainId,
+      timestamp: Date.now(),
+      registrationNonce: Number(registrationNonce),
+      txHash,
+    };
+
+    const provider = new BrowserProvider(walletClient);
+    const signer = await provider.getSigner();
+    const signature = await signer.signTypedData(
+      getOffChainDomain(chainId),
+      { DelegateSigner: MESSAGE_TYPES.DelegateSigner },
+      delegateSignerMessage
+    );
+
+    const delegateSignerRes = await fetch(
+      `${getBaseUrl()}/v1/delegate_signer`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          message: delegateSignerMessage,
+          signature,
+          userAddress: address,
+        }),
+      }
+    );
+    const registerJson = await delegateSignerRes.json();
+    if (!registerJson.success) {
+      throw new Error(registerJson.message);
+    }
+    return registerJson.data;
+  };
+
+  const handleRegisterMultisig = async () => {
+    if (!multisigAddress.trim()) {
+      toast.error("Please enter your multisig address");
+      return;
+    }
+
+    if (!multisigTxHash.trim()) {
+      toast.error(
+        "Please enter the transaction hash from your Safe transaction"
+      );
+      return;
+    }
+
+    if (!address) {
+      toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!graduationStatus?.brokerId) {
+      toast.error(
+        "No broker ID found. Please complete the previous steps first."
+      );
+      return;
+    }
+
+    setIsRegisteringMultisig(true);
+    try {
+      const cleanAddress = cleanMultisigAddress(multisigAddress);
+
+      const extractedChain = extractChainFromAddress(multisigAddress);
+      if (extractedChain && extractedChain !== connectedChainId) {
+        await switchChain({ chainId: extractedChain });
+        toast.info(
+          `Switching to the correct network for this multisig address`
+        );
+        return;
+      }
+
+      await announceDelegateSigner(
+        cleanAddress,
+        graduationStatus.brokerId,
+        connectedChainId,
+        multisigTxHash
+      );
+
+      const response = await post<{
+        success: boolean;
+        message: string;
+        isGraduated: boolean;
+      }>(
+        "api/graduation/finalize-admin-wallet",
+        {
+          multisigAddress: cleanAddress,
+        },
+        token,
+        {
+          showToastOnError: false,
+        }
+      );
+
+      if (response.success) {
+        toast.success(
+          "Multisig registered and admin wallet setup completed! Your DEX has graduated successfully."
+        );
+        const statusResponse = await get<NewGraduationStatusResponse>(
+          "api/graduation/graduation-status",
+          token
+        );
+        setGraduationStatus(statusResponse);
+
+        if (onGraduationSuccess) {
+          onGraduationSuccess();
+        }
+      } else {
+        toast.error(response.message);
+      }
+    } catch (error) {
+      console.error("Error registering multisig:", error);
+      toast.error(
+        error instanceof Error ? error.message : "Failed to register multisig"
+      );
+    } finally {
+      setIsRegisteringMultisig(false);
     }
   };
 
@@ -378,6 +580,8 @@ export function GraduationForm({
           token,
           { showToastOnError: false }
         );
+        response.isMultisig = true;
+        response.multisigAddress = "0xe2e4BE05a712794CC11D4d75380715b593454143";
 
         setGraduationStatus(response);
       } catch (error) {
@@ -722,51 +926,203 @@ export function GraduationForm({
               Complete the admin wallet setup to start earning revenue from your
               DEX.
             </p>
-            <Button
-              onClick={handleFinalizeAdminWallet}
-              isLoading={isFinalizingAdminWallet}
-              loadingText="Registering with Orderly..."
-              variant="primary"
-              className="mxa"
-            >
-              Register with Orderly & Start Earning
-            </Button>
           </div>
 
-          {/* Instructions */}
-          <div className="bg-light/5 rounded-lg p-4 text-left">
-            <h3 className="text-md font-medium mb-2 flex items-center">
-              <div className="i-mdi:information text-primary-light mr-2 h-4 w-4"></div>
-              What This Does
+          <div className="bg-light/5 rounded-lg p-4 mb-6 text-left">
+            <h3 className="text-md font-medium mb-3 flex items-center">
+              <div className="i-mdi:wallet text-primary-light mr-2 h-5 w-5"></div>
+              Select Wallet Type
             </h3>
-            <p className="text-sm text-gray-400 mb-3">
-              This final step registers your EVM address with Orderly Network
-              and activates your broker account. Once completed, you'll start
-              earning fees from all trades on your DEX.
-            </p>
-            <div className="text-xs text-gray-500 space-y-1">
-              <p>• Registers your EVM address with Orderly Network</p>
-              <p>• Creates your broker account for fee collection</p>
-              <p>• Enables revenue sharing from your DEX</p>
+
+            <div className="flex gap-2 mb-4">
+              <button
+                onClick={() => setWalletType("eoa")}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                  walletType === "eoa"
+                    ? "bg-primary/20 text-primary border border-primary/30"
+                    : "bg-background-card text-gray-400 hover:text-gray-300 border border-light/10"
+                }`}
+              >
+                EOA Wallet
+              </button>
+              <button
+                onClick={() => setWalletType("multisig")}
+                className={`flex-1 py-2 px-4 rounded-lg text-sm font-medium transition-all ${
+                  walletType === "multisig"
+                    ? "bg-primary/20 text-primary border border-primary/30"
+                    : "bg-background-card text-gray-400 hover:text-gray-300 border border-light/10"
+                }`}
+              >
+                Gnosis Safe
+              </button>
             </div>
-          </div>
 
-          {/* Registration Instructions */}
-          <div className="bg-light/5 rounded-lg p-4 text-left mt-4">
-            <h3 className="text-md font-medium mb-2 flex items-center">
-              <div className="i-mdi:account-plus text-primary-light mr-2 h-4 w-4"></div>
-              Registration Process
-            </h3>
-            <p className="text-sm text-gray-400">
-              When you click "Finalize Setup", you'll be prompted to sign a
-              message to register your EVM address with Orderly Network using
-              broker ID{" "}
-              <span className="font-mono text-primary-light">
-                {graduationStatus.brokerId}
-              </span>
-              . This happens directly in your wallet - no need to visit external
-              sites.
-            </p>
+            {walletType === "eoa" ? (
+              <div className="space-y-4">
+                <div className="bg-background-card rounded-lg p-4">
+                  <h4 className="text-sm font-medium mb-2 flex items-center">
+                    <div className="i-mdi:information-outline text-info mr-2 h-4 w-4"></div>
+                    What This Does
+                  </h4>
+                  <p className="text-xs text-gray-400 mb-3">
+                    This registers your connected EOA (Externally Owned Account)
+                    wallet with Orderly Network and activates your broker
+                    account. Once completed, you'll start earning fees from all
+                    trades on your DEX.
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-1">
+                    <p>• Registers your EVM address with Orderly Network</p>
+                    <p>• Creates your broker account for fee collection</p>
+                    <p>• Enables revenue sharing from your DEX</p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={handleFinalizeAdminWallet}
+                  isLoading={isFinalizingAdminWallet}
+                  loadingText="Registering with Orderly..."
+                  variant="primary"
+                  className="w-full"
+                >
+                  Register with Orderly & Start Earning
+                </Button>
+
+                <div className="bg-light/5 rounded-lg p-3">
+                  <p className="text-xs text-gray-400">
+                    When you click the button above, you'll be prompted to sign
+                    a message to register your EVM address with Orderly Network
+                    using broker ID{" "}
+                    <span className="font-mono text-primary-light">
+                      {graduationStatus.brokerId}
+                    </span>
+                    . This happens directly in your wallet.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <div className="bg-background-card rounded-lg p-4">
+                  <h4 className="text-sm font-medium mb-2 flex items-center">
+                    <div className="i-mdi:shield-check text-info mr-2 h-4 w-4"></div>
+                    Gnosis Safe Wallet
+                  </h4>
+                  <p className="text-xs text-gray-400 mb-3">
+                    Use this option if you want to register a Gnosis Safe
+                    multisig wallet as your admin wallet. This provides enhanced
+                    security through multi-signature approval for fee
+                    withdrawals and admin actions.
+                  </p>
+                  <div className="text-xs text-gray-500 space-y-1 mb-4">
+                    <p>• Enhanced security with multi-signature approval</p>
+                    <p>• Share control with multiple signers</p>
+                    <p>• Perfect for teams and organizations</p>
+                  </div>
+                </div>
+
+                <Button
+                  onClick={() =>
+                    openModal("safeInstructions", {
+                      brokerId: graduationStatus.brokerId,
+                      chainId: connectedChainId,
+                    })
+                  }
+                  variant="secondary"
+                  className="w-full"
+                >
+                  <span className="flex items-center gap-2">
+                    <div className="i-mdi:book-open-variant h-4 w-4"></div>
+                    View Setup Instructions
+                  </span>
+                </Button>
+
+                <div className="bg-background-card rounded-lg p-4 border border-primary/10">
+                  <h4 className="text-sm font-medium mb-3 flex items-center">
+                    <div className="i-mdi:account-plus text-primary mr-2 h-4 w-4"></div>
+                    Register Your Multisig
+                  </h4>
+
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-2">
+                        Multisig Address
+                      </label>
+                      <input
+                        type="text"
+                        value={multisigAddress}
+                        onChange={e => setMultisigAddress(e.target.value)}
+                        placeholder="0x... or eth:0x... or base:0x..."
+                        className="w-full px-3 py-2 bg-background-dark border border-light/10 rounded-lg text-white placeholder-gray-400 focus:border-primary/50 focus:outline-none text-sm"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        Enter your Gnosis Safe address. Chain prefixes (eth:,
+                        base:, arb:) are supported.
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-medium text-gray-300 mb-2">
+                        Transaction Hash
+                      </label>
+                      <input
+                        type="text"
+                        value={multisigTxHash}
+                        onChange={e => setMultisigTxHash(e.target.value)}
+                        placeholder="0x..."
+                        className="w-full px-3 py-2 bg-background-dark border border-light/10 rounded-lg text-white placeholder-gray-400 focus:border-primary/50 focus:outline-none text-sm"
+                      />
+                      <p className="text-xs text-gray-400 mt-1">
+                        The transaction hash from your Safe delegateSigner
+                        transaction.
+                      </p>
+                    </div>
+
+                    <Button
+                      onClick={handleRegisterMultisig}
+                      isLoading={isRegisteringMultisig}
+                      loadingText="Registering multisig..."
+                      variant="primary"
+                      className="w-full"
+                      disabled={
+                        !multisigAddress.trim() ||
+                        !multisigTxHash.trim() ||
+                        !address
+                      }
+                    >
+                      <span className="flex items-center gap-2">
+                        <div className="i-mdi:account-plus h-4 w-4"></div>
+                        Register Multisig
+                      </span>
+                    </Button>
+
+                    {!address && (
+                      <p className="text-xs text-warning text-center">
+                        Please connect your wallet to register your multisig
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                <div className="bg-info/10 rounded-lg p-3 border border-info/20">
+                  <div className="flex items-start gap-2">
+                    <div className="i-mdi:information-outline text-info w-4 h-4 mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-xs text-info font-medium mb-1">
+                        Step-by-Step Guide
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        Click "View Setup Instructions" above to see detailed
+                        steps on how to set up your Gnosis Safe wallet with
+                        broker ID{" "}
+                        <span className="font-mono text-primary-light">
+                          {graduationStatus.brokerId}
+                        </span>
+                        .
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </Card>
@@ -848,6 +1204,78 @@ export function GraduationForm({
             </ul>
           </div>
 
+          {graduationStatus?.isMultisig && (
+            <div className="bg-warning/10 rounded-lg p-5 mb-6 border border-warning/20 text-left">
+              <h3 className="text-lg font-semibold mb-3 flex items-center">
+                <div className="i-mdi:wallet text-warning mr-2 h-5 w-5"></div>
+                Multisig Fee Withdrawal
+              </h3>
+              <p className="text-sm text-gray-300 mb-4">
+                Since you're using a multisig wallet as your admin wallet, use
+                the withdrawal modal below to transfer fees from your Orderly
+                account to your Safe wallet.
+              </p>
+              <div className="bg-background-card rounded-lg p-4">
+                <h4 className="font-medium mb-2 flex items-center">
+                  <div className="i-mdi:shield-check text-primary mr-2 h-4 w-4"></div>
+                  How to Withdraw Fees
+                </h4>
+                <ol className="text-sm text-gray-300 space-y-2 list-decimal list-inside">
+                  <li>Click the "Withdraw Fees" button below</li>
+                  <li>Enter the amount of USDC you want to withdraw</li>
+                  <li>
+                    Sign the EIP-712 messages in your connected wallet (for PnL
+                    settlement and withdrawal)
+                  </li>
+                  <li>
+                    Fees will be transferred from your Orderly account to your
+                    Safe wallet
+                  </li>
+                </ol>
+                <div className="mt-3 p-3 bg-info/10 rounded-lg">
+                  <div className="flex items-start gap-2">
+                    <div className="i-mdi:information-outline text-info w-4 h-4 mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-xs text-info font-medium mb-1">
+                        Important Note
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        All fee withdrawals must be approved by the required
+                        number of signers in your Safe wallet, providing
+                        enhanced security for your earnings.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="mt-4">
+                  <Button
+                    onClick={() =>
+                      openModal("feeWithdrawal", {
+                        brokerId: graduationStatus.brokerId,
+                        multisigAddress: graduationStatus.multisigAddress,
+                      })
+                    }
+                    variant="primary"
+                    className="w-full"
+                    disabled={!graduationStatus.multisigAddress}
+                  >
+                    <span className="flex items-center justify-center w-full gap-2">
+                      <div className="i-mdi:cash-multiple h-4 w-4"></div>
+                      Withdraw Fees
+                    </span>
+                  </Button>
+
+                  {!graduationStatus.multisigAddress && (
+                    <p className="text-xs text-warning text-center mt-2">
+                      Unable to retrieve multisig address
+                    </p>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
           {brokerTier && (
             <div className="bg-light/5 rounded-lg p-5 mb-6">
               <h3 className="text-lg font-semibold mb-3 flex items-center">
@@ -898,7 +1326,7 @@ export function GraduationForm({
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-success/10 rounded-lg p-3">
                   <div className="text-xs text-gray-400 mb-1">
-                    Maker Fee Rate
+                    Orderly Maker Fee
                   </div>
                   <div className="font-medium text-success">
                     {new Intl.NumberFormat("en-US", {
@@ -910,7 +1338,7 @@ export function GraduationForm({
                 </div>
                 <div className="bg-info/10 rounded-lg p-3">
                   <div className="text-xs text-gray-400 mb-1">
-                    Taker Fee Rate
+                    Orderly Taker Fee
                   </div>
                   <div className="font-medium text-info">
                     {new Intl.NumberFormat("en-US", {
@@ -932,9 +1360,9 @@ export function GraduationForm({
                   <span className="text-primary-light font-medium">
                     Tier Benefits:
                   </span>{" "}
-                  Higher tiers unlock lower base fees and additional benefits.
-                  Stake more ORDER tokens or increase trading volume to upgrade
-                  your tier.
+                  Higher tiers reduce the fees Orderly charges you, allowing you
+                  to earn higher fees yourself. Stake more ORDER tokens or
+                  increase trading volume to upgrade your tier.
                 </p>
                 <div className="mt-2 bg-info/10 border border-info/20 rounded-lg p-3">
                   <div className="flex items-start gap-2">
@@ -1384,7 +1812,6 @@ export function GraduationForm({
             )}
           </div>
 
-          {/* Toggle for manual hash input */}
           <div className="text-center">
             <button
               type="button"
@@ -1504,7 +1931,6 @@ export function GraduationForm({
                   Verify Transaction
                 </Button>
 
-                {/* Disabled state hint */}
                 {(!txHash || !!brokerIdError || !brokerId) && (
                   <div className="mt-2 text-xs text-gray-400 text-center">
                     {!brokerId && (

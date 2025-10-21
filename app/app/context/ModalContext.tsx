@@ -10,6 +10,8 @@ import AdminLoginModal from "../components/AdminLoginModal";
 import GraduationExplanationModal from "../components/GraduationExplanationModal";
 import DomainSetupGuideModal from "../components/DomainSetupGuideModal";
 import { TokenSelectionModal } from "../components/TokenSelectionModal";
+import SafeInstructionsModal from "../components/SafeInstructions";
+import { FeeWithdrawalModal } from "../components/FeeWithdrawalModal";
 
 type ModalType =
   | "login"
@@ -23,6 +25,8 @@ type ModalType =
   | "graduationExplanation"
   | "domainSetupGuide"
   | "tokenSelection"
+  | "safeInstructions"
+  | "feeWithdrawal"
   | null;
 
 interface ModalContextType {
@@ -215,6 +219,24 @@ function ModalManager() {
           onSelect={currentModalProps.onSelect}
           currentChain={currentModalProps.currentChain}
           currentPaymentType={currentModalProps.currentPaymentType}
+        />
+      );
+    case "safeInstructions":
+      return (
+        <SafeInstructionsModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          brokerId={currentModalProps.brokerId}
+          chainId={currentModalProps.chainId}
+        />
+      );
+    case "feeWithdrawal":
+      return (
+        <FeeWithdrawalModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          brokerId={currentModalProps.brokerId}
+          multisigAddress={currentModalProps.multisigAddress}
         />
       );
     default:

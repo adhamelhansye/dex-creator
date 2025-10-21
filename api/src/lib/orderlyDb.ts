@@ -48,10 +48,17 @@ interface CachedBrokerTier extends BrokerTier {
   timestamp: number;
 }
 
+interface CachedAdminAccountId {
+  adminAccountId: string | null;
+  timestamp: number;
+}
+
 const brokerFeesCache = new Map<string, CachedBrokerFees>();
 const brokerTierCache = new Map<string, CachedBrokerTier>();
+const adminAccountIdCache = new Map<string, CachedAdminAccountId>();
 const CACHE_TTL_FEES_MS = 5 * 60 * 1000;
 const CACHE_TTL_TIER_MS = 30 * 60 * 1000;
+const CACHE_TTL_ADMIN_ACCOUNT_MS = 5 * 60 * 1000;
 
 interface DatabaseConfig {
   url: string;
@@ -855,6 +862,64 @@ export async function updateBrokerFeesInOrderlyDb(
 
 export function invalidateBrokerFeesCache(brokerId: string): void {
   brokerFeesCache.delete(brokerId);
+}
+
+export async function getAdminAccountIdFromOrderlyDb(
+  brokerId: string
+): Promise<Result<{ adminAccountId: string | null }>> {
+  const cached = adminAccountIdCache.get(brokerId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL_ADMIN_ACCOUNT_MS) {
+    return {
+      success: true,
+      data: {
+        adminAccountId: cached.adminAccountId,
+      },
+    };
+  }
+
+  const orderlyPrisma = await getOrderlyPrismaClient();
+
+  try {
+    const broker = await orderlyPrisma.orderlyBroker.findUnique({
+      where: {
+        brokerId: brokerId,
+      },
+      select: {
+        adminAccountId: true,
+      },
+    });
+
+    if (!broker) {
+      return {
+        success: false,
+        error: `Broker ID ${brokerId} not found in Orderly database`,
+      };
+    }
+
+    adminAccountIdCache.set(brokerId, {
+      adminAccountId: broker.adminAccountId,
+      timestamp: Date.now(),
+    });
+
+    return {
+      success: true,
+      data: {
+        adminAccountId: broker.adminAccountId,
+      },
+    };
+  } catch (error) {
+    console.error(
+      "❌ Error getting admin account ID from Orderly database:",
+      error
+    );
+
+    return {
+      success: false,
+      error: `Failed to get admin account ID from Orderly database: ${error instanceof Error ? error.message : String(error)}`,
+    };
+  } finally {
+    await orderlyPrisma.$disconnect();
+  }
 }
 
 export async function getBrokerTierFromOrderlyDb(
