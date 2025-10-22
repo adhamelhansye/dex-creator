@@ -94,15 +94,13 @@ export default function OrderlyKeyLoginModal({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center h-screen">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center h-screen md:p-4">
       <div
         className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-[1001]"
         onClick={isCreating ? undefined : onClose}
       ></div>
 
-      {/* Modal */}
-      <div className="relative z-[1002] max-w-md p-6 rounded-xl bg-background-light border border-primary-light/20 shadow-2xl slide-fade-in">
+      <div className="relative z-[1002] w-full h-full md:h-auto md:max-w-md md:max-h-[90vh] overflow-y-auto p-6 md:rounded-xl bg-background-light border-0 md:border md:border-primary-light/20 shadow-2xl slide-fade-in">
         <div className="text-center mb-6">
           <div className="bg-warning/20 p-3 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
             <div className="i-mdi:key text-warning w-8 h-8"></div>
@@ -111,8 +109,8 @@ export default function OrderlyKeyLoginModal({
             Create Orderly Key
           </h2>
           <p className="text-gray-300">
-            To manage your referral settings, you'll need to create an Orderly
-            API key by signing a message with your wallet.
+            To interact with the Orderly Network API, you'll need to create an
+            Orderly API key by signing a message with your wallet.
           </p>
         </div>
 
@@ -131,9 +129,7 @@ export default function OrderlyKeyLoginModal({
             </li>
             <li className="flex items-start gap-2">
               <div className="i-mdi:numeric-3-circle text-primary w-4 h-4 flex-shrink-0 mt-0.5"></div>
-              <span>
-                The key will be stored locally for referral management
-              </span>
+              <span>The key will be stored locally for API interactions</span>
             </li>
           </ul>
         </div>
@@ -143,9 +139,10 @@ export default function OrderlyKeyLoginModal({
             Security Note
           </h4>
           <p className="text-gray-400 text-sm">
-            This key allows secure API access to manage your referral program.
-            It will be stored locally in your browser and is unique to your DEX
-            broker account. No gas fees or blockchain transactions are required.
+            This key allows secure API access to manage your DEX settings and
+            interact with the Orderly Network. It will be stored locally in your
+            browser and is unique to your DEX broker account. No gas fees or
+            blockchain transactions are required.
           </p>
         </div>
 
