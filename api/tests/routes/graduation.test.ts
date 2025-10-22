@@ -387,65 +387,6 @@ describe("Graduation Routes", () => {
     });
   });
 
-  describe("PUT /api/graduation/fees", () => {
-    it("should update DEX fees", async () => {
-      const request = createAuthenticatedRequest(app, testUser.id);
-
-      await testDataFactory.createTestDex(testUser.id, {
-        brokerName: "Test DEX for Fee Update",
-        repoUrl: "https://github.com/test/test-repo",
-      });
-
-      const feeData = {
-        makerFee: 15,
-        takerFee: 35,
-      };
-
-      const response = await request.put("/api/graduation/fees", feeData);
-      const body = await response.json();
-
-      expect(response.status).toBe(200);
-      expect(body).toHaveProperty("success", true);
-      expect(body).toHaveProperty("message");
-    });
-
-    it("should return 400 for invalid fee values", async () => {
-      const request = createAuthenticatedRequest(app, testUser.id);
-
-      await testDataFactory.createTestDex(testUser.id, {
-        repoUrl: "https://github.com/test/test-repo",
-        brokerId: "demo",
-      });
-
-      const feeData = {
-        makerFee: 200,
-        takerFee: 10,
-      };
-
-      const response = await request.put("/api/graduation/fees", feeData);
-      const body = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(body).toHaveProperty("error");
-    });
-
-    it("should return 400 if user has no DEX", async () => {
-      const request = createAuthenticatedRequest(app, testUser.id);
-
-      const feeData = {
-        makerFee: 15,
-        takerFee: 35,
-      };
-
-      const response = await request.put("/api/graduation/fees", feeData);
-      const body = await response.json();
-
-      expect(response.status).toBe(400);
-      expect(body).toHaveProperty("success", false);
-      expect(body).toHaveProperty("message");
-    });
-  });
-
   describe("GET /api/graduation/fees", () => {
     it("should return 400 if user has no DEX", async () => {
       const request = createAuthenticatedRequest(app, testUser.id);

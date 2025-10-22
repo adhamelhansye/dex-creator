@@ -14,7 +14,7 @@ import {
   updateBrokerAdminAccountId,
   getAdminAccountIdFromOrderlyDb,
 } from "../lib/orderlyDb.js";
-import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
+import { getOrderlyApiBaseUrl, getAccountId } from "../utils/orderly.js";
 import { createAutomatedBrokerId } from "../lib/brokerCreation.js";
 import { getSecret } from "../lib/secretManager.js";
 import { ALL_CHAINS, ChainName } from "../../../config";
@@ -407,9 +407,6 @@ graduationRoutes.post(
       const { multisigAddress } = c.req.valid("json");
       const addressToCheck = multisigAddress || user.address;
 
-      console.log(
-        `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
-      );
       const orderlyResponse = await fetch(
         `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
       );
@@ -427,7 +424,6 @@ graduationRoutes.post(
       const orderlyData = await orderlyResponse.json();
 
       if (!orderlyData.success || !orderlyData.data) {
-        console.log("orderlyData", orderlyData);
         return c.json(
           {
             success: false,
@@ -513,33 +509,23 @@ graduationRoutes.get("/graduation-status", async c => {
         const adminResult = await getAdminAccountIdFromOrderlyDb(dex.brokerId);
 
         if (adminResult.success && adminResult.data.adminAccountId) {
-          const orderlyResponse = await fetch(
-            `${getOrderlyApiBaseUrl()}/v1/get_account?address=${user.address}&broker_id=${dex.brokerId}`
-          );
+          const userAccountId = getAccountId(user.address, dex.brokerId);
 
-          if (orderlyResponse.ok) {
-            const orderlyData = await orderlyResponse.json();
+          isMultisig = adminResult.data.adminAccountId !== userAccountId;
 
-            if (orderlyData.success && orderlyData.data?.account_id) {
-              const userAccountId = orderlyData.data.account_id;
+          if (isMultisig) {
+            const accountResponse = await fetch(
+              `${getOrderlyApiBaseUrl()}/v1/public/account?account_id=${adminResult.data.adminAccountId}`
+            );
 
-              isMultisig = adminResult.data.adminAccountId !== userAccountId;
-
-              if (isMultisig) {
-                const accountResponse = await fetch(
-                  `${getOrderlyApiBaseUrl()}/v1/public/account?account_id=${adminResult.data.adminAccountId}`
-                );
-
-                if (accountResponse.ok) {
-                  const accountData = await accountResponse.json();
-                  if (
-                    accountData.success &&
-                    accountData.data?.address &&
-                    accountData.data?.broker_id === dex.brokerId
-                  ) {
-                    multisigAddress = accountData.data.address;
-                  }
-                }
+            if (accountResponse.ok) {
+              const accountData = await accountResponse.json();
+              if (
+                accountData.success &&
+                accountData.data?.address &&
+                accountData.data?.broker_id === dex.brokerId
+              ) {
+                multisigAddress = accountData.data.address;
               }
             }
           }

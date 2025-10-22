@@ -1,5 +1,11 @@
+import { AbiCoder, keccak256, solidityPackedKeccak256 } from "ethers";
+
 export function getOrderlyApiBaseUrl(): string {
   const deploymentEnv = process.env.DEPLOYMENT_ENV;
+
+  if (process.env.IS_DOCKER === "true") {
+    return "http://orderly-gateway-rest";
+  }
 
   switch (deploymentEnv) {
     case "mainnet":
@@ -7,10 +13,19 @@ export function getOrderlyApiBaseUrl(): string {
     case "staging":
       return "https://testnet-api.orderly.org";
     case "qa":
-      return "http://orderly-gateway-rest";
-    // return "https://qa-api-aliyun.orderly.network";
+      return "https://qa-api-aliyun.orderly.network";
     case "dev":
     default:
       return "https://dev-api-aliyun.orderly.network";
   }
+}
+
+export function getAccountId(address: string, brokerId: string) {
+  const abicoder = AbiCoder.defaultAbiCoder();
+  return keccak256(
+    abicoder.encode(
+      ["address", "bytes32"],
+      [address, solidityPackedKeccak256(["string"], [brokerId])]
+    )
+  );
 }
