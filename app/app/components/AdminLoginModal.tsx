@@ -50,15 +50,13 @@ export default function AdminLoginModal({
   };
 
   return (
-    <div className="fixed inset-0 z-[1000] flex items-center justify-center h-screen">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center h-screen md:p-4">
       <div
         className="absolute inset-0 bg-background-dark/80 backdrop-blur-sm z-[1001]"
         onClick={onClose}
       ></div>
 
-      {/* Modal */}
-      <div className="relative z-[1002] max-w-lg w-full mx-4 p-6 rounded-xl bg-background-light border border-primary-light/20 shadow-2xl slide-fade-in">
+      <div className="relative z-[1002] w-full h-full md:h-auto md:max-w-lg md:max-h-[90vh] overflow-y-auto p-6 md:rounded-xl bg-background-light border-0 md:border md:border-primary-light/20 shadow-2xl slide-fade-in">
         <h3 className="text-xl font-bold mb-4 gradient-text">
           Admin Dashboard Login
         </h3>
@@ -91,7 +89,6 @@ export default function AdminLoginModal({
             </div>
           </div>
 
-          {/* Public Key */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-secondary-light">
               Public Key (Orderly Key)
@@ -113,7 +110,6 @@ export default function AdminLoginModal({
             </div>
           </div>
 
-          {/* Private Key */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-secondary-light">
               Private Key (Secret Key)
