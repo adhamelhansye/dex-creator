@@ -19,7 +19,10 @@ const metadata = {
   icons: ["https://dex.orderly.network/favicon.webp"],
 };
 
-const networks = [
+export const mainnetNetworks = [mainnet, arbitrum, base];
+export const testnetNetworks = [sepolia, arbitrumSepolia, baseSepolia];
+
+export const networks = [
   mainnet,
   arbitrum,
   base,

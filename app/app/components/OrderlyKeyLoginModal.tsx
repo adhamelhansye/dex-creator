@@ -1,9 +1,11 @@
 import { useState } from "react";
 import { Button } from "./Button";
-import { useAccount, useChainId, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import { BrowserProvider } from "ethers";
 import { addOrderlyKey } from "../utils/orderly";
 import { toast } from "react-toastify";
+import { mainnetNetworks, testnetNetworks } from "../utils/wagmiConfig";
+import { getCurrentEnvironment } from "../utils/config";
 
 interface OrderlyKeyLoginModalProps {
   isOpen: boolean;
@@ -23,13 +25,39 @@ export default function OrderlyKeyLoginModal({
   accountId,
 }: OrderlyKeyLoginModalProps) {
   const { address } = useAccount();
-  const chainId = useChainId();
   const { data: walletClient } = useWalletClient();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [isCreating, setIsCreating] = useState(false);
+
+  const isMainnet = getCurrentEnvironment() === "mainnet";
+  const supportedNetworks = isMainnet ? mainnetNetworks : testnetNetworks;
+  const supportedChainIds = supportedNetworks.map(network => network.id);
+  const isSupportedChain = supportedChainIds.includes(
+    chainId as (typeof supportedChainIds)[number]
+  );
+
+  const defaultChainId = (
+    isMainnet ? 1 : 11155111
+  ) as (typeof supportedChainIds)[number];
+
+  const handleSwitchChain = async () => {
+    try {
+      await switchChain({ chainId: defaultChainId });
+    } catch (error) {
+      console.error("Failed to switch chain:", error);
+      toast.error("Please switch to a supported network in your wallet");
+    }
+  };
 
   const handleCreateKey = async () => {
     if (!walletClient || !address) {
       toast.error("Please connect your wallet first");
+      return;
+    }
+
+    if (!isSupportedChain) {
+      toast.error("Please switch to a supported network");
       return;
     }
 
@@ -121,6 +149,20 @@ export default function OrderlyKeyLoginModal({
           </p>
         </div>
 
+        {!isSupportedChain && (
+          <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
+            <div className="flex items-start gap-2">
+              <div className="i-mdi:alert text-warning w-5 h-5 mt-0.5 flex-shrink-0"></div>
+              <div className="flex-1">
+                <p className="text-warning text-sm">
+                  Please switch to a supported network to create your Orderly
+                  key.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="flex gap-3 justify-end">
           <Button
             variant="secondary"
@@ -129,14 +171,23 @@ export default function OrderlyKeyLoginModal({
           >
             Cancel
           </Button>
-          <Button
-            variant="primary"
-            onClick={handleCreateKey}
-            isLoading={isCreating}
-            loadingText="Creating Key"
-          >
-            Create Key
-          </Button>
+          {isSupportedChain ? (
+            <Button
+              variant="primary"
+              onClick={handleCreateKey}
+              isLoading={isCreating}
+              loadingText="Creating Key"
+            >
+              Create Key
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={handleSwitchChain}>
+              <div className="flex items-center gap-2">
+                <div className="i-mdi:swap-horizontal w-4 h-4"></div>
+                Switch Network
+              </div>
+            </Button>
+          )}
         </div>
       </div>
     </div>
