@@ -419,9 +419,9 @@ export function FeeWithdrawalModal({
                       Multisig Withdrawal Process
                     </p>
                     <p className="text-xs text-gray-400">
-                      This will first settle your PnL and then withdraw fees to
-                      your multisig wallet. Both operations require multisig
-                      approval.
+                      This will withdraw fees to your multisig wallet. The
+                      operation requires a signature from your connected EOA
+                      wallet.
                     </p>
                   </div>
                 </div>
@@ -495,7 +495,7 @@ export function FeeWithdrawalModal({
                 loadingText="Processing..."
                 disabled={!amount.trim()}
               >
-                Settle PnL & Withdraw Fees
+                Withdraw Fees
               </Button>
             </>
           )}

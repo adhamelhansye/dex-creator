@@ -1362,6 +1362,34 @@ export function GraduationForm({
                   to earn higher fees yourself. Stake more ORDER tokens or
                   increase trading volume to upgrade your tier.
                 </p>
+                <div className="mt-2 bg-warning/10 border border-warning/20 rounded-lg p-3">
+                  <div className="flex items-start gap-2">
+                    <div className="i-mdi:information-outline text-warning w-4 h-4 mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <p className="text-xs text-warning font-medium mb-1">
+                        Important: Admin Wallet Staking
+                      </p>
+                      <p className="text-xs text-gray-400">
+                        ORDER tokens must be staked on your admin wallet{" "}
+                        {graduationStatus?.isMultisig ? (
+                          <>
+                            (your multisig:{" "}
+                            <span className="font-mono text-primary-light">
+                              {graduationStatus.multisigAddress
+                                ? `${graduationStatus.multisigAddress.slice(0, 6)}...${graduationStatus.multisigAddress.slice(-4)}`
+                                : "loading..."}
+                            </span>
+                            )
+                          </>
+                        ) : (
+                          <>(your connected EOA wallet)</>
+                        )}{" "}
+                        to count towards your broker tier. Staking on other
+                        addresses will not improve your tier.
+                      </p>
+                    </div>
+                  </div>
+                </div>
                 <div className="mt-2 bg-info/10 border border-info/20 rounded-lg p-3">
                   <div className="flex items-start gap-2">
                     <div className="i-mdi:clock-outline text-info w-4 h-4 mt-0.5 flex-shrink-0"></div>
