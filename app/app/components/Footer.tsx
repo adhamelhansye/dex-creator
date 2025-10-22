@@ -1,6 +1,28 @@
 import SystemStatus from "./SystemStatus";
 import { useState } from "react";
 
+// TODO: define others section links here instead of hardcoding them
+const URLS = {
+  legal: [
+    {
+      title: "Privacy Policy",
+      href: "https://orderly.network/docs/introduction/privacy-policy",
+    },
+    {
+      title: "Terms of Service",
+      href: "https://orderly.network/docs/introduction/terms-of-service",
+    },
+    {
+      title: "Builder Guidelines",
+      href: "https://orderly.network/docs/introduction/orderly-one/builder-guidelines",
+    },
+    {
+      title: "Supplemental Terms for DEXes",
+      href: "https://orderly.network/docs/introduction/orderly-one/supplemental-terms-for-dexes",
+    },
+  ],
+};
+
 export default function Footer() {
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
@@ -229,18 +251,15 @@ export default function Footer() {
               </div>
               {openSections.has("legal") && (
                 <div className="mt-[16px] space-y-[12px]">
-                  <a
-                    href="https://orderly.network/docs/introduction/privacy-policy"
-                    className="block text-gray-400 hover:text-gray-300"
-                  >
-                    Privacy Policy
-                  </a>
-                  <a
-                    href="https://orderly.network/docs/introduction/terms-of-service"
-                    className="block text-gray-400 hover:text-gray-300"
-                  >
-                    Terms of Service
-                  </a>
+                  {URLS.legal.map(item => (
+                    <a
+                      href={item.href}
+                      className="block text-gray-400 hover:text-gray-300"
+                      key={item.title}
+                    >
+                      {item.title}
+                    </a>
+                  ))}
                 </div>
               )}
             </div>
@@ -376,18 +395,15 @@ export default function Footer() {
             <div className="text-sm font-bold">
               Legal
               <div className="flex flex-col mt-[8px] font-normal text-gray-300">
-                <a
-                  href="https://orderly.network/docs/introduction/privacy-policy"
-                  className="text-gray-400 hover:text-gray-300 my-[8px]"
-                >
-                  Privacy Policy
-                </a>
-                <a
-                  href="https://orderly.network/docs/introduction/terms-of-service"
-                  className="text-gray-400 hover:text-gray-300 my-[8px]"
-                >
-                  Terms of Service
-                </a>
+                {URLS.legal.map(item => (
+                  <a
+                    href={item.href}
+                    className="text-gray-400 hover:text-gray-300 my-[8px]"
+                    key={item.title}
+                  >
+                    {item.title}
+                  </a>
+                ))}
               </div>
             </div>
           </div>
