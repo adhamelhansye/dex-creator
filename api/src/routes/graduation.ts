@@ -407,9 +407,6 @@ graduationRoutes.post(
       const { multisigAddress } = c.req.valid("json");
       const addressToCheck = multisigAddress || user.address;
 
-      console.log(
-        `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
-      );
       const orderlyResponse = await fetch(
         `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
       );
@@ -427,7 +424,6 @@ graduationRoutes.post(
       const orderlyData = await orderlyResponse.json();
 
       if (!orderlyData.success || !orderlyData.data) {
-        console.log("orderlyData", orderlyData);
         return c.json(
           {
             success: false,
