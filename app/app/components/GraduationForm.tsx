@@ -580,8 +580,6 @@ export function GraduationForm({
           token,
           { showToastOnError: false }
         );
-        response.isMultisig = true;
-        response.multisigAddress = "0xe2e4BE05a712794CC11D4d75380715b593454143";
 
         setGraduationStatus(response);
       } catch (error) {
@@ -982,7 +980,7 @@ export function GraduationForm({
                   isLoading={isFinalizingAdminWallet}
                   loadingText="Registering with Orderly..."
                   variant="primary"
-                  className="w-full"
+                  className="w-full text-center"
                 >
                   Register with Orderly & Start Earning
                 </Button>
@@ -1029,7 +1027,7 @@ export function GraduationForm({
                   variant="secondary"
                   className="w-full"
                 >
-                  <span className="flex items-center gap-2">
+                  <span className="flex items-center justify-center gap-2">
                     <div className="i-mdi:book-open-variant h-4 w-4"></div>
                     View Setup Instructions
                   </span>
@@ -1088,7 +1086,7 @@ export function GraduationForm({
                         !address
                       }
                     >
-                      <span className="flex items-center gap-2">
+                      <span className="flex items-center justify-center gap-2">
                         <div className="i-mdi:account-plus h-4 w-4"></div>
                         Register Multisig
                       </span>
