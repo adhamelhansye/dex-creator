@@ -1,3 +1,5 @@
+import { AbiCoder, keccak256, solidityPackedKeccak256 } from "ethers";
+
 export function getOrderlyApiBaseUrl(): string {
   const deploymentEnv = process.env.DEPLOYMENT_ENV;
 
@@ -16,4 +18,14 @@ export function getOrderlyApiBaseUrl(): string {
     default:
       return "https://dev-api-aliyun.orderly.network";
   }
+}
+
+export function getAccountId(address: string, brokerId: string) {
+  const abicoder = AbiCoder.defaultAbiCoder();
+  return keccak256(
+    abicoder.encode(
+      ["address", "bytes32"],
+      [address, solidityPackedKeccak256(["string"], [brokerId])]
+    )
+  );
 }
