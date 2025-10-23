@@ -646,7 +646,7 @@ export async function setBrokerAccountId(
   }
 }
 
-async function simulateLedgerSetBrokerFromLedger(
+export async function simulateLedgerSetBrokerFromLedger(
   chainConfig: EnvironmentChainConfig,
   brokerId: string,
   brokerIndex: number,

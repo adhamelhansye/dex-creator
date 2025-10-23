@@ -1,7 +1,17 @@
-import { MAX_BROKER_COUNT } from "../../../config";
+import {
+  MAX_BROKER_COUNT,
+  ENVIRONMENT_CONFIGS,
+  ALL_CHAINS,
+  type ChainName,
+  type EnvironmentChainConfig,
+} from "../../../config";
 import { Result } from "./types";
 import { getCurrentEnvironment } from "../models/dex";
 import { getPrisma } from "./prisma";
+import {
+  simulateLedgerSetBrokerFromLedger,
+  initializeBrokerCreation,
+} from "./brokerCreation";
 
 const BROKER_INDEX_START = {
   mainnet: 18_000,
@@ -22,6 +32,15 @@ export type CreateBrokerIndexResult = Result<{ brokerIndex: number }>;
 export async function getNextBrokerIndex(): Promise<BrokerIndexResult> {
   try {
     const startingBrokerIndex = getStartingBrokerIndex();
+    const env = getCurrentEnvironment();
+    const config = ENVIRONMENT_CONFIGS[env];
+
+    if (!config) {
+      return {
+        success: false,
+        error: `No configuration found for environment: ${env}`,
+      };
+    }
 
     const prisma = await getPrisma();
     const lastBroker = await prisma.brokerIndex.findFirst({
@@ -33,16 +52,16 @@ export async function getNextBrokerIndex(): Promise<BrokerIndexResult> {
       },
     });
 
-    let nextBrokerIndex = lastBroker
+    let candidateIndex = lastBroker
       ? lastBroker.brokerIndex + 1
       : startingBrokerIndex;
 
-    if (nextBrokerIndex < startingBrokerIndex) {
-      nextBrokerIndex = startingBrokerIndex;
+    if (candidateIndex < startingBrokerIndex) {
+      candidateIndex = startingBrokerIndex;
     }
 
     const maxAllowedIndex = 18_000 + MAX_BROKER_COUNT;
-    if (nextBrokerIndex >= maxAllowedIndex) {
+    if (candidateIndex >= maxAllowedIndex) {
       return {
         success: false,
         error: `Only a maximum broker count of ${MAX_BROKER_COUNT} can be set up`,
@@ -50,14 +69,101 @@ export async function getNextBrokerIndex(): Promise<BrokerIndexResult> {
     }
 
     console.log(
-      `📍 Last broker index: ${lastBroker?.brokerIndex || "none"}, next broker index will be: ${nextBrokerIndex}`
+      `📍 Last broker index in DB: ${lastBroker?.brokerIndex || "none"}, candidate index: ${candidateIndex}`
     );
 
+    await initializeBrokerCreation();
+
+    const orderlyChainName = env === "mainnet" ? "orderlyL2" : "orderlyTestnet";
+    const orderlyConfig = config[orderlyChainName as keyof typeof config] as
+      | EnvironmentChainConfig
+      | undefined;
+
+    if (!orderlyConfig || !orderlyConfig.ledgerAddress) {
+      console.warn(
+        `⚠️ No Ledger configuration found for ${orderlyChainName}, skipping on-chain validation`
+      );
+      return {
+        success: true,
+        data: {
+          brokerIndex: candidateIndex,
+        },
+      };
+    }
+
+    const evmChains: Array<[string, EnvironmentChainConfig]> = [];
+    for (const [chainName, chainConfig] of Object.entries(config)) {
+      const chainInfo = ALL_CHAINS[chainName as ChainName];
+      if (chainInfo?.chainType === "EVM" && chainConfig.vaultAddress) {
+        evmChains.push([chainName, chainConfig]);
+      }
+    }
+
+    const evmVaultChainIds: number[] = [];
+    for (const [chainName, chainConfig] of evmChains) {
+      if (chainConfig.vaultAddress && chainName !== orderlyChainName) {
+        const chainId = ALL_CHAINS[chainName as ChainName].chainId;
+        evmVaultChainIds.push(chainId);
+      }
+    }
+
+    if (evmVaultChainIds.length === 0) {
+      console.warn(
+        `⚠️ No EVM vault chains found for validation, skipping on-chain check`
+      );
+      return {
+        success: true,
+        data: {
+          brokerIndex: candidateIndex,
+        },
+      };
+    }
+
+    const MAX_RETRIES = 5;
+    const TEST_BROKER_ID = `__test_broker_index_check_${Date.now()}__`;
+
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const testIndex = candidateIndex + attempt;
+
+      if (testIndex >= maxAllowedIndex) {
+        return {
+          success: false,
+          error: `Reached maximum broker count of ${MAX_BROKER_COUNT} while searching for available index`,
+        };
+      }
+
+      console.log(
+        `🔍 Validating broker index ${testIndex} on-chain (attempt ${attempt + 1}/${MAX_RETRIES})...`
+      );
+
+      const simulationResult = await simulateLedgerSetBrokerFromLedger(
+        orderlyConfig,
+        TEST_BROKER_ID,
+        testIndex,
+        evmVaultChainIds,
+        orderlyChainName
+      );
+
+      if (simulationResult.success) {
+        console.log(
+          `✅ Found available broker index: ${testIndex}${attempt > 0 ? ` (after ${attempt} retries)` : ""}`
+        );
+        return {
+          success: true,
+          data: {
+            brokerIndex: testIndex,
+          },
+        };
+      }
+
+      console.warn(
+        `⚠️ Index ${testIndex} failed simulation: ${simulationResult.error}`
+      );
+    }
+
     return {
-      success: true,
-      data: {
-        brokerIndex: nextBrokerIndex,
-      },
+      success: false,
+      error: `Failed to find available broker index after ${MAX_RETRIES} attempts. Last attempted index: ${candidateIndex + MAX_RETRIES - 1}`,
     };
   } catch (error) {
     console.error("❌ Error getting next broker index:", error);

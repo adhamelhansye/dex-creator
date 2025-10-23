@@ -10,7 +10,6 @@ import { getSecret } from "../lib/secretManager.js";
 import { createProvider } from "../lib/fallbackProvider.js";
 import {
   getBrokerFeesFromOrderlyDb,
-  updateBrokerFeesInOrderlyDb,
   invalidateBrokerFeesCache,
   getBrokerTierFromOrderlyDb,
   type BrokerTier,
@@ -253,62 +252,6 @@ export async function verifyOrderTransaction(
     return {
       success: false,
       message: `Error verifying transaction: ${error instanceof Error ? error.message : String(error)}`,
-    };
-  }
-}
-
-export async function updateDexFees(
-  userId: string,
-  makerFee: number,
-  takerFee: number,
-  rwaMakerFee?: number,
-  rwaTakerFee?: number
-): Promise<{ success: boolean; message: string }> {
-  try {
-    const prismaClient = await getPrisma();
-    const dex = await prismaClient.dex.findFirst({
-      where: { userId },
-    });
-
-    if (!dex) {
-      return {
-        success: false,
-        message: "You must create a DEX first",
-      };
-    }
-
-    if (!dex.brokerId) {
-      return {
-        success: false,
-        message:
-          "You must verify an ORDER token transaction before setting fees",
-      };
-    }
-
-    const result = await updateBrokerFeesInOrderlyDb(
-      dex.brokerId,
-      makerFee,
-      takerFee,
-      rwaMakerFee,
-      rwaTakerFee
-    );
-
-    if (!result.success) {
-      return {
-        success: false,
-        message: result.error || "Failed to update fees in Orderly database",
-      };
-    }
-
-    return {
-      success: true,
-      message: "DEX fees updated successfully",
-    };
-  } catch (error) {
-    console.error("Error updating DEX fees:", error);
-    return {
-      success: false,
-      message: `Error updating DEX fees: ${error instanceof Error ? error.message : String(error)}`,
     };
   }
 }
