@@ -13,6 +13,7 @@ import { getCurrentEnvironment } from "../utils/config";
 import { get } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
 import { cleanMultisigAddress } from "../utils/multisig";
+import { getChainById } from "../../../config";
 
 interface OrderlyKeyLoginModalProps {
   isOpen: boolean;
@@ -38,6 +39,7 @@ export default function OrderlyKeyLoginModal({
   const { token } = useAuth();
   const [isCreating, setIsCreating] = useState(false);
   const [multisigAddress, setMultisigAddress] = useState<string | undefined>();
+  const [multisigChainId, setMultisigChainId] = useState<number | undefined>();
   const [isLoadingStatus, setIsLoadingStatus] = useState(false);
 
   const isMainnet = getCurrentEnvironment() === "mainnet";
@@ -60,13 +62,16 @@ export default function OrderlyKeyLoginModal({
         const data = await get<{
           isMultisig?: boolean;
           multisigAddress?: string;
+          multisigChainId?: number | null;
         }>("/api/graduation/graduation-status", token, {
           showToastOnError: false,
         });
         if (data.isMultisig && data.multisigAddress) {
           setMultisigAddress(data.multisigAddress);
+          setMultisigChainId(data.multisigChainId || undefined);
         } else {
           setMultisigAddress(undefined);
+          setMultisigChainId(undefined);
         }
       } catch (error) {
         console.error("Failed to fetch graduation status:", error);
@@ -86,12 +91,20 @@ export default function OrderlyKeyLoginModal({
     accountId ||
     (cleanAddress && brokerId ? getAccountId(cleanAddress, brokerId) : "");
 
+  const requiredChainId =
+    isMultisig && multisigChainId ? multisigChainId : null;
+  const isOnCorrectChain = requiredChainId
+    ? chainId === requiredChainId
+    : isSupportedChain;
+  const requiredChain = requiredChainId ? getChainById(requiredChainId) : null;
+
   const handleSwitchChain = async () => {
     try {
-      await switchChain({ chainId: defaultChainId });
+      const targetChainId = requiredChainId || defaultChainId;
+      await switchChain({ chainId: targetChainId });
     } catch (error) {
       console.error("Failed to switch chain:", error);
-      toast.error("Please switch to a supported network in your wallet");
+      toast.error("Please switch to the required network in your wallet");
     }
   };
 
@@ -101,8 +114,12 @@ export default function OrderlyKeyLoginModal({
       return;
     }
 
-    if (!isSupportedChain) {
-      toast.error("Please switch to a supported network");
+    if (!isOnCorrectChain) {
+      toast.error(
+        isMultisig
+          ? "Please switch to the network where your multisig delegate signer link was established"
+          : "Please switch to a supported network"
+      );
       return;
     }
 
@@ -118,8 +135,6 @@ export default function OrderlyKeyLoginModal({
       const signer = await provider.getSigner();
 
       let orderlyKey: Uint8Array;
-
-      console.log("isMultisig", isMultisig);
 
       if (isMultisig) {
         orderlyKey = await addDelegateOrderlyKey(
@@ -201,12 +216,22 @@ export default function OrderlyKeyLoginModal({
                 <div className="mt-3 bg-info/10 rounded-lg p-3 border border-info/20">
                   <div className="flex items-start gap-2">
                     <div className="i-mdi:information-outline text-info w-4 h-4 mt-0.5 flex-shrink-0"></div>
-                    <p className="text-xs text-gray-400 text-left">
-                      Creating delegate key for multisig wallet:{" "}
-                      <span className="font-mono text-primary-light">
-                        {multisigAddress}
-                      </span>
-                    </p>
+                    <div className="text-xs text-gray-400 text-left">
+                      <p className="mb-1">
+                        Creating delegate key for multisig wallet:{" "}
+                        <span className="font-mono text-primary-light">
+                          {multisigAddress}
+                        </span>
+                      </p>
+                      {requiredChain && (
+                        <p className="text-info">
+                          Required network:{" "}
+                          <span className="font-semibold">
+                            {requiredChain.name}
+                          </span>
+                        </p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )}
@@ -246,14 +271,17 @@ export default function OrderlyKeyLoginModal({
               </p>
             </div>
 
-            {!isSupportedChain && (
+            {!isOnCorrectChain && (
               <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
                 <div className="flex items-start gap-2">
                   <div className="i-mdi:alert text-warning w-5 h-5 mt-0.5 flex-shrink-0"></div>
                   <div className="flex-1">
                     <p className="text-warning text-sm">
-                      Please switch to a supported network to create your
-                      Orderly key.
+                      {isMultisig && requiredChain
+                        ? `Please switch to ${requiredChain.name} where your multisig delegate signer link was established.`
+                        : isMultisig && requiredChainId
+                          ? `Please switch to the network where your multisig delegate signer link was established (Chain ID: ${requiredChainId}).`
+                          : "Please switch to a supported network to create your Orderly key."}
                     </p>
                   </div>
                 </div>
@@ -268,7 +296,7 @@ export default function OrderlyKeyLoginModal({
               >
                 Cancel
               </Button>
-              {isSupportedChain ? (
+              {isOnCorrectChain ? (
                 <Button
                   variant="primary"
                   onClick={handleCreateKey}

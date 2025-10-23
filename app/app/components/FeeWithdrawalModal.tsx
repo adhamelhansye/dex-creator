@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useAccount, useWalletClient } from "wagmi";
+import { useAccount, useWalletClient, useChainId, useSwitchChain } from "wagmi";
 import { BrowserProvider } from "ethers";
 import { toast } from "react-toastify";
 import { Button } from "./Button";
@@ -10,6 +10,7 @@ import {
   getClientHolding,
 } from "../utils/orderly";
 import { cleanMultisigAddress } from "../utils/multisig";
+import { getChainById } from "../../../config";
 
 interface FeeWithdrawalModalProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export function FeeWithdrawalModal({
 }: FeeWithdrawalModalProps) {
   const { address } = useAccount();
   const { data: walletClient } = useWalletClient();
+  const chainId = useChainId();
+  const { switchChain } = useSwitchChain();
   const [isProcessing, setIsProcessing] = useState(false);
   const [amount, setAmount] = useState("");
   const [usdcBalance, setUsdcBalance] = useState<number | null>(null);
@@ -36,6 +39,9 @@ export function FeeWithdrawalModal({
   const cleanAddress = cleanMultisigAddress(multisigAddress);
   const accountId = getAccountId(cleanAddress, brokerId);
   const [orderlyKey, setOrderlyKey] = useState<Uint8Array | null>(null);
+
+  const isOnCorrectChain = chainId === multisigChainId;
+  const requiredChain = getChainById(multisigChainId);
 
   useEffect(() => {
     if (isOpen) {
@@ -76,9 +82,25 @@ export function FeeWithdrawalModal({
     }
   };
 
+  const handleSwitchChain = async () => {
+    try {
+      await switchChain({ chainId: multisigChainId });
+    } catch (error) {
+      console.error("Failed to switch chain:", error);
+      toast.error("Please switch to the required network in your wallet");
+    }
+  };
+
   const handleWithdraw = async () => {
     if (!walletClient || !accountId || !orderlyKey || !address) {
       toast.error("Missing required data for withdrawal");
+      return;
+    }
+
+    if (!isOnCorrectChain) {
+      toast.error(
+        `Please switch to ${requiredChain?.name || "the correct network"} to withdraw`
+      );
       return;
     }
 
@@ -212,31 +234,49 @@ export function FeeWithdrawalModal({
             />
           </div>
 
-          <div className="bg-warning/10 rounded-lg p-3">
-            <div className="flex items-start gap-2">
-              <div className="i-mdi:shield-check text-warning w-4 h-4 mt-0.5 flex-shrink-0"></div>
-              <div>
-                <p className="text-xs text-warning font-medium mb-1">
-                  Multisig Approval Required
-                </p>
-                <p className="text-xs text-gray-400">
-                  This transaction will be submitted to your Safe wallet and
-                  requires approval from the required number of signers.
-                </p>
+          {!isOnCorrectChain && (
+            <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
+              <div className="flex items-start gap-2">
+                <div className="i-mdi:alert text-warning w-5 h-5 mt-0.5 flex-shrink-0"></div>
+                <div className="flex-1">
+                  <p className="text-xs text-warning font-medium mb-1">
+                    Wrong Network
+                  </p>
+                  <p className="text-xs text-gray-400">
+                    Please switch to{" "}
+                    <span className="font-semibold text-white">
+                      {requiredChain?.name || `Chain ID ${multisigChainId}`}
+                    </span>{" "}
+                    where your multisig delegate signer link was established.
+                  </p>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
-          <Button
-            onClick={handleFullWithdrawal}
-            variant="primary"
-            className="w-full"
-            isLoading={isProcessing}
-            loadingText="Processing..."
-            disabled={!amount.trim() || !orderlyKey}
-          >
-            Withdraw Fees
-          </Button>
+          {isOnCorrectChain ? (
+            <Button
+              onClick={handleFullWithdrawal}
+              variant="primary"
+              className="w-full"
+              isLoading={isProcessing}
+              loadingText="Processing..."
+              disabled={!amount.trim() || !orderlyKey}
+            >
+              Withdraw Fees
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSwitchChain}
+              variant="primary"
+              className="w-full"
+            >
+              <div className="flex items-center justify-center gap-2">
+                <div className="i-mdi:swap-horizontal w-4 h-4"></div>
+                Switch to {requiredChain?.name || "Correct Network"}
+              </div>
+            </Button>
+          )}
         </div>
       </div>
     </div>

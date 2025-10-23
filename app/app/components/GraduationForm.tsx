@@ -1255,9 +1255,6 @@ export function GraduationForm({
                           brokerId: graduationStatus.brokerId,
                           onSuccess: () => {
                             setMultisigHasKey(true);
-                            toast.success(
-                              "Orderly key created! You can now withdraw fees."
-                            );
                           },
                           onCancel: () => {},
                         })
