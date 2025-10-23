@@ -44,6 +44,7 @@ const verifyTxSchema = z.object({
 
 const finalizeAdminWalletSchema = z.object({
   multisigAddress: z.string().optional(),
+  multisigChainId: z.number().optional(),
 });
 
 const graduationRoutes = new Hono();
@@ -404,7 +405,7 @@ graduationRoutes.post(
         );
       }
 
-      const { multisigAddress } = c.req.valid("json");
+      const { multisigAddress, multisigChainId } = c.req.valid("json");
       const addressToCheck = multisigAddress || user.address;
 
       const orderlyResponse = await fetch(
@@ -462,7 +463,10 @@ graduationRoutes.post(
 
       await prismaClient.dex.update({
         where: { userId },
-        data: { isGraduated: true },
+        data: {
+          isGraduated: true,
+          multisigChainId: multisigChainId || null,
+        },
       });
 
       return c.json({
@@ -543,6 +547,7 @@ graduationRoutes.get("/graduation-status", async c => {
       brokerId: dex.brokerId,
       isMultisig,
       multisigAddress,
+      multisigChainId: dex.multisigChainId,
     });
   } catch (error) {
     console.error("Error getting graduation status:", error);

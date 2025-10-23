@@ -73,7 +73,26 @@ const MESSAGE_TYPES = {
     { name: "timestamp", type: "uint64" },
     { name: "expiration", type: "uint64" },
   ],
+  DelegateAddOrderlyKey: [
+    { name: "delegateContract", type: "address" },
+    { name: "brokerId", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "orderlyKey", type: "string" },
+    { name: "scope", type: "string" },
+    { name: "timestamp", type: "uint64" },
+    { name: "expiration", type: "uint64" },
+  ],
   Withdraw: [
+    { name: "brokerId", type: "string" },
+    { name: "chainId", type: "uint256" },
+    { name: "receiver", type: "address" },
+    { name: "token", type: "string" },
+    { name: "amount", type: "uint256" },
+    { name: "withdrawNonce", type: "uint64" },
+    { name: "timestamp", type: "uint64" },
+  ],
+  DelegateWithdraw: [
+    { name: "delegateContract", type: "address" },
     { name: "brokerId", type: "string" },
     { name: "chainId", type: "uint256" },
     { name: "receiver", type: "address" },
@@ -240,6 +259,130 @@ export async function addOrderlyKey(
   }
   saveOrderlyKey(accountId, privateKey);
   return privateKey;
+}
+
+export async function addDelegateOrderlyKey(
+  signer: JsonRpcSigner,
+  signerAddress: string,
+  delegateContract: string,
+  chainId: number | string,
+  brokerId: string,
+  scope: Scope,
+  accountId: string
+): Promise<Uint8Array> {
+  const privateKey = utils.randomPrivateKey();
+  const orderlyKey = `ed25519:${encodeBase58(await getPublicKeyAsync(privateKey))}`;
+  const timestamp = Date.now();
+  const addKeyMessage = {
+    delegateContract,
+    brokerId,
+    chainId: Number(chainId),
+    orderlyKey,
+    scope,
+    timestamp,
+    expiration: timestamp + 1_000 * 60 * 60 * 24 * 365, // 1 year
+  };
+  const signature = await signer.signTypedData(
+    getOffChainDomain(chainId),
+    {
+      DelegateAddOrderlyKey: MESSAGE_TYPES.DelegateAddOrderlyKey,
+    },
+    addKeyMessage
+  );
+
+  const keyRes = await fetch(`${getBaseUrl()}/v1/delegate_orderly_key`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      message: addKeyMessage,
+      signature,
+      userAddress: signerAddress,
+    }),
+  });
+  const keyJson = await keyRes.json();
+  if (!keyJson.success) {
+    throw new Error(keyJson.message);
+  }
+  saveOrderlyKey(accountId, privateKey);
+  return privateKey;
+}
+
+export async function delegateWithdraw(
+  signer: JsonRpcSigner,
+  signerAddress: string,
+  delegateContract: string,
+  chainId: number | string,
+  brokerId: string,
+  receiver: string,
+  token: string,
+  amount: number,
+  accountId: string,
+  orderlyKey: Uint8Array
+): Promise<void> {
+  const nonceRes = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/withdraw_nonce`
+  );
+  const nonceJson = await nonceRes.json();
+  const withdrawNonce = nonceJson.data.withdraw_nonce as string;
+
+  const delegateWithdrawMessage = {
+    delegateContract,
+    brokerId,
+    chainId: Number(chainId),
+    receiver,
+    token,
+    amount,
+    timestamp: Date.now(),
+    withdrawNonce,
+  };
+
+  const signature = await signer.signTypedData(
+    getOnChainDomain(chainId),
+    {
+      DelegateWithdraw: MESSAGE_TYPES.DelegateWithdraw,
+    },
+    delegateWithdrawMessage
+  );
+
+  const delegateWithdrawRes = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/delegate_withdraw_request`,
+    {
+      method: "POST",
+      body: JSON.stringify({
+        message: delegateWithdrawMessage,
+        signature,
+        userAddress: signerAddress,
+        verifyingContract: getVerifyingAddress(),
+      }),
+    }
+  );
+  const withdrawJson = await delegateWithdrawRes.json();
+  if (!withdrawJson.success) {
+    throw new Error(withdrawJson.message);
+  }
+}
+
+export async function getClientHolding(
+  accountId: string,
+  orderlyKey: Uint8Array
+): Promise<{ token: string; holding: number }[]> {
+  const response = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/client/holding`
+  );
+
+  const data = await response.json();
+  if (!data.success) {
+    throw new Error(data.message || "Failed to fetch holdings");
+  }
+  return data.data?.holding || [];
 }
 
 async function signAndSendRequest(

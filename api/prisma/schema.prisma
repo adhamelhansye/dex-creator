@@ -90,6 +90,7 @@ model Dex {
   privyLoginMethods    String?  // Comma-separated list of Privy login methods (email,passkey,twitter,google)
   isGraduated          Boolean  @default(false) // Whether the DEX has fully graduated
   graduationTxHash    String?  @unique // Transaction hash used for graduation (prevents reuse)
+  multisigChainId      Int?     // Chain ID where the multisig delegate signer link was established
   
   // Social Card Fields
   description          String?  // DEX description for social cards

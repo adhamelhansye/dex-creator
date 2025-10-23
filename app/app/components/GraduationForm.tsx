@@ -28,6 +28,10 @@ import { BrowserProvider } from "ethers";
 import clsx from "clsx";
 import { FeeConfigWithCalculator } from "./FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "./BaseFeeExplanation";
+import {
+  cleanMultisigAddress,
+  extractChainFromAddress,
+} from "../utils/multisig";
 import { useModal } from "../context/ModalContext";
 import {
   getBaseUrl,
@@ -35,6 +39,8 @@ import {
   pollAccountRegistration,
   checkAccountRegistration,
   getOffChainDomain,
+  loadOrderlyKey,
+  getAccountId,
 } from "../utils/orderly";
 import { getBlockExplorerUrlByChainId } from "../../../config";
 import { generateDeploymentUrl } from "../utils/deploymentUrl";
@@ -65,18 +71,6 @@ const ERC20_ABI = [
 
 const SUPPORTED_CHAINS = getSupportedChains();
 
-const CHAIN_PREFIXES = [
-  "eth:",
-  "base:",
-  "arb:",
-  "sepolia:",
-  "sep:",
-  "base-sep:",
-  "basesep:",
-  "arb-sep:",
-  "arbsep:",
-];
-
 const validateAddress = (address: string): boolean => {
   return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
@@ -102,6 +96,7 @@ interface NewGraduationStatusResponse {
   brokerId: string;
   isMultisig?: boolean;
   multisigAddress?: string | null;
+  multisigChainId?: number | null;
 }
 
 interface FeeConfigResponse {
@@ -192,6 +187,7 @@ export function GraduationForm({
   const [multisigAddress, setMultisigAddress] = useState("");
   const [multisigTxHash, setMultisigTxHash] = useState("");
   const [isRegisteringMultisig, setIsRegisteringMultisig] = useState(false);
+  const [multisigHasKey, setMultisigHasKey] = useState(false);
 
   const copyToClipboard = async (text: string, label: string) => {
     try {
@@ -212,40 +208,6 @@ export function GraduationForm({
       { name: "registrationNonce", type: "uint256" },
       { name: "txHash", type: "bytes32" },
     ],
-  };
-
-  const extractChainFromAddress = (address: string): number | null => {
-    const chainPrefixes: Record<string, number> = {
-      "eth:": 1,
-      "base:": 8453,
-      "arb:": 42161,
-      "sepolia:": 11155111,
-      "sep:": 11155111,
-      "base-sep:": 84532,
-      "basesep:": 84532,
-      "arb-sep:": 421614,
-      "arbsep:": 421614,
-    };
-
-    for (const [prefix, chainId] of Object.entries(chainPrefixes)) {
-      if (address.toLowerCase().startsWith(prefix)) {
-        return chainId;
-      }
-    }
-    return null;
-  };
-
-  const cleanMultisigAddress = (address: string): string => {
-    let cleanAddress = address;
-
-    for (const prefix of CHAIN_PREFIXES) {
-      if (cleanAddress.toLowerCase().startsWith(prefix)) {
-        cleanAddress = cleanAddress.substring(prefix.length);
-        break;
-      }
-    }
-
-    return cleanAddress;
   };
 
   const announceDelegateSigner = async (
@@ -353,6 +315,7 @@ export function GraduationForm({
         "api/graduation/finalize-admin-wallet",
         {
           multisigAddress: cleanAddress,
+          multisigChainId: connectedChainId,
         },
         token,
         {
@@ -620,6 +583,23 @@ export function GraduationForm({
       loadBrokerTier();
     }
   }, [token, hasSubmitted]);
+
+  useEffect(() => {
+    if (
+      graduationStatus?.isMultisig &&
+      graduationStatus?.multisigAddress &&
+      graduationStatus?.brokerId
+    ) {
+      const cleanAddress = cleanMultisigAddress(
+        graduationStatus.multisigAddress
+      );
+      const accountId = getAccountId(cleanAddress, graduationStatus.brokerId);
+      const savedKey = loadOrderlyKey(accountId);
+      setMultisigHasKey(!!savedKey);
+    } else {
+      setMultisigHasKey(false);
+    }
+  }, [graduationStatus]);
 
   const handleFinalizeAdminWallet = async () => {
     if (!address) {
@@ -1247,26 +1227,57 @@ export function GraduationForm({
                 </div>
 
                 <div className="mt-4">
-                  <Button
-                    onClick={() =>
-                      openModal("feeWithdrawal", {
-                        brokerId: graduationStatus.brokerId,
-                        multisigAddress: graduationStatus.multisigAddress,
-                      })
-                    }
-                    variant="primary"
-                    className="w-full"
-                    disabled={!graduationStatus.multisigAddress}
-                  >
-                    <span className="flex items-center justify-center w-full gap-2">
-                      <div className="i-mdi:cash-multiple h-4 w-4"></div>
-                      Withdraw Fees
-                    </span>
-                  </Button>
+                  {multisigHasKey ? (
+                    <Button
+                      onClick={() =>
+                        openModal("feeWithdrawal", {
+                          brokerId: graduationStatus.brokerId,
+                          multisigAddress: graduationStatus.multisigAddress!,
+                          multisigChainId: graduationStatus.multisigChainId!,
+                        })
+                      }
+                      variant="primary"
+                      className="w-full"
+                      disabled={
+                        !graduationStatus.multisigAddress ||
+                        !graduationStatus.multisigChainId
+                      }
+                    >
+                      <span className="flex items-center justify-center w-full gap-2">
+                        <div className="i-mdi:cash-multiple h-4 w-4"></div>
+                        Withdraw Fees
+                      </span>
+                    </Button>
+                  ) : (
+                    <Button
+                      onClick={() =>
+                        openModal("orderlyKeyLogin", {
+                          brokerId: graduationStatus.brokerId,
+                          onSuccess: () => {
+                            setMultisigHasKey(true);
+                            toast.success(
+                              "Orderly key created! You can now withdraw fees."
+                            );
+                          },
+                          onCancel: () => {},
+                        })
+                      }
+                      variant="primary"
+                      className="w-full"
+                      disabled={!graduationStatus.multisigAddress}
+                    >
+                      <span className="flex items-center justify-center w-full gap-2">
+                        <div className="i-mdi:key-plus h-4 w-4"></div>
+                        Create Orderly Key
+                      </span>
+                    </Button>
+                  )}
 
-                  {!graduationStatus.multisigAddress && (
+                  {(!graduationStatus.multisigAddress ||
+                    !graduationStatus.multisigChainId) && (
                     <p className="text-xs text-warning text-center mt-2">
-                      Unable to retrieve multisig address
+                      Unable to retrieve multisig configuration. Please ensure
+                      you have completed the multisig registration.
                     </p>
                   )}
                 </div>
