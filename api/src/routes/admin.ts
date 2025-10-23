@@ -12,7 +12,6 @@ import {
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { createAutomatedBrokerId } from "../lib/brokerCreation";
-import { updateDexFees } from "../models/graduation";
 import {
   setupRepositoryWithSingleCommit,
   renameRepository,
@@ -504,17 +503,6 @@ adminRoutes.post(
           },
           { status: 400 }
         );
-      }
-
-      const feeUpdateResult = await updateDexFees(
-        dex.userId,
-        makerFee,
-        takerFee,
-        rwaMakerFee,
-        rwaTakerFee
-      );
-      if (!feeUpdateResult.success) {
-        return c.json(feeUpdateResult, { status: 400 });
       }
 
       const brokerCreationResult = await createAutomatedBrokerId(
