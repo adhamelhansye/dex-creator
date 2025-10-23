@@ -207,6 +207,26 @@ export default function SafeInstructionsModal({
           <div className="flex-1 overflow-y-auto px-8">
             {activeTab === "safe" && (
               <div className="space-y-4 mb-8">
+                <div className="bg-info/10 border border-info/20 rounded-lg p-4 mb-4">
+                  <div className="flex items-start gap-3">
+                    <div className="i-mdi:information-outline text-info w-5 h-5 mt-0.5 flex-shrink-0"></div>
+                    <div>
+                      <h4 className="font-semibold text-info mb-2">
+                        Important: Match Your Safe's Network
+                      </h4>
+                      <p className="text-sm text-gray-300">
+                        Use the network selector above to choose the chain where
+                        your Safe wallet is deployed. Currently selected:{" "}
+                        <span className="font-semibold text-white">
+                          {chain?.name}
+                        </span>
+                        . If your Safe is on a different chain, switch using the
+                        network selector at the top before proceeding.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
                 <p className="text-gray-300">
                   Visit{" "}
                   <a
