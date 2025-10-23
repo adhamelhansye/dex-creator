@@ -237,6 +237,7 @@ function ModalManager() {
           onClose={closeModal}
           brokerId={currentModalProps.brokerId}
           multisigAddress={currentModalProps.multisigAddress}
+          multisigChainId={currentModalProps.multisigChainId}
         />
       );
     default:
