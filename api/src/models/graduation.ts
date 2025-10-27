@@ -4,6 +4,7 @@ import {
   ALL_CHAINS,
   ORDER_ADDRESSES,
   USDC_ADDRESSES,
+  GRADUATION_SUPPORTED_CHAINS,
   type ChainName,
 } from "../../../config";
 import { getSecret } from "../lib/secretManager.js";
@@ -54,7 +55,10 @@ const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
 const DEFAULT_RWA_MAKER_FEE = 0; // Default RWA maker fee (0 bps = 0 units)
 const DEFAULT_RWA_TAKER_FEE = 50; // Default RWA taker fee (5 bps = 50 units)
 
-const ACCEPTED_CHAINS = ["ethereum", "arbitrum", "sepolia", "arbitrum-sepolia"];
+const ACCEPTED_CHAINS = [
+  ...GRADUATION_SUPPORTED_CHAINS.mainnet,
+  ...GRADUATION_SUPPORTED_CHAINS.testnet,
+];
 
 const ERC20_TRANSFER_EVENT_ABI = [
   "event Transfer(address indexed from, address indexed to, uint256 value)",
@@ -66,7 +70,7 @@ export async function verifyOrderTransaction(
   userWalletAddress: string,
   paymentType: "usdc" | "order" = "order"
 ): Promise<{ success: boolean; message: string; amount?: string }> {
-  if (!ACCEPTED_CHAINS.includes(chain)) {
+  if (!(ACCEPTED_CHAINS as readonly string[]).includes(chain)) {
     return {
       success: false,
       message: `${TransactionVerificationError.CHAIN_NOT_SUPPORTED}. Supported chains: ${ACCEPTED_CHAINS.join(", ")}`,

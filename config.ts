@@ -64,6 +64,22 @@ export type OrderTokenChainName =
 
 export type ChainType = "EVM" | "SOL";
 
+export type GraduationSupportedChainName =
+  | "ethereum"
+  | "arbitrum"
+  | "base"
+  | "sepolia"
+  | "arbitrum-sepolia"
+  | "base-sepolia";
+
+export const GRADUATION_SUPPORTED_CHAINS: {
+  mainnet: GraduationSupportedChainName[];
+  testnet: GraduationSupportedChainName[];
+} = {
+  mainnet: ["ethereum", "arbitrum", "base"],
+  testnet: ["sepolia", "arbitrum-sepolia", "base-sepolia"],
+};
+
 export interface ChainConfig {
   id: ChainName;
   name: string;

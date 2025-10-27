@@ -8,6 +8,11 @@ import {
   sepolia,
 } from "@reown/appkit/networks";
 import { WagmiAdapter } from "@reown/appkit-adapter-wagmi";
+import {
+  GRADUATION_SUPPORTED_CHAINS,
+  GraduationSupportedChainName,
+} from "../../../config";
+import type { AppKitNetwork } from "@reown/appkit/networks";
 
 export const projectId =
   process.env.WALLET_CONNECT_PROJECT_ID || "67f3ccbaec6f6119a5c91a22793c89e3";
@@ -19,17 +24,24 @@ const metadata = {
   icons: ["https://dex.orderly.network/favicon.webp"],
 };
 
-export const mainnetNetworks = [mainnet, arbitrum, base];
-export const testnetNetworks = [sepolia, arbitrumSepolia, baseSepolia];
-
-export const networks = [
-  mainnet,
+const networkMap: Record<GraduationSupportedChainName, AppKitNetwork> = {
+  ethereum: mainnet,
   arbitrum,
   base,
   sepolia,
-  arbitrumSepolia,
-  baseSepolia,
-];
+  "arbitrum-sepolia": arbitrumSepolia,
+  "base-sepolia": baseSepolia,
+};
+
+export const mainnetNetworks = GRADUATION_SUPPORTED_CHAINS.mainnet.map(
+  chain => networkMap[chain]
+);
+
+export const testnetNetworks = GRADUATION_SUPPORTED_CHAINS.testnet.map(
+  chain => networkMap[chain]
+);
+
+export const networks = [...mainnetNetworks, ...testnetNetworks];
 
 export const wagmiAdapter = new WagmiAdapter({
   networks,
@@ -39,7 +51,7 @@ export const wagmiAdapter = new WagmiAdapter({
 
 createAppKit({
   adapters: [wagmiAdapter],
-  networks: [mainnet, arbitrum, base, sepolia, arbitrumSepolia, baseSepolia],
+  networks: networks as [AppKitNetwork, ...AppKitNetwork[]],
   defaultNetwork: mainnet,
   projectId,
   metadata,
