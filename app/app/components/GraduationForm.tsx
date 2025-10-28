@@ -1464,13 +1464,6 @@ export function GraduationForm({
             </span>
           </li>
           <li className="flex items-start gap-2">
-            <div className="i-mdi:gift text-primary-light w-4 h-4 mt-0.5 flex-shrink-0"></div>
-            <span>
-              Your traders will receive ORDER token rewards based on trading
-              volume
-            </span>
-          </li>
-          <li className="flex items-start gap-2">
             <div className="i-mdi:cog text-warning w-4 h-4 mt-0.5 flex-shrink-0"></div>
             <span>
               You can customize trading fees to optimize for your community
