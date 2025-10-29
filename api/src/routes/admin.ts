@@ -88,7 +88,7 @@ const brokerIdSchema = z.object({
   brokerId: z
     .string()
     .min(3, "Broker ID must be at least 3 characters")
-    .max(20, "Broker ID cannot exceed 20 characters")
+    .max(30, "Broker ID cannot exceed 30 characters")
     .regex(
       /^[a-z0-9_-]+$/,
       "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
