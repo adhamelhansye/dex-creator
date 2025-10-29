@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, Link } from "@remix-run/react";
 import { Icon } from "@iconify/react";
 import { apiClient } from "../utils/apiClient";
+import { type TimePeriod, getTimePeriodString } from "../types/leaderboard";
 
 interface BrokerStats {
   id: string;
@@ -39,8 +40,6 @@ interface DailyStats {
   broker_fee: number;
   total_fee: number;
 }
-
-type TimePeriod = "daily" | "weekly" | "30d";
 
 export default function DexDetailRoute() {
   const { dexId } = useParams();
@@ -142,17 +141,6 @@ export default function DexDetailRoute() {
       value: isNegative ? `-$${formatted}` : `+$${formatted}`,
       isNegative,
     };
-  };
-
-  const getTimePeriodString = (period: TimePeriod) => {
-    switch (period) {
-      case "daily":
-        return "24h";
-      case "weekly":
-        return "7d";
-      case "30d":
-        return "30d";
-    }
   };
 
   const getGeckoTerminalUrl = () => {
@@ -319,7 +307,7 @@ export default function DexDetailRoute() {
         <div className="mb-8 slide-fade-in-delayed">
           <div className="flex items-center gap-3">
             <span className="text-sm text-gray-400">Time Period:</span>
-            {(["daily", "weekly", "30d"] as TimePeriod[]).map(period => (
+            {(["daily", "weekly", "30d", "90d"] as TimePeriod[]).map(period => (
               <button
                 key={period}
                 onClick={() => setTimePeriod(period)}

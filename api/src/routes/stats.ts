@@ -28,7 +28,7 @@ interface StatsCacheEntry {
 const statsCache = new Map<string, StatsCacheEntry>();
 
 const statsQuerySchema = z.object({
-  period: z.enum(["daily", "weekly", "30d"]).default("30d"),
+  period: z.enum(["daily", "weekly", "30d", "90d"]).default("30d"),
 });
 
 function generateCacheKey(period: string): string {
@@ -44,6 +44,8 @@ function getDateFilter(period: string) {
       return now.subtract(7, "day").toDate();
     case "30d":
       return now.subtract(30, "day").toDate();
+    case "90d":
+      return now.subtract(90, "day").toDate();
     default:
       return now.subtract(30, "day").toDate();
   }
