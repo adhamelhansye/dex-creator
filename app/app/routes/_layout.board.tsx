@@ -4,6 +4,7 @@ import { Icon } from "@iconify/react";
 import { apiClient } from "../utils/apiClient";
 import DexCard from "../components/DexCard";
 import Pagination from "../components/Pagination";
+import type { TimePeriod } from "../types/leaderboard";
 
 interface BrokerStats {
   id: string;
@@ -60,7 +61,6 @@ interface DexStats {
 }
 
 type SortOption = "volume" | "pnl" | "fee";
-type TimePeriod = "daily" | "weekly" | "30d";
 
 export default function BoardRoute() {
   const [leaderboard, setLeaderboard] = useState<BrokerStats[]>([]);
@@ -236,6 +236,7 @@ export default function BoardRoute() {
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="30d">30 Days</option>
+                <option value="90d">90 Days</option>
               </select>
             </div>
 

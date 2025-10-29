@@ -1,3 +1,5 @@
+import { type TimePeriod, getTimePeriodString } from "../types/leaderboard";
+
 interface DexCardProps {
   broker: {
     id: string;
@@ -24,7 +26,7 @@ interface DexCardProps {
     websiteUrl?: string;
   };
   rank?: number;
-  timePeriod?: "daily" | "weekly" | "30d";
+  timePeriod?: TimePeriod;
 }
 
 const formatVolume = (num: number) => {
@@ -49,17 +51,6 @@ const formatPnl = (num: number) => {
     value: isNegative ? `-$${formatted}` : `+$${formatted}`,
     isNegative,
   };
-};
-
-const getTimePeriodString = (period: "daily" | "weekly" | "30d") => {
-  switch (period) {
-    case "daily":
-      return "24h";
-    case "weekly":
-      return "7d";
-    case "30d":
-      return "30d";
-  }
 };
 
 const getRankIcon = (index: number) => {

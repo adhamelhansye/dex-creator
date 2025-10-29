@@ -9,7 +9,7 @@ const leaderboard = new Hono();
 
 const leaderboardQuerySchema = z.object({
   sort: z.enum(["volume", "pnl", "fee"]).default("volume"),
-  period: z.enum(["daily", "weekly", "30d"]).default("weekly"),
+  period: z.enum(["daily", "weekly", "30d", "90d"]).default("weekly"),
   limit: z.coerce.number().int().positive().max(20).default(20),
   offset: z.coerce.number().int().min(0).default(0),
 });
@@ -250,7 +250,7 @@ const brokerParamSchema = z.object({
 });
 
 const brokerQuerySchema = z.object({
-  period: z.enum(["daily", "weekly", "30d"]).default("weekly"),
+  period: z.enum(["daily", "weekly", "30d", "90d"]).default("weekly"),
 });
 
 /**

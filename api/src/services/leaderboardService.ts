@@ -343,7 +343,7 @@ class LeaderboardService {
 
   public getAggregatedBrokerStats(
     brokerId: string,
-    period: "daily" | "weekly" | "30d" = "30d"
+    period: "daily" | "weekly" | "30d" | "90d" = "30d"
   ): AggregatedBrokerStats | null {
     const dailyStats = this.cache.get(brokerId);
     if (!dailyStats || dailyStats.length === 0) return null;
@@ -360,6 +360,9 @@ class LeaderboardService {
         break;
       case "30d":
         startDate.setDate(endDate.getDate() - 29);
+        break;
+      case "90d":
+        startDate.setDate(endDate.getDate() - 89);
         break;
     }
 
@@ -402,7 +405,7 @@ class LeaderboardService {
 
   public getDailyStatsForBroker(
     brokerId: string,
-    period: "daily" | "weekly" | "30d" = "30d"
+    period: "daily" | "weekly" | "30d" | "90d" = "30d"
   ): BrokerStats[] | null {
     const dailyStats = this.cache.get(brokerId);
     if (!dailyStats || dailyStats.length === 0) return null;
@@ -419,6 +422,9 @@ class LeaderboardService {
         break;
       case "30d":
         startDate.setDate(endDate.getDate() - 29);
+        break;
+      case "90d":
+        startDate.setDate(endDate.getDate() - 89);
         break;
     }
 
