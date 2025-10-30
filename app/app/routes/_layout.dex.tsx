@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
@@ -44,6 +44,9 @@ export default function DexRoute() {
   );
   const deploymentUrl = localDeploymentUrl || contextDeploymentUrl;
   const [deploymentConfirmed, setDeploymentConfirmed] = useState(false);
+  const loadedImagesForDexId = useRef<string | null>(null);
+  const populatedFormForDexId = useRef<string | null>(null);
+  const initializedThemeForDexId = useRef<string | null>(null);
 
   const [upgradeStatus, setUpgradeStatus] = useState<{
     hasUpdates: boolean;
@@ -83,7 +86,8 @@ export default function DexRoute() {
   }, [upgradeStatus]);
 
   useEffect(() => {
-    if (dexData) {
+    if (dexData && populatedFormForDexId.current !== dexData.id) {
+      populatedFormForDexId.current = dexData.id;
       form.populateFromDexData({
         brokerName: dexData.brokerName,
         telegramLink: dexData.telegramLink || "",
@@ -131,17 +135,31 @@ export default function DexRoute() {
           : null
       );
     }
-  }, [dexData, form]);
+  }, [
+    dexData,
+    form.populateFromDexData,
+    form.setViewCssCode,
+    form.setCurrentTheme,
+    form.setThemeApplied,
+    form.setActiveThemeTab,
+  ]);
 
   useEffect(() => {
-    if (!form.currentTheme && !dexData?.themeCSS) {
+    if (
+      dexData &&
+      !form.currentTheme &&
+      !dexData?.themeCSS &&
+      initializedThemeForDexId.current !== dexData.id
+    ) {
+      initializedThemeForDexId.current = dexData.id;
       form.setCurrentTheme(defaultTheme);
       form.setThemeApplied(true);
     }
-  }, [form, dexData?.themeCSS]);
+  }, [form.currentTheme, form.setCurrentTheme, form.setThemeApplied, dexData]);
 
   useEffect(() => {
-    if (dexData) {
+    if (dexData && loadedImagesForDexId.current !== dexData.id) {
+      loadedImagesForDexId.current = dexData.id;
       form.loadImagesFromBase64({
         primaryLogo: dexData.primaryLogo,
         secondaryLogo: dexData.secondaryLogo,
@@ -149,7 +167,15 @@ export default function DexRoute() {
         pnlPosters: dexData.pnlPosters,
       });
     }
-  }, [dexData, form]);
+  }, [dexData, form.loadImagesFromBase64]);
+
+  useEffect(() => {
+    if (!dexData) {
+      loadedImagesForDexId.current = null;
+      populatedFormForDexId.current = null;
+      initializedThemeForDexId.current = null;
+    }
+  }, [dexData]);
 
   // Handle smooth scrolling to DEX Creation Status when navigating from config
   useEffect(() => {

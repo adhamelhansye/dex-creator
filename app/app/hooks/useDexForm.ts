@@ -453,73 +453,80 @@ export function useDexForm(): UseDexFormReturn {
     setPnlPosters(posters);
   };
 
-  const populateFromDexData = (
-    dexData: Omit<Partial<DexFormData>, "privyLoginMethods"> & {
-      privyLoginMethods?: string | string[] | null;
-      themeCSS?: string | null;
-    }
-  ) => {
-    if (dexData.brokerName !== undefined) setBrokerName(dexData.brokerName);
-    if (dexData.telegramLink !== undefined)
-      setTelegramLink(dexData.telegramLink);
-    if (dexData.discordLink !== undefined) setDiscordLink(dexData.discordLink);
-    if (dexData.xLink !== undefined) setXLink(dexData.xLink);
-    if (dexData.walletConnectProjectId !== undefined)
-      setWalletConnectProjectId(dexData.walletConnectProjectId);
-    if (dexData.privyAppId !== undefined) setPrivyAppId(dexData.privyAppId);
-    if (dexData.privyTermsOfUse !== undefined)
-      setPrivyTermsOfUse(dexData.privyTermsOfUse);
-    if (dexData.privyLoginMethods !== undefined) {
-      if (typeof dexData.privyLoginMethods === "string") {
-        setPrivyLoginMethods(
-          dexData.privyLoginMethods.split(",").filter(Boolean)
-        );
-      } else {
-        setPrivyLoginMethods(dexData.privyLoginMethods || ["email"]);
+  const populateFromDexData = useCallback(
+    (
+      dexData: Omit<Partial<DexFormData>, "privyLoginMethods"> & {
+        privyLoginMethods?: string | string[] | null;
+        themeCSS?: string | null;
       }
-    }
-    if (dexData.enabledMenus !== undefined)
-      setEnabledMenus(dexData.enabledMenus);
-    if (dexData.customMenus !== undefined) setCustomMenus(dexData.customMenus);
-    if (dexData.enableAbstractWallet !== undefined)
-      setEnableAbstractWallet(dexData.enableAbstractWallet);
-    if (dexData.enableServiceDisclaimerDialog !== undefined)
-      setEnableServiceDisclaimerDialog(dexData.enableServiceDisclaimerDialog);
-    if (dexData.enableCampaigns !== undefined)
-      setEnableCampaigns(dexData.enableCampaigns);
-    if (dexData.chainIds !== undefined) setChainIds(dexData.chainIds);
-    if (dexData.defaultChain !== undefined)
-      setDefaultChain(dexData.defaultChain);
-    if (dexData.disableMainnet !== undefined)
-      setDisableMainnet(dexData.disableMainnet);
-    if (dexData.disableTestnet !== undefined)
-      setDisableTestnet(dexData.disableTestnet);
-    if (dexData.disableEvmWallets !== undefined)
-      setDisableEvmWallets(dexData.disableEvmWallets);
-    if (dexData.disableSolanaWallets !== undefined)
-      setDisableSolanaWallets(dexData.disableSolanaWallets);
-    if (dexData.tradingViewColorConfig !== undefined)
-      setTradingViewColorConfig(dexData.tradingViewColorConfig);
-    if (dexData.availableLanguages !== undefined)
-      setAvailableLanguages(dexData.availableLanguages);
-    if (dexData.seoSiteName !== undefined) setSeoSiteName(dexData.seoSiteName);
-    if (dexData.seoSiteDescription !== undefined)
-      setSeoSiteDescription(dexData.seoSiteDescription);
-    if (dexData.seoSiteLanguage !== undefined)
-      setSeoSiteLanguage(dexData.seoSiteLanguage);
-    if (dexData.seoSiteLocale !== undefined)
-      setSeoSiteLocale(dexData.seoSiteLocale);
-    if (dexData.seoTwitterHandle !== undefined)
-      setSeoTwitterHandle(dexData.seoTwitterHandle);
-    if (dexData.seoThemeColor !== undefined)
-      setSeoThemeColor(dexData.seoThemeColor);
-    if (dexData.seoKeywords !== undefined) setSeoKeywords(dexData.seoKeywords);
+    ) => {
+      if (dexData.brokerName !== undefined) setBrokerName(dexData.brokerName);
+      if (dexData.telegramLink !== undefined)
+        setTelegramLink(dexData.telegramLink);
+      if (dexData.discordLink !== undefined)
+        setDiscordLink(dexData.discordLink);
+      if (dexData.xLink !== undefined) setXLink(dexData.xLink);
+      if (dexData.walletConnectProjectId !== undefined)
+        setWalletConnectProjectId(dexData.walletConnectProjectId);
+      if (dexData.privyAppId !== undefined) setPrivyAppId(dexData.privyAppId);
+      if (dexData.privyTermsOfUse !== undefined)
+        setPrivyTermsOfUse(dexData.privyTermsOfUse);
+      if (dexData.privyLoginMethods !== undefined) {
+        if (typeof dexData.privyLoginMethods === "string") {
+          setPrivyLoginMethods(
+            dexData.privyLoginMethods.split(",").filter(Boolean)
+          );
+        } else {
+          setPrivyLoginMethods(dexData.privyLoginMethods || ["email"]);
+        }
+      }
+      if (dexData.enabledMenus !== undefined)
+        setEnabledMenus(dexData.enabledMenus);
+      if (dexData.customMenus !== undefined)
+        setCustomMenus(dexData.customMenus);
+      if (dexData.enableAbstractWallet !== undefined)
+        setEnableAbstractWallet(dexData.enableAbstractWallet);
+      if (dexData.enableServiceDisclaimerDialog !== undefined)
+        setEnableServiceDisclaimerDialog(dexData.enableServiceDisclaimerDialog);
+      if (dexData.enableCampaigns !== undefined)
+        setEnableCampaigns(dexData.enableCampaigns);
+      if (dexData.chainIds !== undefined) setChainIds(dexData.chainIds);
+      if (dexData.defaultChain !== undefined)
+        setDefaultChain(dexData.defaultChain);
+      if (dexData.disableMainnet !== undefined)
+        setDisableMainnet(dexData.disableMainnet);
+      if (dexData.disableTestnet !== undefined)
+        setDisableTestnet(dexData.disableTestnet);
+      if (dexData.disableEvmWallets !== undefined)
+        setDisableEvmWallets(dexData.disableEvmWallets);
+      if (dexData.disableSolanaWallets !== undefined)
+        setDisableSolanaWallets(dexData.disableSolanaWallets);
+      if (dexData.tradingViewColorConfig !== undefined)
+        setTradingViewColorConfig(dexData.tradingViewColorConfig);
+      if (dexData.availableLanguages !== undefined)
+        setAvailableLanguages(dexData.availableLanguages);
+      if (dexData.seoSiteName !== undefined)
+        setSeoSiteName(dexData.seoSiteName);
+      if (dexData.seoSiteDescription !== undefined)
+        setSeoSiteDescription(dexData.seoSiteDescription);
+      if (dexData.seoSiteLanguage !== undefined)
+        setSeoSiteLanguage(dexData.seoSiteLanguage);
+      if (dexData.seoSiteLocale !== undefined)
+        setSeoSiteLocale(dexData.seoSiteLocale);
+      if (dexData.seoTwitterHandle !== undefined)
+        setSeoTwitterHandle(dexData.seoTwitterHandle);
+      if (dexData.seoThemeColor !== undefined)
+        setSeoThemeColor(dexData.seoThemeColor);
+      if (dexData.seoKeywords !== undefined)
+        setSeoKeywords(dexData.seoKeywords);
 
-    if (dexData.themeCSS !== undefined) {
-      setCurrentTheme(dexData.themeCSS);
-      setThemeApplied(!!dexData.themeCSS);
-    }
-  };
+      if (dexData.themeCSS !== undefined) {
+        setCurrentTheme(dexData.themeCSS);
+        setThemeApplied(!!dexData.themeCSS);
+      }
+    },
+    []
+  );
 
   const loadImagesFromBase64 = useCallback(
     async (images: {
@@ -792,7 +799,6 @@ export function useDexForm(): UseDexFormReturn {
         if (response && "id" in response) {
           setDexData(response);
 
-          // Populate form data from response
           populateFromDexData({
             brokerName: response.brokerName,
             telegramLink: response.telegramLink || "",
@@ -826,7 +832,6 @@ export function useDexForm(): UseDexFormReturn {
             themeCSS: response.themeCSS,
           });
 
-          // Initialize theme
           setViewCssCode(false);
           if (!response.themeCSS) {
             setCurrentTheme(defaultTheme);
@@ -834,8 +839,7 @@ export function useDexForm(): UseDexFormReturn {
           }
           setActiveThemeTab("colors");
 
-          // Load images from base64
-          loadImagesFromBase64({
+          await loadImagesFromBase64({
             primaryLogo: response.primaryLogo,
             secondaryLogo: response.secondaryLogo,
             favicon: response.favicon,
@@ -851,7 +855,7 @@ export function useDexForm(): UseDexFormReturn {
         return null;
       }
     },
-    [populateFromDexData]
+    [populateFromDexData, loadImagesFromBase64]
   );
 
   const getSectionProps = useCallback(

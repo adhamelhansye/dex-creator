@@ -61,7 +61,7 @@ export default function CustomDomainSection({
 }: CustomDomainSectionProps) {
   const [customDomain, setCustomDomain] = useState("");
   const [isEditing, setIsEditing] = useState(false);
-  const { openModal } = useModal();
+  const { openModal, closeModal } = useModal();
 
   const handleSetDomain = async () => {
     const normalizedDomain = customDomain.trim().toLowerCase();
@@ -101,18 +101,33 @@ export default function CustomDomainSection({
       return;
     }
 
+    if (!isEditing) {
+      openModal("tradingViewLicenseAcknowledgment", {
+        onAcknowledge: () =>
+          handleSetDomainAfterAcknowledgment(normalizedDomain),
+        onViewGuide: () => {
+          openModal("tradingViewLicense");
+        },
+      });
+    } else {
+      handleSetDomainAfterAcknowledgment(normalizedDomain);
+    }
+  };
+
+  const handleSetDomainAfterAcknowledgment = async (domainToSet: string) => {
+    closeModal();
     onSavingChange(true);
 
     try {
       await post(
         `api/dex/${dexData.id}/custom-domain`,
-        { domain: normalizedDomain },
+        { domain: domainToSet },
         token
       );
 
       onDexDataUpdate({
         ...dexData,
-        customDomain: normalizedDomain,
+        customDomain: domainToSet,
       });
 
       toast.success(
