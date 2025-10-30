@@ -5,6 +5,7 @@ import ConfirmationModal from "../components/ConfirmationModal";
 import ImageCropModal from "../components/ImageCropModal";
 import ThemePreviewModal from "../components/ThemePreviewModal";
 import TradingViewLicenseModal from "../components/TradingViewLicenseModal";
+import TradingViewLicenseAcknowledgmentModal from "../components/TradingViewLicenseAcknowledgmentModal";
 import OrderlyKeyLoginModal from "../components/OrderlyKeyLoginModal";
 import AdminLoginModal from "../components/AdminLoginModal";
 import GraduationExplanationModal from "../components/GraduationExplanationModal";
@@ -20,6 +21,7 @@ export type ModalType =
   | "imageCrop"
   | "themePreview"
   | "tradingViewLicense"
+  | "tradingViewLicenseAcknowledgment"
   | "orderlyKeyLogin"
   | "adminLogin"
   | "graduationExplanation"
@@ -178,6 +180,15 @@ function ModalManager() {
     case "tradingViewLicense":
       return (
         <TradingViewLicenseModal isOpen={isModalOpen} onClose={closeModal} />
+      );
+    case "tradingViewLicenseAcknowledgment":
+      return (
+        <TradingViewLicenseAcknowledgmentModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onAcknowledge={currentModalProps.onAcknowledge}
+          onViewGuide={currentModalProps.onViewGuide}
+        />
       );
     case "orderlyKeyLogin":
       return (
