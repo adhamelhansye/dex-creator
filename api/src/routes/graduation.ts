@@ -210,6 +210,8 @@ graduationRoutes.post(
               disableTestnet: dex.disableTestnet || false,
               disableEvmWallets: dex.disableEvmWallets || false,
               disableSolanaWallets: dex.disableSolanaWallets || false,
+              enableServiceDisclaimerDialog:
+                dex.enableServiceDisclaimerDialog || false,
               enableCampaigns: dex.enableCampaigns || false,
               tradingViewColorConfig: dex.tradingViewColorConfig?.toString(),
               availableLanguages: dex.availableLanguages,

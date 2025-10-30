@@ -170,6 +170,7 @@ export const dexSchema = z.object({
   disableTestnet: z.boolean().optional(),
   disableEvmWallets: z.boolean().optional(),
   disableSolanaWallets: z.boolean().optional(),
+  enableServiceDisclaimerDialog: z.boolean().optional(),
   enableCampaigns: z.boolean().optional(),
   tradingViewColorConfig: z.string().nullish(),
   availableLanguages: z.array(z.nativeEnum(LocaleEnum)).optional(),
@@ -259,6 +260,9 @@ export const dexFormSchema = dexSchema
       .union([z.boolean(), z.string().transform(val => val === "true")])
       .optional(),
     disableSolanaWallets: z
+      .union([z.boolean(), z.string().transform(val => val === "true")])
+      .optional(),
+    enableServiceDisclaimerDialog: z
       .union([z.boolean(), z.string().transform(val => val === "true")])
       .optional(),
     enableCampaigns: z
@@ -422,6 +426,8 @@ export async function createDex(
         disableTestnet: validatedData.disableTestnet,
         disableEvmWallets: validatedData.disableEvmWallets,
         disableSolanaWallets: validatedData.disableSolanaWallets,
+        enableServiceDisclaimerDialog:
+          validatedData.enableServiceDisclaimerDialog,
         enableCampaigns: validatedData.enableCampaigns,
         tradingViewColorConfig:
           validatedData.tradingViewColorConfig || undefined,
@@ -485,6 +491,8 @@ export async function createDex(
         disableTestnet: validatedData.disableTestnet,
         disableEvmWallets: validatedData.disableEvmWallets,
         disableSolanaWallets: validatedData.disableSolanaWallets,
+        enableServiceDisclaimerDialog:
+          validatedData.enableServiceDisclaimerDialog,
         enableCampaigns: validatedData.enableCampaigns,
         tradingViewColorConfig: validatedData.tradingViewColorConfig,
         availableLanguages: validatedData.availableLanguages,
@@ -629,6 +637,9 @@ export async function updateDex(
     updateData.disableEvmWallets = validatedData.disableEvmWallets;
   if ("disableSolanaWallets" in validatedData)
     updateData.disableSolanaWallets = validatedData.disableSolanaWallets;
+  if ("enableServiceDisclaimerDialog" in validatedData)
+    updateData.enableServiceDisclaimerDialog =
+      validatedData.enableServiceDisclaimerDialog;
   if ("enableCampaigns" in validatedData)
     updateData.enableCampaigns = validatedData.enableCampaigns;
   if ("tradingViewColorConfig" in validatedData)

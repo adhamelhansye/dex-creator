@@ -8,54 +8,7 @@ import {
 } from "react";
 import { useAuth } from "./useAuth";
 import { get } from "../utils/apiClient";
-
-interface DexData {
-  id: string;
-  brokerName: string;
-  brokerId: string;
-  themeCSS?: string | null;
-  primaryLogo?: string | null;
-  secondaryLogo?: string | null;
-  favicon?: string | null;
-  pnlPosters?: string[] | null;
-  telegramLink?: string | null;
-  discordLink?: string | null;
-  xLink?: string | null;
-  walletConnectProjectId?: string | null;
-  privyAppId?: string | null;
-  privyTermsOfUse?: string | null;
-  privyLoginMethods?: string | null;
-  enabledMenus?: string | null;
-  customMenus?: string | null;
-  enableAbstractWallet?: boolean;
-  enableCampaigns?: boolean;
-  chainIds?: number[] | null;
-  defaultChain?: number | null;
-  repoUrl?: string | null;
-  customDomain?: string | null;
-  disableMainnet?: boolean;
-  disableTestnet?: boolean;
-  disableEvmWallets?: boolean;
-  disableSolanaWallets?: boolean;
-  tradingViewColorConfig?: string | null;
-  availableLanguages?: string[] | null;
-  seoSiteName?: string | null;
-  seoSiteDescription?: string | null;
-  seoSiteLanguage?: string | null;
-  seoSiteLocale?: string | null;
-  seoTwitterHandle?: string | null;
-  seoThemeColor?: string | null;
-  seoKeywords?: string | null;
-  description?: string | null;
-  banner?: string | null;
-  logo?: string | null;
-  tokenAddress?: string | null;
-  tokenChain?: string | null;
-  websiteUrl?: string | null;
-  isGraduated?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
+import { DexData } from "../types/dex";
 
 interface DexContextType {
   dexData: DexData | null;
