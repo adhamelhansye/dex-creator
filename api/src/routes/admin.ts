@@ -191,6 +191,8 @@ adminRoutes.post(
                 disableTestnet: updatedDex.disableTestnet || false,
                 disableEvmWallets: updatedDex.disableEvmWallets || false,
                 disableSolanaWallets: updatedDex.disableSolanaWallets || false,
+                enableServiceDisclaimerDialog:
+                  updatedDex.enableServiceDisclaimerDialog || false,
                 enableCampaigns: updatedDex.enableCampaigns || false,
                 tradingViewColorConfig:
                   updatedDex.tradingViewColorConfig || undefined,
@@ -388,6 +390,8 @@ adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
         disableTestnet: dex.disableTestnet || false,
         disableEvmWallets: dex.disableEvmWallets || false,
         disableSolanaWallets: dex.disableSolanaWallets || false,
+        enableServiceDisclaimerDialog:
+          dex.enableServiceDisclaimerDialog || false,
         enableCampaigns: dex.enableCampaigns || false,
         tradingViewColorConfig: dex.tradingViewColorConfig || undefined,
         availableLanguages: dex.availableLanguages,
@@ -608,6 +612,8 @@ adminRoutes.post(
               disableTestnet: dex.disableTestnet || false,
               disableEvmWallets: dex.disableEvmWallets || false,
               disableSolanaWallets: dex.disableSolanaWallets || false,
+              enableServiceDisclaimerDialog:
+                dex.enableServiceDisclaimerDialog || false,
               enableCampaigns: dex.enableCampaigns || false,
               tradingViewColorConfig: dex.tradingViewColorConfig?.toString(),
               availableLanguages: dex.availableLanguages,

@@ -11,7 +11,9 @@ import PrivyConfigSection from "./PrivyConfigSection";
 import BlockchainConfigSection from "./BlockchainConfigSection";
 import LanguageSupportSection from "./LanguageSupportSection";
 import NavigationMenuSection from "./NavigationMenuSection";
+import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
 import ProgressTracker from "./ProgressTracker";
+import { DexSectionProps } from "../hooks/useDexForm";
 
 export interface DexSectionConfig {
   id: number;
@@ -22,103 +24,8 @@ export interface DexSectionConfig {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   component: React.ComponentType<any>;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  getProps: (allProps: DexSectionAllProps) => any;
-  getValidationTest?: (allProps: DexSectionAllProps) => boolean;
-}
-
-export interface DexSectionAllProps {
-  // Broker Details
-  brokerName: string;
-  handleInputChange: (
-    field: string
-  ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  brokerNameValidator: (value: string) => string | null;
-
-  // Branding
-  primaryLogo: Blob | null;
-  secondaryLogo: Blob | null;
-  favicon: Blob | null;
-  handleImageChange: (field: string) => (blob: Blob | null) => void;
-
-  // Theme
-  currentTheme: string | null;
-  defaultTheme: string;
-  showThemeEditor: boolean;
-  viewCssCode: boolean;
-  activeThemeTab: "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
-  themePrompt: string;
-  isGeneratingTheme: boolean;
-  themeApplied: boolean;
-  tradingViewColorConfig: string | null;
-  toggleThemeEditor: () => void;
-  handleResetTheme: () => void;
-  handleResetToDefault: () => void;
-  handleThemeEditorChange: (value: string) => void;
-  setViewCssCode: (value: boolean) => void;
-  ThemeTabButton: React.FC<{
-    tab: "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
-    label: string;
-  }>;
-  updateCssColor: (variableName: string, newColorHex: string) => void;
-  updateCssValue: (variableName: string, newValue: string) => void;
-  handleGenerateTheme: () => void;
-  setTradingViewColorConfig: (config: string | null) => void;
-
-  // PnL Posters
-  pnlPosters: (Blob | null)[];
-  handlePnLPosterChange: (posters: (Blob | null)[]) => void;
-
-  // Social Links
-  telegramLink: string;
-  discordLink: string;
-  xLink: string;
-  urlValidator: (value: string) => string | null;
-
-  // SEO
-  seoSiteName: string;
-  seoSiteDescription: string;
-  seoSiteLanguage: string;
-  seoSiteLocale: string;
-  seoTwitterHandle: string;
-  seoThemeColor: string;
-  seoKeywords: string;
-
-  // Reown
-  walletConnectProjectId: string;
-
-  // Privy
-  privyAppId: string;
-  privyTermsOfUse: string;
-  enableAbstractWallet: boolean;
-  onEnableAbstractWalletChange: (value: boolean) => void;
-  disableEvmWallets: boolean;
-  disableSolanaWallets: boolean;
-  onDisableEvmWalletsChange: (value: boolean) => void;
-  onDisableSolanaWalletsChange: (value: boolean) => void;
-  privyLoginMethods: string[];
-  onPrivyLoginMethodsChange: (methods: string[]) => void;
-
-  // Blockchain
-  chainIds: number[];
-  onChainIdsChange: (chainIds: number[]) => void;
-  defaultChain?: number;
-  onDefaultChainChange?: (chainId: number | undefined) => void;
-  disableMainnet: boolean;
-  disableTestnet: boolean;
-  onDisableMainnetChange: (value: boolean) => void;
-  onDisableTestnetChange: (value: boolean) => void;
-
-  // Language Support
-  availableLanguages: string[];
-  onAvailableLanguagesChange: (languages: string[]) => void;
-
-  // Navigation Menus
-  enabledMenus: string;
-  setEnabledMenus: (menus: string) => void;
-  customMenus: string;
-  setCustomMenus: (menus: string) => void;
-  enableCampaigns: boolean;
-  setEnableCampaigns: (value: boolean) => void;
+  getProps: (sectionProps: DexSectionProps) => any;
+  getValidationTest?: (sectionProps: DexSectionProps) => boolean;
 }
 
 export const DEX_SECTIONS: DexSectionConfig[] = [
@@ -325,12 +232,26 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       setEnableCampaigns: props.setEnableCampaigns,
     }),
   },
+  {
+    id: 12,
+    key: "serviceDisclaimer",
+    title: "Service Disclaimer",
+    description:
+      "Enable a one-time disclaimer dialog that informs users about the platform's use of Orderly Network's infrastructure. This is optional and can help set proper expectations for users.",
+    isOptional: true,
+    component: ServiceDisclaimerSection,
+    getProps: props => ({
+      enableServiceDisclaimerDialog: props.enableServiceDisclaimerDialog,
+      onEnableServiceDisclaimerDialogChange:
+        props.onEnableServiceDisclaimerDialogChange,
+    }),
+  },
 ];
 
 interface DexSectionRendererProps {
   mode: "accordion" | "direct";
   sections: DexSectionConfig[];
-  allProps: DexSectionAllProps;
+  sectionProps: DexSectionProps;
   currentStep?: number;
   completedSteps?: Record<number, boolean>;
   setCurrentStep?: (step: number) => void;
@@ -344,7 +265,7 @@ interface DexSectionRendererProps {
 const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
   mode,
   sections,
-  allProps,
+  sectionProps,
   currentStep,
   completedSteps,
   setCurrentStep,
@@ -397,7 +318,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
   const renderSection = (section: DexSectionConfig, index: number) => {
     const Component = section.component;
     const componentProps = {
-      ...section.getProps(allProps),
+      ...section.getProps(sectionProps),
       idPrefix: mode === "accordion" ? "" : idPrefix,
     };
 
@@ -436,7 +357,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
           onNextInternal={() => handleNextStep(section.id)}
           isStepContentValidTest={
             section.getValidationTest
-              ? section.getValidationTest(allProps)
+              ? section.getValidationTest(sectionProps)
               : true
           }
           isActive={currentStep === section.id}

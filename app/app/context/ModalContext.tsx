@@ -13,7 +13,7 @@ import { TokenSelectionModal } from "../components/TokenSelectionModal";
 import SafeInstructionsModal from "../components/SafeInstructions";
 import { FeeWithdrawalModal } from "../components/FeeWithdrawalModal";
 
-type ModalType =
+export type ModalType =
   | "login"
   | "deleteConfirm"
   | "confirmation"

@@ -327,6 +327,8 @@ dexRoutes.put(
                 disableTestnet: updatedDex.disableTestnet,
                 disableEvmWallets: updatedDex.disableEvmWallets,
                 disableSolanaWallets: updatedDex.disableSolanaWallets,
+                enableServiceDisclaimerDialog:
+                  updatedDex.enableServiceDisclaimerDialog,
                 enableCampaigns: updatedDex.enableCampaigns,
                 tradingViewColorConfig:
                   updatedDex.tradingViewColorConfig || undefined,

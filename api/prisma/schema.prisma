@@ -79,6 +79,7 @@ model Dex {
   disableTestnet       Boolean  @default(false) // Flag to disable testnet chains
   disableEvmWallets    Boolean  @default(false) // Flag to disable EVM wallets
   disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
+  enableServiceDisclaimerDialog Boolean @default(false) // Flag to enable one-time service disclaimer dialog
   tradingViewColorConfig String? // TradingView color configuration JSON
   seoSiteName          String?  // SEO Site Name
   seoSiteDescription   String?  // SEO Site Description

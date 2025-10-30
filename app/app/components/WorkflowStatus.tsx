@@ -162,19 +162,18 @@ export default function WorkflowStatus({
 
   useEffect(() => {
     fetchWorkflowStatus();
+  }, [token, dexId, workflowName]);
 
-    let interval: NodeJS.Timeout | null = null;
-    if (autoRefresh) {
-      const refreshInterval =
-        !workflowStatus || workflowStatus.totalCount === 0 ? 5_000 : 20_000;
+  useEffect(() => {
+    if (!autoRefresh) return;
 
-      interval = setInterval(fetchWorkflowStatus, refreshInterval);
-    }
+    const refreshInterval =
+      !workflowStatus || workflowStatus.totalCount === 0 ? 5_000 : 20_000;
 
-    return () => {
-      if (interval) clearInterval(interval);
-    };
-  }, [fetchWorkflowStatus, autoRefresh]);
+    const interval = setInterval(fetchWorkflowStatus, refreshInterval);
+
+    return () => clearInterval(interval);
+  }, [autoRefresh, workflowStatus, fetchWorkflowStatus]);
 
   const checkForSuccessfulDeployment = useCallback(() => {
     if (

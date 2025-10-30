@@ -573,6 +573,7 @@ function prepareDexConfigContent(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableServiceDisclaimerDialog?: boolean;
     enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
@@ -676,6 +677,9 @@ function prepareDexConfigContent(
     VITE_ENABLED_MENUS:
       config.enabledMenus || "Trading,Portfolio,Markets,Leaderboard",
     VITE_CUSTOM_MENUS: config.customMenus || "",
+    VITE_ENABLE_SERVICE_DISCLAIMER_DIALOG: String(
+      config.enableServiceDisclaimerDialog ?? false
+    ),
     VITE_ENABLE_CAMPAIGNS: String(config.enableCampaigns ?? false),
 
     // Social links
@@ -866,6 +870,7 @@ export async function updateDexConfig(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableServiceDisclaimerDialog?: boolean;
     enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
@@ -992,6 +997,7 @@ export async function setupRepositoryWithSingleCommit(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableServiceDisclaimerDialog?: boolean;
     enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
@@ -1486,6 +1492,7 @@ export async function triggerRedeployment(
     disableTestnet?: boolean;
     disableEvmWallets?: boolean;
     disableSolanaWallets?: boolean;
+    enableServiceDisclaimerDialog?: boolean;
     enableCampaigns?: boolean;
     tradingViewColorConfig?: string;
     availableLanguages?: string[];
@@ -1545,6 +1552,7 @@ export interface DexConfig {
   disableTestnet?: boolean;
   disableEvmWallets?: boolean;
   disableSolanaWallets?: boolean;
+  enableServiceDisclaimerDialog?: boolean;
   enableCampaigns?: boolean;
   tradingViewColorConfig?: string;
   availableLanguages?: string[];
