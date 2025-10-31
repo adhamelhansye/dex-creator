@@ -710,6 +710,8 @@ export async function updateDex(
     updateData.tradingViewColorConfig = validatedData.tradingViewColorConfig;
   if ("availableLanguages" in validatedData)
     updateData.availableLanguages = validatedData.availableLanguages;
+  if ("swapFeeBps" in validatedData)
+    updateData.swapFeeBps = validatedData.swapFeeBps;
 
   if ("seoSiteName" in validatedData)
     updateData.seoSiteName = validatedData.seoSiteName;
