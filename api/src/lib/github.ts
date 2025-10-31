@@ -21,7 +21,13 @@ import sodium from "libsodium-wrappers";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { GitHubResult, GitHubError, GitHubErrorType } from "./types";
+import {
+  GitHubResult,
+  GitHubError,
+  GitHubErrorType,
+  type DexConfig,
+  type DexFiles,
+} from "./types";
 import { getSecret } from "./secretManager.js";
 import {
   ALLOWED_MAINNET_CHAIN_IDS,
@@ -535,7 +541,7 @@ async function encryptSecret(
  * @param dataUri The data URI string
  * @returns The raw binary data buffer or null if invalid
  */
-function extractImageDataFromUri(dataUri: string | undefined): Buffer | null {
+function extractImageDataFromUri(dataUri: string | null): Buffer | null {
   if (!dataUri) return null;
 
   try {
@@ -553,61 +559,26 @@ function extractImageDataFromUri(dataUri: string | undefined): Buffer | null {
 }
 
 function prepareDexConfigContent(
-  config: {
-    brokerId: string;
-    brokerName: string;
-    chainIds?: number[];
-    defaultChain?: number;
-    themeCSS?: string;
-    telegramLink?: string;
-    discordLink?: string;
-    xLink?: string;
-    walletConnectProjectId?: string;
-    privyAppId?: string;
-    privyTermsOfUse?: string;
-    privyLoginMethods?: string;
-    enabledMenus?: string;
-    customMenus?: string;
-    enableAbstractWallet?: boolean;
-    disableMainnet?: boolean;
-    disableTestnet?: boolean;
-    disableEvmWallets?: boolean;
-    disableSolanaWallets?: boolean;
-    enableServiceDisclaimerDialog?: boolean;
-    enableCampaigns?: boolean;
-    tradingViewColorConfig?: string;
-    availableLanguages?: string[];
-    seoSiteName?: string;
-    seoSiteDescription?: string;
-    seoSiteLanguage?: string;
-    seoSiteLocale?: string;
-    seoTwitterHandle?: string;
-    seoThemeColor?: string;
-    seoKeywords?: string;
-  },
-  files?: {
-    primaryLogo?: string;
-    secondaryLogo?: string;
-    favicon?: string;
-    pnlPosters?: string[];
-  },
-  customDomain?: string,
-  repoUrl?: string
+  config: DexConfig,
+  files: DexFiles,
+  customDomain: string | null,
+  repoUrl: string | null,
+  brokerEoaAddress: string | null
 ): {
   configJsContent: string;
   envContent: string;
-  themeCSS?: string;
-  faviconData?: Buffer;
-  primaryLogoData?: Buffer;
-  secondaryLogoData?: Buffer;
-  pnlPostersData?: Buffer[];
+  themeCSS: string | null;
+  faviconData: Buffer | null;
+  primaryLogoData: Buffer | null;
+  secondaryLogoData: Buffer | null;
+  pnlPostersData: Buffer[] | null;
 } {
-  const faviconData = extractImageDataFromUri(files?.favicon);
-  const primaryLogoData = extractImageDataFromUri(files?.primaryLogo);
-  const secondaryLogoData = extractImageDataFromUri(files?.secondaryLogo);
+  const faviconData = extractImageDataFromUri(files.favicon);
+  const primaryLogoData = extractImageDataFromUri(files.primaryLogo);
+  const secondaryLogoData = extractImageDataFromUri(files.secondaryLogo);
 
   const pnlPostersData =
-    (files?.pnlPosters
+    (files.pnlPosters
       ?.map(poster => extractImageDataFromUri(poster))
       .filter(Boolean) as Buffer[]) || [];
 
@@ -649,6 +620,7 @@ function prepareDexConfigContent(
     // Broker settings
     VITE_ORDERLY_BROKER_ID: config.brokerId,
     VITE_ORDERLY_BROKER_NAME: config.brokerName,
+    VITE_BROKER_EOA_ADDRESS: brokerEoaAddress || "",
 
     // Network settings
     VITE_DISABLE_MAINNET: String(config.disableMainnet ?? false),
@@ -719,10 +691,10 @@ function prepareDexConfigContent(
     configJsContent,
     envContent,
     themeCSS: config.themeCSS,
-    faviconData: faviconData || undefined,
-    primaryLogoData: primaryLogoData || undefined,
-    secondaryLogoData: secondaryLogoData || undefined,
-    pnlPostersData: pnlPostersData.length > 0 ? pnlPostersData : undefined,
+    faviconData: faviconData,
+    primaryLogoData: primaryLogoData,
+    secondaryLogoData: secondaryLogoData,
+    pnlPostersData: pnlPostersData.length > 0 ? pnlPostersData : null,
   };
 }
 
@@ -850,45 +822,10 @@ async function createSingleCommit(
 export async function updateDexConfig(
   owner: string,
   repo: string,
-  config: {
-    brokerId: string;
-    brokerName: string;
-    chainIds?: number[];
-    defaultChain?: number;
-    themeCSS?: string;
-    telegramLink?: string;
-    discordLink?: string;
-    xLink?: string;
-    walletConnectProjectId?: string;
-    privyAppId?: string;
-    privyTermsOfUse?: string;
-    privyLoginMethods?: string;
-    enabledMenus?: string;
-    customMenus?: string;
-    enableAbstractWallet?: boolean;
-    disableMainnet?: boolean;
-    disableTestnet?: boolean;
-    disableEvmWallets?: boolean;
-    disableSolanaWallets?: boolean;
-    enableServiceDisclaimerDialog?: boolean;
-    enableCampaigns?: boolean;
-    tradingViewColorConfig?: string;
-    availableLanguages?: string[];
-    seoSiteName?: string;
-    seoSiteDescription?: string;
-    seoSiteLanguage?: string;
-    seoSiteLocale?: string;
-    seoTwitterHandle?: string;
-    seoThemeColor?: string;
-    seoKeywords?: string;
-  },
-  files?: {
-    primaryLogo?: string;
-    secondaryLogo?: string;
-    favicon?: string;
-    pnlPosters?: string[];
-  },
-  customDomain?: string
+  config: DexConfig,
+  files: DexFiles,
+  customDomain: string | null,
+  brokerEoaAddress: string | null
 ): Promise<void> {
   try {
     const {
@@ -903,7 +840,8 @@ export async function updateDexConfig(
       config,
       files,
       customDomain,
-      `https://github.com/${owner}/${repo}`
+      `https://github.com/${owner}/${repo}`,
+      brokerEoaAddress
     );
 
     const fileContents = new Map<string, string>();
@@ -977,45 +915,10 @@ async function enableGitHubPages(owner: string, repo: string): Promise<void> {
 export async function setupRepositoryWithSingleCommit(
   owner: string,
   repo: string,
-  config: {
-    brokerId: string;
-    brokerName: string;
-    chainIds?: number[];
-    defaultChain?: number;
-    themeCSS?: string;
-    telegramLink?: string;
-    discordLink?: string;
-    xLink?: string;
-    walletConnectProjectId?: string;
-    privyAppId?: string;
-    privyTermsOfUse?: string;
-    privyLoginMethods?: string;
-    enabledMenus?: string;
-    customMenus?: string;
-    enableAbstractWallet?: boolean;
-    disableMainnet?: boolean;
-    disableTestnet?: boolean;
-    disableEvmWallets?: boolean;
-    disableSolanaWallets?: boolean;
-    enableServiceDisclaimerDialog?: boolean;
-    enableCampaigns?: boolean;
-    tradingViewColorConfig?: string;
-    availableLanguages?: string[];
-    seoSiteName?: string;
-    seoSiteDescription?: string;
-    seoSiteLanguage?: string;
-    seoSiteLocale?: string;
-    seoTwitterHandle?: string;
-    seoThemeColor?: string;
-    seoKeywords?: string;
-  },
-  files: {
-    primaryLogo?: string;
-    secondaryLogo?: string;
-    favicon?: string;
-    pnlPosters?: string[];
-  },
-  customDomain?: string
+  config: DexConfig,
+  files: DexFiles,
+  customDomain: string | null,
+  brokerEoaAddress: string | null
 ): Promise<void> {
   console.log(`Setting up repository ${owner}/${repo} with a single commit...`);
 
@@ -1032,7 +935,8 @@ export async function setupRepositoryWithSingleCommit(
       config,
       files,
       customDomain,
-      `https://github.com/${owner}/${repo}`
+      `https://github.com/${owner}/${repo}`,
+      brokerEoaAddress
     );
 
     const fileContents = new Map<string, string>();
@@ -1472,50 +1376,22 @@ export async function removeCustomDomain(
 export async function triggerRedeployment(
   owner: string,
   repo: string,
-  dexConfig: {
-    brokerId: string;
-    brokerName: string;
-    chainIds?: number[];
-    defaultChain?: number;
-    themeCSS?: string;
-    telegramLink?: string;
-    discordLink?: string;
-    xLink?: string;
-    walletConnectProjectId?: string;
-    privyAppId?: string;
-    privyTermsOfUse?: string;
-    privyLoginMethods?: string;
-    enabledMenus?: string;
-    customMenus?: string;
-    enableAbstractWallet?: boolean;
-    disableMainnet?: boolean;
-    disableTestnet?: boolean;
-    disableEvmWallets?: boolean;
-    disableSolanaWallets?: boolean;
-    enableServiceDisclaimerDialog?: boolean;
-    enableCampaigns?: boolean;
-    tradingViewColorConfig?: string;
-    availableLanguages?: string[];
-    seoSiteName?: string;
-    seoSiteDescription?: string;
-    seoSiteLanguage?: string;
-    seoSiteLocale?: string;
-    seoTwitterHandle?: string;
-    seoThemeColor?: string;
-    seoKeywords?: string;
-  },
-  files?: {
-    primaryLogo?: string;
-    secondaryLogo?: string;
-    favicon?: string;
-    pnlPosters?: string[];
-  },
-  customDomain?: string
+  dexConfig: DexConfig,
+  files: DexFiles,
+  customDomain: string | null,
+  brokerEoaAddress: string | null
 ): Promise<boolean> {
   try {
     console.log(`Creating redeployment commit for ${owner}/${repo}...`);
 
-    await updateDexConfig(owner, repo, dexConfig, files, customDomain);
+    await updateDexConfig(
+      owner,
+      repo,
+      dexConfig,
+      files,
+      customDomain,
+      brokerEoaAddress
+    );
 
     console.log(
       `Successfully created redeployment commit for ${owner}/${repo}`
@@ -1530,39 +1406,6 @@ export async function triggerRedeployment(
       `Failed to create redeployment commit: ${error instanceof Error ? error.message : String(error)}`
     );
   }
-}
-
-export interface DexConfig {
-  brokerId: string;
-  brokerName: string;
-  chainIds?: number[];
-  defaultChain?: number;
-  themeCSS?: string;
-  telegramLink?: string;
-  discordLink?: string;
-  xLink?: string;
-  walletConnectProjectId?: string;
-  privyAppId?: string;
-  privyTermsOfUse?: string;
-  privyLoginMethods?: string;
-  enabledMenus?: string;
-  customMenus?: string;
-  enableAbstractWallet?: boolean;
-  disableMainnet?: boolean;
-  disableTestnet?: boolean;
-  disableEvmWallets?: boolean;
-  disableSolanaWallets?: boolean;
-  enableServiceDisclaimerDialog?: boolean;
-  enableCampaigns?: boolean;
-  tradingViewColorConfig?: string;
-  availableLanguages?: string[];
-  seoSiteName?: string;
-  seoSiteDescription?: string;
-  seoSiteLanguage?: string;
-  seoSiteLocale?: string;
-  seoTwitterHandle?: string;
-  seoThemeColor?: string;
-  seoKeywords?: string;
 }
 
 /**

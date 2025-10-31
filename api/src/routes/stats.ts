@@ -3,6 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { getPrisma } from "../lib/prisma";
 import dayjs from "dayjs";
+import { getSwapFeeConfigs } from "../models/graduation";
 
 const stats = new Hono();
 
@@ -131,6 +132,34 @@ stats.get("/", zValidator("query", statsQuerySchema), async c => {
     return c.json(stats);
   } catch (error) {
     console.error("Error getting DEX statistics:", error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
+interface GraduatedDexesCacheEntry {
+  data: Record<string, { fee_rate: number }>;
+  expires: number;
+}
+
+let graduatedDexesCache: GraduatedDexesCacheEntry | null = null;
+
+stats.get("/swap-fee-config", async c => {
+  try {
+    if (graduatedDexesCache && graduatedDexesCache.expires > Date.now()) {
+      return c.json(graduatedDexesCache.data);
+    }
+
+    const graduatedDexes = await getSwapFeeConfigs();
+
+    const nextMinute = dayjs().endOf("minute").valueOf();
+    graduatedDexesCache = {
+      data: graduatedDexes,
+      expires: nextMinute,
+    };
+
+    return c.json(graduatedDexes);
+  } catch (error) {
+    console.error("Error getting graduated DEXes:", error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });

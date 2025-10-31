@@ -10,9 +10,86 @@ import {
   setCustomDomain,
   removeCustomDomain,
 } from "../lib/github";
+import type { DexConfig } from "../lib/types";
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
 import { validateCSS } from "../lib/cssValidator.js";
+
+export function convertDexToDexConfig(dex: Dex): DexConfig {
+  return {
+    brokerId: dex.brokerId,
+    brokerName: dex.brokerName,
+    chainIds: dex.chainIds.length > 0 ? dex.chainIds : null,
+    defaultChain: dex.defaultChain,
+    themeCSS: dex.themeCSS,
+    telegramLink: dex.telegramLink,
+    discordLink: dex.discordLink,
+    xLink: dex.xLink,
+    walletConnectProjectId: dex.walletConnectProjectId,
+    privyAppId: dex.privyAppId,
+    privyTermsOfUse: dex.privyTermsOfUse,
+    privyLoginMethods: dex.privyLoginMethods,
+    enabledMenus: dex.enabledMenus,
+    customMenus: dex.customMenus,
+    enableAbstractWallet: dex.enableAbstractWallet,
+    disableMainnet: dex.disableMainnet,
+    disableTestnet: dex.disableTestnet,
+    disableEvmWallets: dex.disableEvmWallets,
+    disableSolanaWallets: dex.disableSolanaWallets,
+    enableServiceDisclaimerDialog: dex.enableServiceDisclaimerDialog,
+    enableCampaigns: dex.enableCampaigns,
+    tradingViewColorConfig: dex.tradingViewColorConfig,
+    availableLanguages:
+      dex.availableLanguages.length > 0 ? dex.availableLanguages : null,
+    seoSiteName: dex.seoSiteName,
+    seoSiteDescription: dex.seoSiteDescription,
+    seoSiteLanguage: dex.seoSiteLanguage,
+    seoSiteLocale: dex.seoSiteLocale,
+    seoTwitterHandle: dex.seoTwitterHandle,
+    seoThemeColor: dex.seoThemeColor,
+    seoKeywords: dex.seoKeywords,
+  };
+}
+
+function convertValidatedDataToDexConfig(
+  validatedData: z.infer<typeof dexSchema>,
+  brokerId: string,
+  brokerName: string
+): DexConfig {
+  return {
+    brokerId,
+    brokerName,
+    chainIds: validatedData.chainIds ?? null,
+    defaultChain: validatedData.defaultChain ?? null,
+    themeCSS: validatedData.themeCSS ?? null,
+    telegramLink: validatedData.telegramLink ?? null,
+    discordLink: validatedData.discordLink ?? null,
+    xLink: validatedData.xLink ?? null,
+    walletConnectProjectId: validatedData.walletConnectProjectId ?? null,
+    privyAppId: validatedData.privyAppId ?? null,
+    privyTermsOfUse: validatedData.privyTermsOfUse ?? null,
+    privyLoginMethods: validatedData.privyLoginMethods ?? null,
+    enabledMenus: validatedData.enabledMenus ?? null,
+    customMenus: validatedData.customMenus ?? null,
+    enableAbstractWallet: validatedData.enableAbstractWallet ?? null,
+    disableMainnet: validatedData.disableMainnet ?? null,
+    disableTestnet: validatedData.disableTestnet ?? null,
+    disableEvmWallets: validatedData.disableEvmWallets ?? null,
+    disableSolanaWallets: validatedData.disableSolanaWallets ?? null,
+    enableServiceDisclaimerDialog:
+      validatedData.enableServiceDisclaimerDialog ?? null,
+    enableCampaigns: validatedData.enableCampaigns ?? null,
+    tradingViewColorConfig: validatedData.tradingViewColorConfig ?? null,
+    availableLanguages: validatedData.availableLanguages ?? null,
+    seoSiteName: validatedData.seoSiteName ?? null,
+    seoSiteDescription: validatedData.seoSiteDescription ?? null,
+    seoSiteLanguage: validatedData.seoSiteLanguage ?? null,
+    seoSiteLocale: validatedData.seoSiteLocale ?? null,
+    seoTwitterHandle: validatedData.seoTwitterHandle ?? null,
+    seoThemeColor: validatedData.seoThemeColor ?? null,
+    seoKeywords: validatedData.seoKeywords ?? null,
+  };
+}
 
 export type Environment = "mainnet" | "staging" | "qa" | "dev";
 
@@ -174,6 +251,13 @@ export const dexSchema = z.object({
   enableCampaigns: z.boolean().optional(),
   tradingViewColorConfig: z.string().nullish(),
   availableLanguages: z.array(z.nativeEnum(LocaleEnum)).optional(),
+  swapFeeBps: z
+    .number()
+    .int()
+    .min(0, "Swap fee must be at least 0 bps")
+    .max(100, "Swap fee cannot exceed 100 bps (1%)")
+    .nullable()
+    .optional(),
 
   seoSiteName: z
     .string()
@@ -279,6 +363,17 @@ export const dexFormSchema = dexSchema
             return ["en"];
           }
         }),
+      ])
+      .optional(),
+    swapFeeBps: z
+      .union([
+        z.number().int(),
+        z.string().transform(val => {
+          if (!val || val.trim() === "") return null;
+          const parsed = parseInt(val, 10);
+          return isNaN(parsed) ? null : parsed;
+        }),
+        z.null(),
       ])
       .optional(),
   })
@@ -406,47 +501,15 @@ export async function createDex(
     await setupRepositoryWithSingleCommit(
       repoInfo.owner,
       repoInfo.repo,
+      convertValidatedDataToDexConfig(validatedData, brokerId, brokerName),
       {
-        brokerId,
-        brokerName,
-        chainIds: validatedData.chainIds,
-        defaultChain: validatedData.defaultChain,
-        themeCSS: validatedData.themeCSS?.toString(),
-        telegramLink: validatedData.telegramLink || undefined,
-        discordLink: validatedData.discordLink || undefined,
-        xLink: validatedData.xLink || undefined,
-        walletConnectProjectId:
-          validatedData.walletConnectProjectId || undefined,
-        privyAppId: validatedData.privyAppId || undefined,
-        privyTermsOfUse: validatedData.privyTermsOfUse || undefined,
-        enabledMenus: validatedData.enabledMenus || undefined,
-        customMenus: validatedData.customMenus || undefined,
-        enableAbstractWallet: validatedData.enableAbstractWallet,
-        disableMainnet: validatedData.disableMainnet,
-        disableTestnet: validatedData.disableTestnet,
-        disableEvmWallets: validatedData.disableEvmWallets,
-        disableSolanaWallets: validatedData.disableSolanaWallets,
-        enableServiceDisclaimerDialog:
-          validatedData.enableServiceDisclaimerDialog,
-        enableCampaigns: validatedData.enableCampaigns,
-        tradingViewColorConfig:
-          validatedData.tradingViewColorConfig || undefined,
-        availableLanguages: validatedData.availableLanguages,
-        seoSiteName: validatedData.seoSiteName || undefined,
-        seoSiteDescription: validatedData.seoSiteDescription || undefined,
-        seoSiteLanguage: validatedData.seoSiteLanguage || undefined,
-        seoSiteLocale: validatedData.seoSiteLocale || undefined,
-        seoTwitterHandle: validatedData.seoTwitterHandle || undefined,
-        seoThemeColor: validatedData.seoThemeColor || undefined,
-        seoKeywords: validatedData.seoKeywords || undefined,
+        primaryLogo: validatedData.primaryLogo ?? null,
+        secondaryLogo: validatedData.secondaryLogo ?? null,
+        favicon: validatedData.favicon ?? null,
+        pnlPosters: validatedData.pnlPosters ?? null,
       },
-      {
-        primaryLogo: validatedData.primaryLogo || undefined,
-        secondaryLogo: validatedData.secondaryLogo || undefined,
-        favicon: validatedData.favicon || undefined,
-        pnlPosters: validatedData.pnlPosters || undefined,
-      },
-      undefined
+      null,
+      user.address
     );
     console.log(`Successfully set up repository for ${brokerName}`);
   } catch (error) {
@@ -503,6 +566,7 @@ export async function createDex(
         seoTwitterHandle: validatedData.seoTwitterHandle,
         seoThemeColor: validatedData.seoThemeColor,
         seoKeywords: validatedData.seoKeywords,
+        swapFeeBps: validatedData.swapFeeBps,
         repoUrl: repoUrl,
         user: {
           connect: {

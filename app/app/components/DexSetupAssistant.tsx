@@ -180,6 +180,13 @@ export default function DexSetupAssistant({
       }
     }
 
+    const isSwapEnabled = form.enabledMenus.split(",").includes("Swap");
+    if (isSwapEnabled && form.swapFeeBps === null) {
+      validationErrors.push(
+        "Navigation Menus: Swap fee configuration is required when Swap page is enabled"
+      );
+    }
+
     return validationErrors;
   };
 
@@ -205,7 +212,7 @@ export default function DexSetupAssistant({
         pnlPosters: form.pnlPosters,
       };
 
-      const dexData_ToSend = {
+      const dexDataToSend = {
         brokerName: formValues.brokerName.trim(),
         telegramLink: formValues.telegramLink.trim(),
         discordLink: formValues.discordLink.trim(),
@@ -220,6 +227,9 @@ export default function DexSetupAssistant({
         enableAbstractWallet: formValues.enableAbstractWallet,
         enableServiceDisclaimerDialog: formValues.enableServiceDisclaimerDialog,
         enableCampaigns: formValues.enableCampaigns,
+        ...(formValues.swapFeeBps !== null && {
+          swapFeeBps: formValues.swapFeeBps,
+        }),
         chainIds: formValues.chainIds,
         defaultChain: formValues.defaultChain,
         disableMainnet: formValues.disableMainnet,
@@ -237,7 +247,7 @@ export default function DexSetupAssistant({
         seoKeywords: formValues.seoKeywords.trim(),
       };
 
-      const formData = createDexFormData(dexData_ToSend, imageBlobs);
+      const formData = createDexFormData(dexDataToSend, imageBlobs);
 
       const savedData = await postFormData<DexData>(
         "api/dex",

@@ -92,6 +92,7 @@ model Dex {
   isGraduated          Boolean  @default(false) // Whether the DEX has fully graduated
   graduationTxHash    String?  @unique // Transaction hash used for graduation (prevents reuse)
   multisigChainId      Int?     // Chain ID where the multisig delegate signer link was established
+  swapFeeBps           Int?     // Swap fee in basis points for WooFi integration (e.g., 100 = 1%)
   
   // Social Card Fields
   description          String?  // DEX description for social cards

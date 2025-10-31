@@ -9,6 +9,7 @@ import {
   getAllDexes,
   getCurrentEnvironment,
   updateDexCustomDomainOverride,
+  convertDexToDexConfig,
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { createAutomatedBrokerId } from "../lib/brokerCreation";
@@ -168,50 +169,30 @@ adminRoutes.post(
 
         if (repoInfo) {
           try {
+            const prisma = await getPrisma();
+            const user = await prisma.user.findUnique({
+              where: { id: updatedDex.userId },
+              select: { address: true },
+            });
+
+            const dexConfig = convertDexToDexConfig(updatedDex);
+            dexConfig.brokerId = brokerId;
+
             await setupRepositoryWithSingleCommit(
               repoInfo.owner,
               repoInfo.repo,
+              dexConfig,
               {
-                brokerId: brokerId,
-                brokerName: updatedDex.brokerName,
-                chainIds: updatedDex.chainIds,
-                defaultChain: updatedDex.defaultChain || undefined,
-                themeCSS: updatedDex.themeCSS?.toString(),
-                telegramLink: updatedDex.telegramLink || undefined,
-                discordLink: updatedDex.discordLink || undefined,
-                xLink: updatedDex.xLink || undefined,
-                walletConnectProjectId:
-                  updatedDex.walletConnectProjectId || undefined,
-                privyAppId: updatedDex.privyAppId || undefined,
-                privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
-                enabledMenus: updatedDex.enabledMenus || undefined,
-                customMenus: updatedDex.customMenus || undefined,
-                enableAbstractWallet: updatedDex.enableAbstractWallet || false,
-                disableMainnet: updatedDex.disableMainnet || false,
-                disableTestnet: updatedDex.disableTestnet || false,
-                disableEvmWallets: updatedDex.disableEvmWallets || false,
-                disableSolanaWallets: updatedDex.disableSolanaWallets || false,
-                enableServiceDisclaimerDialog:
-                  updatedDex.enableServiceDisclaimerDialog || false,
-                enableCampaigns: updatedDex.enableCampaigns || false,
-                tradingViewColorConfig:
-                  updatedDex.tradingViewColorConfig || undefined,
-                availableLanguages: updatedDex.availableLanguages,
-                seoSiteName: updatedDex.seoSiteName || undefined,
-                seoSiteDescription: updatedDex.seoSiteDescription || undefined,
-                seoSiteLanguage: updatedDex.seoSiteLanguage || undefined,
-                seoSiteLocale: updatedDex.seoSiteLocale || undefined,
-                seoTwitterHandle: updatedDex.seoTwitterHandle || undefined,
-                seoThemeColor: updatedDex.seoThemeColor || undefined,
-                seoKeywords: updatedDex.seoKeywords || undefined,
+                primaryLogo: updatedDex.primaryLogo,
+                secondaryLogo: updatedDex.secondaryLogo,
+                favicon: updatedDex.favicon,
+                pnlPosters:
+                  updatedDex.pnlPosters.length > 0
+                    ? updatedDex.pnlPosters
+                    : null,
               },
-              {
-                primaryLogo: updatedDex.primaryLogo || undefined,
-                secondaryLogo: updatedDex.secondaryLogo || undefined,
-                favicon: updatedDex.favicon || undefined,
-                pnlPosters: updatedDex.pnlPosters || undefined,
-              },
-              updatedDex.customDomain || undefined
+              updatedDex.customDomain,
+              user?.address ?? null
             );
 
             console.log(
@@ -367,49 +348,24 @@ adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
       return c.json({ message: "Invalid repository URL" }, 400);
     }
 
+    const prisma = await getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: dex.userId },
+      select: { address: true },
+    });
+
     const success = await triggerRedeployment(
       repoInfo.owner,
       repoInfo.repo,
+      convertDexToDexConfig(dex),
       {
-        brokerId: dex.brokerId,
-        brokerName: dex.brokerName,
-        chainIds: dex.chainIds,
-        defaultChain: dex.defaultChain || undefined,
-        themeCSS: dex.themeCSS?.toString(),
-        telegramLink: dex.telegramLink || undefined,
-        discordLink: dex.discordLink || undefined,
-        xLink: dex.xLink || undefined,
-        walletConnectProjectId: dex.walletConnectProjectId || undefined,
-        privyAppId: dex.privyAppId || undefined,
-        privyTermsOfUse: dex.privyTermsOfUse || undefined,
-        privyLoginMethods: dex.privyLoginMethods || undefined,
-        enabledMenus: dex.enabledMenus || undefined,
-        customMenus: dex.customMenus || undefined,
-        enableAbstractWallet: dex.enableAbstractWallet || false,
-        disableMainnet: dex.disableMainnet || false,
-        disableTestnet: dex.disableTestnet || false,
-        disableEvmWallets: dex.disableEvmWallets || false,
-        disableSolanaWallets: dex.disableSolanaWallets || false,
-        enableServiceDisclaimerDialog:
-          dex.enableServiceDisclaimerDialog || false,
-        enableCampaigns: dex.enableCampaigns || false,
-        tradingViewColorConfig: dex.tradingViewColorConfig || undefined,
-        availableLanguages: dex.availableLanguages,
-        seoSiteName: dex.seoSiteName || undefined,
-        seoSiteDescription: dex.seoSiteDescription || undefined,
-        seoSiteLanguage: dex.seoSiteLanguage || undefined,
-        seoSiteLocale: dex.seoSiteLocale || undefined,
-        seoTwitterHandle: dex.seoTwitterHandle || undefined,
-        seoThemeColor: dex.seoThemeColor || undefined,
-        seoKeywords: dex.seoKeywords || undefined,
+        primaryLogo: dex.primaryLogo,
+        secondaryLogo: dex.secondaryLogo,
+        favicon: dex.favicon,
+        pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
       },
-      {
-        primaryLogo: dex.primaryLogo || undefined,
-        secondaryLogo: dex.secondaryLogo || undefined,
-        favicon: dex.favicon || undefined,
-        pnlPosters: dex.pnlPosters || undefined,
-      },
-      dex.customDomain || undefined
+      dex.customDomain,
+      user?.address ?? null
     );
 
     if (success) {
@@ -589,49 +545,26 @@ adminRoutes.post(
         if (repoUrlMatch) {
           const [, owner, repo] = repoUrlMatch;
 
+          const user = await prismaClient.user.findUnique({
+            where: { id: dex.userId },
+            select: { address: true },
+          });
+
+          const dexConfig = convertDexToDexConfig(dex);
+          dexConfig.brokerId = brokerId;
+
           await setupRepositoryWithSingleCommit(
             owner,
             repo,
+            dexConfig,
             {
-              brokerId: brokerId,
-              brokerName: dex.brokerName,
-              chainIds: dex.chainIds,
-              defaultChain: dex.defaultChain || undefined,
-              themeCSS: dex.themeCSS?.toString(),
-              telegramLink: dex.telegramLink || undefined,
-              discordLink: dex.discordLink || undefined,
-              xLink: dex.xLink || undefined,
-              walletConnectProjectId: dex.walletConnectProjectId || undefined,
-              privyAppId: dex.privyAppId || undefined,
-              privyTermsOfUse: dex.privyTermsOfUse || undefined,
-              privyLoginMethods: dex.privyLoginMethods || undefined,
-              enabledMenus: dex.enabledMenus || undefined,
-              customMenus: dex.customMenus || undefined,
-              enableAbstractWallet: dex.enableAbstractWallet || false,
-              disableMainnet: dex.disableMainnet || false,
-              disableTestnet: dex.disableTestnet || false,
-              disableEvmWallets: dex.disableEvmWallets || false,
-              disableSolanaWallets: dex.disableSolanaWallets || false,
-              enableServiceDisclaimerDialog:
-                dex.enableServiceDisclaimerDialog || false,
-              enableCampaigns: dex.enableCampaigns || false,
-              tradingViewColorConfig: dex.tradingViewColorConfig?.toString(),
-              availableLanguages: dex.availableLanguages,
-              seoSiteName: dex.seoSiteName || undefined,
-              seoSiteDescription: dex.seoSiteDescription || undefined,
-              seoSiteLanguage: dex.seoSiteLanguage || undefined,
-              seoSiteLocale: dex.seoSiteLocale || undefined,
-              seoTwitterHandle: dex.seoTwitterHandle || undefined,
-              seoThemeColor: dex.seoThemeColor || undefined,
-              seoKeywords: dex.seoKeywords || undefined,
+              primaryLogo: dex.primaryLogo,
+              secondaryLogo: dex.secondaryLogo,
+              favicon: dex.favicon,
+              pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
             },
-            {
-              primaryLogo: dex.primaryLogo || undefined,
-              secondaryLogo: dex.secondaryLogo || undefined,
-              favicon: dex.favicon || undefined,
-              pnlPosters: dex.pnlPosters || undefined,
-            },
-            dex.customDomain || undefined
+            dex.customDomain,
+            user?.address ?? null
           );
 
           console.log(

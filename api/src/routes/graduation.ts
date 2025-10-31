@@ -7,7 +7,11 @@ import {
   getDexBrokerTier,
   invalidateDexFeesCache,
 } from "../models/graduation";
-import { getUserDex, getCurrentEnvironment } from "../models/dex";
+import {
+  getUserDex,
+  getCurrentEnvironment,
+  convertDexToDexConfig,
+} from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
 import {
@@ -187,49 +191,21 @@ graduationRoutes.post(
         if (repoUrlMatch) {
           const [, owner, repo] = repoUrlMatch;
 
+          const dexConfig = convertDexToDexConfig(dex);
+          dexConfig.brokerId = brokerId;
+
           await setupRepositoryWithSingleCommit(
             owner,
             repo,
+            dexConfig,
             {
-              brokerId: brokerId,
-              brokerName: dex.brokerName,
-              chainIds: dex.chainIds,
-              defaultChain: dex.defaultChain || undefined,
-              themeCSS: dex.themeCSS?.toString(),
-              telegramLink: dex.telegramLink || undefined,
-              discordLink: dex.discordLink || undefined,
-              xLink: dex.xLink || undefined,
-              walletConnectProjectId: dex.walletConnectProjectId || undefined,
-              privyAppId: dex.privyAppId || undefined,
-              privyTermsOfUse: dex.privyTermsOfUse || undefined,
-              privyLoginMethods: dex.privyLoginMethods || undefined,
-              enabledMenus: dex.enabledMenus || undefined,
-              customMenus: dex.customMenus || undefined,
-              enableAbstractWallet: dex.enableAbstractWallet || false,
-              disableMainnet: dex.disableMainnet || false,
-              disableTestnet: dex.disableTestnet || false,
-              disableEvmWallets: dex.disableEvmWallets || false,
-              disableSolanaWallets: dex.disableSolanaWallets || false,
-              enableServiceDisclaimerDialog:
-                dex.enableServiceDisclaimerDialog || false,
-              enableCampaigns: dex.enableCampaigns || false,
-              tradingViewColorConfig: dex.tradingViewColorConfig?.toString(),
-              availableLanguages: dex.availableLanguages,
-              seoSiteName: dex.seoSiteName || undefined,
-              seoSiteDescription: dex.seoSiteDescription || undefined,
-              seoSiteLanguage: dex.seoSiteLanguage || undefined,
-              seoSiteLocale: dex.seoSiteLocale || undefined,
-              seoTwitterHandle: dex.seoTwitterHandle || undefined,
-              seoThemeColor: dex.seoThemeColor || undefined,
-              seoKeywords: dex.seoKeywords || undefined,
+              primaryLogo: dex.primaryLogo,
+              secondaryLogo: dex.secondaryLogo,
+              favicon: dex.favicon,
+              pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
             },
-            {
-              primaryLogo: dex.primaryLogo || undefined,
-              secondaryLogo: dex.secondaryLogo || undefined,
-              favicon: dex.favicon || undefined,
-              pnlPosters: dex.pnlPosters || undefined,
-            },
-            dex.customDomain || undefined
+            dex.customDomain,
+            user.address
           );
 
           console.log(

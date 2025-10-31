@@ -69,3 +69,49 @@ export type GitHubResult<T> = Result<T, GitHubError>;
  * Result type specifically for DEX operations
  */
 export type DexResult<T> = Result<T, DexError>;
+
+/**
+ * DEX configuration shared across all GitHub operations
+ */
+export interface DexConfig {
+  brokerId: string;
+  brokerName: string;
+  chainIds: number[] | null;
+  defaultChain: number | null;
+  themeCSS: string | null;
+  telegramLink: string | null;
+  discordLink: string | null;
+  xLink: string | null;
+  walletConnectProjectId: string | null;
+  privyAppId: string | null;
+  privyTermsOfUse: string | null;
+  privyLoginMethods: string | null;
+  enabledMenus: string | null;
+  customMenus: string | null;
+  enableAbstractWallet: boolean | null;
+  disableMainnet: boolean | null;
+  disableTestnet: boolean | null;
+  disableEvmWallets: boolean | null;
+  disableSolanaWallets: boolean | null;
+  enableServiceDisclaimerDialog: boolean | null;
+  enableCampaigns: boolean | null;
+  tradingViewColorConfig: string | null;
+  availableLanguages: string[] | null;
+  seoSiteName: string | null;
+  seoSiteDescription: string | null;
+  seoSiteLanguage: string | null;
+  seoSiteLocale: string | null;
+  seoTwitterHandle: string | null;
+  seoThemeColor: string | null;
+  seoKeywords: string | null;
+}
+
+/**
+ * DEX files (logos, posters, etc.) shared across all GitHub operations
+ */
+export interface DexFiles {
+  primaryLogo: string | null;
+  secondaryLogo: string | null;
+  favicon: string | null;
+  pnlPosters: string[] | null;
+}
