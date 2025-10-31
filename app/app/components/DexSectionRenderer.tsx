@@ -230,6 +230,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       setCustomMenus: props.setCustomMenus,
       enableCampaigns: props.enableCampaigns,
       setEnableCampaigns: props.setEnableCampaigns,
+      swapFeeBps: props.swapFeeBps,
+      setSwapFeeBps: props.setSwapFeeBps,
     }),
   },
   {

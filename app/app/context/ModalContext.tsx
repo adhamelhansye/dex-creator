@@ -13,6 +13,7 @@ import DomainSetupGuideModal from "../components/DomainSetupGuideModal";
 import { TokenSelectionModal } from "../components/TokenSelectionModal";
 import SafeInstructionsModal from "../components/SafeInstructions";
 import { FeeWithdrawalModal } from "../components/FeeWithdrawalModal";
+import SwapFeeConfigModal from "../components/SwapFeeConfigModal";
 
 export type ModalType =
   | "login"
@@ -29,6 +30,7 @@ export type ModalType =
   | "tokenSelection"
   | "safeInstructions"
   | "feeWithdrawal"
+  | "swapFeeConfig"
   | null;
 
 interface ModalContextType {
@@ -65,7 +67,6 @@ export function ModalProvider({ children }: ModalProviderProps) {
     Record<string, any>
   >({});
 
-  // Function to open a modal with specific props
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const openModal = (type: ModalType, props: Record<string, any> = {}) => {
     setIsModalOpen(true);
@@ -73,10 +74,8 @@ export function ModalProvider({ children }: ModalProviderProps) {
     setCurrentModalProps(props);
   };
 
-  // Function to close the current modal
   const closeModal = () => {
     setIsModalOpen(false);
-    // Reset type and props after a short delay to allow animations to complete
     setTimeout(() => {
       setCurrentModalType(null);
       setCurrentModalProps({});
@@ -102,15 +101,12 @@ export function ModalProvider({ children }: ModalProviderProps) {
   );
 }
 
-// The ModalManager component will render the appropriate modal
 function ModalManager() {
   const { isModalOpen, currentModalType, currentModalProps, closeModal } =
     useModal();
 
-  // Don't render anything if no modal is open
   if (!isModalOpen || !currentModalType) return null;
 
-  // Render the appropriate modal based on type
   switch (currentModalType) {
     case "login":
       return (
@@ -249,6 +245,15 @@ function ModalManager() {
           brokerId={currentModalProps.brokerId}
           multisigAddress={currentModalProps.multisigAddress}
           multisigChainId={currentModalProps.multisigChainId}
+        />
+      );
+    case "swapFeeConfig":
+      return (
+        <SwapFeeConfigModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onSave={currentModalProps.onSave}
+          currentFeeBps={currentModalProps.currentFeeBps}
         />
       );
     default:

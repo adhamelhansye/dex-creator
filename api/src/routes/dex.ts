@@ -15,6 +15,7 @@ import {
   updateDexSocialCard,
   socialCardFormSchema,
   convertSocialCardFormDataToInternal,
+  convertDexToDexConfig,
 } from "../models/dex";
 import { DexErrorType } from "../lib/types";
 import { geckoTerminalService } from "../services/geckoTerminalService.js";
@@ -303,51 +304,28 @@ dexRoutes.put(
 
         if (repoInfo) {
           try {
+            const { getPrisma } = await import("../lib/prisma");
+            const prisma = await getPrisma();
+            const user = await prisma.user.findUnique({
+              where: { id: userId },
+              select: { address: true },
+            });
+
             await updateDexConfig(
               repoInfo.owner,
               repoInfo.repo,
+              convertDexToDexConfig(updatedDex),
               {
-                brokerId: updatedDex.brokerId,
-                brokerName: updatedDex.brokerName,
-                chainIds: updatedDex.chainIds,
-                defaultChain: updatedDex.defaultChain || undefined,
-                themeCSS: updatedDex.themeCSS?.toString(),
-                telegramLink: updatedDex.telegramLink || undefined,
-                discordLink: updatedDex.discordLink || undefined,
-                xLink: updatedDex.xLink || undefined,
-                walletConnectProjectId:
-                  updatedDex.walletConnectProjectId || undefined,
-                privyAppId: updatedDex.privyAppId || undefined,
-                privyTermsOfUse: updatedDex.privyTermsOfUse || undefined,
-                privyLoginMethods: updatedDex.privyLoginMethods || undefined,
-                enabledMenus: updatedDex.enabledMenus || undefined,
-                customMenus: updatedDex.customMenus || undefined,
-                enableAbstractWallet: updatedDex.enableAbstractWallet,
-                disableMainnet: updatedDex.disableMainnet,
-                disableTestnet: updatedDex.disableTestnet,
-                disableEvmWallets: updatedDex.disableEvmWallets,
-                disableSolanaWallets: updatedDex.disableSolanaWallets,
-                enableServiceDisclaimerDialog:
-                  updatedDex.enableServiceDisclaimerDialog,
-                enableCampaigns: updatedDex.enableCampaigns,
-                tradingViewColorConfig:
-                  updatedDex.tradingViewColorConfig || undefined,
-                availableLanguages: updatedDex.availableLanguages,
-                seoSiteName: updatedDex.seoSiteName || undefined,
-                seoSiteDescription: updatedDex.seoSiteDescription || undefined,
-                seoSiteLanguage: updatedDex.seoSiteLanguage || undefined,
-                seoSiteLocale: updatedDex.seoSiteLocale || undefined,
-                seoTwitterHandle: updatedDex.seoTwitterHandle || undefined,
-                seoThemeColor: updatedDex.seoThemeColor || undefined,
-                seoKeywords: updatedDex.seoKeywords || undefined,
+                primaryLogo: updatedDex.primaryLogo,
+                secondaryLogo: updatedDex.secondaryLogo,
+                favicon: updatedDex.favicon,
+                pnlPosters:
+                  updatedDex.pnlPosters.length > 0
+                    ? updatedDex.pnlPosters
+                    : null,
               },
-              {
-                primaryLogo: updatedDex.primaryLogo || undefined,
-                secondaryLogo: updatedDex.secondaryLogo || undefined,
-                favicon: updatedDex.favicon || undefined,
-                pnlPosters: updatedDex.pnlPosters || undefined,
-              },
-              updatedDex.customDomain || undefined
+              updatedDex.customDomain,
+              user?.address ?? null
             );
 
             console.log(

@@ -4,6 +4,8 @@ interface NavigationMenuEditorProps {
   value: string;
   onChange: (value: string) => void;
   className?: string;
+  swapFeeBps: number | null;
+  onOpenSwapFeeConfig: () => void;
 }
 
 const AVAILABLE_MENUS = [
@@ -14,12 +16,11 @@ const AVAILABLE_MENUS = [
     isDefault: true,
   },
   {
-    id: "Swap",
-    label: "Swap",
-    icon: "i-mdi:swap-horizontal",
-    isDefault: false,
+    id: "Portfolio",
+    label: "Portfolio",
+    icon: "i-mdi:wallet-outline",
+    isDefault: true,
   },
-  { id: "Portfolio", label: "Portfolio", icon: "i-mdi:wallet-outline" },
   {
     id: "Markets",
     label: "Markets",
@@ -31,6 +32,12 @@ const AVAILABLE_MENUS = [
     label: "Leaderboard",
     icon: "i-mdi:trophy-outline",
     isDefault: true,
+  },
+  {
+    id: "Swap",
+    label: "Swap",
+    icon: "i-mdi:swap-horizontal",
+    isDefault: false,
   },
   {
     id: "Rewards",
@@ -46,10 +53,36 @@ const AVAILABLE_MENUS = [
   },
 ];
 
+const MENU_INFO: Record<
+  string,
+  { title: string; description: string; color: string }
+> = {
+  Swap: {
+    title: "Swap Page Features:",
+    description:
+      "The Swap page allows users to exchange tokens seamlessly across multiple chains. Powered by WooFi, this feature provides efficient token swapping with competitive rates and deep liquidity across supported networks.",
+    color: "blue",
+  },
+  Rewards: {
+    title: "Rewards Page Requirement:",
+    description:
+      "The Rewards page (which includes referral management) can only be fully utilized after your DEX has been graduated. You can enable the Rewards menu now, but referral features will only become active once you graduate your DEX and start earning fee splits.",
+    color: "warning",
+  },
+  Vaults: {
+    title: "Vaults Page Features:",
+    description:
+      "The Vaults page enables users to earn passive yield through automated trading strategies and yield farming. Users can deposit USDC into curated vault strategies that deploy market-making strategies, handle liquidations, and accrue platform fees. This feature works across multiple blockchains with no gas fees for deposits from your DEX account.",
+    color: "success",
+  },
+};
+
 const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
   value,
   onChange,
   className = "",
+  swapFeeBps,
+  onOpenSwapFeeConfig,
 }) => {
   const parseMenus = useCallback((menuString: string): string[] => {
     if (!menuString) return [];
@@ -67,6 +100,7 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
   const [draggedOverItem, setDraggedOverItem] = useState<string | null>(null);
 
   const [isInternalUpdate, setIsInternalUpdate] = useState(false);
+  const [expandedInfo, setExpandedInfo] = useState<string | null>(null);
 
   useEffect(() => {
     if (isInternalUpdate) {
@@ -76,11 +110,13 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
   }, [enabledMenus, onChange, isInternalUpdate]);
 
   useEffect(() => {
-    const parsedValue = parseMenus(value);
-    if (JSON.stringify(parsedValue) !== JSON.stringify(enabledMenus)) {
-      setEnabledMenus(parsedValue);
+    if (!isInternalUpdate) {
+      const parsedValue = parseMenus(value);
+      if (JSON.stringify(parsedValue) !== JSON.stringify(enabledMenus)) {
+        setEnabledMenus(parsedValue);
+      }
     }
-  }, [value, parseMenus, enabledMenus]);
+  }, [value, parseMenus]);
 
   const toggleMenu = (menuId: string) => {
     setIsInternalUpdate(true);
@@ -153,89 +189,89 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
         </div>
       </div>
 
-      {/* Swap page explanation */}
-      <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-3 text-sm flex items-start">
-        <div className="i-mdi:swap-horizontal h-5 w-5 mr-2 text-blue-400 flex-shrink-0 mt-0.5"></div>
-        <div className="text-gray-300">
-          <p className="mb-1">
-            <span className="text-blue-400 font-medium">
-              Swap Page Features:
-            </span>{" "}
-            <span className="text-xs bg-blue-500/20 text-blue-300 px-2 py-0.5 rounded">
-              BETA
-            </span>{" "}
-            The Swap page allows users to exchange tokens seamlessly across
-            multiple chains.
-          </p>
-          <p className="text-xs text-gray-400">
-            Powered by Woofi, this feature provides efficient token swapping
-            with competitive rates and deep liquidity across supported networks.
-          </p>
-        </div>
-      </div>
-
-      {/* Graduation requirement note for Rewards */}
-      <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 text-sm flex items-start">
-        <div className="i-mdi:school-outline h-5 w-5 mr-2 text-warning flex-shrink-0 mt-0.5"></div>
-        <div className="text-gray-300">
-          <p className="mb-1">
-            <span className="text-warning font-medium">
-              Rewards Page Requirement:
-            </span>{" "}
-            The Rewards page (which includes referral management) can only be
-            fully utilized after your DEX has been graduated.
-          </p>
-          <p className="text-xs text-gray-400">
-            You can enable the Rewards menu now, but referral features will only
-            become active once you graduate your DEX and start earning fee
-            splits.
-          </p>
-        </div>
-      </div>
-
-      {/* Vaults page explanation */}
-      <div className="bg-success/10 border border-success/20 rounded-lg p-3 text-sm flex items-start">
-        <div className="i-mdi:shield-outline h-5 w-5 mr-2 text-success flex-shrink-0 mt-0.5"></div>
-        <div className="text-gray-300">
-          <p className="mb-1">
-            <span className="text-success font-medium">
-              Vaults Page Features:
-            </span>{" "}
-            The Vaults page enables users to earn passive yield through
-            automated trading strategies and yield farming.
-          </p>
-          <p className="text-xs text-gray-400">
-            Users can deposit USDC into curated vault strategies that deploy
-            market-making strategies, handle liquidations, and accrue platform
-            fees. This feature works across multiple blockchains with no gas
-            fees for deposits from your DEX account.
-          </p>
-        </div>
-      </div>
-
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2 mb-4">
-        {AVAILABLE_MENUS.map(menu => (
-          <label
-            key={menu.id}
-            className={`flex items-center space-x-2 cursor-pointer p-2 rounded 
-              ${enabledMenus.includes(menu.id) ? "bg-primary/20 border-primary/30" : "bg-dark/50 border-light/10"} 
-              border transition-colors hover:bg-dark/70`}
-          >
-            <input
-              type="checkbox"
-              checked={enabledMenus.includes(menu.id)}
-              onChange={() => toggleMenu(menu.id)}
-              className="form-checkbox rounded bg-dark border-gray-500 text-primary focus:ring-primary"
-            />
-            <div className="flex items-center space-x-2">
-              <div className={`${menu.icon} h-5 w-5`}></div>
-              <span>
-                {menu.label} {menu.isDefault && "(Default)"}
-              </span>
+        {AVAILABLE_MENUS.map(menu => {
+          const hasInfo = menu.id in MENU_INFO;
+          const isInfoExpanded = expandedInfo === menu.id;
+
+          return (
+            <div key={menu.id} className="flex items-center gap-2">
+              <label
+                className={`flex items-center space-x-2 cursor-pointer p-2 rounded flex-1
+                  ${enabledMenus.includes(menu.id) ? "bg-primary/20 border-primary/30" : "bg-dark/50 border-light/10"} 
+                  border transition-colors hover:bg-dark/70`}
+              >
+                <input
+                  type="checkbox"
+                  checked={enabledMenus.includes(menu.id)}
+                  onChange={() => toggleMenu(menu.id)}
+                  className="form-checkbox rounded bg-dark border-gray-500 text-primary focus:ring-primary"
+                />
+                <div className="flex items-center space-x-2">
+                  <div className={`${menu.icon} h-5 w-5`}></div>
+                  <span>
+                    {menu.label} {menu.isDefault && "(Default)"}
+                  </span>
+                </div>
+              </label>
+              {hasInfo && (
+                <button
+                  type="button"
+                  onClick={() =>
+                    setExpandedInfo(isInfoExpanded ? null : menu.id)
+                  }
+                  className={`p-2 rounded transition-colors ${
+                    isInfoExpanded
+                      ? "bg-primary/20 text-primary-light"
+                      : "bg-dark/50 hover:bg-dark/70 text-gray-400"
+                  }`}
+                  title="Show information"
+                >
+                  <div className="i-mdi:information-outline h-5 w-5"></div>
+                </button>
+              )}
             </div>
-          </label>
-        ))}
+          );
+        })}
       </div>
+
+      {expandedInfo && MENU_INFO[expandedInfo] && (
+        <div
+          className={`rounded-lg p-3 text-sm mb-4 ${
+            expandedInfo === "Swap"
+              ? "bg-blue-500/10 border border-blue-500/20"
+              : expandedInfo === "Rewards"
+                ? "bg-warning/10 border border-warning/20"
+                : "bg-success/10 border border-success/20"
+          }`}
+        >
+          <div className="flex items-start justify-between">
+            <div className="text-gray-300 flex-1">
+              <p className="mb-2">
+                <span
+                  className={`font-medium ${
+                    expandedInfo === "Swap"
+                      ? "text-blue-400"
+                      : expandedInfo === "Rewards"
+                        ? "text-warning"
+                        : "text-success"
+                  }`}
+                >
+                  {MENU_INFO[expandedInfo].title}
+                </span>{" "}
+                {MENU_INFO[expandedInfo].description}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => setExpandedInfo(null)}
+              className="ml-3 text-gray-400 hover:text-gray-300"
+            >
+              <div className="i-mdi:close h-5 w-5"></div>
+            </button>
+          </div>
+        </div>
+      )}
 
       {enabledMenus.length > 0 && (
         <>
@@ -243,6 +279,7 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
             <div className="text-base font-bold">Menu Order</div>
             <div className="text-xs text-gray-400">Drag items to reorder</div>
           </div>
+
           <div className="border border-light/10 rounded-lg p-2 bg-dark/30">
             <ul className="space-y-2">
               {enabledMenus.map((menuId, index) => {
@@ -267,8 +304,32 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
                       <div className="i-mdi:drag h-5 w-5 text-gray-400"></div>
                       <div className={`${menu.icon} h-5 w-5`}></div>
                       <span>{menu.label}</span>
+                      {menuId === "Swap" && swapFeeBps !== null && (
+                        <div className="flex items-center gap-1.5 ml-2">
+                          <div className="i-mdi:check-circle w-4 h-4 text-success"></div>
+                          <span className="text-xs text-success">
+                            {swapFeeBps} bps ({(swapFeeBps / 100).toFixed(2)}%)
+                          </span>
+                        </div>
+                      )}
                     </div>
                     <div className="flex items-center space-x-2">
+                      {menuId === "Swap" && (
+                        <button
+                          type="button"
+                          onClick={e => {
+                            e.stopPropagation();
+                            onOpenSwapFeeConfig();
+                          }}
+                          className={`text-xs px-2.5 py-1 rounded transition-all duration-200 font-medium ${
+                            swapFeeBps !== null
+                              ? "bg-primary/20 hover:bg-primary/30 text-primary-light"
+                              : "bg-warning text-dark hover:bg-warning/90 animate-pulse"
+                          }`}
+                        >
+                          {swapFeeBps !== null ? "Edit Fee" : "⚠️ Set Fee"}
+                        </button>
+                      )}
                       <div className="text-xs px-2 py-1 rounded-full bg-dark/50 text-gray-400">
                         {index + 1}
                       </div>

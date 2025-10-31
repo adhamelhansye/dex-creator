@@ -402,6 +402,9 @@ export default function DexRoute() {
         enableAbstractWallet: formValues.enableAbstractWallet,
         enableServiceDisclaimerDialog: formValues.enableServiceDisclaimerDialog,
         enableCampaigns: formValues.enableCampaigns,
+        ...(formValues.swapFeeBps !== null && {
+          swapFeeBps: formValues.swapFeeBps,
+        }),
         chainIds: formValues.chainIds,
         defaultChain: formValues.defaultChain,
         disableMainnet: formValues.disableMainnet,

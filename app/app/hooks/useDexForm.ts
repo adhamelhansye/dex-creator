@@ -100,6 +100,8 @@ export interface DexSectionProps {
   setCustomMenus: (menus: string) => void;
   enableCampaigns: boolean;
   setEnableCampaigns: (value: boolean) => void;
+  swapFeeBps: number | null;
+  setSwapFeeBps: (value: number | null) => void;
 }
 
 export interface DexFormData {
@@ -116,6 +118,7 @@ export interface DexFormData {
   enableAbstractWallet: boolean;
   enableServiceDisclaimerDialog: boolean;
   enableCampaigns: boolean;
+  swapFeeBps: number | null;
   primaryLogo: Blob | null;
   secondaryLogo: Blob | null;
   favicon: Blob | null;
@@ -162,6 +165,7 @@ export interface UseDexFormReturn extends DexFormData {
   setEnableAbstractWallet: (value: boolean) => void;
   setEnableServiceDisclaimerDialog: (value: boolean) => void;
   setEnableCampaigns: (value: boolean) => void;
+  setSwapFeeBps: (value: number | null) => void;
   setPrimaryLogo: (value: Blob | null) => void;
   setSecondaryLogo: (value: Blob | null) => void;
   setFavicon: (value: Blob | null) => void;
@@ -260,6 +264,7 @@ const initialFormState: DexFormData = {
   enableAbstractWallet: false,
   enableServiceDisclaimerDialog: false,
   enableCampaigns: false,
+  swapFeeBps: null,
   primaryLogo: null,
   secondaryLogo: null,
   favicon: null,
@@ -330,6 +335,7 @@ export function useDexForm(): UseDexFormReturn {
   const [enableCampaigns, setEnableCampaigns] = useState(
     initialFormState.enableCampaigns
   );
+  const [swapFeeBps, setSwapFeeBps] = useState(initialFormState.swapFeeBps);
   const [primaryLogo, setPrimaryLogo] = useState(initialFormState.primaryLogo);
   const [secondaryLogo, setSecondaryLogo] = useState(
     initialFormState.secondaryLogo
@@ -490,6 +496,7 @@ export function useDexForm(): UseDexFormReturn {
         setEnableServiceDisclaimerDialog(dexData.enableServiceDisclaimerDialog);
       if (dexData.enableCampaigns !== undefined)
         setEnableCampaigns(dexData.enableCampaigns);
+      if (dexData.swapFeeBps !== undefined) setSwapFeeBps(dexData.swapFeeBps);
       if (dexData.chainIds !== undefined) setChainIds(dexData.chainIds);
       if (dexData.defaultChain !== undefined)
         setDefaultChain(dexData.defaultChain);
@@ -588,6 +595,7 @@ export function useDexForm(): UseDexFormReturn {
         enableAbstractWallet,
         enableServiceDisclaimerDialog,
         enableCampaigns,
+        swapFeeBps,
         themePrompt,
         currentTheme,
         themeApplied,
@@ -632,6 +640,7 @@ export function useDexForm(): UseDexFormReturn {
     enableAbstractWallet,
     enableServiceDisclaimerDialog,
     enableCampaigns,
+    swapFeeBps,
     themePrompt,
     currentTheme,
     themeApplied,
@@ -668,6 +677,7 @@ export function useDexForm(): UseDexFormReturn {
       initialFormState.enableServiceDisclaimerDialog
     );
     setEnableCampaigns(initialFormState.enableCampaigns);
+    setSwapFeeBps(initialFormState.swapFeeBps);
     setPrimaryLogo(initialFormState.primaryLogo);
     setSecondaryLogo(initialFormState.secondaryLogo);
     setFavicon(initialFormState.favicon);
@@ -936,6 +946,8 @@ export function useDexForm(): UseDexFormReturn {
       setCustomMenus,
       enableCampaigns,
       setEnableCampaigns,
+      swapFeeBps,
+      setSwapFeeBps,
     }),
     [
       brokerName,
@@ -1022,6 +1034,7 @@ export function useDexForm(): UseDexFormReturn {
     enableAbstractWallet,
     enableServiceDisclaimerDialog,
     enableCampaigns,
+    swapFeeBps,
     primaryLogo,
     secondaryLogo,
     favicon,
@@ -1057,6 +1070,7 @@ export function useDexForm(): UseDexFormReturn {
     setEnableAbstractWallet,
     setEnableServiceDisclaimerDialog,
     setEnableCampaigns,
+    setSwapFeeBps,
     setPrimaryLogo,
     setSecondaryLogo,
     setFavicon,

@@ -19,6 +19,7 @@ export interface DexData {
   enableAbstractWallet?: boolean;
   enableServiceDisclaimerDialog?: boolean;
   enableCampaigns?: boolean;
+  swapFeeBps?: number | null;
   chainIds?: number[] | null;
   defaultChain?: number | null;
   repoUrl?: string | null;

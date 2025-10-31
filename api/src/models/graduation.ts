@@ -419,3 +419,45 @@ export async function invalidateDexFeesCache(
     };
   }
 }
+
+export async function getSwapFeeConfigs(): Promise<
+  Record<string, { fee_rate: number }>
+> {
+  try {
+    const prismaClient = await getPrisma();
+
+    const graduatedDexes = await prismaClient.dex.findMany({
+      where: {
+        isGraduated: true,
+        brokerId: {
+          not: "demo",
+        },
+        swapFeeBps: {
+          not: null,
+        },
+      },
+      include: {
+        user: {
+          select: {
+            address: true,
+          },
+        },
+      },
+    });
+
+    const result: Record<string, { fee_rate: number }> = {};
+
+    for (const dex of graduatedDexes) {
+      if (dex.swapFeeBps != null) {
+        result[dex.user.address] = {
+          fee_rate: dex.swapFeeBps / 100,
+        };
+      }
+    }
+
+    return result;
+  } catch (error) {
+    console.error("Error fetching graduated dexes:", error);
+    return {};
+  }
+}
