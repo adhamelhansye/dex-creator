@@ -60,7 +60,7 @@ const MENU_INFO: Record<
   Swap: {
     title: "Swap Page Features:",
     description:
-      "The Swap page allows users to exchange tokens seamlessly across multiple chains. Powered by WooFi, this feature provides efficient token swapping with competitive rates and deep liquidity across supported networks.",
+      "The Swap page allows users to exchange tokens seamlessly across multiple chains. Powered by WOOFi, this feature provides efficient token swapping with competitive rates and deep liquidity across supported networks.",
     color: "blue",
   },
   Rewards: {

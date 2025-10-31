@@ -77,7 +77,7 @@ export default function SwapFeeConfigModal({
             Configure Swap Fee
           </h2>
           <p className="text-gray-300 text-sm">
-            Set up your fee for the WooFi-powered swap integration
+            Set up your fee for the WOOFi-powered swap integration
           </p>
         </div>
 
@@ -150,7 +150,7 @@ export default function SwapFeeConfigModal({
               <div className="text-xs text-gray-300 space-y-2">
                 <p>
                   The Swap page is powered by{" "}
-                  <span className="text-blue-300 font-medium">WooFi</span>,
+                  <span className="text-blue-300 font-medium">WOOFi</span>,
                   providing efficient token swapping with competitive rates and
                   deep liquidity.
                 </p>
@@ -165,7 +165,7 @@ export default function SwapFeeConfigModal({
                   </li>
                   <li>
                     <strong>Fee split:</strong> Fees are shared 70% (you) / 30%
-                    (WooFi)
+                    (WOOFi)
                   </li>
                 </ul>
               </div>
