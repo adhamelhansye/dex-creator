@@ -7,7 +7,8 @@
     "dev": "remix vite:dev",
     "build": "remix vite:build",
     "start": "vite preview",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "typechain": "typechain --target ethers-v6 --out-dir ./types './abi/**/*.json'"
   },
   "license": "MIT",
   "author": "Mario Reder <mario@orderly.network>",
