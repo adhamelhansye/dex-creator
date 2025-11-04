@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { getPrisma } from "../lib/prisma";
 import dayjs from "dayjs";
-import { getSwapFeeConfigs } from "../models/graduation";
+import { getSwapFeeConfigs } from "../models/stats";
 
 const stats = new Hono();
 
@@ -151,10 +151,10 @@ stats.get("/swap-fee-config", async c => {
 
     const graduatedDexes = await getSwapFeeConfigs();
 
-    const nextMinute = dayjs().endOf("minute").valueOf();
+    const fiveMinutesFromNow = dayjs().add(5, "minute").valueOf();
     graduatedDexesCache = {
       data: graduatedDexes,
-      expires: nextMinute,
+      expires: fiveMinutesFromNow,
     };
 
     return c.json(graduatedDexes);

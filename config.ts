@@ -80,6 +80,14 @@ export const GRADUATION_SUPPORTED_CHAINS: {
   testnet: ["sepolia", "arbitrum-sepolia", "base-sepolia"],
 };
 
+export type SwapFeeSupportedChainName = "ethereum" | "arbitrum" | "base";
+
+export const SWAP_FEE_SUPPORTED_CHAINS: SwapFeeSupportedChainName[] = [
+  "ethereum",
+  "arbitrum",
+  "base",
+];
+
 export interface ChainConfig {
   id: ChainName;
   name: string;
@@ -484,6 +492,9 @@ export interface EnvironmentChainConfig {
   solConnectorAddress?: string;
   ledgerAddress?: string;
 }
+
+export const WOOFI_WIDGET_ROUTER_ADDRESS =
+  "0xE52f38D753e5428550976498675960b4A4571f9A";
 
 export const ENVIRONMENT_CONFIGS: {
   mainnet: Record<ChainNameMainnet, EnvironmentChainConfig>;

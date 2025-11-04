@@ -55,6 +55,7 @@ import {
   OrderTokenChainName,
   getChainIcon,
 } from "../../../config";
+import { SwapFeeWithdrawal } from "./SwapFeeWithdrawal";
 
 const ERC20_ABI = [
   {
@@ -1281,6 +1282,8 @@ export function GraduationForm({
               </div>
             </div>
           )}
+
+          <SwapFeeWithdrawal isGraduated={graduationStatus.isGraduated} />
 
           {brokerTier && (
             <div className="bg-light/5 rounded-lg p-5 mb-6">

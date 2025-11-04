@@ -38,6 +38,7 @@
     "@commitlint/cli": "^19.8.0",
     "@commitlint/config-conventional": "^19.8.0",
     "@eslint/js": "^9.23.0",
+    "@typechain/ethers-v6": "^0.5.1",
     "@typescript-eslint/eslint-plugin": "^8.29.0",
     "@typescript-eslint/parser": "^8.29.0",
     "concurrently": "^9.1.2",
@@ -48,6 +49,7 @@
     "prettier": "^3.5.3",
     "ts-node": "^10.9.2",
     "tsx": "^4.7.1",
+    "typechain": "^8.3.2",
     "typescript": "^5.8.2"
   }
 }

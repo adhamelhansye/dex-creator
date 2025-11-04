@@ -14,6 +14,7 @@ import { TokenSelectionModal } from "../components/TokenSelectionModal";
 import SafeInstructionsModal from "../components/SafeInstructions";
 import { FeeWithdrawalModal } from "../components/FeeWithdrawalModal";
 import SwapFeeConfigModal from "../components/SwapFeeConfigModal";
+import { SwapFeeWithdrawalModal } from "../components/SwapFeeWithdrawalModal";
 
 export type ModalType =
   | "login"
@@ -31,6 +32,7 @@ export type ModalType =
   | "safeInstructions"
   | "feeWithdrawal"
   | "swapFeeConfig"
+  | "swapFeeWithdrawal"
   | null;
 
 interface ModalContextType {
@@ -254,6 +256,14 @@ function ModalManager() {
           onClose={closeModal}
           onSave={currentModalProps.onSave}
           currentFeeBps={currentModalProps.currentFeeBps}
+        />
+      );
+    case "swapFeeWithdrawal":
+      return (
+        <SwapFeeWithdrawalModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          address={currentModalProps.address}
         />
       );
     default:
