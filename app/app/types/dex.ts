@@ -37,6 +37,7 @@ export interface DexData {
   seoTwitterHandle?: string | null;
   seoThemeColor?: string | null;
   seoKeywords?: string | null;
+  analyticsScript?: string | null;
   description?: string | null;
   banner?: string | null;
   logo?: string | null;

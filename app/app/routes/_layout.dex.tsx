@@ -76,6 +76,7 @@ export default function DexRoute() {
         seoTwitterHandle: dexData.seoTwitterHandle || "",
         seoThemeColor: dexData.seoThemeColor || "",
         seoKeywords: dexData.seoKeywords || "",
+        analyticsScript: dexData.analyticsScript || "",
         themeCSS: dexData.themeCSS,
       });
 

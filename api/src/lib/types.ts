@@ -104,6 +104,7 @@ export interface DexConfig {
   seoTwitterHandle: string | null;
   seoThemeColor: string | null;
   seoKeywords: string | null;
+  analyticsScript: string | null;
 }
 
 /**

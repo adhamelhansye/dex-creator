@@ -184,6 +184,7 @@ export default function DexConfigRoute() {
         seoTwitterHandle: formValues.seoTwitterHandle.trim(),
         seoThemeColor: formValues.seoThemeColor.trim(),
         seoKeywords: formValues.seoKeywords.trim(),
+        analyticsScript: formValues.analyticsScript.trim(),
       };
 
       const formData = createDexFormData(dexDataToSend, imageBlobs);

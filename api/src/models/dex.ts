@@ -48,6 +48,7 @@ export function convertDexToDexConfig(dex: Dex): DexConfig {
     seoTwitterHandle: dex.seoTwitterHandle,
     seoThemeColor: dex.seoThemeColor,
     seoKeywords: dex.seoKeywords,
+    analyticsScript: dex.analyticsScript,
   };
 }
 
@@ -88,6 +89,7 @@ function convertValidatedDataToDexConfig(
     seoTwitterHandle: validatedData.seoTwitterHandle ?? null,
     seoThemeColor: validatedData.seoThemeColor ?? null,
     seoKeywords: validatedData.seoKeywords ?? null,
+    analyticsScript: validatedData.analyticsScript ?? null,
   };
 }
 
@@ -299,6 +301,10 @@ export const dexSchema = z.object({
   seoKeywords: z
     .string()
     .max(500, "Keywords must be 500 characters or less")
+    .nullish(),
+  analyticsScript: z
+    .string()
+    .max(2000, "Analytics script must be 2000 characters or less")
     .nullish(),
 });
 
@@ -566,6 +572,7 @@ export async function createDex(
         seoTwitterHandle: validatedData.seoTwitterHandle,
         seoThemeColor: validatedData.seoThemeColor,
         seoKeywords: validatedData.seoKeywords,
+        analyticsScript: validatedData.analyticsScript,
         swapFeeBps: validatedData.swapFeeBps,
         repoUrl: repoUrl,
         user: {
@@ -727,6 +734,8 @@ export async function updateDex(
     updateData.seoThemeColor = validatedData.seoThemeColor;
   if ("seoKeywords" in validatedData)
     updateData.seoKeywords = validatedData.seoKeywords;
+  if ("analyticsScript" in validatedData)
+    updateData.analyticsScript = validatedData.analyticsScript;
 
   try {
     const prismaClient = await getPrisma();

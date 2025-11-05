@@ -6,6 +6,7 @@ import ThemeCustomizationSection from "./ThemeCustomizationSection";
 import PnLPostersSection from "./PnLPostersSection";
 import SocialLinksSection from "./SocialLinksSection";
 import SEOConfigSection from "./SEOConfigSection";
+import AnalyticsConfigSection from "./AnalyticsConfigSection";
 import ReownConfigSection from "./ReownConfigSection";
 import PrivyConfigSection from "./PrivyConfigSection";
 import BlockchainConfigSection from "./BlockchainConfigSection";
@@ -145,6 +146,19 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
   },
   {
     id: 7,
+    key: "analyticsConfiguration",
+    title: "Analytics Configuration",
+    description:
+      "Add your analytics tracking script to monitor usage and performance of your DEX. Supports Google Analytics, Plausible, Matomo, and other analytics services. This is completely optional.",
+    isOptional: true,
+    component: AnalyticsConfigSection,
+    getProps: props => ({
+      analyticsScript: props.analyticsScript,
+      handleInputChange: props.handleInputChange,
+    }),
+  },
+  {
+    id: 8,
     key: "reownConfiguration",
     title: "Reown Configuration",
     description:
@@ -157,7 +171,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 8,
+    id: 9,
     key: "privyConfiguration",
     title: "Privy Configuration",
     description:
@@ -184,7 +198,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
         : true,
   },
   {
-    id: 9,
+    id: 10,
     key: "blockchainConfiguration",
     title: "Blockchain Configuration",
     description:
@@ -203,7 +217,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 10,
+    id: 11,
     key: "languageSupport",
     title: "Language Support",
     description:
@@ -216,7 +230,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 11,
+    id: 12,
     key: "navigationMenus",
     title: "Navigation Menus",
     description:
@@ -235,7 +249,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 12,
+    id: 13,
     key: "serviceDisclaimer",
     title: "Service Disclaimer",
     description:

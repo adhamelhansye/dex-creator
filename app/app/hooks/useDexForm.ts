@@ -71,6 +71,7 @@ export interface DexSectionProps {
   seoTwitterHandle: string;
   seoThemeColor: string;
   seoKeywords: string;
+  analyticsScript: string;
   walletConnectProjectId: string;
   privyAppId: string;
   privyTermsOfUse: string;
@@ -141,6 +142,7 @@ export interface DexFormData {
   seoTwitterHandle: string;
   seoThemeColor: string;
   seoKeywords: string;
+  analyticsScript: string;
 }
 
 export interface UseDexFormReturn extends DexFormData {
@@ -188,9 +190,10 @@ export interface UseDexFormReturn extends DexFormData {
   setSeoTwitterHandle: (value: string) => void;
   setSeoThemeColor: (value: string) => void;
   setSeoKeywords: (value: string) => void;
+  setAnalyticsScript: (value: string) => void;
   handleInputChange: (
     field: string
-  ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
+  ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
   handleImageChange: (field: string) => (blob: Blob | null) => void;
   handlePnLPosterChange: (posters: (Blob | null)[]) => void;
   populateFromDexData: (
@@ -287,6 +290,7 @@ const initialFormState: DexFormData = {
   seoTwitterHandle: "",
   seoThemeColor: "",
   seoKeywords: "",
+  analyticsScript: "",
 };
 
 export function useDexForm(): UseDexFormReturn {
@@ -388,9 +392,13 @@ export function useDexForm(): UseDexFormReturn {
     initialFormState.seoThemeColor
   );
   const [seoKeywords, setSeoKeywords] = useState(initialFormState.seoKeywords);
+  const [analyticsScript, setAnalyticsScript] = useState(
+    initialFormState.analyticsScript
+  );
 
   const handleInputChange =
-    (field: string) => (e: React.ChangeEvent<HTMLInputElement>) => {
+    (field: string) =>
+    (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
       const value = e.target.value;
       switch (field) {
         case "brokerName":
@@ -437,6 +445,9 @@ export function useDexForm(): UseDexFormReturn {
           break;
         case "seoKeywords":
           setSeoKeywords(value);
+          break;
+        case "analyticsScript":
+          setAnalyticsScript(value);
           break;
       }
     };
@@ -526,6 +537,8 @@ export function useDexForm(): UseDexFormReturn {
         setSeoThemeColor(dexData.seoThemeColor);
       if (dexData.seoKeywords !== undefined)
         setSeoKeywords(dexData.seoKeywords);
+      if (dexData.analyticsScript !== undefined)
+        setAnalyticsScript(dexData.analyticsScript);
 
       if (dexData.themeCSS !== undefined) {
         setCurrentTheme(dexData.themeCSS);
@@ -614,6 +627,7 @@ export function useDexForm(): UseDexFormReturn {
         seoTwitterHandle,
         seoThemeColor,
         seoKeywords,
+        analyticsScript,
       },
       images: {
         primaryLogo: primaryLogoBase64,
@@ -659,6 +673,7 @@ export function useDexForm(): UseDexFormReturn {
     seoTwitterHandle,
     seoThemeColor,
     seoKeywords,
+    analyticsScript,
   ]);
 
   const resetForm = () => {
@@ -700,6 +715,7 @@ export function useDexForm(): UseDexFormReturn {
     setSeoTwitterHandle(initialFormState.seoTwitterHandle);
     setSeoThemeColor(initialFormState.seoThemeColor);
     setSeoKeywords(initialFormState.seoKeywords);
+    setAnalyticsScript(initialFormState.analyticsScript);
   };
 
   const generateTheme = useCallback(
@@ -917,6 +933,7 @@ export function useDexForm(): UseDexFormReturn {
       seoTwitterHandle,
       seoThemeColor,
       seoKeywords,
+      analyticsScript,
       walletConnectProjectId,
       privyAppId,
       privyTermsOfUse,
@@ -975,6 +992,7 @@ export function useDexForm(): UseDexFormReturn {
       seoTwitterHandle,
       seoThemeColor,
       seoKeywords,
+      analyticsScript,
       walletConnectProjectId,
       privyAppId,
       privyTermsOfUse,
@@ -1057,6 +1075,7 @@ export function useDexForm(): UseDexFormReturn {
     seoTwitterHandle,
     seoThemeColor,
     seoKeywords,
+    analyticsScript,
     setBrokerName,
     setTelegramLink,
     setDiscordLink,
@@ -1093,6 +1112,7 @@ export function useDexForm(): UseDexFormReturn {
     setSeoTwitterHandle,
     setSeoThemeColor,
     setSeoKeywords,
+    setAnalyticsScript,
     handleInputChange,
     handleImageChange,
     handlePnLPosterChange,
