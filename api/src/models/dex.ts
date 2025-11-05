@@ -48,6 +48,7 @@ export function convertDexToDexConfig(dex: Dex): DexConfig {
     seoTwitterHandle: dex.seoTwitterHandle,
     seoThemeColor: dex.seoThemeColor,
     seoKeywords: dex.seoKeywords,
+    analyticsScript: dex.analyticsScript,
   };
 }
 
@@ -88,6 +89,7 @@ function convertValidatedDataToDexConfig(
     seoTwitterHandle: validatedData.seoTwitterHandle ?? null,
     seoThemeColor: validatedData.seoThemeColor ?? null,
     seoKeywords: validatedData.seoKeywords ?? null,
+    analyticsScript: validatedData.analyticsScript ?? null,
   };
 }
 
@@ -300,6 +302,10 @@ export const dexSchema = z.object({
     .string()
     .max(500, "Keywords must be 500 characters or less")
     .nullish(),
+  analyticsScript: z
+    .string()
+    .max(2000, "Analytics script must be 2000 characters or less")
+    .nullish(),
 });
 
 export const dexFormSchema = dexSchema
@@ -367,11 +373,15 @@ export const dexFormSchema = dexSchema
       .optional(),
     swapFeeBps: z
       .union([
-        z.number().int(),
+        z.number().int().min(0).max(100),
         z.string().transform(val => {
           if (!val || val.trim() === "") return null;
           const parsed = parseInt(val, 10);
-          return isNaN(parsed) ? null : parsed;
+          if (isNaN(parsed)) return null;
+          if (parsed < 0 || parsed > 100) {
+            throw new Error("Swap fee must be between 0 and 100 bps (1%)");
+          }
+          return parsed;
         }),
         z.null(),
       ])
@@ -566,6 +576,7 @@ export async function createDex(
         seoTwitterHandle: validatedData.seoTwitterHandle,
         seoThemeColor: validatedData.seoThemeColor,
         seoKeywords: validatedData.seoKeywords,
+        analyticsScript: validatedData.analyticsScript,
         swapFeeBps: validatedData.swapFeeBps,
         repoUrl: repoUrl,
         user: {
@@ -727,6 +738,8 @@ export async function updateDex(
     updateData.seoThemeColor = validatedData.seoThemeColor;
   if ("seoKeywords" in validatedData)
     updateData.seoKeywords = validatedData.seoKeywords;
+  if ("analyticsScript" in validatedData)
+    updateData.analyticsScript = validatedData.analyticsScript;
 
   try {
     const prismaClient = await getPrisma();

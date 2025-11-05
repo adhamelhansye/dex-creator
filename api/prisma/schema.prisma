@@ -89,6 +89,7 @@ model Dex {
   seoThemeColor        String?  // SEO Theme Color (e.g., "#1a1b23")
   seoKeywords          String?  // SEO Keywords
   privyLoginMethods    String?  // Comma-separated list of Privy login methods (email,passkey,twitter,google)
+  analyticsScript      String?  // Custom analytics script (GA, Plausible, etc.) with script tags
   isGraduated          Boolean  @default(false) // Whether the DEX has fully graduated
   graduationTxHash    String?  @unique // Transaction hash used for graduation (prevents reuse)
   multisigChainId      Int?     // Chain ID where the multisig delegate signer link was established

@@ -676,6 +676,9 @@ function prepareDexConfigContent(
     VITE_USE_CUSTOM_PNL_POSTERS: pnlPostersData.length > 0 ? "true" : "false",
     VITE_CUSTOM_PNL_POSTER_COUNT: String(pnlPostersData.length),
     VITE_TRADING_VIEW_COLOR_CONFIG: config.tradingViewColorConfig || "",
+
+    // Analytics
+    VITE_ANALYTICS_SCRIPT: config.analyticsScript || "",
   };
 
   const configJsContent = `window.__RUNTIME_CONFIG__ = ${JSON.stringify(
