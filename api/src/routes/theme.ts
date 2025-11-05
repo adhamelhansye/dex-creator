@@ -176,7 +176,7 @@ COLOR GUIDELINES:
    • Gradient-brand-end: Similar to primary`;
 
       const response = await openai.chat.completions.create({
-        model: "llama-4-scout-17b-16e-instruct",
+        model: "qwen-3-235b-a22b-instruct-2507",
         messages: [
           {
             role: "system",
