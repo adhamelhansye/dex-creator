@@ -96,7 +96,15 @@ export default function SEOConfigSection({
           value={seoSiteLanguage}
           onChange={handleInputChange("seoSiteLanguage")}
           placeholder="en"
-          helpText="Language code for your site (e.g., 'en', 'zh', 'es')"
+          helpText="Language code: 'en', 'es', 'zh' or with region 'en-US', 'es-MX', 'zh-CN'"
+          validator={value => {
+            if (!value || value.trim() === "") return null;
+            const regex = /^[a-z]{2}(-[A-Z]{2})?$/;
+            if (!regex.test(value)) {
+              return "Format: 'en' or 'en-US' (2 lowercase letters, optionally hyphen + 2 uppercase letters)";
+            }
+            return null;
+          }}
         />
 
         <FormInput
@@ -106,6 +114,14 @@ export default function SEOConfigSection({
           onChange={handleInputChange("seoSiteLocale")}
           placeholder="en_US"
           helpText="Locale for social platforms (e.g., 'en_US', 'zh_CN')"
+          validator={value => {
+            if (!value || value.trim() === "") return null;
+            const regex = /^[a-z]{2}_[A-Z]{2}$/;
+            if (!regex.test(value)) {
+              return "Format: 'en_US' (2 lowercase letters, underscore, 2 uppercase letters)";
+            }
+            return null;
+          }}
         />
       </div>
 
@@ -116,7 +132,15 @@ export default function SEOConfigSection({
           value={seoTwitterHandle}
           onChange={handleInputChange("seoTwitterHandle")}
           placeholder="@mydex"
-          helpText="Your Twitter handle for Twitter Card metadata (include @)"
+          helpText="Your Twitter handle for Twitter Card metadata (must start with @)"
+          validator={value => {
+            if (!value || value.trim() === "") return null;
+            const regex = /^@[a-zA-Z0-9_]+$/;
+            if (!regex.test(value)) {
+              return "Must start with @ and contain only alphanumeric characters and underscores";
+            }
+            return null;
+          }}
         />
 
         <div className="space-y-2">
