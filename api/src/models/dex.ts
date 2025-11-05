@@ -373,11 +373,15 @@ export const dexFormSchema = dexSchema
       .optional(),
     swapFeeBps: z
       .union([
-        z.number().int(),
+        z.number().int().min(0).max(100),
         z.string().transform(val => {
           if (!val || val.trim() === "") return null;
           const parsed = parseInt(val, 10);
-          return isNaN(parsed) ? null : parsed;
+          if (isNaN(parsed)) return null;
+          if (parsed < 0 || parsed > 100) {
+            throw new Error("Swap fee must be between 0 and 100 bps (1%)");
+          }
+          return parsed;
         }),
         z.null(),
       ])

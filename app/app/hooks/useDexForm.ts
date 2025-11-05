@@ -840,6 +840,7 @@ export function useDexForm(): UseDexFormReturn {
             enableServiceDisclaimerDialog:
               response.enableServiceDisclaimerDialog || false,
             enableCampaigns: response.enableCampaigns || false,
+            swapFeeBps: response.swapFeeBps ?? null,
             chainIds: response.chainIds || [],
             defaultChain: response.defaultChain || undefined,
             disableMainnet: response.disableMainnet || false,
@@ -855,6 +856,7 @@ export function useDexForm(): UseDexFormReturn {
             seoTwitterHandle: response.seoTwitterHandle || "",
             seoThemeColor: response.seoThemeColor || "",
             seoKeywords: response.seoKeywords || "",
+            analyticsScript: response.analyticsScript || "",
             themeCSS: response.themeCSS,
           });
 
