@@ -1,0 +1,67 @@
+# Graduate Your DEX - Orderly One
+
+> Enable revenue generation and start earning fees
+
+## Overview
+
+This page handles the graduation process - registering your DEX as an official Orderly Network broker to enable revenue generation from trading activity.
+
+## What is Graduation?
+
+Graduation is the process of:
+1. Registering your DEX as an official broker with Orderly Network
+2. Setting up fee configurations
+3. Enabling revenue generation from trading activity
+4. Unlocking additional features like referral programs
+
+## Requirements
+
+Before you can graduate:
+- ✅ Have a custom domain configured
+- ✅ DEX must be deployed
+- ✅ Complete basic configuration
+
+## Fee Configuration
+
+### Broker Fee
+- **What it is**: Your share of trading fees
+- **Range**: Configurable basis points (bps)
+- **Revenue**: Earned from all trading activity on your DEX
+
+### Base Fee
+- **What it is**: Orderly Network's infrastructure fee
+- **Purpose**: Covers network costs and services
+- **Standard**: Set by Orderly Network
+
+### Calculator
+The graduation page includes a fee calculator that shows:
+- Total fees per trade
+- Your revenue per trade
+- Expected earnings based on volume
+
+## Graduation Process
+
+1. **Configure Fees**: Set your broker fee percentage
+2. **Submit Transaction**: Pay the one-time graduation fee on-chain
+3. **Verification**: System verifies your transaction
+4. **Activation**: Your DEX starts earning fees from trading activity
+
+## Post-Graduation
+
+After graduating, you gain access to:
+- **Fee Revenue**: Earn from all trading activity
+- **Referral Program**: Set up auto-referral codes
+- **Leaderboard**: Your DEX appears on the public leaderboard
+- **Advanced Features**: Additional broker management tools
+
+## Important Notes
+
+- Graduation requires a one-time on-chain transaction
+- Make sure you have the necessary tokens for the transaction
+- The process is irreversible - ensure your configuration is correct
+- Custom domain is required for graduation
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+

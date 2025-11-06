@@ -1,3 +1,4 @@
+import type { MetaFunction } from "@remix-run/node";
 import { GraduationForm } from "../components/GraduationForm";
 import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
@@ -7,6 +8,15 @@ import { useState } from "react";
 import { FeeConfigWithCalculator } from "../components/FeeConfigWithCalculator";
 import { BaseFeeExplanation } from "../components/BaseFeeExplanation";
 import { Link } from "@remix-run/react";
+
+export const meta: MetaFunction = () => [
+  { title: "Graduate Your DEX - Orderly One" },
+  {
+    name: "description",
+    content:
+      "Graduate your DEX to enable revenue generation. Configure fees and start earning from trading activity.",
+  },
+];
 
 export default function GraduationRoute() {
   const { isAuthenticated, isLoading } = useAuth();

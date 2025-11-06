@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import type { MetaFunction } from "@remix-run/node";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
@@ -15,6 +16,15 @@ import {
   type AutoReferralSettings,
   type AutoReferralInfo,
 } from "../utils/orderly";
+
+export const meta: MetaFunction = () => [
+  { title: "Referral Program - Orderly One" },
+  {
+    name: "description",
+    content:
+      "Manage your DEX referral program. Set up auto-referral codes and earn from trader activity.",
+  },
+];
 
 export default function ReferralRoute() {
   const { isAuthenticated, isLoading } = useAuth();

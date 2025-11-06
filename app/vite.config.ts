@@ -24,7 +24,12 @@ export default defineConfig({
       include: ["buffer", "process", "util", "stream", "events", "crypto"],
     }),
     cjsInterop({
-      dependencies: ["bs58", "@coral-xyz/anchor", "lodash"],
+      dependencies: [
+        "bs58",
+        "@coral-xyz/anchor",
+        "lodash",
+        "react-helmet-async",
+      ],
     }),
   ],
   server: {

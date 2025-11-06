@@ -1,0 +1,72 @@
+# DEX Configuration - Orderly One
+
+> Customize your DEX branding, features, and settings
+
+## Overview
+
+This is the comprehensive configuration page where you customize every aspect of your DEX, from branding and themes to wallets and advanced features.
+
+## Configuration Sections
+
+### 1. Branding
+- **DEX Name**: Your DEX's display name
+- **Logos**: Upload primary logo, secondary logo, and favicon
+- **Social Links**: Telegram, Discord, Twitter/X links
+
+### 2. Theme Customization
+- **Colors**: Customize primary, secondary, success, warning, error, and background colors
+- **AI Theme Generation**: Use AI to generate themes based on descriptions
+- **Custom CSS**: Advanced theme customization
+- **Font Family & Size**: Typography customization
+
+### 3. Wallet Integration
+- **Privy App ID**: Configure Privy wallet authentication
+- **WalletConnect Project ID**: Enable WalletConnect support
+- **Login Methods**: Email, wallet, social logins
+- **Terms of Use**: Link to your terms of service
+- **Abstract Wallet**: Enable/disable Abstract wallet support
+- **EVM/Solana Wallets**: Toggle wallet type support
+
+### 4. Network Configuration
+- **Chain Selection**: Choose supported EVM chains
+- **Default Chain**: Set the default blockchain
+- **Mainnet/Testnet**: Toggle network availability
+
+### 5. UI Features
+- **Enabled Menus**: Trading, Portfolio, Markets, Leaderboard, etc.
+- **Custom Menus**: Add custom navigation items
+- **Service Disclaimer**: Enable disclaimer dialog
+- **Campaigns**: Enable trading campaigns
+
+### 6. Advanced Settings
+- **TradingView Colors**: Customize chart colors
+- **PnL Posters**: Upload custom PnL sharing backgrounds
+- **Languages**: Configure available languages
+- **Swap Fees**: Set custom swap fee basis points
+
+### 7. SEO Configuration
+- **Site Name & Description**: Optimize for search engines
+- **Keywords**: SEO keywords
+- **Twitter Handle**: For Twitter Card metadata
+- **Language & Locale**: i18n settings
+- **Theme Color**: Mobile browser theme
+
+### 8. Analytics
+- **Analytics Script**: Add Google Analytics or other tracking codes
+
+## How It Works
+
+1. Configure your settings in any section
+2. Click "Save & Deploy" to apply changes
+3. Changes are automatically deployed to your GitHub repository
+4. Your DEX updates within minutes
+
+## Tips
+
+- Use the preview button to see how your DEX will look
+- AI theme generation can create professional color schemes quickly
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+

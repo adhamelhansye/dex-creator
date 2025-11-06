@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent, useRef, useMemo } from "react";
+import type { MetaFunction } from "@remix-run/node";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
@@ -11,6 +12,15 @@ import { useNavigate, Link } from "@remix-run/react";
 import { maxLength, composeValidators } from "../utils/validation";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 import DexCard from "../components/DexCard";
+
+export const meta: MetaFunction = () => [
+  { title: "DEX Card - Orderly One" },
+  {
+    name: "description",
+    content:
+      "Customize your DEX card appearance on the leaderboard. Upload banners, logos, and add description.",
+  },
+];
 
 interface NetworkInfo {
   id: string;

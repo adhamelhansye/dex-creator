@@ -1,0 +1,79 @@
+# DEX Card Setup - Orderly One
+
+> Configure how your DEX appears on the leaderboard
+
+## Overview
+
+This page allows you to customize your DEX's card appearance on the public leaderboard. Your DEX card is how other users will discover and learn about your platform.
+
+## Card Components
+
+### Visual Elements
+
+1. **Banner Image**
+   - Large header image for your DEX card
+   - Recommended size: 1200x400px
+   - Formats: PNG, JPG, WebP
+   - Use eye-catching visuals that represent your brand
+
+2. **Logo**
+   - Square logo displayed on the card
+   - Recommended size: 200x200px
+   - Appears alongside your DEX name
+
+### Information
+
+3. **Description**
+   - Brief description of your DEX
+   - Max length: 500 characters
+   - Explain what makes your DEX unique
+   - Highlight key features or community focus
+
+4. **Token Information** (Optional)
+   - **Token Address**: Smart contract address
+   - **Chain**: Which blockchain the token is on
+   - **Symbol**: Token ticker (e.g., "USDC", "ETH")
+   - **Name**: Full token name
+   - Automatically fetches price and market cap data
+
+### Social Links
+
+5. **Community Links**
+   - Telegram group
+   - Discord server
+   - Additional links specific to your DEX
+
+## Token Integration
+
+If your DEX has an associated token:
+- Enter the token contract address
+- Select the blockchain
+- System automatically fetches:
+  - Current price
+  - Market capitalization
+  - Token icon
+  - Real-time data
+
+## Best Practices
+
+- **Banner**: Use high-quality images that represent your brand identity
+- **Description**: Be clear and concise about your DEX's value proposition
+- **Logo**: Use your primary brand logo for consistency
+- **Token**: Only add if you have an official project token
+- **Links**: Ensure all social links are active and moderated
+
+## Visibility
+
+**Important**: Your DEX card only appears on the public leaderboard after graduation. Set up your card early so it's ready when you graduate.
+
+## Updates
+
+You can update your DEX card at any time:
+- Changes are reflected immediately
+- No redeployment needed
+- Update as your brand evolves
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+
