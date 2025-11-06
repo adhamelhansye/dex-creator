@@ -20,7 +20,8 @@ export async function getSwapFeeConfigs(): Promise<
 
     for (const dex of allDexes) {
       result[dex.user.address] = {
-        fee_rate: dex.swapFeeBps != null ? dex.swapFeeBps / 100 : 0,
+        fee_rate:
+          dex.isGraduated && dex.swapFeeBps != null ? dex.swapFeeBps / 100 : 0,
       };
     }
 
