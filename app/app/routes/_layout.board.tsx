@@ -1,10 +1,20 @@
 import { useEffect, useState } from "react";
+import type { MetaFunction } from "@remix-run/node";
 import { Link } from "@remix-run/react";
 import { Icon } from "@iconify/react";
 import { apiClient } from "../utils/apiClient";
 import DexCard from "../components/DexCard";
 import Pagination from "../components/Pagination";
 import type { TimePeriod } from "../types/leaderboard";
+
+export const meta: MetaFunction = () => [
+  { title: "Leaderboard - Orderly One" },
+  {
+    name: "description",
+    content:
+      "Discover top performing DEXes built on Orderly Network. View trading volume, PnL, and broker fees across all platforms.",
+  },
+];
 
 interface BrokerStats {
   id: string;

@@ -1,4 +1,5 @@
 import { useState, useEffect, FormEvent } from "react";
+import type { MetaFunction } from "@remix-run/node";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
 import { useModal } from "../context/ModalContext";
@@ -12,6 +13,15 @@ import DexSectionRenderer, {
 } from "../components/DexSectionRenderer";
 import { useDexForm } from "../hooks/useDexForm";
 import { DexData, ThemeTabType, defaultTheme } from "../types/dex";
+
+export const meta: MetaFunction = () => [
+  { title: "Configure Your DEX - Orderly One" },
+  {
+    name: "description",
+    content:
+      "Customize your DEX configuration. Set up branding, wallets, networks, themes, and advanced features.",
+  },
+];
 
 export default function DexConfigRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();

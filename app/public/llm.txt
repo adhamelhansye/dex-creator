@@ -1,0 +1,54 @@
+# Orderly One
+
+> Orderly One is a platform that lets users create their own perpetual decentralized exchanges (DEXs) using Orderly Network's infrastructure.
+
+## Overview
+
+Orderly One simplifies DEX creation and deployment through an intuitive UI and automated processes. Users can create a fully functional perpetual DEX in minutes without any coding required.
+
+## Key Features
+
+- **No-Code DEX Creation**: Create a perpetual decentralized exchange without writing any code
+- **Customizable Branding**: Upload logos, customize colors, and apply custom themes
+- **Automated Deployment**: Automatic GitHub repository creation and GitHub Pages deployment
+- **Built on Orderly Network**: Leverage Orderly Network's liquidity and infrastructure
+- **Multi-Chain Support**: Support for multiple EVM chains and Solana
+- **Wallet Integration**: Privy and WalletConnect integration for seamless user onboarding
+
+## Technology Stack
+
+- Frontend: Remix (SPA), React, TypeScript, TanStack Query
+- Backend: Node.js, Hono, PostgreSQL, Prisma ORM
+- Blockchain: Orderly Network, EVM chains, Solana
+- Deployment: GitHub Pages with automated CI/CD
+
+## Use Cases
+
+1. **Trading Communities**: Create a branded DEX for your trading community
+2. **DeFi Projects**: Launch a perpetual trading platform for your token ecosystem
+3. **White-Label Solutions**: Provide trading infrastructure under your brand
+4. **Regional Exchanges**: Create localized trading platforms for specific regions
+
+## Getting Started
+
+Visit https://dex.orderly.network to create your own DEX in minutes:
+1. Connect your wallet
+2. Configure your DEX settings (name, branding, features)
+3. Deploy to GitHub Pages
+4. Share your custom DEX with users
+
+## Links
+
+- Website: https://dex.orderly.network
+- Documentation: https://docs.orderly.network
+- Twitter: @OrderlyNetwork
+- Discord: https://discord.gg/orderlynetwork
+
+## Support
+
+For questions and support, visit our Discord community or contact support@orderly.network
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import type { MetaFunction } from "@remix-run/node";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
 import { useDex } from "../context/DexContext";
@@ -14,6 +15,15 @@ import DexSetupAssistant from "../components/DexSetupAssistant";
 import DexUpgrade from "../components/DexUpgrade";
 import { useDexForm } from "../hooks/useDexForm";
 import { DexData, defaultTheme } from "../types/dex";
+
+export const meta: MetaFunction = () => [
+  { title: "Create Your DEX - Orderly One" },
+  {
+    name: "description",
+    content:
+      "Configure and deploy your perpetual DEX. Customize branding, features, and settings for your trading platform.",
+  },
+];
 
 export default function DexRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();

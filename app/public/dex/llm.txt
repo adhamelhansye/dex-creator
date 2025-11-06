@@ -1,0 +1,44 @@
+# Create Your DEX - Orderly One
+
+> Manage and deploy your perpetual decentralized exchange
+
+## Overview
+
+This is the main DEX management dashboard where users can create, configure, and deploy their own perpetual decentralized exchange powered by Orderly Network.
+
+## What You Can Do Here
+
+1. **Create a New DEX**: Start building your perpetual trading platform
+2. **View Deployment Status**: Monitor your DEX repository creation and GitHub Pages deployment
+3. **Access Configuration**: Customize branding, themes, wallets, and features
+4. **Graduate to Mainnet**: Move from testnet to production and start earning fees
+5. **Setup DEX Card**: Configure how your DEX appears on the leaderboard
+6. **Manage Custom Domain**: Add your own domain to your deployed DEX
+7. **Access Referral Program**: Set up auto-referral codes (for graduated DEXes)
+
+## Key Features
+
+- **No-Code Deployment**: Automatically creates a GitHub repository and deploys to GitHub Pages
+- **Configuration Management**: Full control over DEX settings and appearance
+- **Fee Revenue**: Earn fee splits after graduating your DEX
+- **Custom Domains**: Use your own domain for your DEX
+
+## DEX Lifecycle
+
+1. **Setup**: Create your DEX and configure initial settings
+2. **Deployment**: Deploy your DEX
+3. **Configuration**: Customize branding, features, and settings
+4. **Custom Domain** (Optional): Add your own domain
+5. **Graduation**: Register as a broker to enable revenue generation
+6. **Earning**: Start earning fee revenue from trading activity
+
+## Next Steps
+
+- New users: Click "Create DEX" to get started
+- Existing users: Configure your DEX settings or graduate to enable revenue generation
+- Need help? Check the DEX Setup Assistant for guidance
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+

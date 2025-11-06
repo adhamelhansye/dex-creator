@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "@remix-run/react";
+import { Helmet } from "react-helmet-async";
 import { Icon } from "@iconify/react";
 import { apiClient } from "../utils/apiClient";
 import { type TimePeriod, getTimePeriodString } from "../types/leaderboard";
@@ -216,8 +217,15 @@ export default function DexDetailRoute() {
   const timePeriodString = getTimePeriodString(timePeriod);
   const geckoUrl = getGeckoTerminalUrl();
 
+  const pageTitle = `${dexData.brokerName} - DEX Details | Orderly One`;
+  const pageDescription = `View detailed statistics and performance metrics for ${dexData.brokerName}, a DEX built on Orderly Network.`;
+
   return (
     <div className="min-h-screen pt-24 pb-12 px-4 md:px-8">
+      <Helmet>
+        <title>{pageTitle}</title>
+        <meta name="description" content={pageDescription} />
+      </Helmet>
       <div className="max-w-6xl mx-auto">
         {/* Header */}
         <div className="mb-8 slide-fade-in">

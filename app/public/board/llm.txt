@@ -1,0 +1,81 @@
+# DEX Leaderboard - Orderly One
+
+> Discover top performing DEXes built on Orderly Network
+
+## Overview
+
+The leaderboard showcases all graduated DEXes built with Orderly One, ranked by trading performance and activity.
+
+## Metrics Tracked
+
+### Trading Volume
+- **24 Hours**: Recent trading activity
+- **7 Days**: Weekly performance
+- **30 Days**: Monthly trends
+- **All Time**: Cumulative trading volume
+
+### PnL (Profit and Loss)
+- Total trader profits/losses across the platform
+- Indicator of trading activity and user engagement
+
+### Broker Fees
+- Revenue earned by the DEX owner
+- Based on trading volume and fee configuration
+
+### Total Fees
+- Combined fees including Orderly Network fees
+- Shows overall economic activity
+
+## Leaderboard Features
+
+### Sorting
+- Sort by volume, PnL, fees
+- Different time periods (24h, 7d, 30d, all-time)
+- Discover trending and established DEXes
+
+### DEX Cards
+Each DEX is displayed with:
+- Name and logo
+- Description
+- Banner image
+- Key metrics
+- Associated token (if any)
+- Social links
+
+### Filtering
+- Search by DEX name
+- Filter by time period
+- Sort by different metrics
+
+## Token Integration
+
+DEXes with associated tokens show:
+- Token price
+- Market capitalization
+- Token symbol and name
+- Live price data
+
+## For DEX Creators
+
+Your DEX will appear on this leaderboard after:
+1. Graduating your DEX (enabling revenue generation)
+2. Generating trading activity
+3. Setting up your DEX card (optional but recommended)
+
+The leaderboard helps:
+- Showcase your DEX to potential users
+- Attract liquidity providers
+- Build community awareness
+- Track your performance vs other DEXes
+
+## Use Cases
+
+- **Traders**: Find active DEXes with good liquidity
+- **Projects**: Discover potential integration partners
+- **Creators**: Monitor competition and industry trends
+- **Community**: See the growing Orderly Network ecosystem
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+

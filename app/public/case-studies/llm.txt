@@ -1,0 +1,75 @@
+# Case Studies - Orderly One
+
+> Real-world examples of successful DEXes built with Orderly One
+
+## Overview
+
+This page showcases successful DEXes built using the Orderly One platform, demonstrating the capabilities and potential of the no-code DEX creator.
+
+## What You'll Find
+
+### Success Stories
+- Real DEXes built with Orderly One
+- Trading volume and performance metrics
+- Unique features and customizations
+- Community growth strategies
+
+### Use Cases
+Different types of DEXes created:
+- Community-driven trading platforms
+- Project-specific exchanges
+- Regional trading hubs
+- Specialized trading communities
+
+### Technical Implementations
+Examples of:
+- Custom branding and themes
+- Unique feature configurations
+- Integration strategies
+- Growth tactics
+
+## Learning Opportunities
+
+### For New Creators
+- See what's possible with Orderly One
+- Get inspired by successful implementations
+- Learn best practices from real examples
+- Understand the potential of the platform
+
+### For Existing DEX Owners
+- Compare your DEX to others
+- Discover optimization strategies
+- Find integration ideas
+- Network with other creators
+
+## Featured Metrics
+
+Each case study may include:
+- Trading volume over time
+- User growth statistics
+- Fee revenue generated
+- Community engagement metrics
+- Technical highlights
+- Unique features
+
+## Submission
+
+Have a successful DEX built with Orderly One?
+- Contact the Orderly Network team
+- Share your metrics and story
+- Get featured in case studies
+- Inspire other creators
+
+## Categories
+
+Case studies may be organized by:
+- Trading volume tiers
+- Geographic regions
+- Target audiences
+- Special features
+- Industry verticals
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+

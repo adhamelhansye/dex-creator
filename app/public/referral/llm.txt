@@ -1,0 +1,86 @@
+# Referral Program - Orderly One
+
+> Manage your DEX referral program and earn from trader activity
+
+## Overview
+
+The referral program allows graduated DEX owners to set up auto-referral codes, incentivizing traders and growing their community while earning additional revenue.
+
+## Requirements
+
+- ✅ DEX must be graduated to mainnet
+- ✅ Valid Orderly trading key
+- ✅ Active broker ID
+
+## How It Works
+
+### Auto-Referral System
+
+1. **Create Orderly Key**: Generate a trading key for your account
+2. **Configure Referral**: Set up your auto-referral settings
+3. **Automatic Application**: All traders using your DEX get your referral code
+4. **Earn Rewards**: You earn from the trading activity of referred users
+
+### Orderly Trading Key
+
+The Orderly key is required to:
+- Interact with Orderly Network's referral system
+- Manage your referral settings
+- Track referral performance
+
+**Creating a Key**:
+- One-click generation
+- Securely stored in your browser
+- Can be regenerated if needed
+
+## Referral Benefits
+
+### For DEX Owners
+- **Additional Revenue**: Earn from referee trading volume
+- **Compounding Growth**: More traders = more referrals = more revenue
+- **Automatic**: No manual referral code distribution needed
+- **Transparent**: Track all referral activity
+
+### For Traders
+- **Better Rates**: Potential fee discounts
+- **Trusted Source**: Referral comes directly from the DEX they're using
+- **Seamless**: Automatically applied, no codes to enter
+
+## Configuration
+
+### Referral Settings
+- **Referral Code**: Your unique code (auto-generated)
+- **Fee Sharing**: Configure fee split with referees
+- **Tracking**: Monitor referral performance
+
+### Best Practices
+- Enable auto-referral as soon as you graduate
+- Promote your DEX to maximize trading volume
+- Monitor referral dashboard for insights
+- Optimize fee sharing to attract more traders
+
+## Revenue Streams
+
+As a graduated DEX owner, you earn from:
+1. **Trading Fees**: Your broker fee from all trades
+2. **Referral Rewards**: Additional earnings from referee activity
+3. **Combined**: Maximizes revenue from your platform
+
+## Security
+
+- Trading keys are stored locally in your browser
+- Never shared with third parties
+- Can be regenerated at any time
+- No access to your wallet funds
+
+## Support
+
+For referral program questions:
+- Check Orderly Network documentation
+- Contact support through community channels
+- Review your referral dashboard for insights
+
+---
+
+This file is for AI assistants and LLM crawlers. Last updated: 2025-11-05
+
