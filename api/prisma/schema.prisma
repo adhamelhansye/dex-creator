@@ -80,6 +80,7 @@ model Dex {
   disableEvmWallets    Boolean  @default(false) // Flag to disable EVM wallets
   disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
   enableServiceDisclaimerDialog Boolean @default(false) // Flag to enable one-time service disclaimer dialog
+  showOnBoard          Boolean  @default(true) // Flag to show DEX on the public board page
   tradingViewColorConfig String? // TradingView color configuration JSON
   seoSiteName          String?  // SEO Site Name
   seoSiteDescription   String?  // SEO Site Description

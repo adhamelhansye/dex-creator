@@ -18,6 +18,7 @@ import {
   convertDexToDexConfig,
 } from "../models/dex";
 import { DexErrorType } from "../lib/types";
+import { getPrisma } from "../lib/prisma";
 import { geckoTerminalService } from "../services/geckoTerminalService.js";
 import { leaderboardService } from "../services/leaderboardService.js";
 import {
@@ -655,5 +656,54 @@ dexRoutes.delete("/:id/custom-domain", async c => {
     );
   }
 });
+
+const boardVisibilitySchema = z.object({
+  showOnBoard: z.boolean(),
+});
+
+dexRoutes.post(
+  "/:id/board-visibility",
+  zValidator("json", boardVisibilitySchema),
+  async c => {
+    const id = c.req.param("id");
+    const userId = c.get("userId");
+    const { showOnBoard } = c.req.valid("json");
+
+    try {
+      const dex = await getDexById(id);
+
+      if (!dex) {
+        return c.json({ message: "DEX not found" }, 404);
+      }
+
+      if (dex.userId !== userId) {
+        return c.json({ message: "Unauthorized to update this DEX" }, 403);
+      }
+
+      const prisma = await getPrisma();
+      const updatedDex = await prisma.dex.update({
+        where: { id },
+        data: { showOnBoard },
+      });
+
+      return c.json(
+        {
+          message: `DEX ${showOnBoard ? "will now appear" : "is now hidden"} on the public board`,
+          dex: updatedDex,
+        },
+        200
+      );
+    } catch (error) {
+      console.error("Error updating board visibility:", error);
+      return c.json(
+        {
+          message: "Failed to update board visibility",
+          error: error instanceof Error ? error.message : String(error),
+        },
+        500
+      );
+    }
+  }
+);
 
 export default dexRoutes;

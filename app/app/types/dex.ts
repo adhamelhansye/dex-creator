@@ -28,6 +28,7 @@ export interface DexData {
   disableTestnet?: boolean;
   disableEvmWallets?: boolean;
   disableSolanaWallets?: boolean;
+  showOnBoard?: boolean;
   tradingViewColorConfig?: string | null;
   availableLanguages?: string[] | null;
   seoSiteName?: string | null;
