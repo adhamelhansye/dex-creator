@@ -8,6 +8,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import Form from "../components/Form";
 import ImagePaste from "../components/ImagePaste";
+import BoardVisibilitySection from "../components/BoardVisibilitySection";
 import { useNavigate, Link } from "@remix-run/react";
 import { maxLength, composeValidators } from "../utils/validation";
 import FuzzySearchInput from "../components/FuzzySearchInput";
@@ -386,435 +387,488 @@ export default function DexCardRoute() {
 
       <Card>
         <div className="mb-6">
-          <h2 className="text-lg font-semibold mb-2">Board Page Display</h2>
-          <p className="text-gray-400 text-sm mb-4">
-            This information will be displayed on the board page to showcase
-            your DEX alongside others.
-          </p>
-
-          <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
-            <div className="flex items-start gap-3">
-              <div className="bg-warning/20 p-1.5 rounded-full flex-shrink-0">
-                <div className="i-mdi:information text-warning w-4 h-4"></div>
-              </div>
-              <div>
-                <h3 className="text-sm font-medium text-warning mb-1">
-                  Graduation Required
-                </h3>
-                <p className="text-xs text-gray-300">
-                  Your DEX card will only appear on the board page after you
-                  have graduated your DEX. Complete the graduation process to
-                  start earning fees and make your DEX visible on the board.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <Form
-          onSubmit={handleSubmit}
-          className="space-y-6"
-          submitText="Save DEX Card"
-          isLoading={isSaving}
-          loadingText="Saving..."
-          disabled={isSaving}
-        >
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              Description <span className="text-gray-400">(optional)</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={e => setDescription(e.target.value)}
-              placeholder="Brief description of your DEX for the board page"
-              className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
-              rows={3}
-              maxLength={150}
-            />
-            <div className="flex justify-between items-center mt-1">
-              <p className="text-xs text-gray-400">
-                {descriptionValidator(description) ||
-                  "Brief description for social media"}
-              </p>
-              <span className="text-xs text-gray-500">
-                {description.length}/150
-              </span>
-            </div>
-          </div>
-
-          {/* Banner Image */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium">
-                Banner Image <span className="text-gray-400">(optional)</span>
-              </label>
-              {dexData?.primaryLogo && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    if (dexData?.primaryLogo) {
-                      base64ToBlob(dexData.primaryLogo).then(blob => {
-                        handleImageChange("banner")(blob);
-                      });
-                    }
-                  }}
-                >
-                  Use Primary Logo
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 mb-3">
-              Large image displayed on the board page. Recommended: 1200x630px
-            </p>
-            <ImagePaste
-              id="banner"
-              label=""
-              value={banner || undefined}
-              onChange={handleImageChange("banner")}
-              imageType="banner"
-              helpText="Large banner image for the board page display"
-            />
-          </div>
-
-          {/* Logo Image */}
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="block text-sm font-medium">
-                Logo <span className="text-gray-400">(optional)</span>
-              </label>
-              {dexData?.secondaryLogo && (
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    if (dexData?.secondaryLogo) {
-                      base64ToBlob(dexData.secondaryLogo).then(blob => {
-                        handleImageChange("logo")(blob);
-                      });
-                    }
-                  }}
-                >
-                  Use Secondary Logo
-                </Button>
-              )}
-            </div>
-            <p className="text-xs text-gray-400 mb-3">
-              Small logo for the board page. Recommended: 400x400px
-            </p>
-            <ImagePaste
-              id="logo"
-              label=""
-              value={logo || undefined}
-              onChange={handleImageChange("logo")}
-              imageType="logo"
-              helpText="Small logo for the board page display"
-            />
-          </div>
-
-          {/* Token Information */}
-          <div className="border-t border-gray-600 pt-6">
-            <h3 className="text-md font-semibold mb-4">Token Information</h3>
-            <p className="text-xs text-gray-400 mb-4">
-              Optional: Add your token details for enhanced board page display
-            </p>
-
-            {/* Token Address */}
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">
-                Token Address <span className="text-gray-400">(optional)</span>
-              </label>
-              <input
-                type="text"
-                value={tokenAddress}
-                onChange={handleTokenAddressChange}
-                onBlur={handleTokenAddressBlur}
-                placeholder="Enter your token contract address"
-                className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                maxLength={100}
-              />
-              <p className="text-xs text-gray-400 mt-1">
-                {tokenAddressValidator(tokenAddress) ||
-                  "Your token's contract address"}
-              </p>
-
-              {/* Token Validation Status */}
-              {isValidatingToken && (
-                <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
-                  <div className="i-mdi:loading h-4 w-4 animate-spin"></div>
-                  Validating token...
-                </div>
-              )}
-
-              {tokenValidation && !isValidatingToken && (
-                <div className="mt-2">
-                  {tokenValidation.isValid ? (
-                    <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
-                      <div className="flex items-center gap-3">
-                        {tokenValidation.tokenInfo?.attributes?.image_url && (
-                          <img
-                            src={tokenValidation.tokenInfo.attributes.image_url}
-                            alt={tokenValidation.tokenInfo.attributes.name}
-                            className="w-8 h-8 rounded-full"
-                          />
-                        )}
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-semibold text-green-400">
-                              {tokenValidation.tokenInfo?.attributes?.name}
-                            </span>
-                            <span className="text-gray-400">
-                              ({tokenValidation.tokenInfo?.attributes?.symbol})
-                            </span>
-                          </div>
-                          <div className="text-xs text-gray-400 mt-1">
-                            Price: $
-                            {new Intl.NumberFormat("en-US", {
-                              maximumSignificantDigits: 4,
-                            }).format(
-                              parseFloat(
-                                tokenValidation.tokenInfo?.attributes
-                                  ?.price_usd || "0"
-                              )
-                            )}
-                            {tokenValidation.tokenInfo?.attributes
-                              ?.market_cap_usd && (
-                              <span className="ml-2">
-                                • Market Cap: $
-                                {new Intl.NumberFormat("en-US", {
-                                  notation: "compact",
-                                  maximumSignificantDigits: 4,
-                                }).format(
-                                  parseFloat(
-                                    tokenValidation.tokenInfo?.attributes
-                                      ?.market_cap_usd || "0"
-                                  )
-                                )}
-                              </span>
-                            )}
-                          </div>
-                          {tokenValidation.tokenInfo?.relationships?.top_pools
-                            ?.data?.[0] &&
-                            (() => {
-                              const poolId =
-                                tokenValidation.tokenInfo?.relationships
-                                  ?.top_pools?.data?.[0]?.id;
-                              if (!poolId) return null;
-                              const [network, actualPoolId] = poolId.split("_");
-                              return (
-                                <a
-                                  href={`https://www.geckoterminal.com/${network}/pools/${actualPoolId}`}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  className="text-xs text-primary hover:text-primary-light inline-flex items-center gap-1 mt-1"
-                                >
-                                  View on GeckoTerminal
-                                  <div className="i-mdi:open-in-new h-3 w-3"></div>
-                                </a>
-                              );
-                            })()}
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
-                      <div className="flex items-center gap-2 text-red-400">
-                        <div className="i-mdi:alert-circle h-4 w-4"></div>
-                        <span className="text-sm">{tokenValidation.error}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-            {/* Token Chain */}
-            <div>
-              <label className="block text-sm font-medium mb-2">
-                Token Chain <span className="text-gray-400">(optional)</span>
-              </label>
-              <div className="relative" ref={dropdownRef}>
-                <FuzzySearchInput
-                  placeholder="Search blockchain networks..."
-                  value={networkSearchQuery}
-                  onSearch={handleNetworkSearch}
-                  className="mb-0"
-                  disabled={isLoadingNetworks}
-                  debounceTime={100}
-                />
-                {isLoadingNetworks && (
-                  <p className="text-xs text-gray-400 mt-1">
-                    Loading networks...
-                  </p>
-                )}
-                {!isLoadingNetworks &&
-                  isDropdownOpen &&
-                  filteredNetworks.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-background-dark border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
-                      {filteredNetworks.map(network => (
-                        <button
-                          key={network.id}
-                          type="button"
-                          onClick={() => selectNetwork(network)}
-                          className="w-full px-3 py-2 text-left hover:bg-gray-700 focus:bg-gray-700 focus:outline-none flex items-center justify-between"
-                        >
-                          <span>{network.name}</span>
-                          <span className="text-xs text-gray-400">
-                            {network.id}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-                {!isLoadingNetworks &&
-                  isDropdownOpen &&
-                  networkSearchQuery &&
-                  filteredNetworks.length === 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-background-dark border border-gray-600 rounded-lg shadow-lg p-3">
-                      <p className="text-sm text-gray-400">No networks found</p>
-                    </div>
-                  )}
-              </div>
-            </div>
-          </div>
-
-          {/* Social Media Links */}
-          <div className="border-t border-gray-600 pt-6">
-            <h3 className="text-md font-semibold mb-4">Social Media Links</h3>
-            <p className="text-xs text-gray-400 mb-4">
-              Optional: Add your social media links for enhanced board page
-              display
-            </p>
-
-            <div className="space-y-4">
-              {/* Telegram */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Telegram <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={telegramLink}
-                  onChange={e => setTelegramLink(e.target.value)}
-                  placeholder="https://t.me/your-group"
-                  className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-
-              {/* Discord */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Discord <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={discordLink}
-                  onChange={e => setDiscordLink(e.target.value)}
-                  placeholder="https://discord.gg/your-server"
-                  className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-
-              {/* X (Twitter) */}
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  X (Twitter) <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={xLink}
-                  onChange={e => setXLink(e.target.value)}
-                  placeholder="https://twitter.com/your-account"
-                  className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Website URL */}
-          <div className="border-t border-gray-600 pt-6">
-            <h3 className="text-md font-semibold mb-4">Website URL</h3>
-            <p className="text-xs text-gray-400 mb-4">
-              Optional: Add your DEX website URL for the board page
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-2">
-                  Website URL <span className="text-gray-400">(optional)</span>
-                </label>
-                <input
-                  type="url"
-                  value={websiteUrl}
-                  onChange={e => setWebsiteUrl(e.target.value)}
-                  placeholder="https://your-dex.com"
-                  className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                />
-                <p className="text-xs text-gray-400 mt-1">
-                  This will be used as the main website link on your DEX card
-                </p>
-              </div>
-            </div>
-          </div>
-        </Form>
-      </Card>
-
-      {/* Preview Section */}
-      <Card className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Board Page Preview</h3>
-        <div className="max-w-lg">
-          <DexCard
-            broker={{
-              id: dexData.id,
-              brokerId: dexData.brokerId,
-              brokerName: dexData.brokerName,
-              dexUrl:
-                websiteUrl ||
-                (dexData.customDomain
-                  ? `https://${dexData.customDomain}`
-                  : dexData.repoUrl
-                    ? `https://dex.orderly.network/${dexData.repoUrl.split("/").pop()}/`
-                    : null),
-              totalVolume: 1250000,
-              totalPnl: 85000,
-              description,
-              banner: banner ? URL.createObjectURL(banner) : undefined,
-              logo: logo ? URL.createObjectURL(logo) : undefined,
-              tokenAddress,
-              tokenChain,
-              tokenSymbol: tokenValidation?.isValid
-                ? tokenValidation.tokenInfo?.attributes.symbol
-                : undefined,
-              tokenName: tokenValidation?.isValid
-                ? tokenValidation.tokenInfo?.attributes.name
-                : undefined,
-              tokenPrice: tokenValidation?.isValid
-                ? parseFloat(
-                    tokenValidation.tokenInfo?.attributes.price_usd || "0"
-                  )
-                : undefined,
-              tokenMarketCap: tokenValidation?.isValid
-                ? parseFloat(
-                    tokenValidation.tokenInfo?.attributes.market_cap_usd || "0"
-                  )
-                : undefined,
-              tokenImageUrl: tokenValidation?.isValid
-                ? tokenValidation.tokenInfo?.attributes.image_url
-                : undefined,
-              telegramLink,
-              discordLink,
-              xLink,
-              websiteUrl,
-            }}
-            timePeriod="weekly"
+          <h2 className="text-lg font-semibold mb-2">Board Visibility</h2>
+          <BoardVisibilitySection
+            dexData={dexData}
+            token={token || ""}
+            onUpdate={refreshDexData}
           />
         </div>
-        <p className="text-xs text-gray-400 mt-3">
-          This is how your DEX will appear on the board page.
-        </p>
+
+        {(dexData.showOnBoard ?? true) ? (
+          <>
+            <div className="mb-6 pt-6 border-t border-gray-600">
+              <h2 className="text-lg font-semibold mb-2">Board Page Display</h2>
+              <p className="text-gray-400 text-sm mb-4">
+                This information will be displayed on the board page to showcase
+                your DEX alongside others.
+              </p>
+
+              <div className="bg-warning/10 border border-warning/20 rounded-lg p-4">
+                <div className="flex items-start gap-3">
+                  <div className="bg-warning/20 p-1.5 rounded-full flex-shrink-0">
+                    <div className="i-mdi:information text-warning w-4 h-4"></div>
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-medium text-warning mb-1">
+                      Graduation Required
+                    </h3>
+                    <p className="text-xs text-gray-300">
+                      Your DEX card will only appear on the board page after you
+                      have graduated your DEX. Complete the graduation process
+                      to start earning fees and make your DEX visible on the
+                      board.
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <Form
+              onSubmit={handleSubmit}
+              className="space-y-6"
+              submitText="Save DEX Card"
+              isLoading={isSaving}
+              loadingText="Saving..."
+              disabled={isSaving}
+            >
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium mb-2">
+                  Description <span className="text-gray-400">(optional)</span>
+                </label>
+                <textarea
+                  value={description}
+                  onChange={e => setDescription(e.target.value)}
+                  placeholder="Brief description of your DEX for the board page"
+                  className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent resize-none"
+                  rows={3}
+                  maxLength={150}
+                />
+                <div className="flex justify-between items-center mt-1">
+                  <p className="text-xs text-gray-400">
+                    {descriptionValidator(description) ||
+                      "Brief description for social media"}
+                  </p>
+                  <span className="text-xs text-gray-500">
+                    {description.length}/150
+                  </span>
+                </div>
+              </div>
+
+              {/* Banner Image */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">
+                    Banner Image{" "}
+                    <span className="text-gray-400">(optional)</span>
+                  </label>
+                  {dexData?.primaryLogo && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (dexData?.primaryLogo) {
+                          base64ToBlob(dexData.primaryLogo).then(blob => {
+                            handleImageChange("banner")(blob);
+                          });
+                        }
+                      }}
+                    >
+                      Use Primary Logo
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mb-3">
+                  Large image displayed on the board page. Recommended:
+                  1200x630px
+                </p>
+                <ImagePaste
+                  id="banner"
+                  label=""
+                  value={banner || undefined}
+                  onChange={handleImageChange("banner")}
+                  imageType="banner"
+                  helpText="Large banner image for the board page display"
+                />
+              </div>
+
+              {/* Logo Image */}
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="block text-sm font-medium">
+                    Logo <span className="text-gray-400">(optional)</span>
+                  </label>
+                  {dexData?.secondaryLogo && (
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => {
+                        if (dexData?.secondaryLogo) {
+                          base64ToBlob(dexData.secondaryLogo).then(blob => {
+                            handleImageChange("logo")(blob);
+                          });
+                        }
+                      }}
+                    >
+                      Use Secondary Logo
+                    </Button>
+                  )}
+                </div>
+                <p className="text-xs text-gray-400 mb-3">
+                  Small logo for the board page. Recommended: 400x400px
+                </p>
+                <ImagePaste
+                  id="logo"
+                  label=""
+                  value={logo || undefined}
+                  onChange={handleImageChange("logo")}
+                  imageType="logo"
+                  helpText="Small logo for the board page display"
+                />
+              </div>
+
+              {/* Token Information */}
+              <div className="border-t border-gray-600 pt-6">
+                <h3 className="text-md font-semibold mb-4">
+                  Token Information
+                </h3>
+                <p className="text-xs text-gray-400 mb-4">
+                  Optional: Add your token details for enhanced board page
+                  display
+                </p>
+
+                {/* Token Address */}
+                <div className="mb-4">
+                  <label className="block text-sm font-medium mb-2">
+                    Token Address{" "}
+                    <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={tokenAddress}
+                    onChange={handleTokenAddressChange}
+                    onBlur={handleTokenAddressBlur}
+                    placeholder="Enter your token contract address"
+                    className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    maxLength={100}
+                  />
+                  <p className="text-xs text-gray-400 mt-1">
+                    {tokenAddressValidator(tokenAddress) ||
+                      "Your token's contract address"}
+                  </p>
+
+                  {/* Token Validation Status */}
+                  {isValidatingToken && (
+                    <div className="mt-2 flex items-center gap-2 text-sm text-gray-400">
+                      <div className="i-mdi:loading h-4 w-4 animate-spin"></div>
+                      Validating token...
+                    </div>
+                  )}
+
+                  {tokenValidation && !isValidatingToken && (
+                    <div className="mt-2">
+                      {tokenValidation.isValid ? (
+                        <div className="bg-green-900/20 border border-green-500/30 rounded-lg p-3">
+                          <div className="flex items-center gap-3">
+                            {tokenValidation.tokenInfo?.attributes
+                              ?.image_url && (
+                              <img
+                                src={
+                                  tokenValidation.tokenInfo.attributes.image_url
+                                }
+                                alt={tokenValidation.tokenInfo.attributes.name}
+                                className="w-8 h-8 rounded-full"
+                              />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className="font-semibold text-green-400">
+                                  {tokenValidation.tokenInfo?.attributes?.name}
+                                </span>
+                                <span className="text-gray-400">
+                                  (
+                                  {
+                                    tokenValidation.tokenInfo?.attributes
+                                      ?.symbol
+                                  }
+                                  )
+                                </span>
+                              </div>
+                              <div className="text-xs text-gray-400 mt-1">
+                                Price: $
+                                {new Intl.NumberFormat("en-US", {
+                                  maximumSignificantDigits: 4,
+                                }).format(
+                                  Number(
+                                    tokenValidation.tokenInfo?.attributes
+                                      ?.price_usd || "0"
+                                  )
+                                )}
+                                {tokenValidation.tokenInfo?.attributes
+                                  ?.market_cap_usd && (
+                                  <span className="ml-2">
+                                    • Market Cap: $
+                                    {new Intl.NumberFormat("en-US", {
+                                      notation: "compact",
+                                      maximumSignificantDigits: 4,
+                                    }).format(
+                                      Number(
+                                        tokenValidation.tokenInfo?.attributes
+                                          ?.market_cap_usd || "0"
+                                      )
+                                    )}
+                                  </span>
+                                )}
+                              </div>
+                              {tokenValidation.tokenInfo?.relationships
+                                ?.top_pools?.data?.[0] &&
+                                (() => {
+                                  const poolId =
+                                    tokenValidation.tokenInfo?.relationships
+                                      ?.top_pools?.data?.[0]?.id;
+                                  if (!poolId) return null;
+                                  const [network, actualPoolId] =
+                                    poolId.split("_");
+                                  return (
+                                    <a
+                                      href={`https://www.geckoterminal.com/${network}/pools/${actualPoolId}`}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs text-primary hover:text-primary-light inline-flex items-center gap-1 mt-1"
+                                    >
+                                      View on GeckoTerminal
+                                      <div className="i-mdi:open-in-new h-3 w-3"></div>
+                                    </a>
+                                  );
+                                })()}
+                            </div>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="bg-red-900/20 border border-red-500/30 rounded-lg p-3">
+                          <div className="flex items-center gap-2 text-red-400">
+                            <div className="i-mdi:alert-circle h-4 w-4"></div>
+                            <span className="text-sm">
+                              {tokenValidation.error}
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                {/* Token Chain */}
+                <div>
+                  <label className="block text-sm font-medium mb-2">
+                    Token Chain{" "}
+                    <span className="text-gray-400">(optional)</span>
+                  </label>
+                  <div className="relative" ref={dropdownRef}>
+                    <FuzzySearchInput
+                      placeholder="Search blockchain networks..."
+                      value={networkSearchQuery}
+                      onSearch={handleNetworkSearch}
+                      className="mb-0"
+                      disabled={isLoadingNetworks}
+                      debounceTime={100}
+                    />
+                    {isLoadingNetworks && (
+                      <p className="text-xs text-gray-400 mt-1">
+                        Loading networks...
+                      </p>
+                    )}
+                    {!isLoadingNetworks &&
+                      isDropdownOpen &&
+                      filteredNetworks.length > 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-background-dark border border-gray-600 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                          {filteredNetworks.map(network => (
+                            <button
+                              key={network.id}
+                              type="button"
+                              onClick={() => selectNetwork(network)}
+                              className="w-full px-3 py-2 text-left hover:bg-gray-700 focus:bg-gray-700 focus:outline-none flex items-center justify-between"
+                            >
+                              <span>{network.name}</span>
+                              <span className="text-xs text-gray-400">
+                                {network.id}
+                              </span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    {!isLoadingNetworks &&
+                      isDropdownOpen &&
+                      networkSearchQuery &&
+                      filteredNetworks.length === 0 && (
+                        <div className="absolute z-10 w-full mt-1 bg-background-dark border border-gray-600 rounded-lg shadow-lg p-3">
+                          <p className="text-sm text-gray-400">
+                            No networks found
+                          </p>
+                        </div>
+                      )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Social Media Links */}
+              <div className="border-t border-gray-600 pt-6">
+                <h3 className="text-md font-semibold mb-4">
+                  Social Media Links
+                </h3>
+                <p className="text-xs text-gray-400 mb-4">
+                  Optional: Add your social media links for enhanced board page
+                  display
+                </p>
+
+                <div className="space-y-4">
+                  {/* Telegram */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Telegram <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={telegramLink}
+                      onChange={e => setTelegramLink(e.target.value)}
+                      placeholder="https://t.me/your-group"
+                      className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* Discord */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Discord <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={discordLink}
+                      onChange={e => setDiscordLink(e.target.value)}
+                      placeholder="https://discord.gg/your-server"
+                      className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+
+                  {/* X (Twitter) */}
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      X (Twitter){" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={xLink}
+                      onChange={e => setXLink(e.target.value)}
+                      placeholder="https://twitter.com/your-account"
+                      className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Website URL */}
+              <div className="border-t border-gray-600 pt-6">
+                <h3 className="text-md font-semibold mb-4">Website URL</h3>
+                <p className="text-xs text-gray-400 mb-4">
+                  Optional: Add your DEX website URL for the board page
+                </p>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium mb-2">
+                      Website URL{" "}
+                      <span className="text-gray-400">(optional)</span>
+                    </label>
+                    <input
+                      type="url"
+                      value={websiteUrl}
+                      onChange={e => setWebsiteUrl(e.target.value)}
+                      placeholder="https://your-dex.com"
+                      className="w-full px-3 py-2 bg-background-dark border border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                    />
+                    <p className="text-xs text-gray-400 mt-1">
+                      This will be used as the main website link on your DEX
+                      card
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </Form>
+
+            {/* Preview Section */}
+            <div className="mt-8 pt-6 border-t border-gray-600">
+              <h3 className="text-lg font-semibold mb-4">Board Page Preview</h3>
+              <div className="max-w-lg">
+                <DexCard
+                  broker={{
+                    id: dexData.id,
+                    brokerId: dexData.brokerId,
+                    brokerName: dexData.brokerName,
+                    dexUrl:
+                      websiteUrl ||
+                      (dexData.customDomain
+                        ? `https://${dexData.customDomain}`
+                        : dexData.repoUrl
+                          ? `https://dex.orderly.network/${dexData.repoUrl.split("/").pop()}/`
+                          : null),
+                    totalVolume: 1250000,
+                    totalPnl: 85000,
+                    description,
+                    banner: banner ? URL.createObjectURL(banner) : undefined,
+                    logo: logo ? URL.createObjectURL(logo) : undefined,
+                    tokenAddress,
+                    tokenChain,
+                    tokenSymbol: tokenValidation?.isValid
+                      ? tokenValidation.tokenInfo?.attributes.symbol
+                      : undefined,
+                    tokenName: tokenValidation?.isValid
+                      ? tokenValidation.tokenInfo?.attributes.name
+                      : undefined,
+                    tokenPrice: tokenValidation?.isValid
+                      ? Number(
+                          tokenValidation.tokenInfo?.attributes.price_usd || "0"
+                        )
+                      : undefined,
+                    tokenMarketCap: tokenValidation?.isValid
+                      ? Number(
+                          tokenValidation.tokenInfo?.attributes
+                            .market_cap_usd || "0"
+                        )
+                      : undefined,
+                    tokenImageUrl: tokenValidation?.isValid
+                      ? tokenValidation.tokenInfo?.attributes.image_url
+                      : undefined,
+                    telegramLink,
+                    discordLink,
+                    xLink,
+                    websiteUrl,
+                  }}
+                  timePeriod="weekly"
+                />
+              </div>
+              <p className="text-xs text-gray-400 mt-3">
+                This is how your DEX will appear on the board page.
+              </p>
+            </div>
+          </>
+        ) : (
+          <div className="pt-6 border-t border-gray-600">
+            <div className="bg-background-light/30 border border-light/20 rounded-lg p-6 text-center">
+              <div className="i-heroicons:eye-slash w-12 h-12 mx-auto mb-3 text-gray-500"></div>
+              <h3 className="text-lg font-semibold mb-2">
+                DEX Hidden from Board
+              </h3>
+              <p className="text-sm text-gray-400">
+                Your DEX is currently hidden from the public board. Enable board
+                visibility above to configure how your DEX appears to others.
+              </p>
+            </div>
+          </div>
+        )}
       </Card>
     </div>
   );

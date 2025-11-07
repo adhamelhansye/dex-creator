@@ -106,7 +106,7 @@ export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
   }
 
   return (
-    <Card className="my-6 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30">
+    <Card className="my-6 bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-blue-500/30 slide-fade-in">
       <div className="flex flex-col md:flex-row items-center justify-between gap-4">
         <div className="flex items-center gap-3">
           <div className="flex-shrink-0 bg-blue-500/20 p-2 rounded-full">

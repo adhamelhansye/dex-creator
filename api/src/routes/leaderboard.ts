@@ -136,6 +136,7 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
         brokerId: {
           not: "demo",
         },
+        showOnBoard: true,
       },
       select: {
         id: true,
