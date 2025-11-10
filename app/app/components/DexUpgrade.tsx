@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "react-toastify";
-import { get, putFormData, createDexFormData } from "../utils/apiClient";
+import { get, post } from "../utils/apiClient";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import { DexData } from "../types/dex";
@@ -82,11 +82,11 @@ export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
     setIsUpgrading(true);
 
     try {
-      const dexDataToSend = {};
-
-      const formData = createDexFormData(dexDataToSend, {});
-
-      await putFormData<DexData>(`api/dex/${dexData.id}`, formData, token);
+      await post<{ message: string; success: boolean }>(
+        `api/dex/${dexData.id}/upgrade`,
+        {},
+        token
+      );
 
       toast.success(
         "DEX upgraded successfully! New features are being deployed."

@@ -27,6 +27,7 @@ import {
   updateDexConfig,
   checkForTemplateUpdates,
   invalidateTemplateUpdatesCache,
+  triggerRedeployment,
 } from "../lib/github";
 import {
   deploymentRateLimiter,
@@ -539,6 +540,75 @@ dexRoutes.get("/:id/upgrade-status", async c => {
     return c.json(
       {
         message: "Error checking upgrade status",
+        error: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 }
+    );
+  }
+});
+
+// Upgrade DEX (trigger redeployment without changing config)
+dexRoutes.post("/:id/upgrade", deploymentRateLimit, async c => {
+  const id = c.req.param("id");
+  const userId = c.get("userId");
+
+  try {
+    const dex = await getDexById(id);
+
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, { status: 404 });
+    }
+
+    if (dex.userId !== userId) {
+      return c.json(
+        { message: "Unauthorized to access this DEX" },
+        { status: 403 }
+      );
+    }
+
+    if (!dex.repoUrl) {
+      return c.json(
+        { message: "This DEX does not have a repository" },
+        { status: 400 }
+      );
+    }
+
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, { status: 400 });
+    }
+
+    const prisma = await getPrisma();
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { address: true },
+    });
+
+    await triggerRedeployment(
+      repoInfo.owner,
+      repoInfo.repo,
+      convertDexToDexConfig(dex),
+      {
+        primaryLogo: dex.primaryLogo,
+        secondaryLogo: dex.secondaryLogo,
+        favicon: dex.favicon,
+        pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
+      },
+      dex.customDomain,
+      user?.address ?? null
+    );
+
+    invalidateTemplateUpdatesCache(repoInfo.owner, repoInfo.repo);
+
+    return c.json({
+      message: "DEX upgrade triggered successfully",
+      success: true,
+    });
+  } catch (error) {
+    console.error("Error upgrading DEX:", error);
+    return c.json(
+      {
+        message: "Error upgrading DEX",
         error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 }
