@@ -2,11 +2,12 @@ import { useState, FormEvent } from "react";
 import { toast } from "react-toastify";
 import { useModal } from "../context/ModalContext";
 import { postFormData, createDexFormData } from "../utils/apiClient";
+import { buildDexDataToSend } from "../utils/dexDataBuilder";
 import { Button } from "./Button";
 import Form from "./Form";
 import DexSectionRenderer, { DEX_SECTIONS } from "./DexSectionRenderer";
 import { useDexForm } from "../hooks/useDexForm";
-import { DexData, ThemeTabType, defaultTheme } from "../types/dex";
+import { DexData, ThemeTabType } from "../types/dex";
 
 const TOTAL_STEPS = DEX_SECTIONS.length;
 
@@ -34,7 +35,6 @@ export default function DexSetupAssistant({
 
   const handleApplyGeneratedTheme = (modifiedCss: string) => {
     form.setCurrentTheme(modifiedCss);
-    form.setThemeApplied(true);
   };
 
   const handleCancelGeneratedTheme = () => {};
@@ -212,40 +212,7 @@ export default function DexSetupAssistant({
         pnlPosters: form.pnlPosters,
       };
 
-      const dexDataToSend = {
-        brokerName: formValues.brokerName.trim(),
-        telegramLink: formValues.telegramLink.trim(),
-        discordLink: formValues.discordLink.trim(),
-        xLink: formValues.xLink.trim(),
-        walletConnectProjectId: formValues.walletConnectProjectId.trim(),
-        privyAppId: formValues.privyAppId.trim(),
-        privyTermsOfUse: formValues.privyTermsOfUse.trim(),
-        privyLoginMethods: formValues.privyLoginMethods.join(","),
-        themeCSS: formValues.themeApplied ? formValues.currentTheme : null,
-        enabledMenus: formValues.enabledMenus,
-        customMenus: formValues.customMenus,
-        enableAbstractWallet: formValues.enableAbstractWallet,
-        enableServiceDisclaimerDialog: formValues.enableServiceDisclaimerDialog,
-        enableCampaigns: formValues.enableCampaigns,
-        ...(formValues.swapFeeBps !== null && {
-          swapFeeBps: formValues.swapFeeBps,
-        }),
-        chainIds: formValues.chainIds,
-        defaultChain: formValues.defaultChain,
-        disableMainnet: formValues.disableMainnet,
-        disableTestnet: formValues.disableTestnet,
-        disableEvmWallets: formValues.disableEvmWallets,
-        disableSolanaWallets: formValues.disableSolanaWallets,
-        tradingViewColorConfig: formValues.tradingViewColorConfig,
-        availableLanguages: formValues.availableLanguages,
-        seoSiteName: formValues.seoSiteName.trim(),
-        seoSiteDescription: formValues.seoSiteDescription.trim(),
-        seoSiteLanguage: formValues.seoSiteLanguage.trim(),
-        seoSiteLocale: formValues.seoSiteLocale.trim(),
-        seoTwitterHandle: formValues.seoTwitterHandle.trim(),
-        seoThemeColor: formValues.seoThemeColor.trim(),
-        seoKeywords: formValues.seoKeywords.trim(),
-      };
+      const dexDataToSend = buildDexDataToSend(formValues);
 
       const formData = createDexFormData(dexDataToSend, imageBlobs);
 
@@ -294,41 +261,9 @@ export default function DexSetupAssistant({
         pnlPosters: form.pnlPosters,
       };
 
-      const dexData_ToSend = {
-        brokerName: formValues.brokerName.trim(),
-        telegramLink: formValues.telegramLink.trim(),
-        discordLink: formValues.discordLink.trim(),
-        xLink: formValues.xLink.trim(),
-        walletConnectProjectId: formValues.walletConnectProjectId.trim(),
-        privyAppId: formValues.privyAppId.trim(),
-        privyTermsOfUse: formValues.privyTermsOfUse.trim(),
-        privyLoginMethods: formValues.privyLoginMethods.join(","),
-        themeCSS: formValues.themeApplied
-          ? formValues.currentTheme
-          : defaultTheme,
-        enabledMenus: formValues.enabledMenus,
-        customMenus: formValues.customMenus,
-        enableAbstractWallet: formValues.enableAbstractWallet,
-        enableServiceDisclaimerDialog: formValues.enableServiceDisclaimerDialog,
-        enableCampaigns: formValues.enableCampaigns,
-        chainIds: formValues.chainIds,
-        defaultChain: formValues.defaultChain,
-        disableMainnet: formValues.disableMainnet,
-        disableTestnet: formValues.disableTestnet,
-        disableEvmWallets: formValues.disableEvmWallets,
-        disableSolanaWallets: formValues.disableSolanaWallets,
-        tradingViewColorConfig: formValues.tradingViewColorConfig,
-        availableLanguages: formValues.availableLanguages,
-        seoSiteName: formValues.seoSiteName.trim(),
-        seoSiteDescription: formValues.seoSiteDescription.trim(),
-        seoSiteLanguage: formValues.seoSiteLanguage.trim(),
-        seoSiteLocale: formValues.seoSiteLocale.trim(),
-        seoTwitterHandle: formValues.seoTwitterHandle.trim(),
-        seoThemeColor: formValues.seoThemeColor.trim(),
-        seoKeywords: formValues.seoKeywords.trim(),
-      };
+      const dexDataToSend = buildDexDataToSend(formValues);
 
-      const formData = createDexFormData(dexData_ToSend, imageBlobs);
+      const formData = createDexFormData(dexDataToSend, imageBlobs);
       const savedData = await postFormData<DexData>(
         "api/dex",
         formData,

@@ -46,7 +46,6 @@ export interface ThemeCustomizationProps {
   brokerName: string;
   primaryLogo: Blob | null;
   secondaryLogo: Blob | null;
-  themeApplied: boolean;
   tradingViewColorConfig: string | null;
   toggleThemeEditor: () => void;
   handleResetTheme: () => void;
@@ -75,7 +74,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   brokerName,
   primaryLogo,
   secondaryLogo,
-  themeApplied,
   tradingViewColorConfig,
   toggleThemeEditor,
   handleResetTheme,
@@ -318,7 +316,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
             initialSymbol="PERP_BTC_USDC"
             primaryLogo={primaryLogo}
             secondaryLogo={secondaryLogo}
-            themeCSS={themeApplied ? currentTheme : undefined}
+            themeCSS={currentTheme ?? undefined}
             buttonText="Preview DEX Design"
           />
         </div>
