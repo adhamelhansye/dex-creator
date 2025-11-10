@@ -94,7 +94,6 @@ export default function DexRoute() {
 
       if (!dexData.themeCSS) {
         form.setCurrentTheme(defaultTheme);
-        form.setThemeApplied(true);
       }
 
       form.setActiveThemeTab("colors");
@@ -109,7 +108,6 @@ export default function DexRoute() {
     form.populateFromDexData,
     form.setViewCssCode,
     form.setCurrentTheme,
-    form.setThemeApplied,
     form.setActiveThemeTab,
   ]);
 
@@ -122,9 +120,8 @@ export default function DexRoute() {
     ) {
       initializedThemeForDexId.current = dexData.id;
       form.setCurrentTheme(defaultTheme);
-      form.setThemeApplied(true);
     }
-  }, [form.currentTheme, form.setCurrentTheme, form.setThemeApplied, dexData]);
+  }, [form.currentTheme, form.setCurrentTheme, dexData]);
 
   useEffect(() => {
     if (dexData && loadedImagesForDexId.current !== dexData.id) {

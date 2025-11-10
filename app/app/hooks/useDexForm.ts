@@ -43,7 +43,6 @@ export interface DexSectionProps {
   activeThemeTab: "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
   themePrompt: string;
   isGeneratingTheme: boolean;
-  themeApplied: boolean;
   tradingViewColorConfig: string | null;
   toggleThemeEditor: () => void;
   handleResetTheme: () => void;
@@ -126,7 +125,6 @@ export interface DexFormData {
   pnlPosters: (Blob | null)[];
   themePrompt: string;
   currentTheme: string | null;
-  themeApplied: boolean;
   chainIds: number[];
   defaultChain: number | undefined;
   disableMainnet: boolean;
@@ -174,7 +172,6 @@ export interface UseDexFormReturn extends DexFormData {
   setPnlPosters: (value: (Blob | null)[]) => void;
   setThemePrompt: (value: string) => void;
   setCurrentTheme: (value: string | null) => void;
-  setThemeApplied: (value: boolean) => void;
   setChainIds: (value: number[]) => void;
   setDefaultChain: (value: number | undefined) => void;
   setDisableMainnet: (value: boolean) => void;
@@ -274,7 +271,6 @@ const initialFormState: DexFormData = {
   pnlPosters: [],
   themePrompt: "",
   currentTheme: null,
-  themeApplied: false,
   chainIds: [],
   defaultChain: undefined,
   disableMainnet: false,
@@ -349,9 +345,6 @@ export function useDexForm(): UseDexFormReturn {
   const [themePrompt, setThemePrompt] = useState(initialFormState.themePrompt);
   const [currentTheme, setCurrentTheme] = useState(
     initialFormState.currentTheme
-  );
-  const [themeApplied, setThemeApplied] = useState(
-    initialFormState.themeApplied
   );
   const [chainIds, setChainIds] = useState(initialFormState.chainIds);
   const [defaultChain, setDefaultChain] = useState(
@@ -542,7 +535,6 @@ export function useDexForm(): UseDexFormReturn {
 
       if (dexData.themeCSS !== undefined) {
         setCurrentTheme(dexData.themeCSS);
-        setThemeApplied(!!dexData.themeCSS);
       }
     },
     []
@@ -611,7 +603,6 @@ export function useDexForm(): UseDexFormReturn {
         swapFeeBps,
         themePrompt,
         currentTheme,
-        themeApplied,
         chainIds,
         defaultChain,
         disableMainnet,
@@ -657,7 +648,6 @@ export function useDexForm(): UseDexFormReturn {
     swapFeeBps,
     themePrompt,
     currentTheme,
-    themeApplied,
     chainIds,
     defaultChain,
     disableMainnet,
@@ -699,7 +689,6 @@ export function useDexForm(): UseDexFormReturn {
     setPnlPosters(initialFormState.pnlPosters);
     setThemePrompt(initialFormState.themePrompt);
     setCurrentTheme(initialFormState.currentTheme);
-    setThemeApplied(initialFormState.themeApplied);
     setChainIds(initialFormState.chainIds);
     setDefaultChain(initialFormState.defaultChain);
     setDisableMainnet(initialFormState.disableMainnet);
@@ -773,7 +762,6 @@ export function useDexForm(): UseDexFormReturn {
   const resetTheme = useCallback(
     (originalThemeCSS: string | null | undefined) => {
       setCurrentTheme(originalThemeCSS ?? null);
-      setThemeApplied(!!originalThemeCSS);
       setTradingViewColorConfig(null);
       setThemePrompt("");
       toast.success("Theme reset");
@@ -783,7 +771,6 @@ export function useDexForm(): UseDexFormReturn {
 
   const resetThemeToDefault = useCallback(() => {
     setCurrentTheme(defaultTheme);
-    setThemeApplied(true);
     setTradingViewColorConfig(null);
     setThemePrompt("");
     toast.success("Theme reset to default");
@@ -795,13 +782,11 @@ export function useDexForm(): UseDexFormReturn {
 
   const handleThemeEditorChange = useCallback((value: string) => {
     setCurrentTheme(value);
-    setThemeApplied(true);
   }, []);
 
   const handleUpdateCssValue = useCallback(
     (variableName: string, newValue: string) => {
       updateCssValue(variableName, newValue, setCurrentTheme);
-      setThemeApplied(true);
     },
     [updateCssValue]
   );
@@ -809,7 +794,6 @@ export function useDexForm(): UseDexFormReturn {
   const handleUpdateCssColor = useCallback(
     (variableName: string, newColorHex: string) => {
       updateCssColor(variableName, newColorHex, setCurrentTheme);
-      setThemeApplied(true);
     },
     [updateCssColor]
   );
@@ -863,7 +847,6 @@ export function useDexForm(): UseDexFormReturn {
           setViewCssCode(false);
           if (!response.themeCSS) {
             setCurrentTheme(defaultTheme);
-            setThemeApplied(true);
           }
           setActiveThemeTab("colors");
 
@@ -910,7 +893,6 @@ export function useDexForm(): UseDexFormReturn {
       activeThemeTab,
       themePrompt,
       isGeneratingTheme,
-      themeApplied,
       tradingViewColorConfig,
       toggleThemeEditor,
       handleResetTheme: additionalProps.handleResetTheme,
@@ -978,7 +960,6 @@ export function useDexForm(): UseDexFormReturn {
       handleImageChange,
       currentTheme,
       themePrompt,
-      themeApplied,
       tradingViewColorConfig,
       setTradingViewColorConfig,
       pnlPosters,
@@ -1061,7 +1042,6 @@ export function useDexForm(): UseDexFormReturn {
     pnlPosters,
     themePrompt,
     currentTheme,
-    themeApplied,
     chainIds,
     defaultChain,
     disableMainnet,
@@ -1098,7 +1078,6 @@ export function useDexForm(): UseDexFormReturn {
     setPnlPosters,
     setThemePrompt,
     setCurrentTheme,
-    setThemeApplied,
     setChainIds,
     setDefaultChain,
     setDisableMainnet,

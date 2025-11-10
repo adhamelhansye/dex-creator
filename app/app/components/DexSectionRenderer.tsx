@@ -80,7 +80,6 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       brokerName: props.brokerName,
       primaryLogo: props.primaryLogo,
       secondaryLogo: props.secondaryLogo,
-      themeApplied: props.themeApplied,
       tradingViewColorConfig: props.tradingViewColorConfig,
       toggleThemeEditor: props.toggleThemeEditor,
       handleResetTheme: props.handleResetTheme,

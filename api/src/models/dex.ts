@@ -15,6 +15,11 @@ import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
 import { validateCSS } from "../lib/cssValidator.js";
 
+function decodeBase64(str: string): string {
+  const decoded = Buffer.from(str, "base64").toString("utf-8");
+  return decodeURIComponent(decoded);
+}
+
 export function convertDexToDexConfig(dex: Dex): DexConfig {
   return {
     brokerId: dex.brokerId,
@@ -57,6 +62,10 @@ function convertValidatedDataToDexConfig(
   brokerId: string,
   brokerName: string
 ): DexConfig {
+  const decodedAnalyticsScript = validatedData.analyticsScript
+    ? decodeBase64(validatedData.analyticsScript)
+    : null;
+
   return {
     brokerId,
     brokerName,
@@ -89,7 +98,7 @@ function convertValidatedDataToDexConfig(
     seoTwitterHandle: validatedData.seoTwitterHandle ?? null,
     seoThemeColor: validatedData.seoThemeColor ?? null,
     seoKeywords: validatedData.seoKeywords ?? null,
-    analyticsScript: validatedData.analyticsScript ?? null,
+    analyticsScript: decodedAnalyticsScript,
   };
 }
 
@@ -576,7 +585,9 @@ export async function createDex(
         seoTwitterHandle: validatedData.seoTwitterHandle,
         seoThemeColor: validatedData.seoThemeColor,
         seoKeywords: validatedData.seoKeywords,
-        analyticsScript: validatedData.analyticsScript,
+        analyticsScript: validatedData.analyticsScript
+          ? decodeBase64(validatedData.analyticsScript)
+          : undefined,
         swapFeeBps: validatedData.swapFeeBps,
         repoUrl: repoUrl,
         user: {
@@ -738,8 +749,11 @@ export async function updateDex(
     updateData.seoThemeColor = validatedData.seoThemeColor;
   if ("seoKeywords" in validatedData)
     updateData.seoKeywords = validatedData.seoKeywords;
-  if ("analyticsScript" in validatedData)
-    updateData.analyticsScript = validatedData.analyticsScript;
+  if ("analyticsScript" in validatedData) {
+    updateData.analyticsScript = validatedData.analyticsScript
+      ? decodeBase64(validatedData.analyticsScript)
+      : null;
+  }
 
   try {
     const prismaClient = await getPrisma();
