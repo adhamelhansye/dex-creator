@@ -268,7 +268,7 @@ class LeaderboardService {
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = endDate.toISOString().split("T")[0];
 
-    const url = `${getOrderlyApiBaseUrl()}/v1/broker/leaderboard/daily?start_date=${startDateStr}&end_date=${endDateStr}&page=1&size=30&broker_id=${brokerId}&sort=descending_perp_volume&aggregateBy=date`;
+    const url = `${getOrderlyApiBaseUrl()}/v1/broker/leaderboard/daily?start_date=${startDateStr}&end_date=${endDateStr}&broker_id=${brokerId}&sort=descending_perp_volume&aggregateBy=date`;
 
     try {
       const response = await fetch(url);
