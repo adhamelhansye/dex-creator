@@ -1,6 +1,7 @@
 // Removed unused useState import
 import { Link, useLocation } from "@remix-run/react";
 import { Icon } from "@iconify/react";
+import { CampaignIcon } from "../icons/CampaignIcon";
 
 interface MobileNavigationProps {
   isOpen: boolean;
@@ -63,6 +64,22 @@ export default function MobileNavigation({
         <div className="px-6 py-4 overflow-y-auto flex-1">
           <h2 className="text-xl font-bold gradient-text mb-6">Menu</h2>
           <nav className="flex flex-col gap-4">
+            <Link
+              to="https://app.orderly.network/campaigns"
+              target="_blank"
+              className={`inline-flex items-center gap-1
+                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
+                ${
+                  isActive("https://app.orderly.network/campaigns")
+                    ? "bg-light/10 text-white"
+                    : "text-gray-300 hover:bg-light/5 hover:text-white"
+                }
+              `}
+              onClick={closeMenu}
+            >
+              UCC
+              <CampaignIcon />
+            </Link>
             <Link
               to="/"
               className={`
