@@ -22,6 +22,24 @@ export default function Pagination({
   const totalPages = Math.ceil(totalItems / pageSize);
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems);
+  const maxVisiblePages = 5;
+  const halfRange = Math.floor(maxVisiblePages / 2);
+  let startPage = Math.max(1, currentPage - halfRange);
+  let endPage = startPage + maxVisiblePages - 1;
+
+  if (endPage > totalPages) {
+    endPage = totalPages;
+    startPage = Math.max(1, endPage - maxVisiblePages + 1);
+  }
+
+  const pageNumbers = Array.from(
+    { length: endPage - startPage + 1 },
+    (_, index) => startPage + index
+  );
+  const showFirstPage = startPage > 1;
+  const showLastPage = endPage < totalPages;
+  const showLeadingEllipsis = startPage > 2;
+  const showTrailingEllipsis = endPage < totalPages - 1;
 
   if (totalItems === 0) {
     return null;
@@ -58,46 +76,56 @@ export default function Pagination({
         </div>
 
         {/* Pagination Navigation */}
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage <= 1}
-            className="px-3 py-1 rounded border border-light/20 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-light/10 disabled:hover:bg-transparent"
-          >
-            Previous
-          </button>
+        <div className="flex items-center gap-1">
+          {showFirstPage && (
+            <>
+              <button
+                onClick={() => onPageChange(1)}
+                className={`px-2 py-1 rounded text-sm min-w-[32px] ${
+                  currentPage === 1
+                    ? "bg-primary-light text-dark"
+                    : "border border-light/20 hover:bg-light/10"
+                }`}
+              >
+                1
+              </button>
+              {showLeadingEllipsis && (
+                <span className="text-sm text-gray-400 px-2">...</span>
+              )}
+            </>
+          )}
 
-          {/* Page Numbers */}
-          <div className="flex items-center gap-1">
-            {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-              const pageNum = i + 1;
-              return (
-                <button
-                  key={pageNum}
-                  onClick={() => onPageChange(pageNum)}
-                  className={`px-2 py-1 rounded text-sm min-w-[32px] ${
-                    currentPage === pageNum
-                      ? "bg-primary-light text-dark"
-                      : "border border-light/20 hover:bg-light/10"
-                  }`}
-                >
-                  {pageNum}
-                </button>
-              );
-            })}
+          {pageNumbers.map(pageNum => (
+            <button
+              key={pageNum}
+              onClick={() => onPageChange(pageNum)}
+              className={`px-2 py-1 rounded text-sm min-w-[32px] ${
+                currentPage === pageNum
+                  ? "bg-primary-light text-dark"
+                  : "border border-light/20 hover:bg-light/10"
+              }`}
+            >
+              {pageNum}
+            </button>
+          ))}
 
-            {totalPages > 5 && (
-              <span className="text-sm text-gray-400 px-2">...</span>
-            )}
-          </div>
-
-          <button
-            onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage >= totalPages}
-            className="px-3 py-1 rounded border border-light/20 text-sm disabled:opacity-50 disabled:cursor-not-allowed hover:bg-light/10 disabled:hover:bg-transparent"
-          >
-            Next
-          </button>
+          {showLastPage && (
+            <>
+              {showTrailingEllipsis && (
+                <span className="text-sm text-gray-400 px-2">...</span>
+              )}
+              <button
+                onClick={() => onPageChange(totalPages)}
+                className={`px-2 py-1 rounded text-sm min-w-[32px] ${
+                  currentPage === totalPages
+                    ? "bg-primary-light text-dark"
+                    : "border border-light/20 hover:bg-light/10"
+                }`}
+              >
+                {totalPages}
+              </button>
+            </>
+          )}
         </div>
       </div>
     </div>
