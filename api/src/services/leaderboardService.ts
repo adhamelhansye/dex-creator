@@ -264,7 +264,7 @@ class LeaderboardService {
   private async fetchBrokerData(brokerId: string) {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 89);
+    startDate.setDate(endDate.getDate() - 29);
 
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = endDate.toISOString().split("T")[0];
