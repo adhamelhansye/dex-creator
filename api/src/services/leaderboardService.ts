@@ -1,5 +1,6 @@
 import { getPrisma } from "../lib/prisma.js";
 import { getOrderlyApiBaseUrl } from "../utils/orderly.js";
+import dayjs from "dayjs";
 
 export interface BrokerStats {
   brokerId: string;
@@ -348,27 +349,33 @@ class LeaderboardService {
     const dailyStats = this.cache.get(brokerId);
     if (!dailyStats || dailyStats.length === 0) return null;
 
-    const endDate = new Date();
-    const startDate = new Date();
+    const now = dayjs();
+    let startDate: dayjs.Dayjs;
 
     switch (period) {
       case "daily":
-        startDate.setDate(endDate.getDate() - 1);
+        startDate = now.subtract(1, "day").startOf("day");
         break;
       case "weekly":
-        startDate.setDate(endDate.getDate() - 7);
+        startDate = now.subtract(7, "day").startOf("day");
         break;
       case "30d":
-        startDate.setDate(endDate.getDate() - 29);
+        startDate = now.subtract(29, "day").startOf("day");
         break;
       case "90d":
-        startDate.setDate(endDate.getDate() - 89);
+        startDate = now.subtract(89, "day").startOf("day");
         break;
     }
 
+    const endDate = now.endOf("day");
+
     const periodStats = dailyStats.filter(stat => {
-      const statDate = new Date(stat.date);
-      return statDate >= startDate && statDate <= endDate;
+      const statDate = dayjs(stat.date).startOf("day");
+      const statTimestamp = statDate.valueOf();
+      return (
+        statTimestamp >= startDate.valueOf() &&
+        statTimestamp <= endDate.valueOf()
+      );
     });
 
     if (periodStats.length === 0) return null;
@@ -410,31 +417,37 @@ class LeaderboardService {
     const dailyStats = this.cache.get(brokerId);
     if (!dailyStats || dailyStats.length === 0) return null;
 
-    const endDate = new Date();
-    const startDate = new Date();
+    const now = dayjs();
+    let startDate: dayjs.Dayjs;
 
     switch (period) {
       case "daily":
-        startDate.setDate(endDate.getDate() - 1);
+        startDate = now.subtract(1, "day").startOf("day");
         break;
       case "weekly":
-        startDate.setDate(endDate.getDate() - 7);
+        startDate = now.subtract(7, "day").startOf("day");
         break;
       case "30d":
-        startDate.setDate(endDate.getDate() - 29);
+        startDate = now.subtract(29, "day").startOf("day");
         break;
       case "90d":
-        startDate.setDate(endDate.getDate() - 89);
+        startDate = now.subtract(89, "day").startOf("day");
         break;
     }
 
+    const endDate = now.endOf("day");
+
     const periodStats = dailyStats.filter(stat => {
-      const statDate = new Date(stat.date);
-      return statDate >= startDate && statDate <= endDate;
+      const statDate = dayjs(stat.date).startOf("day");
+      const statTimestamp = statDate.valueOf();
+      return (
+        statTimestamp >= startDate.valueOf() &&
+        statTimestamp <= endDate.valueOf()
+      );
     });
 
     return periodStats.sort(
-      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+      (a, b) => dayjs(b.date).valueOf() - dayjs(a.date).valueOf()
     );
   }
 
