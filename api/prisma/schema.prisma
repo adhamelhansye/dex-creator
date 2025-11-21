@@ -24,10 +24,10 @@ model User {
   isAdmin   Boolean  @default(false)
 
   // User can have many auth tokens
-  tokens    Token[]
-  
+  tokens Token[]
+
   // User can have only one DEX
-  dex       Dex?
+  dex Dex?
 
   @@index([address])
 }
@@ -39,9 +39,9 @@ model Token {
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
-  
+
   // Relation to User
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([token])
   @@index([userId])
@@ -49,64 +49,67 @@ model Token {
 
 // Dex model for storing DEX configurations
 model Dex {
-  id                   String   @id @default(uuid())
-  brokerId             String   @default("demo") // Set by admin later, defaults to "demo"
-  brokerName           String   @default("Orderly DEX") // Broker name with default value
-  chainIds             Int[]    @default([]) // Array of chain IDs that the DEX should support
-  defaultChain         Int?     // Default chain ID for the DEX
-  primaryLogo          String?  // Base64-encoded primary logo data
-  secondaryLogo        String?  // Base64-encoded secondary logo data
-  favicon              String?  // Base64-encoded favicon data
-  pnlPosters           String[] @default([]) // Array of base64-encoded PnL poster images
-  themeCSS             String?  // Theme CSS content
-  telegramLink         String?
-  discordLink          String?
-  xLink                String?  // Twitter/X link
-  walletConnectProjectId String? // WalletConnect Project ID for the DEX
-  privyAppId           String?  // Privy App ID for wallet connection
-  privyTermsOfUse      String?  // Privy Terms of Use URL
-  enabledMenus         String?  // Comma-separated list of enabled navigation menus
-  customMenus          String?  // Semicolon-separated list of custom menu items (format: "Name,URL;Name2,URL2")
-  repoUrl              String?  // GitHub repository URL after forking
-  customDomain         String?  // Custom domain for GitHub Pages
-  customDomainOverride String?  // Admin-only override for domain display in leaderboard
-  availableLanguages   String[] @default(["en"]) // Array of language codes that the DEX should support
-  enableCampaigns      Boolean  @default(false) // Flag to enable ORDER token campaigns and related features
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
-  enableAbstractWallet Boolean  @default(false) // New flag for Abstract Wallet
-  disableMainnet       Boolean  @default(false) // Flag to disable mainnet chains
-  disableTestnet       Boolean  @default(false) // Flag to disable testnet chains
-  disableEvmWallets    Boolean  @default(false) // Flag to disable EVM wallets
-  disableSolanaWallets Boolean  @default(false) // Flag to disable Solana wallets
-  enableServiceDisclaimerDialog Boolean @default(false) // Flag to enable one-time service disclaimer dialog
-  showOnBoard          Boolean  @default(true) // Flag to show DEX on the public board page
-  tradingViewColorConfig String? // TradingView color configuration JSON
-  seoSiteName          String?  // SEO Site Name
-  seoSiteDescription   String?  // SEO Site Description
-  seoSiteLanguage      String?  // SEO Site Language (e.g., "en")
-  seoSiteLocale        String?  // SEO Site Locale (e.g., "en_US")
-  seoTwitterHandle     String?  // SEO Twitter Handle (e.g., "@orderly_network")
-  seoThemeColor        String?  // SEO Theme Color (e.g., "#1a1b23")
-  seoKeywords          String?  // SEO Keywords
-  privyLoginMethods    String?  // Comma-separated list of Privy login methods (email,passkey,twitter,google)
-  analyticsScript      String?  // Custom analytics script (GA, Plausible, etc.) with script tags
-  isGraduated          Boolean  @default(false) // Whether the DEX has fully graduated
-  graduationTxHash    String?  @unique // Transaction hash used for graduation (prevents reuse)
-  multisigChainId      Int?     // Chain ID where the multisig delegate signer link was established
-  swapFeeBps           Int?     // Swap fee in basis points for WooFi integration (e.g., 100 = 1%)
-  
+  id                            String   @id @default(uuid())
+  brokerId                      String   @default("demo") // Set by admin later, defaults to "demo"
+  brokerName                    String   @default("Orderly DEX") // Broker name with default value
+  chainIds                      Int[]    @default([]) // Array of chain IDs that the DEX should support
+  defaultChain                  Int? // Default chain ID for the DEX
+  primaryLogo                   String? // Base64-encoded primary logo data
+  secondaryLogo                 String? // Base64-encoded secondary logo data
+  favicon                       String? // Base64-encoded favicon data
+  pnlPosters                    String[] @default([]) // Array of base64-encoded PnL poster images
+  themeCSS                      String? // Theme CSS content
+  telegramLink                  String?
+  discordLink                   String?
+  xLink                         String? // Twitter/X link
+  walletConnectProjectId        String? // WalletConnect Project ID for the DEX
+  privyAppId                    String? // Privy App ID for wallet connection
+  privyTermsOfUse               String? // Privy Terms of Use URL
+  enabledMenus                  String? // Comma-separated list of enabled navigation menus
+  customMenus                   String? // Semicolon-separated list of custom menu items (format: "Name,URL;Name2,URL2")
+  repoUrl                       String? // GitHub repository URL after forking
+  customDomain                  String? // Custom domain for GitHub Pages
+  customDomainOverride          String? // Admin-only override for domain display in leaderboard
+  availableLanguages            String[] @default(["en"]) // Array of language codes that the DEX should support
+  enableCampaigns               Boolean  @default(false) // Flag to enable ORDER token campaigns and related features
+  createdAt                     DateTime @default(now())
+  updatedAt                     DateTime @updatedAt
+  enableAbstractWallet          Boolean  @default(false) // New flag for Abstract Wallet
+  disableMainnet                Boolean  @default(false) // Flag to disable mainnet chains
+  disableTestnet                Boolean  @default(false) // Flag to disable testnet chains
+  disableEvmWallets             Boolean  @default(false) // Flag to disable EVM wallets
+  disableSolanaWallets          Boolean  @default(false) // Flag to disable Solana wallets
+  enableServiceDisclaimerDialog Boolean  @default(false) // Flag to enable one-time service disclaimer dialog
+  showOnBoard                   Boolean  @default(true) // Flag to show DEX on the public board page
+  tradingViewColorConfig        String? // TradingView color configuration JSON
+  seoSiteName                   String? // SEO Site Name
+  seoSiteDescription            String? // SEO Site Description
+  seoSiteLanguage               String? // SEO Site Language (e.g., "en")
+  seoSiteLocale                 String? // SEO Site Locale (e.g., "en_US")
+  seoTwitterHandle              String? // SEO Twitter Handle (e.g., "@orderly_network")
+  seoThemeColor                 String? // SEO Theme Color (e.g., "#1a1b23")
+  seoKeywords                   String? // SEO Keywords
+  privyLoginMethods             String? // Comma-separated list of Privy login methods (email,passkey,twitter,google)
+  analyticsScript               String? // Custom analytics script (GA, Plausible, etc.) with script tags
+  isGraduated                   Boolean  @default(false) // Whether the DEX has fully graduated
+  graduationTxHash              String?  @unique // Transaction hash used for graduation (prevents reuse)
+  multisigChainId               Int? // Chain ID where the multisig delegate signer link was established
+  swapFeeBps                    Int? // Swap fee in basis points for WooFi integration (e.g., 100 = 1%)
+
   // Social Card Fields
-  description          String?  // DEX description for social cards
-  banner               String?  // Banner image for social cards (defaults to primaryLogo for migration)
-  logo                 String?  // Small logo for social cards (defaults to secondaryLogo for migration)
-  tokenAddress         String?  // Token contract address
-  tokenChain           String?  // Token chain (e.g., "ethereum", "polygon", "arbitrum")
-  websiteUrl           String?  // DEX website URL for board display
+  description  String? // DEX description for social cards
+  banner       String? // Banner image for social cards (defaults to primaryLogo for migration)
+  logo         String? // Small logo for social cards (defaults to secondaryLogo for migration)
+  tokenAddress String? // Token contract address
+  tokenChain   String? // Token chain (e.g., "ethereum", "polygon", "arbitrum")
+  websiteUrl   String? // DEX website URL for board display
 
   // Relation to User
-  userId               String
-  user                 User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Relation to UsedTransactionHash (for graduation tracking)
+  graduationTransactions UsedTransactionHash[]
 
   @@unique([userId])
 }
@@ -115,13 +118,17 @@ model Dex {
 model UsedTransactionHash {
   id        String   @id @default(uuid())
   txHash    String   @unique // The transaction hash that was used
-  userId    String   // User who used this transaction hash
-  dexId     String?  // DEX ID that used this hash (null if DEX was deleted)
-  chainId   Int?     // Chain ID where the transaction occurred
+  userId    String // User who used this transaction hash
+  dexId     String? // DEX ID that used this hash (null if DEX was deleted)
+  chainId   Int? // Chain ID where the transaction occurred
   createdAt DateTime @default(now())
-  
+
+  // Relation to Dex (via graduationTxHash = txHash)
+  dex Dex? @relation(fields: [dexId], references: [id], onDelete: SetNull)
+
   @@index([txHash])
   @@index([userId])
+  @@index([dexId])
 }
 
 // Track broker indices and broker IDs in our own database
@@ -130,7 +137,7 @@ model BrokerIndex {
   brokerIndex Int      @unique // The broker index number
   brokerId    String   @unique // The broker ID that was assigned this index
   createdAt   DateTime @default(now())
-  
+
   @@index([brokerIndex])
   @@index([brokerId])
 }
