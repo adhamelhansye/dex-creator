@@ -87,16 +87,37 @@ stats.get("/", zValidator("query", statsQuerySchema), async c => {
           },
         },
       });
-      const graduatedDexesNew = await tx.dex.count({
+      const graduationTxHashes = await tx.usedTransactionHash.findMany({
         where: {
-          brokerId: {
-            not: "demo",
-          },
           createdAt: {
             gte: dateFilter,
           },
+          dexId: {
+            not: null,
+          },
+          dex: {
+            brokerId: {
+              not: "demo",
+            },
+          },
+        },
+        include: {
+          dex: {
+            select: {
+              id: true,
+              graduationTxHash: true,
+            },
+          },
         },
       });
+
+      const graduatedDexIds = new Set(
+        graduationTxHashes
+          .filter(tx => tx.dex && tx.dex.graduationTxHash === tx.txHash)
+          .map(tx => tx.dex!.id)
+      );
+
+      const graduatedDexesNew = graduatedDexIds.size;
       const demoDexesNew = await tx.dex.count({
         where: {
           brokerId: "demo",
