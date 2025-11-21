@@ -264,34 +264,45 @@ class LeaderboardService {
   private async fetchBrokerData(brokerId: string) {
     const endDate = new Date();
     const startDate = new Date();
-    startDate.setDate(endDate.getDate() - 29);
+    startDate.setDate(endDate.getDate() - 89);
 
     const startDateStr = startDate.toISOString().split("T")[0];
     const endDateStr = endDate.toISOString().split("T")[0];
 
-    const url = `${getOrderlyApiBaseUrl()}/v1/broker/leaderboard/daily?start_date=${startDateStr}&end_date=${endDateStr}&broker_id=${brokerId}&sort=descending_perp_volume&aggregateBy=date`;
+    const prisma = await getPrisma();
+    const dex = await prisma.dex.findFirst({
+      where: { brokerId },
+      select: { brokerName: true },
+    });
+
+    const brokerName = dex?.brokerName || brokerId;
+
+    let allRows: OrderlyApiResponse["data"]["rows"] = [];
+    let currentPage = 1;
+    let totalPages = 1;
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      do {
+        const url = `${getOrderlyApiBaseUrl()}/v1/broker/leaderboard/daily?start_date=${startDateStr}&end_date=${endDateStr}&broker_id=${brokerId}&sort=descending_perp_volume&aggregateBy=date&page=${currentPage}`;
 
-      const data: OrderlyApiResponse = await response.json();
+        const response = await fetch(url);
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
-      if (!data.success || !data.data.rows) {
-        throw new Error("Invalid response format from Orderly API");
-      }
+        const data: OrderlyApiResponse = await response.json();
+        if (!data.success || !data.data.rows) {
+          throw new Error("Invalid response format from Orderly API");
+        }
 
-      const prisma = await getPrisma();
-      const dex = await prisma.dex.findFirst({
-        where: { brokerId },
-        select: { brokerName: true },
-      });
+        allRows = [...allRows, ...data.data.rows];
+        totalPages = Math.ceil(
+          data.data.meta.total / data.data.meta.records_per_page
+        );
+        currentPage++;
+      } while (currentPage <= totalPages);
 
-      const brokerName = dex?.brokerName || brokerId;
-
-      const brokerStats: BrokerStats[] = data.data.rows.map(row => ({
+      const brokerStats: BrokerStats[] = allRows.map(row => ({
         brokerId,
         brokerName,
         date: row.date,
@@ -347,17 +358,19 @@ class LeaderboardService {
     period: "daily" | "weekly" | "30d" | "90d" = "30d"
   ): AggregatedBrokerStats | null {
     const dailyStats = this.cache.get(brokerId);
-    if (!dailyStats || dailyStats.length === 0) return null;
+    if (!dailyStats || dailyStats.length === 0) {
+      return null;
+    }
 
     const now = dayjs();
     let startDate: dayjs.Dayjs;
 
     switch (period) {
       case "daily":
-        startDate = now.subtract(1, "day").startOf("day");
+        startDate = now.startOf("day");
         break;
       case "weekly":
-        startDate = now.subtract(7, "day").startOf("day");
+        startDate = now.subtract(6, "day").startOf("day");
         break;
       case "30d":
         startDate = now.subtract(29, "day").startOf("day");
@@ -372,13 +385,15 @@ class LeaderboardService {
     const periodStats = dailyStats.filter(stat => {
       const statDate = dayjs(stat.date).startOf("day");
       const statTimestamp = statDate.valueOf();
-      return (
+      const matches =
         statTimestamp >= startDate.valueOf() &&
-        statTimestamp <= endDate.valueOf()
-      );
+        statTimestamp <= endDate.valueOf();
+      return matches;
     });
 
-    if (periodStats.length === 0) return null;
+    if (periodStats.length === 0) {
+      return null;
+    }
 
     const brokerName = periodStats[0].brokerName;
 
@@ -422,10 +437,10 @@ class LeaderboardService {
 
     switch (period) {
       case "daily":
-        startDate = now.subtract(1, "day").startOf("day");
+        startDate = now.startOf("day");
         break;
       case "weekly":
-        startDate = now.subtract(7, "day").startOf("day");
+        startDate = now.subtract(6, "day").startOf("day");
         break;
       case "30d":
         startDate = now.subtract(29, "day").startOf("day");
