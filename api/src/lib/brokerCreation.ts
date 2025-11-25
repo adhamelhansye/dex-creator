@@ -912,7 +912,17 @@ export async function checkBrokerCreationPermissions(
       `🔍 Checking permissions for wallet: ${walletAddress} on environment: ${env}`
     );
 
-    const permissionCheckPromises = Object.entries(config).map(
+    const orderlyChainName = env === "mainnet" ? "orderlyL2" : "orderlyTestnet";
+
+    const chainsToCheck = Object.entries(config).filter(([chainName]) => {
+      const chainInfo = ALL_CHAINS[chainName as ChainName];
+      if (!chainInfo) {
+        return false;
+      }
+      return chainInfo.chainType === "SOL" || chainName === orderlyChainName;
+    });
+
+    const permissionCheckPromises = chainsToCheck.map(
       ([chainName, chainConfig]) =>
         checkChainPermissions(chainName, chainConfig, walletAddress)
     );
@@ -1243,7 +1253,17 @@ export async function checkGasBalances(environment?: Environment): Promise<{
       throw new Error(`No configuration found for environment: ${env}`);
     }
 
-    const balanceCheckPromises = Object.entries(config).map(
+    const orderlyChainName = env === "mainnet" ? "orderlyL2" : "orderlyTestnet";
+
+    const chainsToCheck = Object.entries(config).filter(([chainName]) => {
+      const chainInfo = ALL_CHAINS[chainName as ChainName];
+      if (!chainInfo) {
+        return false;
+      }
+      return chainInfo.chainType === "SOL" || chainName === orderlyChainName;
+    });
+
+    const balanceCheckPromises = chainsToCheck.map(
       ([chainName, chainConfig]) => {
         const chainInfo = ALL_CHAINS[chainName as ChainName];
         if (!chainInfo) {

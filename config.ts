@@ -47,6 +47,7 @@ export type ChainNameMainnet =
   | "mode"
   | "plume"
   | "abstract"
+  | "monad"
   | "orderlyL2"
   | "solana-mainnet-beta";
 
@@ -116,6 +117,7 @@ export const ALLOWED_MAINNET_CHAIN_IDS = [
   34443, // Mode
   98866, // Plume
   2741, // Abstract
+  143, // Monad
 ];
 
 export const ALLOWED_TESTNET_CHAIN_IDS = [
@@ -304,6 +306,15 @@ export const ALL_CHAINS: Record<ChainName, ChainConfig> = {
     rpcUrl: "https://api.mainnet.abs.xyz",
     fallbackRpcUrls: ["https://abstract.drpc.org"],
     blockExplorerUrl: "https://explorer.mainnet.abs.xyz",
+  },
+  monad: {
+    id: "monad",
+    name: "Monad",
+    chainId: 143,
+    isTestnet: false,
+    chainType: "EVM",
+    rpcUrl: "https://rpc.monad.xyz",
+    blockExplorerUrl: "https://monadvision.com",
   },
   sepolia: {
     id: "sepolia",
@@ -550,6 +561,9 @@ export const ENVIRONMENT_CONFIGS: {
     },
     abstract: {
       vaultAddress: "0xE80F2396A266e898FBbD251b89CFE65B3e41fD18",
+    },
+    monad: {
+      vaultAddress: "0x816f722424B49Cf1275cc86DA9840Fbd5a6167e9",
     },
     "solana-mainnet-beta": {
       vaultAddress: "ErBmAD61mGFKvrFNaTJuxoPwqrS8GgtwtqJTJVjFWx9Q",
