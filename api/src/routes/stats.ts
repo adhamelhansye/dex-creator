@@ -2,6 +2,7 @@ import { Hono } from "hono";
 import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import { getPrisma } from "../lib/prisma";
+import { getOrderlyPrismaClient } from "../lib/orderlyDb";
 import dayjs from "dayjs";
 import { getSwapFeeConfigs } from "../models/stats";
 
@@ -52,6 +53,22 @@ function getDateFilter(period: string) {
   }
 }
 
+function getPeriodStartDate(
+  period: "daily" | "weekly" | "30d" | "90d"
+): dayjs.Dayjs {
+  const now = dayjs();
+  switch (period) {
+    case "daily":
+      return now.subtract(1, "day");
+    case "weekly":
+      return now.subtract(7, "day");
+    case "30d":
+      return now.subtract(30, "day");
+    case "90d":
+      return now.subtract(90, "day");
+  }
+}
+
 stats.get("/", zValidator("query", statsQuerySchema), async c => {
   try {
     const { period } = c.req.valid("query");
@@ -64,6 +81,51 @@ stats.get("/", zValidator("query", statsQuerySchema), async c => {
 
     const prismaClient = await getPrisma();
     const dateFilter = getDateFilter(period);
+
+    const graduatedBrokerIds = await prismaClient.dex.findMany({
+      where: {
+        brokerId: {
+          not: "demo",
+        },
+      },
+      select: {
+        brokerId: true,
+      },
+    });
+
+    const brokerIds = graduatedBrokerIds
+      .map(d => d.brokerId)
+      .filter(Boolean) as string[];
+
+    const orderlyPrisma = await getOrderlyPrismaClient();
+    let newlyGraduatedBrokerIds: Set<string> = new Set();
+
+    if (brokerIds.length > 0) {
+      try {
+        const periodStartDate = getPeriodStartDate(period);
+
+        const orderlyBrokers = await orderlyPrisma.orderlyBroker.findMany({
+          where: {
+            brokerId: {
+              in: brokerIds,
+            },
+            createdTime: {
+              gte: periodStartDate.toDate(),
+            },
+          },
+          select: {
+            brokerId: true,
+          },
+        });
+
+        newlyGraduatedBrokerIds = new Set(orderlyBrokers.map(b => b.brokerId));
+      } catch (error) {
+        console.error("Error querying OrderlyBroker table:", error);
+        newlyGraduatedBrokerIds = new Set();
+      } finally {
+        await orderlyPrisma.$disconnect();
+      }
+    }
 
     const stats = await prismaClient.$transaction(async tx => {
       const totalDexesAllTime = await tx.dex.count();
@@ -87,37 +149,14 @@ stats.get("/", zValidator("query", statsQuerySchema), async c => {
           },
         },
       });
-      const graduationTxHashes = await tx.usedTransactionHash.findMany({
+
+      const graduatedDexesNew = await tx.dex.count({
         where: {
-          createdAt: {
-            gte: dateFilter,
-          },
-          dexId: {
-            not: null,
-          },
-          dex: {
-            brokerId: {
-              not: "demo",
-            },
-          },
-        },
-        include: {
-          dex: {
-            select: {
-              id: true,
-              graduationTxHash: true,
-            },
+          brokerId: {
+            in: Array.from(newlyGraduatedBrokerIds),
           },
         },
       });
-
-      const graduatedDexIds = new Set(
-        graduationTxHashes
-          .filter(tx => tx.dex && tx.dex.graduationTxHash === tx.txHash)
-          .map(tx => tx.dex!.id)
-      );
-
-      const graduatedDexesNew = graduatedDexIds.size;
       const demoDexesNew = await tx.dex.count({
         where: {
           brokerId: "demo",

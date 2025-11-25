@@ -163,7 +163,7 @@ async function getOrderlyDatabaseUrl(): Promise<string> {
   );
 }
 
-async function getOrderlyPrismaClient(): Promise<PrismaClient> {
+export async function getOrderlyPrismaClient(): Promise<PrismaClient> {
   const databaseUrl = await getOrderlyDatabaseUrl();
   return new PrismaClient({
     datasources: {
