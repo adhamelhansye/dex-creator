@@ -121,6 +121,7 @@ export function getCurrentEnvironment(): Environment {
 export enum LocaleEnum {
   en = "en",
   zh = "zh",
+  tc = "tc",
   ja = "ja",
   es = "es",
   ko = "ko",
