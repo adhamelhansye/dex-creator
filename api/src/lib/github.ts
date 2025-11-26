@@ -679,6 +679,9 @@ function prepareDexConfigContent(
 
     // Analytics
     VITE_ANALYTICS_SCRIPT: config.analyticsScript || "",
+
+    // Asset filtering
+    VITE_SYMBOL_LIST: config.symbolList || "",
   };
 
   const configJsContent = `window.__RUNTIME_CONFIG__ = ${JSON.stringify(

@@ -102,6 +102,8 @@ export interface DexSectionProps {
   setEnableCampaigns: (value: boolean) => void;
   swapFeeBps: number | null;
   setSwapFeeBps: (value: number | null) => void;
+  symbolList: string;
+  setSymbolList: (value: string) => void;
 }
 
 export interface DexFormData {
@@ -141,6 +143,7 @@ export interface DexFormData {
   seoThemeColor: string;
   seoKeywords: string;
   analyticsScript: string;
+  symbolList: string;
 }
 
 export interface UseDexFormReturn extends DexFormData {
@@ -188,6 +191,7 @@ export interface UseDexFormReturn extends DexFormData {
   setSeoThemeColor: (value: string) => void;
   setSeoKeywords: (value: string) => void;
   setAnalyticsScript: (value: string) => void;
+  setSymbolList: (value: string) => void;
   handleInputChange: (
     field: string
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -287,6 +291,7 @@ const initialFormState: DexFormData = {
   seoThemeColor: "",
   seoKeywords: "",
   analyticsScript: "",
+  symbolList: "",
 };
 
 export function useDexForm(): UseDexFormReturn {
@@ -388,6 +393,7 @@ export function useDexForm(): UseDexFormReturn {
   const [analyticsScript, setAnalyticsScript] = useState(
     initialFormState.analyticsScript
   );
+  const [symbolList, setSymbolList] = useState(initialFormState.symbolList);
 
   const handleInputChange =
     (field: string) =>
@@ -441,6 +447,9 @@ export function useDexForm(): UseDexFormReturn {
           break;
         case "analyticsScript":
           setAnalyticsScript(value);
+          break;
+        case "symbolList":
+          setSymbolList(value);
           break;
       }
     };
@@ -532,6 +541,7 @@ export function useDexForm(): UseDexFormReturn {
         setSeoKeywords(dexData.seoKeywords);
       if (dexData.analyticsScript !== undefined)
         setAnalyticsScript(dexData.analyticsScript);
+      if (dexData.symbolList !== undefined) setSymbolList(dexData.symbolList);
 
       if (dexData.themeCSS !== undefined) {
         setCurrentTheme(dexData.themeCSS);
@@ -619,6 +629,7 @@ export function useDexForm(): UseDexFormReturn {
         seoThemeColor,
         seoKeywords,
         analyticsScript,
+        symbolList,
       },
       images: {
         primaryLogo: primaryLogoBase64,
@@ -664,6 +675,7 @@ export function useDexForm(): UseDexFormReturn {
     seoThemeColor,
     seoKeywords,
     analyticsScript,
+    symbolList,
   ]);
 
   const resetForm = () => {
@@ -705,6 +717,7 @@ export function useDexForm(): UseDexFormReturn {
     setSeoThemeColor(initialFormState.seoThemeColor);
     setSeoKeywords(initialFormState.seoKeywords);
     setAnalyticsScript(initialFormState.analyticsScript);
+    setSymbolList(initialFormState.symbolList);
   };
 
   const generateTheme = useCallback(
@@ -841,6 +854,7 @@ export function useDexForm(): UseDexFormReturn {
             seoThemeColor: response.seoThemeColor || "",
             seoKeywords: response.seoKeywords || "",
             analyticsScript: response.analyticsScript || "",
+            symbolList: response.symbolList || "",
             themeCSS: response.themeCSS,
           });
 
@@ -949,6 +963,8 @@ export function useDexForm(): UseDexFormReturn {
       setEnableCampaigns,
       swapFeeBps,
       setSwapFeeBps,
+      symbolList,
+      setSymbolList,
     }),
     [
       brokerName,
@@ -976,6 +992,7 @@ export function useDexForm(): UseDexFormReturn {
       seoThemeColor,
       seoKeywords,
       analyticsScript,
+      symbolList,
       walletConnectProjectId,
       privyAppId,
       privyTermsOfUse,
@@ -1058,6 +1075,7 @@ export function useDexForm(): UseDexFormReturn {
     seoThemeColor,
     seoKeywords,
     analyticsScript,
+    symbolList,
     setBrokerName,
     setTelegramLink,
     setDiscordLink,
@@ -1094,6 +1112,7 @@ export function useDexForm(): UseDexFormReturn {
     setSeoThemeColor,
     setSeoKeywords,
     setAnalyticsScript,
+    setSymbolList,
     handleInputChange,
     handleImageChange,
     handlePnLPosterChange,

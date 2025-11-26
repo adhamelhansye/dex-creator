@@ -54,6 +54,7 @@ export function convertDexToDexConfig(dex: Dex): DexConfig {
     seoThemeColor: dex.seoThemeColor,
     seoKeywords: dex.seoKeywords,
     analyticsScript: dex.analyticsScript,
+    symbolList: dex.symbolList,
   };
 }
 
@@ -99,6 +100,7 @@ function convertValidatedDataToDexConfig(
     seoThemeColor: validatedData.seoThemeColor ?? null,
     seoKeywords: validatedData.seoKeywords ?? null,
     analyticsScript: decodedAnalyticsScript,
+    symbolList: validatedData.symbolList ?? null,
   };
 }
 
@@ -315,6 +317,20 @@ export const dexSchema = z.object({
   analyticsScript: z
     .string()
     .max(2000, "Analytics script must be 2000 characters or less")
+    .nullish(),
+  symbolList: z
+    .string()
+    .refine(
+      value => {
+        if (!value || value.trim() === "") return true;
+        const symbols = value.split(",").map(s => s.trim());
+        return symbols.every(s => s.length > 0);
+      },
+      {
+        message:
+          "Symbol list must be comma-separated symbols (e.g., PERP_SOL_USDC,PERP_BTC_USDC)",
+      }
+    )
     .nullish(),
 });
 
@@ -755,6 +771,8 @@ export async function updateDex(
       ? decodeBase64(validatedData.analyticsScript)
       : null;
   }
+  if ("symbolList" in validatedData)
+    updateData.symbolList = validatedData.symbolList;
 
   try {
     const prismaClient = await getPrisma();

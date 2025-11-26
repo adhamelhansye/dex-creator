@@ -39,6 +39,7 @@ export interface DexData {
   seoThemeColor?: string | null;
   seoKeywords?: string | null;
   analyticsScript?: string | null;
+  symbolList?: string | null;
   description?: string | null;
   banner?: string | null;
   logo?: string | null;

@@ -42,5 +42,6 @@ export function buildDexDataToSend(formValues: DexFormDataWithoutImages) {
     analyticsScript: formValues.analyticsScript.trim()
       ? btoa(encodeURIComponent(formValues.analyticsScript.trim()))
       : "",
+    symbolList: formValues.symbolList.trim(),
   };
 }
