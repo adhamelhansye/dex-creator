@@ -2,7 +2,8 @@ import { Card } from "./Card";
 
 export const AVAILABLE_LANGUAGES = [
   { code: "en", name: "English", flag: "🇺🇸" },
-  { code: "zh", name: "中文", flag: "🇨🇳" },
+  { code: "zh", name: "简体中文", flag: "🇨🇳" },
+  { code: "tc", name: "繁體中文", flag: "🇹🇼" },
   { code: "ja", name: "日本語", flag: "🇯🇵" },
   { code: "es", name: "Español", flag: "🇪🇸" },
   { code: "ko", name: "한국어", flag: "🇰🇷" },
