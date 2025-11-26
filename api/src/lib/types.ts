@@ -105,6 +105,7 @@ export interface DexConfig {
   seoThemeColor: string | null;
   seoKeywords: string | null;
   analyticsScript: string | null;
+  symbolList: string | null;
 }
 
 /**

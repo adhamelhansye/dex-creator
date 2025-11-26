@@ -13,6 +13,7 @@ import BlockchainConfigSection from "./BlockchainConfigSection";
 import LanguageSupportSection from "./LanguageSupportSection";
 import NavigationMenuSection from "./NavigationMenuSection";
 import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
+import AssetFilterSection from "./AssetFilterSection";
 import ProgressTracker from "./ProgressTracker";
 import { DexSectionProps } from "../hooks/useDexForm";
 
@@ -217,6 +218,19 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
   },
   {
     id: 11,
+    key: "assetFilter",
+    title: "Asset Filtering",
+    description:
+      "Select which trading pairs will be displayed in your DEX. Leave empty to show all available assets. This is optional - your DEX will show all assets by default.",
+    isOptional: true,
+    component: AssetFilterSection,
+    getProps: props => ({
+      symbolList: props.symbolList,
+      onSymbolListChange: props.setSymbolList,
+    }),
+  },
+  {
+    id: 12,
     key: "languageSupport",
     title: "Language Support",
     description:
@@ -229,7 +243,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 12,
+    id: 13,
     key: "navigationMenus",
     title: "Navigation Menus",
     description:
@@ -248,7 +262,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 13,
+    id: 14,
     key: "serviceDisclaimer",
     title: "Service Disclaimer",
     description:
