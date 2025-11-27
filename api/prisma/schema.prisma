@@ -109,9 +109,6 @@ model Dex {
   userId String
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Relation to UsedTransactionHash (for graduation tracking)
-  graduationTransactions UsedTransactionHash[]
-
   @@unique([userId])
 }
 
@@ -123,9 +120,6 @@ model UsedTransactionHash {
   dexId     String? // DEX ID that used this hash (null if DEX was deleted)
   chainId   Int? // Chain ID where the transaction occurred
   createdAt DateTime @default(now())
-
-  // Relation to Dex (via graduationTxHash = txHash)
-  dex Dex? @relation(fields: [dexId], references: [id], onDelete: SetNull)
 
   @@index([txHash])
   @@index([userId])
