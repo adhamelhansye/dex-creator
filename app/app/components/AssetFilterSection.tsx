@@ -27,6 +27,26 @@ const getSymbolLogoUrl = (symbol: string): string => {
   return `https://oss.orderly.network/static/symbol_logo/${baseSymbol}.png`;
 };
 
+const formatVolume = (volume: number | string): string => {
+  const num = typeof volume === "string" ? parseFloat(volume) : volume;
+  if (isNaN(num) || num === 0) return "N/A";
+  return new Intl.NumberFormat("en-US", {
+    notation: "compact",
+    maximumFractionDigits: 2,
+    style: "currency",
+    currency: "USD",
+  }).format(num);
+};
+
+const formatPrice = (price: number | undefined): string => {
+  if (!price) return "N/A";
+  return new Intl.NumberFormat("en-US", {
+    maximumFractionDigits: 2,
+    style: "currency",
+    currency: "USD",
+  }).format(price);
+};
+
 const AssetFilterSection: React.FC<AssetFilterSectionProps> = ({
   symbolList,
   onSymbolListChange,
@@ -48,7 +68,11 @@ const AssetFilterSection: React.FC<AssetFilterSectionProps> = ({
               typeof a["24h_volume"] === "number" ? a["24h_volume"] : 0;
             const volumeB =
               typeof b["24h_volume"] === "number" ? b["24h_volume"] : 0;
-            return volumeB - volumeA;
+            const priceA = a.index_price || 0;
+            const priceB = b.index_price || 0;
+            const usdVolumeA = volumeA * priceA;
+            const usdVolumeB = volumeB * priceB;
+            return usdVolumeB - usdVolumeA;
           });
           setAvailableAssets(sorted);
         }
@@ -250,10 +274,16 @@ const AssetFilterSection: React.FC<AssetFilterSectionProps> = ({
                       {baseSymbol}
                     </div>
                     <div className="text-[10px] text-gray-400 text-center mt-0.5 truncate w-full">
-                      $
-                      {asset.index_price?.toLocaleString(undefined, {
-                        maximumFractionDigits: 2,
-                      }) || "N/A"}
+                      {formatPrice(asset.index_price)}
+                    </div>
+                    <div className="text-[10px] text-gray-500 text-center mt-0.5 truncate w-full">
+                      Vol:{" "}
+                      {formatVolume(
+                        (typeof asset["24h_volume"] === "number"
+                          ? asset["24h_volume"]
+                          : parseFloat(asset["24h_volume"])) *
+                          (asset.index_price || 0)
+                      )}
                     </div>
                   </label>
                 );
