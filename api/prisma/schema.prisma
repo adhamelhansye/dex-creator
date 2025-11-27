@@ -25,7 +25,7 @@ model User {
 
   // User can have many auth tokens
   tokens Token[]
-
+  
   // User can have only one DEX
   dex Dex?
 
@@ -39,7 +39,7 @@ model Token {
   userId    String
   expiresAt DateTime
   createdAt DateTime @default(now())
-
+  
   // Relation to User
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
@@ -96,7 +96,7 @@ model Dex {
   multisigChainId               Int? // Chain ID where the multisig delegate signer link was established
   swapFeeBps                    Int? // Swap fee in basis points for WooFi integration (e.g., 100 = 1%)
   symbolList                    String? // Comma-separated list of trading symbols to filter/reorder (e.g., "PERP_SOL_USDC,PERP_BTC_USDC")
-
+  
   // Social Card Fields
   description  String? // DEX description for social cards
   banner       String? // Banner image for social cards (defaults to primaryLogo for migration)
@@ -120,10 +120,9 @@ model UsedTransactionHash {
   dexId     String? // DEX ID that used this hash (null if DEX was deleted)
   chainId   Int? // Chain ID where the transaction occurred
   createdAt DateTime @default(now())
-
+  
   @@index([txHash])
   @@index([userId])
-  @@index([dexId])
 }
 
 // Track broker indices and broker IDs in our own database
@@ -132,7 +131,7 @@ model BrokerIndex {
   brokerIndex Int      @unique // The broker index number
   brokerId    String   @unique // The broker ID that was assigned this index
   createdAt   DateTime @default(now())
-
+  
   @@index([brokerIndex])
   @@index([brokerId])
 }
