@@ -55,6 +55,8 @@ export function convertDexToDexConfig(dex: Dex): DexConfig {
     seoKeywords: dex.seoKeywords,
     analyticsScript: dex.analyticsScript,
     symbolList: dex.symbolList,
+    restrictedRegions: dex.restrictedRegions,
+    whitelistedIps: dex.whitelistedIps,
   };
 }
 
@@ -101,6 +103,8 @@ function convertValidatedDataToDexConfig(
     seoKeywords: validatedData.seoKeywords ?? null,
     analyticsScript: decodedAnalyticsScript,
     symbolList: validatedData.symbolList ?? null,
+    restrictedRegions: validatedData.restrictedRegions ?? null,
+    whitelistedIps: validatedData.whitelistedIps ?? null,
   };
 }
 
@@ -331,6 +335,14 @@ export const dexSchema = z.object({
           "Symbol list must be comma-separated symbols (e.g., PERP_SOL_USDC,PERP_BTC_USDC)",
       }
     )
+    .nullish(),
+  restrictedRegions: z
+    .string()
+    .max(2000, "Restricted regions list cannot exceed 2000 characters")
+    .nullish(),
+  whitelistedIps: z
+    .string()
+    .max(2000, "Whitelisted IPs list cannot exceed 2000 characters")
     .nullish(),
 });
 
@@ -606,6 +618,8 @@ export async function createDex(
           ? decodeBase64(validatedData.analyticsScript)
           : undefined,
         swapFeeBps: validatedData.swapFeeBps,
+        restrictedRegions: validatedData.restrictedRegions,
+        whitelistedIps: validatedData.whitelistedIps,
         repoUrl: repoUrl,
         user: {
           connect: {
@@ -773,6 +787,10 @@ export async function updateDex(
   }
   if ("symbolList" in validatedData)
     updateData.symbolList = validatedData.symbolList;
+  if ("restrictedRegions" in validatedData)
+    updateData.restrictedRegions = validatedData.restrictedRegions;
+  if ("whitelistedIps" in validatedData)
+    updateData.whitelistedIps = validatedData.whitelistedIps;
 
   try {
     const prismaClient = await getPrisma();

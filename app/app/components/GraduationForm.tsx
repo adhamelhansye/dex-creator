@@ -1818,7 +1818,9 @@ export function GraduationForm({
               className="w-full justify-center"
             >
               {isCorrectChain
-                ? `Transfer ${paymentType === "usdc" ? "USDC" : "ORDER"} Tokens`
+                ? !brokerId
+                  ? "Enter Broker ID to Continue"
+                  : `Transfer ${paymentType === "usdc" ? "USDC" : "ORDER"} Tokens`
                 : "Switch Chain"}
             </Button>
 

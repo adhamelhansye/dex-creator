@@ -106,6 +106,8 @@ export interface DexConfig {
   seoKeywords: string | null;
   analyticsScript: string | null;
   symbolList: string | null;
+  restrictedRegions: string | null;
+  whitelistedIps: string | null;
 }
 
 /**

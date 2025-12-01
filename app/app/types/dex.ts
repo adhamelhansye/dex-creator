@@ -40,6 +40,8 @@ export interface DexData {
   seoKeywords?: string | null;
   analyticsScript?: string | null;
   symbolList?: string | null;
+  restrictedRegions?: string | null;
+  whitelistedIps?: string | null;
   description?: string | null;
   banner?: string | null;
   logo?: string | null;
