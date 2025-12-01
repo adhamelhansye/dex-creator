@@ -96,6 +96,8 @@ model Dex {
   multisigChainId               Int? // Chain ID where the multisig delegate signer link was established
   swapFeeBps                    Int? // Swap fee in basis points for WooFi integration (e.g., 100 = 1%)
   symbolList                    String? // Comma-separated list of trading symbols to filter/reorder (e.g., "PERP_SOL_USDC,PERP_BTC_USDC")
+  restrictedRegions             String? // Comma-separated list of restricted region names for geo-blocking
+  whitelistedIps                String? // Comma-separated list of whitelisted IP ranges (CIDR notation)
   
   // Social Card Fields
   description  String? // DEX description for social cards

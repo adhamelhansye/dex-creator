@@ -682,6 +682,10 @@ function prepareDexConfigContent(
 
     // Asset filtering
     VITE_SYMBOL_LIST: config.symbolList || "",
+
+    // Geo-restriction settings
+    VITE_RESTRICTED_REGIONS: config.restrictedRegions || "",
+    VITE_WHITELISTED_IPS: config.whitelistedIps || "",
   };
 
   const configJsContent = `window.__RUNTIME_CONFIG__ = ${JSON.stringify(

@@ -104,6 +104,10 @@ export interface DexSectionProps {
   setSwapFeeBps: (value: number | null) => void;
   symbolList: string;
   setSymbolList: (value: string) => void;
+  restrictedRegions: string;
+  onRestrictedRegionsChange: (value: string) => void;
+  whitelistedIps: string;
+  onWhitelistedIpsChange: (value: string) => void;
 }
 
 export interface DexFormData {
@@ -144,6 +148,8 @@ export interface DexFormData {
   seoKeywords: string;
   analyticsScript: string;
   symbolList: string;
+  restrictedRegions: string;
+  whitelistedIps: string;
 }
 
 export interface UseDexFormReturn extends DexFormData {
@@ -192,6 +198,8 @@ export interface UseDexFormReturn extends DexFormData {
   setSeoKeywords: (value: string) => void;
   setAnalyticsScript: (value: string) => void;
   setSymbolList: (value: string) => void;
+  setRestrictedRegions: (value: string) => void;
+  setWhitelistedIps: (value: string) => void;
   handleInputChange: (
     field: string
   ) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
@@ -292,6 +300,8 @@ const initialFormState: DexFormData = {
   seoKeywords: "",
   analyticsScript: "",
   symbolList: "",
+  restrictedRegions: "",
+  whitelistedIps: "",
 };
 
 export function useDexForm(): UseDexFormReturn {
@@ -394,6 +404,12 @@ export function useDexForm(): UseDexFormReturn {
     initialFormState.analyticsScript
   );
   const [symbolList, setSymbolList] = useState(initialFormState.symbolList);
+  const [restrictedRegions, setRestrictedRegions] = useState(
+    initialFormState.restrictedRegions
+  );
+  const [whitelistedIps, setWhitelistedIps] = useState(
+    initialFormState.whitelistedIps
+  );
 
   const handleInputChange =
     (field: string) =>
@@ -542,6 +558,10 @@ export function useDexForm(): UseDexFormReturn {
       if (dexData.analyticsScript !== undefined)
         setAnalyticsScript(dexData.analyticsScript);
       if (dexData.symbolList !== undefined) setSymbolList(dexData.symbolList);
+      if (dexData.restrictedRegions !== undefined)
+        setRestrictedRegions(dexData.restrictedRegions);
+      if (dexData.whitelistedIps !== undefined)
+        setWhitelistedIps(dexData.whitelistedIps);
 
       if (dexData.themeCSS !== undefined) {
         setCurrentTheme(dexData.themeCSS);
@@ -630,6 +650,8 @@ export function useDexForm(): UseDexFormReturn {
         seoKeywords,
         analyticsScript,
         symbolList,
+        restrictedRegions,
+        whitelistedIps,
       },
       images: {
         primaryLogo: primaryLogoBase64,
@@ -676,6 +698,8 @@ export function useDexForm(): UseDexFormReturn {
     seoKeywords,
     analyticsScript,
     symbolList,
+    restrictedRegions,
+    whitelistedIps,
   ]);
 
   const resetForm = () => {
@@ -718,6 +742,8 @@ export function useDexForm(): UseDexFormReturn {
     setSeoKeywords(initialFormState.seoKeywords);
     setAnalyticsScript(initialFormState.analyticsScript);
     setSymbolList(initialFormState.symbolList);
+    setRestrictedRegions(initialFormState.restrictedRegions);
+    setWhitelistedIps(initialFormState.whitelistedIps);
   };
 
   const generateTheme = useCallback(
@@ -855,6 +881,8 @@ export function useDexForm(): UseDexFormReturn {
             seoKeywords: response.seoKeywords || "",
             analyticsScript: response.analyticsScript || "",
             symbolList: response.symbolList || "",
+            restrictedRegions: response.restrictedRegions || "",
+            whitelistedIps: response.whitelistedIps || "",
             themeCSS: response.themeCSS,
           });
 
@@ -965,6 +993,10 @@ export function useDexForm(): UseDexFormReturn {
       setSwapFeeBps,
       symbolList,
       setSymbolList,
+      restrictedRegions,
+      onRestrictedRegionsChange: setRestrictedRegions,
+      whitelistedIps,
+      onWhitelistedIpsChange: setWhitelistedIps,
     }),
     [
       brokerName,
@@ -993,6 +1025,8 @@ export function useDexForm(): UseDexFormReturn {
       seoKeywords,
       analyticsScript,
       symbolList,
+      restrictedRegions,
+      whitelistedIps,
       walletConnectProjectId,
       privyAppId,
       privyTermsOfUse,
@@ -1076,6 +1110,8 @@ export function useDexForm(): UseDexFormReturn {
     seoKeywords,
     analyticsScript,
     symbolList,
+    restrictedRegions,
+    whitelistedIps,
     setBrokerName,
     setTelegramLink,
     setDiscordLink,
@@ -1113,6 +1149,8 @@ export function useDexForm(): UseDexFormReturn {
     setSeoKeywords,
     setAnalyticsScript,
     setSymbolList,
+    setRestrictedRegions,
+    setWhitelistedIps,
     handleInputChange,
     handleImageChange,
     handlePnLPosterChange,

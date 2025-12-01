@@ -273,6 +273,10 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       enableServiceDisclaimerDialog: props.enableServiceDisclaimerDialog,
       onEnableServiceDisclaimerDialogChange:
         props.onEnableServiceDisclaimerDialogChange,
+      restrictedRegions: props.restrictedRegions,
+      onRestrictedRegionsChange: props.onRestrictedRegionsChange,
+      whitelistedIps: props.whitelistedIps,
+      onWhitelistedIpsChange: props.onWhitelistedIpsChange,
     }),
   },
 ];
