@@ -17,7 +17,7 @@ const URLS = {
       href: "https://orderly.network/docs/introduction/orderly-one/builder-guidelines",
     },
     {
-      title: "Supplemental Terms for DEXes",
+      title: "Supplemental Terms for DEXs",
       href: "https://orderly.network/docs/introduction/orderly-one/supplemental-terms-for-dexes",
     },
   ],

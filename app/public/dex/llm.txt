@@ -14,7 +14,7 @@ This is the main DEX management dashboard where users can create, configure, and
 4. **Graduate to Mainnet**: Move from testnet to production and start earning fees
 5. **Setup DEX Card**: Configure how your DEX appears on the leaderboard
 6. **Manage Custom Domain**: Add your own domain to your deployed DEX
-7. **Access Referral Program**: Set up auto-referral codes (for graduated DEXes)
+7. **Access Referral Program**: Set up auto-referral codes (for graduated DEXs)
 
 ## Key Features
 

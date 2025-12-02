@@ -302,7 +302,7 @@ export default function AdminRoute() {
       );
       setFilteredDeleteDexes(response.dexes);
     } catch (error) {
-      console.error("Error searching DEXes:", error);
+      console.error("Error searching DEXs:", error);
       setFilteredDeleteDexes([]);
     } finally {
       setIsSearchingDelete(false);
@@ -325,7 +325,7 @@ export default function AdminRoute() {
       );
       setFilteredBrokerDexes(response.dexes);
     } catch (error) {
-      console.error("Error searching DEXes:", error);
+      console.error("Error searching DEXs:", error);
       setFilteredBrokerDexes([]);
     } finally {
       setIsSearchingBroker(false);
@@ -349,7 +349,7 @@ export default function AdminRoute() {
       const filtered = response.dexes.filter(dex => dex.repoUrl);
       setFilteredRepoDexes(filtered);
     } catch (error) {
-      console.error("Error searching DEXes:", error);
+      console.error("Error searching DEXs:", error);
       setFilteredRepoDexes([]);
     } finally {
       setIsSearchingRepo(false);
@@ -375,7 +375,7 @@ export default function AdminRoute() {
       );
       setFilteredManualDexes(filtered);
     } catch (error) {
-      console.error("Error searching DEXes:", error);
+      console.error("Error searching DEXs:", error);
       setFilteredManualDexes([]);
     } finally {
       setIsSearchingManual(false);
@@ -798,7 +798,7 @@ export default function AdminRoute() {
             </button>
           </div>
           <p className="text-gray-400 text-sm mb-4">
-            Manage broker ID configurations and fee settings for DEXes.
+            Manage broker ID configurations and fee settings for DEXs.
             Graduation is now automated - users can graduate their DEX by
             sending ORDER tokens.
           </p>
@@ -883,7 +883,7 @@ export default function AdminRoute() {
                 filteredBrokerDexes.length === 0 &&
                 !isSearchingBroker && (
                   <div className="text-sm text-gray-400 p-2">
-                    No DEXes found matching your search.
+                    No DEXs found matching your search.
                   </div>
                 )}
 
@@ -988,7 +988,7 @@ export default function AdminRoute() {
                 filteredRepoDexes.length === 0 &&
                 !isSearchingRepo && (
                   <div className="text-sm text-gray-400 p-2">
-                    No DEXes found matching your search.
+                    No DEXs found matching your search.
                   </div>
                 )}
 
@@ -1099,7 +1099,7 @@ export default function AdminRoute() {
 
               {filteredDeleteDexes.length === 0 && !isSearchingDelete && (
                 <div className="text-sm text-gray-400 p-2">
-                  No DEXes found matching your search.
+                  No DEXs found matching your search.
                 </div>
               )}
 
@@ -1211,7 +1211,7 @@ export default function AdminRoute() {
                 filteredManualDexes.length === 0 &&
                 !isSearchingManual && (
                   <div className="text-sm text-gray-400 p-2">
-                    No eligible DEXes found. DEX must have a repository and no
+                    No eligible DEXs found. DEX must have a repository and no
                     existing broker ID.
                   </div>
                 )}

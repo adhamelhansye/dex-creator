@@ -1,10 +1,10 @@
 # DEX Leaderboard - Orderly One
 
-> Discover top performing DEXes built on Orderly Network
+> Discover top performing DEXs built on Orderly Network
 
 ## Overview
 
-The leaderboard showcases all graduated DEXes built with Orderly One, ranked by trading performance and activity.
+The leaderboard showcases all graduated DEXs built with Orderly One, ranked by trading performance and activity.
 
 ## Metrics Tracked
 
@@ -31,7 +31,7 @@ The leaderboard showcases all graduated DEXes built with Orderly One, ranked by 
 ### Sorting
 - Sort by volume, PnL, fees
 - Different time periods (24h, 7d, 30d, all-time)
-- Discover trending and established DEXes
+- Discover trending and established DEXs
 
 ### DEX Cards
 Each DEX is displayed with:
@@ -49,7 +49,7 @@ Each DEX is displayed with:
 
 ## Token Integration
 
-DEXes with associated tokens show:
+DEXs with associated tokens show:
 - Token price
 - Market capitalization
 - Token symbol and name
@@ -66,11 +66,11 @@ The leaderboard helps:
 - Showcase your DEX to potential users
 - Attract liquidity providers
 - Build community awareness
-- Track your performance vs other DEXes
+- Track your performance vs other DEXs
 
 ## Use Cases
 
-- **Traders**: Find active DEXes with good liquidity
+- **Traders**: Find active DEXs with good liquidity
 - **Projects**: Discover potential integration partners
 - **Creators**: Monitor competition and industry trends
 - **Community**: See the growing Orderly Network ecosystem

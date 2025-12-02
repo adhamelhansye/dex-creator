@@ -127,7 +127,7 @@ const ReownConfigSection: React.FC<ReownConfigProps> = ({
                 </li>
                 <li>
                   • Free tier includes 10,000 monthly active wallets - more than
-                  enough for most DEXes
+                  enough for most DEXs
                 </li>
                 <li>
                   • No additional configuration needed - just paste your Project

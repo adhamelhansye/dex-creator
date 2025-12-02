@@ -210,7 +210,7 @@ export default function Index() {
                 Built on Battle-Tested Infra
               </h2>
               <p className="text-lg text-white/80 mb-8 leading-relaxed">
-                Orderly’s SDK powers the DEXes deployed by WOO, Raydium,
+                Orderly’s SDK powers the DEXs deployed by WOO, Raydium,
                 Quickswap, and other established DeFi powerhouses.
               </p>
               <Button

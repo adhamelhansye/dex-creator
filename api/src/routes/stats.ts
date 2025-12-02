@@ -219,7 +219,7 @@ stats.get("/swap-fee-config", async c => {
 
     return c.json(graduatedDexes);
   } catch (error) {
-    console.error("Error getting graduated DEXes:", error);
+    console.error("Error getting graduated DEXs:", error);
     return c.json({ error: "Internal Server Error" }, 500);
   }
 });

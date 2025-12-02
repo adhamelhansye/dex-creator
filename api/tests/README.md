@@ -34,7 +34,7 @@ tests/
 - **Graduation**: Transaction verification, fee management, broker creation
 
 ### Test Utilities
-- **TestDataFactory**: Creates test users, DEXes, and tokens
+- **TestDataFactory**: Creates test users, DEXs, and tokens
 - **Mock Data Generators**: Realistic test data for all entities
 - **Authentication Helpers**: Wallet creation, signature generation
 - **Database Cleanup**: Automatic cleanup between tests
@@ -85,7 +85,7 @@ Tests automatically:
 - Admin users with elevated privileges
 - Authentication tokens with configurable expiration
 
-### Test DEXes
+### Test DEXs
 - Complete DEX configurations
 - Custom branding (logos, themes)
 - Social links and SEO settings
