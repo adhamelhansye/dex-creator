@@ -117,8 +117,8 @@ export default function AllDexesList({
       setPageSize(targetSize);
       setSearchTerm(targetSearch);
     } catch (error) {
-      console.error("Error loading DEXes:", error);
-      toast.error("Failed to load DEXes");
+      console.error("Error loading DEXs:", error);
+      toast.error("Failed to load DEXs");
     } finally {
       if (isSearch) {
         setSearchLoading(false);
@@ -163,7 +163,7 @@ export default function AllDexesList({
   return (
     <div className="bg-light/5 backdrop-blur-sm rounded-xl p-4 md:p-6 border border-light/10 md:col-span-2">
       <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-medium">Browse All DEXes</h2>
+        <h2 className="text-xl font-medium">Browse All DEXs</h2>
         <button
           onClick={() => {
             loadAllDexes(currentPage, pageSize, searchTerm);
@@ -178,7 +178,7 @@ export default function AllDexesList({
         </button>
       </div>
       <p className="text-gray-400 text-sm mb-4">
-        A comprehensive list of all DEXes and their database values.
+        A comprehensive list of all DEXs and their database values.
       </p>
 
       {/* Search Input */}
@@ -206,10 +206,10 @@ export default function AllDexesList({
       {loadingDexes ? (
         <div className="text-center py-4">
           <div className="i-svg-spinners:pulse-rings h-8 w-8 mx-auto text-primary-light mb-2"></div>
-          <p className="text-sm text-gray-400">Loading DEXes...</p>
+          <p className="text-sm text-gray-400">Loading DEXs...</p>
         </div>
       ) : allDexes.length === 0 ? (
-        <p className="text-gray-400 text-sm italic">No DEXes found.</p>
+        <p className="text-gray-400 text-sm italic">No DEXs found.</p>
       ) : (
         <div className="relative space-y-4 max-h-[600px] overflow-y-auto">
           {/* Search Loading Overlay */}
@@ -510,7 +510,7 @@ export default function AllDexesList({
           totalItems={totalDexes}
           onPageChange={page => loadAllDexes(page, pageSize, searchTerm)}
           onPageSizeChange={size => loadAllDexes(1, size, searchTerm)}
-          itemName="DEXes"
+          itemName="DEXs"
         />
       )}
     </div>

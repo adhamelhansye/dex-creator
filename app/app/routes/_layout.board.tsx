@@ -12,7 +12,7 @@ export const meta: MetaFunction = () => [
   {
     name: "description",
     content:
-      "Discover top performing DEXes built on Orderly Network. View trading volume, PnL, and broker fees across all platforms.",
+      "Discover top performing DEXs built on Orderly Network. View trading volume, PnL, and broker fees across all platforms.",
   },
 ];
 
@@ -167,7 +167,7 @@ export default function BoardRoute() {
             DEX Board
           </h1>
           <p className="text-gray-300 text-lg md:text-xl mb-6">
-            Discover the top performing DEXes on Orderly One
+            Discover the top performing DEXs on Orderly One
           </p>
         </div>
 
@@ -187,7 +187,7 @@ export default function BoardRoute() {
                     dexStats.total.allTime.toLocaleString()
                   )}
                 </div>
-                <div className="text-xs text-gray-300 mb-1">Total DEXes</div>
+                <div className="text-xs text-gray-300 mb-1">Total DEXs</div>
                 <div className="text-xs text-primary-light">
                   +{dexStats.total.new.toLocaleString()} new ({dexStats.period})
                 </div>
@@ -328,7 +328,7 @@ export default function BoardRoute() {
             pageSize={pageSize}
             totalItems={totalItems}
             onPageChange={handlePageChange}
-            itemName="DEXes"
+            itemName="DEXs"
             showPageSizeSelector={false}
           />
         )}
@@ -343,7 +343,7 @@ export default function BoardRoute() {
             />
             <p className="text-gray-300 text-lg mb-2">No data available</p>
             <p className="text-gray-400">
-              The board will populate as DEXes generate trading activity.
+              The board will populate as DEXs generate trading activity.
             </p>
           </div>
         )}
@@ -359,8 +359,8 @@ export default function BoardRoute() {
                 How it works
               </h4>
               <p>
-                The board aggregates trading data from DEXes launched via
-                Orderly One over the last 30 days.
+                The board aggregates trading data from DEXs launched via Orderly
+                One over the last 30 days.
               </p>
             </div>
             <div>

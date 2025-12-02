@@ -1,21 +1,21 @@
 # Case Studies - Orderly One
 
-> Real-world examples of successful DEXes built with Orderly One
+> Real-world examples of successful DEXs built with Orderly One
 
 ## Overview
 
-This page showcases successful DEXes built using the Orderly One platform, demonstrating the capabilities and potential of the no-code DEX creator.
+This page showcases successful DEXs built using the Orderly One platform, demonstrating the capabilities and potential of the no-code DEX creator.
 
 ## What You'll Find
 
 ### Success Stories
-- Real DEXes built with Orderly One
+- Real DEXs built with Orderly One
 - Trading volume and performance metrics
 - Unique features and customizations
 - Community growth strategies
 
 ### Use Cases
-Different types of DEXes created:
+Different types of DEXs created:
 - Community-driven trading platforms
 - Project-specific exchanges
 - Regional trading hubs

@@ -36,8 +36,8 @@ This is a monorepo managed with Yarn Workspaces:
 
 - Role-based access control for platform administrators
 - Manage DEX instances across the platform
-- Delete DEXes by wallet address
-- Approve broker ID requests for graduated DEXes
+- Delete DEXs by wallet address
+- Approve broker ID requests for graduated DEXs
 - View admin-only information
 
 For detailed documentation on the admin implementation, see [COMPOSER.md](./COMPOSER.md).

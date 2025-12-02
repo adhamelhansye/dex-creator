@@ -289,7 +289,7 @@ export default function ReferralRoute() {
                 Graduation Required
               </h3>
               <p className="text-gray-300 mb-4">
-                Referral settings are only available for graduated DEXes. You
+                Referral settings are only available for graduated DEXs. You
                 need to graduate your DEX first to start earning revenue and
                 enable referral programs.
               </p>
@@ -308,7 +308,7 @@ export default function ReferralRoute() {
                   <li className="flex items-start gap-2">
                     <div className="i-mdi:account-group text-primary w-4 h-4 flex-shrink-0 mt-0.5"></div>
                     <span>
-                      Graduated DEXes can offer rebates and rewards to traders
+                      Graduated DEXs can offer rebates and rewards to traders
                     </span>
                   </li>
                   <li className="flex items-start gap-2">

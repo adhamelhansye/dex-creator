@@ -100,7 +100,7 @@ The Orderly One platform includes a comprehensive admin system that allows privi
 
 1. **Role-Based Access Control**: Users can be assigned admin privileges through a database flag
 2. **Admin Dashboard**: A secure interface for performing administrative actions
-3. **DEX Management**: Ability to delete DEXes associated with specific wallet addresses
+3. **DEX Management**: Ability to delete DEXs associated with specific wallet addresses
 4. **Security**: Multi-layered authentication and authorization checks
 
 ### Technical Implementation
@@ -151,7 +151,7 @@ The admin system implements middleware functions to secure admin routes:
 
 ##### DEX Management Routes
 
-Admin functionality for managing DEXes:
+Admin functionality for managing DEXs:
 
 - `DELETE /api/dex/admin/delete`: Allows admins to delete a DEX by wallet address
 
@@ -163,7 +163,7 @@ The admin interface provides:
 
 - Admin status checking on page load
 - Proper authorization flow with clear user feedback
-- Interface for deleting DEXes by wallet address
+- Interface for deleting DEXs by wallet address
 - Comprehensive error handling and result display
 
 ##### Auth Context Integration
@@ -239,7 +239,7 @@ Key files:
 - `api/src/routes/dex.ts`: API routes for DEX operations
 - `api/src/routes/auth.ts`: API routes for wallet authentication
 - `api/src/routes/admin.ts`: API routes for admin operations
-- `api/src/models/dex.ts`: Data models and storage for DEXes
+- `api/src/models/dex.ts`: Data models and storage for DEXs
 - `api/src/models/user.ts`: User model for authentication
 - `api/src/models/admin.ts`: Admin model for admin management
 - `api/src/lib/prisma.ts`: Prisma client configuration
@@ -269,7 +269,7 @@ The database is configured with proper indexes and relations to ensure efficient
 3. **Configuration**: Uses `ORDERLY_DATABASE_URL` environment variable
 4. **Integration**: Automatically adds new brokers after successful graduation
 
-The Orderly database integration ensures that graduated DEXes are properly registered in the Orderly ecosystem with the correct fee structure and broker configuration.
+The Orderly database integration ensures that graduated DEXs are properly registered in the Orderly ecosystem with the correct fee structure and broker configuration.
 
 ### Authentication Flow
 
@@ -873,7 +873,7 @@ Alternative individual commands:
 
 | Method | Endpoint           | Description                       | Status      |
 | ------ | ------------------ | --------------------------------- | ----------- |
-| GET    | /api/dex           | List all DEXes                    | Planned     |
+| GET    | /api/dex           | List all DEXs                    | Planned     |
 | GET    | /api/dex/:id       | Get a specific DEX                | Planned     |
 | POST   | /api/dex           | Create a new DEX                  | Planned     |
 | PUT    | /api/dex/:id       | Update a DEX                      | Planned     |
