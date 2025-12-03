@@ -10,6 +10,10 @@ import { API_BASE_URL } from "../utils/wagmiConfig";
 import { toast } from "react-toastify";
 import { setGlobalDisconnect } from "../utils/globalDisconnect";
 import { useTrack } from "../hooks/useTrack";
+import {
+  DistributorInfo,
+  useDistributorInfoByAddress,
+} from "../hooks/useDistrubutorInfo";
 
 interface User {
   id: string;
@@ -25,6 +29,7 @@ export interface AuthContextType {
   login: () => Promise<void>;
   logout: () => void;
   validateToken: () => Promise<boolean>;
+  distributorInfo?: DistributorInfo;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -43,6 +48,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
   const { setUserId } = useTrack();
+
+  const distributorInfo = useDistributorInfoByAddress(address);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -242,6 +249,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         validateToken,
+        distributorInfo,
       }}
     >
       {children}
