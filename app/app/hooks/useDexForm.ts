@@ -23,7 +23,7 @@ const base64ToBlob = async (base64: string): Promise<Blob> => {
 };
 
 const blobToBase64 = (blob: Blob): Promise<string> => {
-  return new Promise((resolve) => {
+  return new Promise(resolve => {
     const reader = new FileReader();
     reader.onloadend = () => resolve(reader.result as string);
     reader.readAsDataURL(blob);
@@ -621,7 +621,7 @@ export function useDexForm(): UseDexFormReturn {
       }
       if (images.pnlPosters) {
         const posterBlobs = await Promise.all(
-          images.pnlPosters.map((poster) =>
+          images.pnlPosters.map(poster =>
             poster ? base64ToBlob(poster) : Promise.resolve(null)
           )
         );
@@ -642,7 +642,7 @@ export function useDexForm(): UseDexFormReturn {
       secondaryLogo ? blobToBase64(secondaryLogo) : Promise.resolve(null),
       favicon ? blobToBase64(favicon) : Promise.resolve(null),
       Promise.all(
-        pnlPosters.map((poster) =>
+        pnlPosters.map(poster =>
           poster ? blobToBase64(poster) : Promise.resolve(null)
         )
       ),
@@ -852,7 +852,7 @@ export function useDexForm(): UseDexFormReturn {
   }, []);
 
   const toggleThemeEditor = useCallback(() => {
-    setShowThemeEditor((prev) => !prev);
+    setShowThemeEditor(prev => !prev);
   }, []);
 
   const handleThemeEditorChange = useCallback((value: string) => {

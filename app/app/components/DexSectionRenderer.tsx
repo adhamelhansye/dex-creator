@@ -62,16 +62,16 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "If you have been referred by a distributor and given a distributor code, please input below for binding.",
     isOptional: true,
     component: DistributorCodeSection,
-    getProps: (props) => ({
+    getProps: props => ({
       distributorCode: props.distributorCode,
       handleInputChange: props.handleInputChange,
       distributorCodeValidator: props.distributorCodeValidator,
     }),
-    getValidationTest: (props) =>
+    getValidationTest: props =>
       props.distributorCode.trim()
         ? props.distributorCodeValidator(props.distributorCode.trim()) === null
         : true,
-    getValue: (props) => props.distributorCode,
+    getValue: props => props.distributorCode,
   },
   {
     id: 2,
@@ -81,14 +81,14 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Configure your DEX's basic information and trading broker details. Broker name can only contain letters, numbers, spaces, dots, hyphens, and underscores.",
     isOptional: false,
     component: BrokerDetailsSection,
-    getProps: (props) => ({
+    getProps: props => ({
       brokerName: props.brokerName,
       handleInputChange: props.handleInputChange,
       brokerNameValidator: props.brokerNameValidator,
     }),
-    getValidationTest: (props) =>
+    getValidationTest: props =>
       props.brokerNameValidator(props.brokerName.trim()) === null,
-    getValue: (props) => props.brokerName,
+    getValue: props => props.brokerName,
   },
   {
     id: 3,
@@ -98,7 +98,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Customize your DEX with your own branding by pasting your logos below. Copy an image to your clipboard (from any image editor or browser), then click in the paste area and press Ctrl+V or ⌘+V. All branding fields are optional.",
     isOptional: true,
     component: BrandingSection,
-    getProps: (props) => ({
+    getProps: props => ({
       primaryLogo: props.primaryLogo,
       secondaryLogo: props.secondaryLogo,
       favicon: props.favicon,
@@ -113,7 +113,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Customize your DEX's colors and theme by editing the CSS directly or describing how you want it to look for AI-assisted generation. Theme customization is completely optional - your DEX will work great with the default theme.",
     isOptional: true,
     component: ThemeCustomizationSection,
-    getProps: (props) => ({
+    getProps: props => ({
       currentTheme: props.currentTheme,
       defaultTheme: props.defaultTheme,
       showThemeEditor: props.showThemeEditor,
@@ -146,7 +146,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Upload custom background images for PnL sharing posters. Users can share their trading performance with these backgrounds. You can upload up to 8 custom poster backgrounds. Leave empty to use default poster designs.",
     isOptional: true,
     component: PnLPostersSection,
-    getProps: (props) => ({
+    getProps: props => ({
       pnlPosters: props.pnlPosters,
       onChange: props.handlePnLPosterChange,
     }),
@@ -159,7 +159,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Add social media links that will appear in your DEX footer. All social media links are optional. Leave empty if not applicable.",
     isOptional: true,
     component: SocialLinksSection,
-    getProps: (props) => ({
+    getProps: props => ({
       telegramLink: props.telegramLink,
       discordLink: props.discordLink,
       xLink: props.xLink,
@@ -175,7 +175,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Configure SEO settings to optimize how your DEX appears in search engines and social media sharing. All SEO fields are optional but recommended for better discoverability.",
     isOptional: true,
     component: SEOConfigSection,
-    getProps: (props) => ({
+    getProps: props => ({
       seoSiteName: props.seoSiteName,
       seoSiteDescription: props.seoSiteDescription,
       seoSiteLanguage: props.seoSiteLanguage,
@@ -195,7 +195,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Add your analytics tracking script to monitor usage and performance of your DEX. Supports Google Analytics, Plausible, Matomo, and other analytics services. This is completely optional.",
     isOptional: true,
     component: AnalyticsConfigSection,
-    getProps: (props) => ({
+    getProps: props => ({
       analyticsScript: props.analyticsScript,
       handleInputChange: props.handleInputChange,
     }),
@@ -208,7 +208,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Add your Reown Project ID to enable enhanced wallet connectivity functionality in your DEX. This is completely optional - your DEX will work without it.",
     isOptional: true,
     component: ReownConfigSection,
-    getProps: (props) => ({
+    getProps: props => ({
       walletConnectProjectId: props.walletConnectProjectId,
       handleInputChange: props.handleInputChange,
     }),
@@ -221,7 +221,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Add your Privy credentials to enable social login, email authentication, and other wallet connection options in your DEX. This is completely optional. Only the App ID is required if you want to use Privy.",
     isOptional: true,
     component: PrivyConfigSection,
-    getProps: (props) => ({
+    getProps: props => ({
       privyAppId: props.privyAppId,
       privyTermsOfUse: props.privyTermsOfUse,
       handleInputChange: props.handleInputChange,
@@ -235,7 +235,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       privyLoginMethods: props.privyLoginMethods,
       onPrivyLoginMethodsChange: props.onPrivyLoginMethodsChange,
     }),
-    getValidationTest: (props) =>
+    getValidationTest: props =>
       props.privyTermsOfUse.trim()
         ? props.urlValidator(props.privyTermsOfUse.trim()) === null
         : true,
@@ -248,7 +248,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Choose which blockchains your DEX will support for trading. This is optional - your DEX will support all available blockchains by default.",
     isOptional: true,
     component: BlockchainConfigSection,
-    getProps: (props) => ({
+    getProps: props => ({
       chainIds: props.chainIds,
       onChainIdsChange: props.onChainIdsChange,
       defaultChain: props.defaultChain,
@@ -267,7 +267,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Select which trading pairs will be displayed in your DEX. Leave empty to show all available assets. This is optional - your DEX will show all assets by default.",
     isOptional: true,
     component: AssetFilterSection,
-    getProps: (props) => ({
+    getProps: props => ({
       symbolList: props.symbolList,
       onSymbolListChange: props.setSymbolList,
     }),
@@ -280,7 +280,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Select the languages you want to support in your DEX interface. This is optional - your DEX will default to English only.",
     isOptional: true,
     component: LanguageSupportSection,
-    getProps: (props) => ({
+    getProps: props => ({
       availableLanguages: props.availableLanguages,
       onAvailableLanguagesChange: props.onAvailableLanguagesChange,
     }),
@@ -293,7 +293,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Customize which navigation links appear in your DEX. This is optional - if you don't select any menus, the default menus will be displayed.",
     isOptional: true,
     component: NavigationMenuSection,
-    getProps: (props) => ({
+    getProps: props => ({
       enabledMenus: props.enabledMenus,
       setEnabledMenus: props.setEnabledMenus,
       customMenus: props.customMenus,
@@ -312,7 +312,7 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       "Enable a one-time disclaimer dialog that informs users about the platform's use of Orderly Network's infrastructure. This is optional and can help set proper expectations for users.",
     isOptional: true,
     component: ServiceDisclaimerSection,
-    getProps: (props) => ({
+    getProps: props => ({
       enableServiceDisclaimerDialog: props.enableServiceDisclaimerDialog,
       onEnableServiceDisclaimerDialogChange:
         props.onEnableServiceDisclaimerDialogChange,
@@ -338,6 +338,7 @@ interface DexSectionRendererProps {
   showProgressTracker?: boolean;
   customRender?: (children: ReactNode, section: DexSectionConfig) => ReactNode;
   shouldShowSkip?: (section: DexSectionConfig) => boolean;
+  customDescription?: (section: DexSectionConfig) => ReactNode;
 }
 
 const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
@@ -354,6 +355,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
   showProgressTracker = false,
   customRender,
   shouldShowSkip,
+  customDescription,
 }) => {
   const [currentSection, setCurrentSection] = useState(1);
   const sectionRefsRef = useRef<Record<number, HTMLElement | null>>({});
@@ -362,8 +364,8 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
     if (mode !== "direct" || !showProgressTracker) return;
 
     const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
+      entries => {
+        entries.forEach(entry => {
           if (entry.isIntersecting) {
             const sectionId = parseInt(
               entry.target.getAttribute("data-section-id") || "0"
@@ -379,7 +381,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
     );
 
     const timeoutId = setTimeout(() => {
-      Object.values(sectionRefsRef.current).forEach((ref) => {
+      Object.values(sectionRefsRef.current).forEach(ref => {
         if (ref) {
           observer.observe(ref);
         }
@@ -451,7 +453,9 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
           allRequiredPreviousStepsCompleted={allRequiredPreviousStepsCompleted}
           value={section.getValue ? section.getValue(sectionProps) : undefined}
         >
-          <p className="text-xs text-gray-400 mb-4">{section.description}</p>
+          <p className="text-xs text-gray-400 mb-4">
+            {customDescription?.(section) || section.description}
+          </p>
           <Component {...componentProps} />
         </AccordionItem>
       );
@@ -465,7 +469,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
       const content = (
         <div
           key={section.key}
-          ref={(el) => {
+          ref={el => {
             if (el) {
               sectionRefsRef.current[section.id] = el;
             }
@@ -484,7 +488,7 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
                 )}
               </h3>
               <p className="text-xs text-gray-400 mb-4">
-                {section.description}
+                {customDescription?.(section) || section.description}
               </p>
             </>
           )}

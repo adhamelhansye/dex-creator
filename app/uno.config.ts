@@ -96,6 +96,17 @@ export default defineConfig({
       success: "rgb(48, 208, 88)",
       warning: "rgb(242, 153, 74)",
       error: "rgb(242, 78, 78)",
+      base: {
+        contrast: {
+          DEFAULT: "rgb(255 255 255 / 0.98)",
+          80: "rgb(255 255 255 / 0.80)",
+          54: "rgb(255 255 255 / 0.54)",
+          36: "rgb(255 255 255 / 0.36)",
+          20: "rgb(255 255 255 / 0.2)",
+          12: "rgb(255 255 255 / 0.12)",
+          16: "rgb(255 255 255 / 0.16)",
+        },
+      },
     },
     extend: {
       backgroundImage: {

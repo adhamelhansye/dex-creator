@@ -53,7 +53,11 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = ({
       value={value}
       onChange={handleInputChange("distributorCode")}
       placeholder="Distributor code"
-      helpText="Alphanumeric characters only. Other special characters and spaces are not permitted."
+      helpText={
+        isBound
+          ? ""
+          : "Alphanumeric characters only. Other special characters and spaces are not permitted."
+      }
       // minLength={4}
       maxLength={isBound ? undefined : 10}
       validator={isBound ? undefined : distributorCodeValidator}
@@ -65,7 +69,7 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = ({
 
 export default DistributorCodeSection;
 
-const DistributorCodeSuffix: React.FC<{ onClick?: () => void }> = (props) => {
+const DistributorCodeSuffix: React.FC<{ onClick?: () => void }> = props => {
   return (
     <div
       className={clsx(

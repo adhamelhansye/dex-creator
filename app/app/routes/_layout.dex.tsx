@@ -299,7 +299,7 @@ export default function DexRoute() {
             });
             toast.success("Custom domain removed successfully");
           })
-          .catch((error) => {
+          .catch(error => {
             console.error("Error removing custom domain:", error);
             toast.error("Failed to remove custom domain");
           })

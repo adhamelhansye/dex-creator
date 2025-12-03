@@ -49,7 +49,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { disconnect } = useDisconnect();
   const { setUserId } = useTrack();
 
-  const distributorInfo = useDistributorInfoByAddress(address);
+  const { data: distributorInfo } = useDistributorInfoByAddress(address);
 
   const logout = useCallback(() => {
     setUser(null);

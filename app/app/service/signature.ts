@@ -91,4 +91,38 @@ export class SignatureService {
       verifyingContract: domain.verifyingContract,
     };
   }
+
+  /**
+   * Generate bind distributor code message and signature
+   */
+  async generateRegisterAccountMessage(inputs: RegisterAccountInputs) {
+    const domain = this.getDomain();
+
+    const primaryType = "BindDistributorCode";
+
+    const typeDefinition = {
+      // EIP712Domain: MESSAGE_TYPES.EIP712Domain,
+      [primaryType]: MESSAGE_TYPES[primaryType],
+    };
+
+    const toSignatureMessage: ToSignatureMessage = {
+      domain,
+      message: inputs,
+      primaryType,
+      types: typeDefinition,
+    };
+
+    const signedMessage = await this.signTypedData(toSignatureMessage);
+
+    return {
+      message: {
+        ...inputs,
+        chainId: this.chainId,
+        chainType: "EVM",
+      },
+      signature: signedMessage,
+      userAddress: this.address,
+      verifyingContract: domain.verifyingContract,
+    };
+  }
 }

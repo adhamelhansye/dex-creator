@@ -19,7 +19,11 @@ export const useDistributorInfoByUrl = () => {
   const { data } = useQuery<DistributorInfo>(
     distributor_code
       ? `/v1/orderly_one/vanguard/verify_code?distributor_code=${distributor_code}`
-      : null
+      : null,
+    {
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+    }
   );
 
   return {
@@ -29,9 +33,11 @@ export const useDistributorInfoByUrl = () => {
 };
 
 export const useDistributorInfoByAddress = (address?: string) => {
-  const { data } = useQuery<DistributorInfo>(
-    address ? `/v1/orderly_one/vanguard/check?address=${address}` : null
+  return useQuery<DistributorInfo>(
+    address ? `/v1/orderly_one/vanguard/check?address=${address}` : null,
+    {
+      revalidateOnFocus: false,
+      keepPreviousData: true,
+    }
   );
-
-  return data;
 };

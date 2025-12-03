@@ -14,6 +14,7 @@ import { DexData, ThemeTabType } from "../types/dex";
 import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
 import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
 import { useAuth } from "../context/useAuth";
+import { useDistributorCode } from "../hooks/useDistrubutorInfo";
 
 const TOTAL_STEPS = DEX_SECTIONS.length;
 
@@ -41,6 +42,7 @@ export default function DexSetupAssistant({
   );
 
   const { distributorInfo } = useAuth();
+  const distributorCodeFromUrl = useDistributorCode();
 
   const handleApplyGeneratedTheme = (modifiedCss: string) => {
     form.setCurrentTheme(modifiedCss);
@@ -98,7 +100,7 @@ export default function DexSetupAssistant({
   const allRequiredPreviousStepsCompleted = (stepNumber: number) => {
     if (stepNumber === 1) return true;
     for (let i = 1; i < stepNumber; i++) {
-      const stepConfig = DEX_SECTIONS.find((s) => s.id === i);
+      const stepConfig = DEX_SECTIONS.find(s => s.id === i);
       if (stepConfig && !stepConfig.isOptional && !completedSteps[i]) {
         return false;
       }
@@ -107,7 +109,7 @@ export default function DexSetupAssistant({
   };
 
   const handleNextStep = async (step: number, skip?: boolean) => {
-    const currentStepConfig = DEX_SECTIONS.find((s) => s.id === step);
+    const currentStepConfig = DEX_SECTIONS.find(s => s.id === step);
 
     if (
       currentStepConfig &&
@@ -157,7 +159,7 @@ export default function DexSetupAssistant({
     }
 
     if (
-      step === DEX_SECTIONS.find((s) => s.title === "Privy Configuration")?.id
+      step === DEX_SECTIONS.find(s => s.title === "Privy Configuration")?.id
     ) {
       const privyTermsOfUseFilled =
         form.privyTermsOfUse && form.privyTermsOfUse.trim() !== "";
@@ -171,7 +173,7 @@ export default function DexSetupAssistant({
       }
     }
 
-    setCompletedSteps((prev) => ({ ...prev, [step]: true }));
+    setCompletedSteps(prev => ({ ...prev, [step]: true }));
     if (step < TOTAL_STEPS) {
       setCurrentStep(step + 1);
 
@@ -325,7 +327,7 @@ export default function DexSetupAssistant({
       successMessageWithRepo:
         "DEX created with current settings! Repository is being set up.",
       successMessageWithoutRepo: "DEX created with current settings!",
-      onSuccess: (savedData) => {
+      onSuccess: savedData => {
         updateDexData(savedData);
       },
     });
@@ -432,11 +434,19 @@ export default function DexSetupAssistant({
             }
             return children;
           }}
-          shouldShowSkip={(section) => {
+          shouldShowSkip={section => {
             if (section.key === DEX_SECTION_KEYS.DistributorCode) {
-              return !distributorInfo?.exist;
+              return !distributorInfo?.exist && !distributorCodeFromUrl;
             }
             return false;
+          }}
+          customDescription={section => {
+            if (section.key === DEX_SECTION_KEYS.DistributorCode) {
+              return distributorInfo?.exist
+                ? "You have been invited by the following distributor."
+                : section.description;
+            }
+            return section.description;
           }}
         />
       </Form>

@@ -330,6 +330,14 @@ export default function DexConfigRoute() {
             ThemeTabButton,
           })}
           idPrefix="config-"
+          customDescription={section => {
+            if (section.key === DEX_SECTION_KEYS.DistributorCode) {
+              return distributorInfo?.exist
+                ? "You have been invited by the following distributor."
+                : section.description;
+            }
+            return section.description;
+          }}
         />
       </Form>
     </div>

@@ -53,7 +53,7 @@ export function AppKitProvider({ children }: AppKitProviderProps) {
   useEffect(() => {
     const intervalId = setInterval(
       () => {
-      queryClient.invalidateQueries();
+        queryClient.invalidateQueries();
       },
       15 * 60 * 1000
     );

@@ -160,14 +160,14 @@ export async function pollAccountRegistration(
 
       if (attempt < maxAttempts) {
         const delay = initialDelay * attempt;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     } catch (error) {
       console.warn(`Registration check attempt ${attempt} failed:`, error);
 
       if (attempt < maxAttempts) {
         const delay = initialDelay * attempt;
-        await new Promise((resolve) => setTimeout(resolve, delay));
+        await new Promise(resolve => setTimeout(resolve, delay));
       }
     }
   }
@@ -575,7 +575,7 @@ export function saveOrderlyKey(
 function base64EncodeURL(byteArray: Uint8Array) {
   return btoa(
     Array.from(new Uint8Array(byteArray))
-      .map((val) => {
+      .map(val => {
         return String.fromCharCode(val);
       })
       .join("")
@@ -589,7 +589,7 @@ function base64DecodeURL(b64urlstring: string): Uint8Array {
   return new Uint8Array(
     atob(b64urlstring.replace(/-/g, "+").replace(/_/g, "/"))
       .split("")
-      .map((val) => {
+      .map(val => {
         return val.charCodeAt(0);
       })
   );
