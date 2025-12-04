@@ -1,17 +1,15 @@
 import { Link, useLocation } from "@remix-run/react";
-import {
-  navigationItems,
-  isPathActive,
-  getPathWithSearch,
-} from "../utils/navigation";
+import { isPathActive, getPathWithSearch } from "../utils/navigation";
+import { useNavigationMenu } from "../hooks/useNavigationMenu";
 
 export default function Navigation() {
   const location = useLocation();
+  const menuItems = useNavigationMenu();
 
   return (
     <nav className="flex items-center">
       <div className="flex lg:gap-4">
-        {navigationItems.map(item => {
+        {menuItems.map(item => {
           const isActive = isPathActive(
             location.pathname,
             item.path,

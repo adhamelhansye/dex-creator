@@ -2,6 +2,7 @@ import React from "react";
 import { toast } from "react-toastify";
 import { Card } from "./Card";
 import { Button } from "./Button";
+import clsx from "clsx";
 
 export interface AccordionItemProps {
   title: string;
@@ -17,6 +18,7 @@ export interface AccordionItemProps {
   setCurrentStep: (step: number) => void;
   allRequiredPreviousStepsCompleted: (stepNumber: number) => boolean;
   value?: string;
+  isValidating?: boolean;
 }
 
 const AccordionItem: React.FC<AccordionItemProps> = ({
@@ -33,6 +35,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
   setCurrentStep,
   allRequiredPreviousStepsCompleted,
   value,
+  isValidating,
 }) => {
   return (
     <Card
@@ -83,7 +86,13 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
         </div>
       </div>
       {isActive && (
-        <div className="p-3 md:p-6 border-t border-light/10 slide-fade-in bg-base-8/30">
+        <div
+          className={clsx(
+            "p-3 md:p-6 border-t border-light/10 slide-fade-in bg-base-8/30",
+            // when isValidating is true, disabled user interaction
+            isValidating ? "pointer-events-none" : ""
+          )}
+        >
           {children}
           <div className="mt-6 flex justify-end space-x-3">
             {showSkip && (
@@ -102,6 +111,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
               type="button"
               size="sm"
               disabled={!isOptional && !isStepContentValidTest}
+              isLoading={isValidating}
             >
               Next
             </Button>

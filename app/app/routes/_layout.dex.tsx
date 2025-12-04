@@ -8,7 +8,7 @@ import { post, del } from "../utils/apiClient";
 import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
-import { useNavigate, useSearchParams } from "@remix-run/react";
+import { useLocation, useNavigate } from "@remix-run/react";
 import DexCreationStatus from "../components/DexCreationStatus";
 import CustomDomainSection from "../components/CustomDomainSection";
 import DexSetupAssistant from "../components/DexSetupAssistant";
@@ -18,6 +18,7 @@ import { DexData, defaultTheme } from "../types/dex";
 import { useDistributorInfoByUrl } from "../hooks/useDistrubutorInfo";
 import { MainnetChains } from "../components/ChainsSelect";
 import clsx from "clsx";
+import { useDistributor } from "../context/DistributorContext";
 
 export const meta: MetaFunction = () => [
   { title: "Create Your DEX - Orderly One" },
@@ -56,6 +57,8 @@ export default function DexRoute() {
   const populatedFormForDexId = useRef<string | null>(null);
   const initializedThemeForDexId = useRef<string | null>(null);
   const distributorInfo = useDistributorInfoByUrl();
+  const { isAmbassador } = useDistributor();
+  const location = useLocation();
 
   useEffect(() => {
     if (dexData && populatedFormForDexId.current !== dexData.id) {
@@ -197,6 +200,13 @@ export default function DexRoute() {
     isDexLoading,
     openModal,
   ]);
+
+  useEffect(() => {
+    // if user is ambassador, redirect to distributor page
+    if (isAmbassador) {
+      navigate(`/distributor${location.search}`);
+    }
+  }, [isAmbassador]);
 
   const handleRetryForking = async () => {
     if (!dexData || !dexData.id || !token) {

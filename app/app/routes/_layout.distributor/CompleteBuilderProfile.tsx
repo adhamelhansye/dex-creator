@@ -5,14 +5,7 @@ import { useDex } from "../../context/DexContext";
 import { DexGraduationCard } from "./components/DexGraduationCard";
 import { DistributorHeader } from "./components/DistributorHeader";
 
-type CompleteBuilderProfileProps = {
-  accountId: string;
-  brokerId: string;
-};
-
-export default function CompleteBuilderProfile(
-  props: CompleteBuilderProfileProps
-) {
+export function CompleteBuilderProfile() {
   const { dexData } = useDex();
 
   return (
@@ -33,12 +26,7 @@ export default function CompleteBuilderProfile(
           <DexGraduationCard />
 
           {/* Step 4 */}
-          {dexData && dexData.isGraduated && (
-            <OrderlyKeyCard
-              brokerId={props.brokerId}
-              accountId={props.accountId}
-            />
-          )}
+          {dexData && dexData.isGraduated && <OrderlyKeyCard />}
         </div>
       </div>
     </div>

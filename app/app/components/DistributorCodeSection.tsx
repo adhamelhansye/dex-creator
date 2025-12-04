@@ -3,7 +3,6 @@ import FormInput from "./FormInput";
 import { useDistributorCode } from "../hooks/useDistrubutorInfo";
 import clsx from "clsx";
 import { useAuth } from "../context/useAuth";
-
 export interface BrokerDetailsProps {
   distributorCode: string;
   handleInputChange: (
@@ -12,11 +11,9 @@ export interface BrokerDetailsProps {
   distributorCodeValidator: (value: string) => string | null;
 }
 
-const DistributorCodeSection: React.FC<BrokerDetailsProps> = ({
-  distributorCode,
-  handleInputChange,
-  distributorCodeValidator,
-}) => {
+const DistributorCodeSection: React.FC<BrokerDetailsProps> = props => {
+  const { distributorCode, handleInputChange, distributorCodeValidator } =
+    props;
   const distributorCodeFromUrl = useDistributorCode();
   const [showClearIcon, setShowClearIcon] = useState(!!distributorCodeFromUrl);
 
@@ -45,6 +42,9 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = ({
 
   const label = isBound ? "Your distributor" : "Distributor code";
   const value = distributorInfo?.distributor_name || distributorCode;
+  const helpText = isBound
+    ? ""
+    : "Alphanumeric characters only. Other special characters and spaces are not permitted.";
 
   return (
     <FormInput
@@ -53,12 +53,7 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = ({
       value={value}
       onChange={handleInputChange("distributorCode")}
       placeholder="Distributor code"
-      helpText={
-        isBound
-          ? ""
-          : "Alphanumeric characters only. Other special characters and spaces are not permitted."
-      }
-      // minLength={4}
+      helpText={helpText}
       maxLength={isBound ? undefined : 10}
       validator={isBound ? undefined : distributorCodeValidator}
       disabled={disabled}
@@ -69,7 +64,9 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = ({
 
 export default DistributorCodeSection;
 
-const DistributorCodeSuffix: React.FC<{ onClick?: () => void }> = props => {
+const DistributorCodeSuffix: React.FC<{
+  onClick?: () => void;
+}> = props => {
   return (
     <div
       className={clsx(

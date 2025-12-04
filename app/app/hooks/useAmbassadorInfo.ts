@@ -15,7 +15,6 @@ type AmbassadorInfo = {
 export function useAmbassadorInfo() {
   return usePrivateQuery<AmbassadorInfo>("/v1/vanguard/summary", {
     revalidateOnFocus: false,
-    keepPreviousData: true,
     /**
      * {"success":false,"code":-1004,"message":"account id not exist"}
      *  when the account may not exist yet, it will throw error, so we don't want to retry

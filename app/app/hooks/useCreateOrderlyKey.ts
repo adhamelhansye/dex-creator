@@ -7,7 +7,7 @@ export function useCreateOrderlyKey() {
   const [isCreatingKey, setIsCreatingKey] = useState(false);
   const { openModal } = useModal();
 
-  const { orderlyKey, hasValidKey, setOrderlyKey } = useOrderlyKey();
+  const { setOrderlyKey, ...rest } = useOrderlyKey();
 
   const createOrderlyKey = async ({
     brokerId,
@@ -38,5 +38,5 @@ export function useCreateOrderlyKey() {
     }
   };
 
-  return { orderlyKey, hasValidKey, isCreatingKey, createOrderlyKey };
+  return { isCreatingKey, createOrderlyKey, ...rest };
 }

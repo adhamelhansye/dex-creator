@@ -22,7 +22,6 @@ export const useDistributorInfoByUrl = () => {
       : null,
     {
       revalidateOnFocus: false,
-      keepPreviousData: true,
     }
   );
 
@@ -37,7 +36,6 @@ export const useDistributorInfoByAddress = (address?: string) => {
     address ? `/v1/orderly_one/vanguard/check?address=${address}` : null,
     {
       revalidateOnFocus: false,
-      keepPreviousData: true,
     }
   );
 };

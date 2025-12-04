@@ -1,66 +1,53 @@
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 import { useAuth } from "../../context/useAuth";
 import { CompleteAmbassadorProfile } from "./CompleteAmbassadorProfile";
 import { CreateDistributorProfile } from "./CreateDistributorProfile";
 import { VanguardDistributorProgramme } from "./VanguardDistributorProgramme";
-import { useAccount } from "wagmi";
-import { useDex } from "../../context/DexContext";
-import { useDistributorInfoByAddress } from "../../hooks/useDistrubutorInfo";
-import { useAmbassadorInfo } from "../../hooks/useAmbassadorInfo";
-import { useAccountInfo } from "../../hooks/useAccountInfo";
-import CompleteBuilderProfile from "./CompleteBuilderProfile";
+import { CompleteBuilderProfile } from "./CompleteBuilderProfile";
 import { useOrderlyKey } from "../../context/OrderlyKeyContext";
 import { OrderlyKeyCard } from "./components/OrderlyKeyCard";
 import { DistributorHeader } from "./components/DistributorHeader";
+import { useDistributor } from "../../context/DistributorContext";
+import { useDex } from "../../context/DexContext";
 
 export const AMBASSADOR_BROKER_ID = "ambassador";
 
 export default function DistributorRoute() {
   const { isAuthenticated } = useAuth();
-  const { address } = useAccount();
-  const { dexData, setBrokerId } = useDex();
+  const { setBrokerId } = useDex();
 
   const { hasValidKey } = useOrderlyKey();
-
-  const [accountId, setAccountId] = useState<string | null>(null);
+  // flag to prevent showing the create key card when creating ambassador profile
+  const isCreatingAmbassador = useRef(false);
 
   const {
-    data: ambassadorInfo,
-    isLoading: isLoadingAmbassadorInfo,
-    mutate: refetchAmbassadorInfo,
-  } = useAmbassadorInfo();
+    isInitialLoading,
+    isAmbassador,
+    ambassadorCompleted,
+    isBuilder,
+    builderCompleted,
+    mutateAmbassadorInfo,
+    mutateAccountInfo,
+  } = useDistributor();
 
-  const { data: accountInfo, isLoading: isLoadingAccountInfo } = useAccountInfo(
-    address!,
-    AMBASSADOR_BROKER_ID
+  const handleCreateAmbassador = () => {
+    isCreatingAmbassador.current = true;
+    // when broker id is set, we can calculate the account id
+    setBrokerId(AMBASSADOR_BROKER_ID);
+    // mutate the account info to get the latest account info
+    mutateAccountInfo();
+  };
+
+  const handleCompleteAmbassador = () => {
+    mutateAmbassadorInfo();
+  };
+
+  const createKeyCard = (
+    <div className="mt-15 md:mt-30 pb-52 max-w-6xl mx-auto flex flex-col gap-10 px-4 md:px-8 ">
+      <DistributorHeader title="Create key to manage your distributor profile" />
+      <OrderlyKeyCard />
+    </div>
   );
-
-  const { data: distributorInfo, isLoading: isLoadingDistributorInfo } =
-    useDistributorInfoByAddress(address);
-
-  const isAmbassador = !!accountInfo?.account_id;
-
-  const ambassadorCompleted =
-    isAmbassador && !!ambassadorInfo?.distributor_name;
-
-  const isBuilder = !!dexData || !!distributorInfo?.exist;
-
-  const builderCompleted = isBuilder && !!dexData?.isGraduated;
-
-  useEffect(() => {
-    if (accountInfo) {
-      setAccountId(accountInfo.account_id);
-      setBrokerId(AMBASSADOR_BROKER_ID);
-    }
-  }, [accountInfo]);
-
-  const hasNoData = !ambassadorInfo && !accountInfo && !distributorInfo;
-
-  const isInitialLoading =
-    hasNoData &&
-    (isLoadingAccountInfo ||
-      isLoadingDistributorInfo ||
-      isLoadingAmbassadorInfo);
 
   if (!isAuthenticated) {
     return <VanguardDistributorProgramme />;
@@ -74,17 +61,13 @@ export default function DistributorRoute() {
     );
   }
 
+  if (isAmbassador && !hasValidKey && !isCreatingAmbassador.current) {
+    return createKeyCard;
+  }
+
   if (ambassadorCompleted || builderCompleted) {
     if (!hasValidKey) {
-      return (
-        <div className="mt-15 md:mt-30 pb-52 max-w-6xl mx-auto flex flex-col gap-10 px-4 md:px-8 ">
-          <DistributorHeader title="Create key to manage your distributor profile" />
-          <OrderlyKeyCard
-            brokerId={AMBASSADOR_BROKER_ID}
-            accountId={accountId!}
-          />
-        </div>
-      );
+      return createKeyCard;
     }
 
     // TODO: show my distributor profile if already configured
@@ -92,30 +75,17 @@ export default function DistributorRoute() {
   }
 
   if (isBuilder) {
-    return (
-      <CompleteBuilderProfile
-        accountId={accountId!}
-        brokerId={AMBASSADOR_BROKER_ID}
-      />
-    );
+    return <CompleteBuilderProfile />;
   }
 
   if (isAmbassador) {
-    return (
-      <CompleteAmbassadorProfile
-        brokerId={AMBASSADOR_BROKER_ID}
-        accountId={accountId!}
-        onSuccess={() => {
-          refetchAmbassadorInfo();
-        }}
-      />
-    );
+    return <CompleteAmbassadorProfile onSuccess={handleCompleteAmbassador} />;
   }
 
   return (
     <CreateDistributorProfile
       brokerId={AMBASSADOR_BROKER_ID}
-      onSuccess={setAccountId}
+      onSuccess={handleCreateAmbassador}
     />
   );
 }

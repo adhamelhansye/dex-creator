@@ -1,22 +1,19 @@
 import { Button } from "../../../components/Button";
+import { useDex } from "../../../context/DexContext";
 import { useCreateOrderlyKey } from "../../../hooks/useCreateOrderlyKey";
 import { StepCard } from "./StepCard";
 import { SuccessStepCard } from "./SuccessStepCard";
 
-type OrderlyKeyCardProps = {
-  brokerId: string;
-  accountId: string;
-};
-
-export const OrderlyKeyCard = (props: OrderlyKeyCardProps) => {
-  const { hasValidKey, isCreatingKey, createOrderlyKey } =
+export const OrderlyKeyCard = () => {
+  const { brokerId } = useDex();
+  const { hasValidKey, isCreatingKey, createOrderlyKey, accountId } =
     useCreateOrderlyKey();
 
   const createKey = () => {
-    createOrderlyKey({
-      brokerId: props.brokerId,
-      accountId: props.accountId,
-    }).then(res => {});
+    if (!brokerId || !accountId) {
+      return;
+    }
+    createOrderlyKey({ brokerId, accountId }).then(res => {});
   };
 
   if (hasValidKey) {

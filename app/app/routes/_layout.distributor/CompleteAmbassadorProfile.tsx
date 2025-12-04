@@ -5,8 +5,6 @@ import { DistributorNameCard } from "./components/DistributorNameCard";
 import { DistributorHeader } from "./components/DistributorHeader";
 
 type CompleteDistributorProfileProps = {
-  accountId: string;
-  brokerId: string;
   onSuccess: () => void;
 };
 
@@ -30,10 +28,7 @@ export function CompleteAmbassadorProfile(
           />
 
           {/* Step 2 */}
-          <OrderlyKeyCard
-            brokerId={props.brokerId}
-            accountId={props.accountId}
-          />
+          <OrderlyKeyCard />
 
           {/* Step 3 */}
           {hasValidKey && <DistributorNameCard onSuccess={props.onSuccess} />}

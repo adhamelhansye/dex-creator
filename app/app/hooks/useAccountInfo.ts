@@ -12,7 +12,6 @@ export function useAccountInfo(address: string, brokerId: string) {
       : null,
     {
       revalidateOnFocus: false,
-      keepPreviousData: true,
       /**
        * {"success":false,"code":-1607,"message":"Account not found."}
        * when the account may not exist yet, it will throw error, so we don't want to retry
