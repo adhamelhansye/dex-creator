@@ -31,13 +31,18 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = props => {
     }
   }, [isBound]);
 
+  useEffect(() => {
+    if (!distributorCode) {
+      setDisabled(false);
+    }
+  }, [distributorCode]);
+
   const onClear = () => {
     handleInputChange("distributorCode")({
       target: {
         value: "",
       },
     } as React.ChangeEvent<HTMLInputElement>);
-    setDisabled(false);
   };
 
   const label = isBound ? "Your distributor" : "Distributor code";

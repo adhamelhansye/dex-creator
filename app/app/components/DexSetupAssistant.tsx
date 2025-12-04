@@ -43,7 +43,7 @@ export default function DexSetupAssistant({
   const [isValidating, setIsValidating] = useState(false);
 
   const { distributorInfo } = useAuth();
-  const distributorCodeFromUrl = useDistributorCode();
+  const urlDistributorCode = useDistributorCode();
 
   const handleApplyGeneratedTheme = (modifiedCss: string) => {
     form.setCurrentTheme(modifiedCss);
@@ -442,15 +442,13 @@ export default function DexSetupAssistant({
           }}
           shouldShowSkip={section => {
             if (section.key === DEX_SECTION_KEYS.DistributorCode) {
-              // if distributor code is empty, show skip button
-              // if distributor is not bound yet and distributor code from url is not provided, show skip button
-              // if distributor code from url is provided and it is not the same as the distributor code in the form, show skip button
-              return (
-                !form.distributorCode.trim() ||
-                (!distributorInfo?.exist && !distributorCodeFromUrl) ||
-                distributorCodeFromUrl?.toLowerCase() !==
-                  form.distributorCode.trim().toLowerCase()
-              );
+              const hideSkip =
+                !!distributorInfo?.exist ||
+                (!!urlDistributorCode &&
+                  urlDistributorCode ===
+                    form.distributorCode.trim().toUpperCase());
+
+              return !hideSkip;
             }
             return false;
           }}

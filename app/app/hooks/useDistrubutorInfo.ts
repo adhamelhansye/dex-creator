@@ -10,7 +10,7 @@ export type DistributorInfo = {
 
 export const useDistributorCode = () => {
   const [searchParams] = useSearchParams();
-  return searchParams.get("distributor_code");
+  return searchParams.get("distributor_code")?.toLocaleUpperCase();
 };
 
 export const useDistributorInfoByUrl = () => {

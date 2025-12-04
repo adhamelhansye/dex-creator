@@ -10,7 +10,7 @@ export function CompleteBuilderProfile() {
 
   return (
     <div className="mt-15 md:mt-30 pb-52 font-medium">
-      <div className="section-container flex flex-col gap-10 md:gap-16 items-start px-4 md:px-8 py-10 md:py-16 relative max-w-6xl mx-auto">
+      <div className="flex flex-col gap-10 md:gap-16 items-start px-4 md:px-8 py-10 md:py-16 relative max-w-6xl mx-auto">
         {/* Header Section */}
         <DistributorHeader title="Complete your distributor profile - 4 steps" />
 

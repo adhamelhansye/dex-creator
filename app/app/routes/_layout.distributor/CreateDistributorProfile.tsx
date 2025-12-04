@@ -57,8 +57,8 @@ export function CreateDistributorProfile(props: CreateDistributorProfileProps) {
   };
 
   return (
-    <div className="mt-15 md:mt-30 pb-52 font-medium">
-      <div className="section-container flex flex-col gap-10 md:gap-15 px-4 md:px-8 py-10 md:py-16 relative max-w-6xl mx-auto">
+    <div className="mt-18 md:mt-30 pt-5 pb-10 md:pb-15 font-medium">
+      <div className="flex flex-col gap-10 md:gap-15 px-4 md:px-8 relative max-w-6xl mx-auto">
         {/* Header Section */}
         <DistributorHeader title="Create your distributor profile" />
 
