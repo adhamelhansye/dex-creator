@@ -9,6 +9,7 @@ import { OrderlyKeyCard } from "./components/OrderlyKeyCard";
 import { DistributorHeader } from "./components/DistributorHeader";
 import { useDistributor } from "../../context/DistributorContext";
 import { useDex } from "../../context/DexContext";
+import VanguardDashboard from "./vanguard/VanguardDashboard";
 
 export const AMBASSADOR_BROKER_ID = "ambassador";
 
@@ -70,8 +71,8 @@ export default function DistributorRoute() {
       return createKeyCard;
     }
 
-    // TODO: show my distributor profile if already configured
-    return null;
+    // Show vanguard distributor dashboard when key is valid
+    return <VanguardDashboard />;
   }
 
   if (isBuilder) {

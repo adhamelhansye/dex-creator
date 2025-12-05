@@ -92,10 +92,18 @@ export default defineConfig({
         DEFAULT: "rgb(0, 209, 255)",
         light: "rgb(129, 229, 247)",
       },
+      // Purple accent (vanguard)
+      purple: {
+        dark: "rgb(23, 11, 41)", // #170B29 - Card/Container background
+        darker: "rgb(25, 14, 44)", // #190E2C - Dialog background
+        select: "rgb(40, 27, 62)", // #281B3E - Select dropdown background
+        light: "rgb(188, 135, 255)", // #BC87FF - Highlight/Accent color
+      },
       // Status colors
       success: "rgb(48, 208, 88)",
       warning: "rgb(242, 153, 74)",
       error: "rgb(242, 78, 78)",
+      danger: "rgb(217, 91, 129)", // #D95B81 - Error/Warning tooltip
       base: {
         contrast: {
           DEFAULT: "rgb(255 255 255 / 0.98)",
