@@ -665,7 +665,7 @@ export default function DexRoute() {
             </Card>
           )}
 
-          {dexData && (
+          {dexData && !isGraduated && (
             <Card>
               <h3 className="text-lg font-bold mb-4 text-red-400">
                 Danger Zone
