@@ -19,7 +19,8 @@ export const usePrivateQuery = <T>(
   const { accountId, orderlyKey } = useOrderlyKey();
 
   return useSWR<T>(
-    () => (accountId ? [query, accountId, orderlyKey] : null),
+    () =>
+      query && accountId && orderlyKey ? [query, accountId, orderlyKey] : null,
     (url: string, init: RequestInit) => {
       return fetcher(url, init, { formatter });
     },
