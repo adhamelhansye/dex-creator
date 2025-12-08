@@ -23,16 +23,7 @@ const EmptyState = () => {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4">
       <SearchDocumentIcon className="w-16 h-16" />
-      <p
-        className="mt-6 text-center"
-        style={{
-          fontFamily: "Atyp BL Text",
-          fontWeight: 500,
-          fontSize: "14px",
-          lineHeight: "150%",
-          color: "#FFFFFF8A",
-        }}
-      >
+      <p className="mt-6 text-center text-sm font-medium leading-[1.5] text-base-contrast-54">
         No revenue share yet.
       </p>
     </div>
@@ -51,7 +42,7 @@ const RevenueShareListUI: React.FC<RevenueShareListUIProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-[#0f1123] rounded-lg p-6">
+      <div className="bg-purple-surface rounded-lg p-6">
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" />
         </div>
@@ -61,7 +52,7 @@ const RevenueShareListUI: React.FC<RevenueShareListUIProps> = ({
 
   if (dataSource.length === 0) {
     return (
-      <div className="bg-[#0f1123] rounded-lg">
+      <div className="bg-purple-surface rounded-lg">
         <EmptyState />
         <RevenueShareDetailsModalUI {...revenueShareDetailsModalUiProps} />
       </div>
@@ -72,7 +63,7 @@ const RevenueShareListUI: React.FC<RevenueShareListUIProps> = ({
   const emptyRowCount = Math.max(pageSize - dataSource.length, 0);
 
   return (
-    <div className="bg-[#0f1123] rounded-lg p-6 overflow-x-auto">
+    <div className="bg-purple-surface rounded-lg p-6 overflow-x-auto">
       <table className="w-full min-w-[700px]">
         <thead>
           <tr className="border-b border-base-contrast-12">

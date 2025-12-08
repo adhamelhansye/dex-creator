@@ -26,16 +26,7 @@ const EmptyState = () => {
   return (
     <div className="flex flex-col items-center justify-center py-12 px-4">
       <SearchDocumentIcon className="w-16 h-16" />
-      <p
-        className="mt-6 text-center"
-        style={{
-          fontFamily: "Atyp BL Text",
-          fontWeight: 500,
-          fontSize: "14px",
-          lineHeight: "150%",
-          color: "#FFFFFF8A",
-        }}
-      >
+      <p className="mt-6 text-center text-sm font-medium leading-[1.5] text-base-contrast-54">
         No Detail Datas Available.
       </p>
     </div>

@@ -98,6 +98,7 @@ export default defineConfig({
         darker: "rgb(25, 14, 44)", // #190E2C - Dialog background
         select: "rgb(40, 27, 62)", // #281B3E - Select dropdown background
         light: "rgb(188, 135, 255)", // #BC87FF - Highlight/Accent color
+        surface: "rgb(15, 17, 35)",
       },
       // Status colors
       success: "rgb(48, 208, 88)",

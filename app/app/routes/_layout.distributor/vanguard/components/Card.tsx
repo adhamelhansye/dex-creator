@@ -34,9 +34,9 @@ const Card: React.FC<CardProps> = ({
             align="center"
             sideOffset={4}
             arrow={{
-              className: "!fill-[#0f1123]",
+              className: "!fill-purple-surface",
             }}
-            className="max-w-[276px] px-3 !bg-[#0f1123] border border-primary-light/30 shadow-lg py-2 rounded-lg whitespace-pre-line break-words leading-[17.5px] text-xs text-white"
+            className="max-w-[276px] px-3 !bg-purple-surface border border-primary-light/30 shadow-lg py-2 rounded-lg whitespace-pre-line break-words leading-[17.5px] text-xs text-white"
             content={infoTooltip}
           >
             <span

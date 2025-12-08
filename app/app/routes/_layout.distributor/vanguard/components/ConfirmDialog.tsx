@@ -38,7 +38,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
       <div
         className={cn(
-          "bg-[#0f1123] border border-primary-light/30 rounded-xl shadow-xl max-h-[90vh] overflow-auto mx-4",
+          "bg-purple-surface border border-primary-light/30 rounded-xl shadow-xl max-h-[90vh] overflow-auto mx-4",
           contentClassName || "w-full max-w-md"
         )}
       >

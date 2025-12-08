@@ -30,28 +30,11 @@ const EmptyState = () => {
   return (
     <div className="flex flex-col items-center justify-center py-20 px-4">
       <SearchDocumentIcon className="w-16 h-16" />
-      <p
-        className="mt-6 text-center"
-        style={{
-          fontFamily: "Atyp BL Text",
-          fontWeight: 500,
-          fontSize: "14px",
-          lineHeight: "150%",
-          color: "#FFFFFF8A",
-        }}
-      >
+      <p className="mt-6 text-center text-sm font-medium leading-[1.5] text-base-contrast-54">
         No invitees yet. Share your distributor code to start referring now!
       </p>
       <div className="mt-4 flex items-center gap-3">
-        <span
-          style={{
-            fontFamily: "Atyp BL Text",
-            fontWeight: 500,
-            fontSize: "14px",
-            lineHeight: "120%",
-            color: "#BC87FF",
-          }}
-        >
+        <span className="text-sm font-medium leading-[1.2] text-[#BC87FF]">
           {distributorCode || "--"}
         </span>
         <div className="flex items-center gap-2">
@@ -97,7 +80,7 @@ const InviteesListUI: React.FC<InviteesListUIProps> = ({
 
   if (isLoading) {
     return (
-      <div className="bg-[#0f1123] rounded-lg p-6">
+      <div className="bg-purple-surface rounded-lg p-6">
         <div className="flex items-center justify-center py-12">
           <Spinner size="lg" />
         </div>
@@ -107,7 +90,7 @@ const InviteesListUI: React.FC<InviteesListUIProps> = ({
 
   if (dataSource.length === 0) {
     return (
-      <div className="bg-[#0f1123] rounded-lg">
+      <div className="bg-purple-surface rounded-lg">
         <EmptyState />
         <MinTierModalUI {...minTierModalUiProps} />
       </div>
@@ -118,14 +101,14 @@ const InviteesListUI: React.FC<InviteesListUIProps> = ({
   const emptyRowCount = Math.max(pageSize - dataSource.length, 0);
 
   return (
-    <div className="bg-[#0f1123] rounded-lg p-6 overflow-x-auto">
+    <div className="bg-purple-surface rounded-lg p-6 overflow-x-auto">
       <table className="w-full min-w-[800px]">
         <thead>
           <tr className="border-b border-base-contrast-12">
             {columns.map((col, idx) => (
               <th
                 key={idx}
-                className="h-[46px] text-left text-sm font-medium text-base-contrast-54 px-3"
+                className="h-[46px] text-left text-sm font-medium text-base-contrast-54 px-3 whitespace-nowrap"
               >
                 {col.title}
               </th>
