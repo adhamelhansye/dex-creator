@@ -133,7 +133,12 @@ export const useRevenueShareDetailsColumn =
           },
         },
         {
-          title: "Invitee's broker tier",
+          title: (
+            <TableTitleWithTooltip
+              title="Invitee's broker tier"
+              tooltip="The invitee's broker tier for the day. This serves as a reference, as certain tier updates may occur asynchronously under exceptional circumstances."
+            />
+          ),
           dataIndex: "inviteeBrokerTier",
           render: (value: string) => formatTier(value),
         },

@@ -28,7 +28,7 @@ const EmptyState = () => {
   const distributorUrl = summaryData?.distributor_url || "";
 
   return (
-    <div className="flex flex-col items-center justify-center py-20 px-4">
+    <div className="flex flex-col items-center justify-center py-20 px-4 min-h-[305px]">
       <SearchDocumentIcon className="w-16 h-16" />
       <p className="mt-6 text-center text-sm font-medium leading-[1.5] text-base-contrast-54">
         No invitees yet. Share your distributor code to start referring now!
