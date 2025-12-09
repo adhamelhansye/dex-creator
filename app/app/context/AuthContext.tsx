@@ -9,7 +9,7 @@ import { useAccount, useSignMessage, useDisconnect } from "wagmi";
 import { API_BASE_URL } from "../utils/wagmiConfig";
 import { toast } from "react-toastify";
 import { setGlobalDisconnect } from "../utils/globalDisconnect";
-import { useTrack } from "../hooks/useTrack";
+import { useGoogleUserId } from "../hooks/useGoogleAnalysis";
 
 interface User {
   id: string;
@@ -42,7 +42,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
-  const { setUserId } = useTrack();
+  useGoogleUserId(address);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -224,12 +224,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
     }
   }, [address, signMessageAsync]);
-
-  useEffect(() => {
-    if (isConnected && address) {
-      setUserId(address);
-    }
-  }, [isConnected, address]);
 
   return (
     <AuthContext.Provider

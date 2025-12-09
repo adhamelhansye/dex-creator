@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 const getGAID = () => {
   if (typeof window === "undefined") return "";
@@ -26,6 +26,8 @@ export function useGoogleAnalysis() {
 
     // @ts-ignore
     window.gtag("js", new Date());
+    // @ts-ignore
+    window.gtag("config", gaID);
     // @ts-ignore
     // window.gtag("config", gaID, { 'debug_mode': true });
 
@@ -102,4 +104,43 @@ export function useGoogleAnalysis() {
       document.removeEventListener("click", handleClick);
     };
   }, []);
+}
+
+export function useGoogleUserId(address?: string | null) {
+  const prevAddress = useRef<string | null | undefined>(undefined);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const gaID = getGAID();
+    if (!gaID) return;
+
+    // @ts-ignore
+    const gtag = window.gtag
+      ? // @ts-ignore
+        window.gtag
+      : (..._args: any[]) => {
+          // @ts-ignore
+          window.dataLayer = window.dataLayer || [];
+          // @ts-ignore
+          window.dataLayer.push(arguments);
+        };
+
+    try {
+      gtag("config", gaID, {
+        user_id: address ?? null,
+      });
+      gtag("set", {
+        user_id: address ?? null,
+      });
+      if (address && address !== prevAddress.current) {
+        gtag("event", "connect_wallet_success", {
+          address: `addr_${address}`,
+        });
+        prevAddress.current = address;
+      }
+    } catch (e) {
+      console.error("Failed to set GA user_id", e);
+    }
+  }, [address]);
 }
