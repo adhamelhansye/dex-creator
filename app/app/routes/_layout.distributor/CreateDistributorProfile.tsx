@@ -10,6 +10,7 @@ import { useDex } from "../../context/DexContext";
 import { ProfileTypeCard } from "./components/ProfileTypeCard";
 import { CreateDexButton } from "./components/CreateDexButton";
 import { DistributorHeader } from "./components/DistributorHeader";
+import { parseWalletError } from "../../utils/wallet";
 
 type ProfileType = "ambassador" | "builder" | null;
 
@@ -47,9 +48,7 @@ export function CreateDistributorProfile(props: CreateDistributorProfileProps) {
       setBrokerId(props.brokerId);
     } catch (error: any) {
       console.error("Error creating profile:", error);
-      const message = error?.message.includes("User rejected")
-        ? "User rejected the request"
-        : error?.message || "Failed to create profile";
+      const message = parseWalletError(error) || "Failed to create profile";
       toast.error(message);
     } finally {
       setLoading(false);
