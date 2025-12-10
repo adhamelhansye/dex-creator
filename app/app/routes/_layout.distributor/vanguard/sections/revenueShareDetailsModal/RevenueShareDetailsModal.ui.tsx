@@ -4,7 +4,7 @@ import {
   useRevenueShareDetailsColumn,
   RevenueShareDetailRecord,
 } from "./useRevenueShareDetailsColumn";
-import { formatCurrency, getUserTimezone } from "../../utils";
+import { formatCurrency, getUserTimezone, splitDateTime } from "../../utils";
 import { Pagination } from "../../components";
 import { SearchDocumentIcon } from "../../icons";
 
@@ -87,17 +87,67 @@ const RevenueShareDetailsModalUI: React.FC<RevenueShareDetailsModalUIProps> = ({
             <div className="mb-1 text-sm font-medium leading-[125%] text-base-contrast-54">
               Period
             </div>
-            <div className="text-sm font-medium leading-[125%] text-base-contrast flex flex-col">
-              <span>{data?.periodStartTime || "--"}</span>
-              <span>{data?.periodEndTime || "--"}</span>
+            <div className="text-sm font-medium leading-[125%] flex flex-col">
+              {(() => {
+                const startParts = splitDateTime(data?.periodStartTime || "");
+                const endParts = splitDateTime(data?.periodEndTime || "");
+                return (
+                  <>
+                    <span>
+                      {startParts ? (
+                        <>
+                          <span className="text-base-contrast">
+                            {startParts.date}
+                          </span>{" "}
+                          <span className="text-base-contrast-54">
+                            {startParts.time}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-base-contrast">
+                          {data?.periodStartTime || "--"}
+                        </span>
+                      )}
+                    </span>
+                    <span>
+                      {endParts ? (
+                        <>
+                          <span className="text-base-contrast">
+                            {endParts.date}
+                          </span>{" "}
+                          <span className="text-base-contrast-54">
+                            {endParts.time}
+                          </span>
+                        </>
+                      ) : (
+                        <span className="text-base-contrast">
+                          {data?.periodEndTime || "--"}
+                        </span>
+                      )}
+                    </span>
+                  </>
+                );
+              })()}
             </div>
           </div>
           <div>
             <div className="mb-1 text-sm font-medium leading-[125%] text-base-contrast-54">
               Distribution time ({getUserTimezone()})
             </div>
-            <div className="text-sm font-medium leading-[125%] text-base-contrast">
-              {data?.distributionTime || "--"}
+            <div className="text-sm font-medium leading-[125%]">
+              {(() => {
+                const parts = splitDateTime(data?.distributionTime || "");
+                return parts ? (
+                  <>
+                    <span className="text-base-contrast">{parts.date}</span>{" "}
+                    <span className="text-base-contrast-54">{parts.time}</span>
+                  </>
+                ) : (
+                  <span className="text-base-contrast">
+                    {data?.distributionTime || "--"}
+                  </span>
+                );
+              })()}
             </div>
           </div>
           <div className="h-px bg-white/10" />

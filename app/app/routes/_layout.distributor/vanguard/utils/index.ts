@@ -113,9 +113,9 @@ export const getUserTimezone = (): string => {
 };
 
 /**
- * Convert UTC timestamp to local timezone and format as "YYYY-MM-DD HH:mm:ss"
+ * Convert UTC timestamp to local timezone and format as "Mon DD, YYYY HH:MMAM/PM"
  * @param timestamp UTC timestamp in milliseconds
- * @returns Formatted local time string
+ * @returns Formatted local time string like "Nov 10, 2024 12:00AM"
  */
 export const formatUTCToLocalDateTime = (
   timestamp: number | string
@@ -128,14 +128,35 @@ export const formatUTCToLocalDateTime = (
 
   if (isNaN(date.getTime())) return "--";
 
-  const year = date.getFullYear();
-  const month = (date.getMonth() + 1).toString().padStart(2, "0");
-  const day = date.getDate().toString().padStart(2, "0");
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const seconds = date.getSeconds().toString().padStart(2, "0");
+  const monthNames = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
 
-  return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  const month = monthNames[date.getMonth()];
+  const day = date.getDate();
+  const year = date.getFullYear();
+
+  let hours = date.getHours();
+  const minutes = date.getMinutes();
+  const ampm = hours >= 12 ? "PM" : "AM";
+  hours = hours % 12;
+  hours = hours ? hours : 12; // the hour '0' should be '12'
+
+  const minutesStr = minutes.toString().padStart(2, "0");
+  const hoursStr = hours.toString().padStart(2, "0");
+
+  return `${month} ${day}, ${year} ${hoursStr}:${minutesStr}${ampm}`;
 };
 
 /**
@@ -152,4 +173,26 @@ export const formatUTCTimeToLocal = (): string => {
   const minutes = utcDate.getMinutes().toString().padStart(2, "0");
 
   return `${hours}:${minutes} (${getUserTimezone()})`;
+};
+
+/**
+ * Split formatted datetime string into date and time parts
+ * @param dateTimeString Formatted string like "Nov 10, 2024 00:00AM"
+ * @returns Object with date and time parts, or null if invalid
+ */
+export const splitDateTime = (
+  dateTimeString: string
+): { date: string; time: string } | null => {
+  if (!dateTimeString || dateTimeString === "--") return null;
+
+  // Match pattern: "Mon DD, YYYY HH:MMAM/PM"
+  const match = dateTimeString.match(/^(.+?)\s+(\d{2}:\d{2}[AP]M)$/);
+  if (match) {
+    return {
+      date: match[1].trim(), // "Nov 10, 2024"
+      time: match[2].trim(), // "00:00AM"
+    };
+  }
+
+  return null;
 };

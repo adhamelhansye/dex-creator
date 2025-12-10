@@ -1,6 +1,11 @@
 import { useMemo, ReactNode } from "react";
 import { TableTitleWithTooltip } from "../../components";
-import { formatCurrency, getUserTimezone, formatTier } from "../../utils";
+import {
+  formatCurrency,
+  getUserTimezone,
+  formatTier,
+  splitDateTime,
+} from "../../utils";
 
 export interface Column {
   title: ReactNode;
@@ -19,7 +24,18 @@ export const useRevenueColumn = (props: {
       {
         title: `Distribution time (${getUserTimezone()})`,
         dataIndex: "distributionTime",
-        render: (value: string) => value || "--",
+        render: (value: string) => {
+          if (!value || value === "--") return "--";
+          const parts = splitDateTime(value);
+          return parts ? (
+            <>
+              <span className="text-base-contrast">{parts.date}</span>{" "}
+              <span className="text-base-contrast-54">{parts.time}</span>
+            </>
+          ) : (
+            value
+          );
+        },
       },
       {
         title: (
