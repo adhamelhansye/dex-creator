@@ -28,6 +28,9 @@ function getSecretNames(deploymentEnv: string): Record<string, string> {
     creatorBrokerApiAccountId: process.env.CREATOR_BROKER_API_ACCOUNT_ID!,
     creatorBrokerApiSecretKey: process.env.CREATOR_BROKER_API_SECRET_KEY!,
   };
+
+  console.log("commonSecretNames", commonSecretNames);
+
   switch (deploymentEnv) {
     case "mainnet":
       return {

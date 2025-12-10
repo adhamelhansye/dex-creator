@@ -15,8 +15,11 @@ type CreateBrokerData = {
 };
 
 export async function createBroker(data: CreateBrokerData) {
+  console.log("createBroker", data);
   const accountId = await getSecret("creatorBrokerApiAccountId");
   const secretKey = await getSecret("creatorBrokerApiSecretKey");
+  console.log("accountId", accountId);
+  console.log("secretKey", secretKey);
 
   const path = "/v1/orderly_one/broker";
   const fullUrl = `${getOrderlyApiBaseUrl()}/v1/orderly_one/broker`;
@@ -28,6 +31,7 @@ export async function createBroker(data: CreateBrokerData) {
   };
 
   const signature = await getSignature(accountId, secretKey, payload);
+  console.log("signature", signature);
 
   const response = await fetch(fullUrl, {
     method: "POST",
