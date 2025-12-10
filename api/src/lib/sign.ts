@@ -1,6 +1,6 @@
 import { getPublicKeyAsync, signAsync } from "@noble/ed25519";
 import { encodeBase58 } from "ethers";
-import { default as bs58 } from "bs58";
+import bs58 from "bs58";
 
 type SignedMessagePayload = {
   "orderly-key": string;

@@ -50,7 +50,6 @@
   "devDependencies": {
     "@testcontainers/mysql": "^11.5.1",
     "@testcontainers/postgresql": "^11.5.1",
-    "@types/bs58": "^5.0.0",
     "@types/css-tree": "^2.3.10",
     "@types/libsodium-wrappers": "^0.7.14",
     "@types/node": "^22.14.0",
