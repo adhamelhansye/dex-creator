@@ -22,7 +22,7 @@ import * as anchor from "@coral-xyz/anchor";
 import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
 import { IDL, type SolanaVault } from "../interface/types/solana_vault";
-import { default as bs58 } from "bs58";
+import bs58 from "bs58";
 
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
