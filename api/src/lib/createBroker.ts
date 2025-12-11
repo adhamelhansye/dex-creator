@@ -18,6 +18,7 @@ export async function createBroker(data: CreateBrokerData) {
   console.log("createBroker", data);
   const accountId = await getSecret("creatorBrokerApiAccountId");
   const secretKey = await getSecret("creatorBrokerApiSecretKey");
+
   console.log("accountId", accountId);
   console.log("secretKey", secretKey);
 
@@ -30,7 +31,12 @@ export async function createBroker(data: CreateBrokerData) {
     data,
   };
 
-  const signature = await getSignature(accountId, secretKey, payload);
+  const signature = await getSignature(
+    accountId,
+    // remove ed25519: prefix from secret key
+    secretKey?.replace("ed25519:", ""),
+    payload
+  );
   console.log("signature", signature);
 
   const response = await fetch(fullUrl, {
