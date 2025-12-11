@@ -37,6 +37,7 @@ export default function DexConfigRoute() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDexData, setIsLoadingDexData] = useState(false);
+  const { isGraduated } = useDex();
   const { distributorInfo } = useDistributor();
 
   useEffect(() => {
@@ -296,6 +297,14 @@ export default function DexConfigRoute() {
     );
   }
 
+  // when the DEX is graduated and the distributor code is not bound, we need to hide the distributor code section because it is not allowed to change the distributor code after the DEX is graduated
+  const filteredSections =
+    isGraduated && !distributorInfo?.exist
+      ? DEX_SECTIONS.filter(
+          section => section.key !== DEX_SECTION_KEYS.DistributorCode
+        )
+      : DEX_SECTIONS;
+
   return (
     <div className="container mx-auto p-4 max-w-7xl mt-26 pb-52">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
@@ -324,7 +333,7 @@ export default function DexConfigRoute() {
       >
         <DexSectionRenderer
           mode="direct"
-          sections={DEX_SECTIONS}
+          sections={filteredSections}
           showProgressTracker={true}
           sectionProps={form.getSectionProps({
             handleGenerateTheme,

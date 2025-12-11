@@ -120,9 +120,7 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                       {isCompleted ? (
                         <div className="i-mdi:check text-xs"></div>
                       ) : (
-                        <span className="text-xs font-medium">
-                          {section.id}
-                        </span>
+                        <span className="text-xs font-medium">{index + 1}</span>
                       )}
                     </div>
 
