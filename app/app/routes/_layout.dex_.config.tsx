@@ -17,6 +17,8 @@ import { useDexForm } from "../hooks/useDexForm";
 import { DexData, ThemeTabType, defaultTheme } from "../types/dex";
 import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
 import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
+import { useDistributor } from "../context/DistributorContext";
+import { useDex } from "../context/DexContext";
 
 export const meta: MetaFunction = () => [
   { title: "Configure Your DEX - Orderly One" },
@@ -28,13 +30,14 @@ export const meta: MetaFunction = () => [
 ];
 
 export default function DexConfigRoute() {
-  const { isAuthenticated, token, isLoading, distributorInfo } = useAuth();
+  const { isAuthenticated, token, isLoading } = useAuth();
   const { openModal } = useModal();
   const navigate = useNavigate();
   const form = useDexForm();
 
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDexData, setIsLoadingDexData] = useState(false);
+  const { distributorInfo } = useDistributor();
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;

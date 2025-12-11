@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import FormInput from "./FormInput";
 import { useDistributorCode } from "../hooks/useDistrubutorInfo";
 import clsx from "clsx";
-import { useAuth } from "../context/useAuth";
+import { useDistributor } from "../context/DistributorContext";
 export interface BrokerDetailsProps {
   distributorCode: string;
   handleInputChange: (
@@ -20,7 +20,7 @@ const DistributorCodeSection: React.FC<BrokerDetailsProps> = props => {
   // dont't watch, get disabled status when init
   const [disabled, setDisabled] = useState(showClearIcon);
 
-  const { distributorInfo } = useAuth();
+  const { distributorInfo } = useDistributor();
 
   const isBound = !!distributorInfo?.exist;
 

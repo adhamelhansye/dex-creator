@@ -1,6 +1,6 @@
 import { usePrivateQuery } from "../net";
 
-type AmbassadorInfo = {
+export type AmbassadorInfo = {
   distributor_id: string;
   distributor_name: string;
   tier: string;

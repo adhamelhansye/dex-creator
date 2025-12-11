@@ -1,9 +1,12 @@
 import { createContext, useContext, ReactNode, useEffect } from "react";
 import { useAccount } from "wagmi";
 import { useDex } from "./DexContext";
-import { useAmbassadorInfo } from "../hooks/useAmbassadorInfo";
+import { AmbassadorInfo, useAmbassadorInfo } from "../hooks/useAmbassadorInfo";
 import { useAccountInfo } from "../hooks/useAccountInfo";
-import { useDistributorInfoByAddress } from "../hooks/useDistrubutorInfo";
+import {
+  DistributorInfo,
+  useDistributorInfoByAddress,
+} from "../hooks/useDistrubutorInfo";
 
 interface DistributorContextType {
   isInitialLoading: boolean;
@@ -14,6 +17,8 @@ interface DistributorContextType {
   mutateAmbassadorInfo: () => void;
   mutateAccountInfo: () => void;
   mutateDistributorInfo: () => void;
+  distributorInfo?: DistributorInfo;
+  ambassadorInfo?: AmbassadorInfo;
 }
 
 export const AMBASSADOR_BROKER_ID = "ambassador";
@@ -74,6 +79,8 @@ export function DistributorProvider({ children }: { children: ReactNode }) {
         mutateAmbassadorInfo,
         mutateAccountInfo,
         mutateDistributorInfo,
+        distributorInfo,
+        ambassadorInfo,
       }}
     >
       {children}

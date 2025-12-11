@@ -29,7 +29,6 @@ export interface AuthContextType {
   login: () => Promise<void>;
   logout: () => void;
   validateToken: () => Promise<boolean>;
-  distributorInfo?: DistributorInfo;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -48,8 +47,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
   const { setUserId } = useTrack();
-
-  const { data: distributorInfo } = useDistributorInfoByAddress(address);
 
   const logout = useCallback(() => {
     setUser(null);
@@ -249,7 +246,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         login,
         logout,
         validateToken,
-        distributorInfo,
       }}
     >
       {children}

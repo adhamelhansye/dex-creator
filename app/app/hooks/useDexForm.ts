@@ -15,7 +15,7 @@ import {
 import { useThemeCSS } from "./useThemeCSS";
 import { ModalType } from "../context/ModalContext";
 import { useDistributorCode } from "./useDistrubutorInfo";
-import { useAuth } from "../context/useAuth";
+import { useDistributor } from "../context/DistributorContext";
 
 const base64ToBlob = async (base64: string): Promise<Blob> => {
   const response = await fetch(base64);
@@ -433,7 +433,7 @@ export function useDexForm(): UseDexFormReturn {
     urlDistributorCode?.toLocaleUpperCase() || initialFormState.distributorCode
   );
 
-  const { distributorInfo } = useAuth();
+  const { distributorInfo } = useDistributor();
 
   useEffect(() => {
     if (distributorInfo?.distributor_name) {

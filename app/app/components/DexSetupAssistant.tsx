@@ -13,8 +13,8 @@ import { useDexForm } from "../hooks/useDexForm";
 import { DexData, ThemeTabType } from "../types/dex";
 import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
 import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
-import { useAuth } from "../context/useAuth";
 import { useDistributorCode } from "../hooks/useDistrubutorInfo";
+import { useDistributor } from "../context/DistributorContext";
 
 const TOTAL_STEPS = DEX_SECTIONS.length;
 
@@ -42,7 +42,7 @@ export default function DexSetupAssistant({
   );
   const [isValidating, setIsValidating] = useState(false);
 
-  const { distributorInfo } = useAuth();
+  const { distributorInfo } = useDistributor();
   const urlDistributorCode = useDistributorCode();
 
   const handleApplyGeneratedTheme = (modifiedCss: string) => {
