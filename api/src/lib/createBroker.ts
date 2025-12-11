@@ -27,7 +27,12 @@ export async function createBroker(data: CreateBrokerData) {
     data,
   };
 
-  const signature = await getSignature(accountId, secretKey, payload);
+  const signature = await getSignature(
+    accountId,
+    // remove ed25519: prefix from secret key
+    secretKey?.replace("ed25519:", ""),
+    payload
+  );
 
   const response = await fetch(fullUrl, {
     method: "POST",
