@@ -25,8 +25,10 @@ export interface SecretConfig {
 function getSecretNames(deploymentEnv: string): Record<string, string> {
   // if staging or prod, env is secret manager key, otherwise it is secret value in dev and qa
   const commonSecretNames = {
-    creatorBrokerApiAccountId: process.env.CREATOR_BROKER_API_ACCOUNT_ID!,
-    creatorBrokerApiSecretKey: process.env.CREATOR_BROKER_API_SECRET_KEY!,
+    creatorBrokerApiAccountId:
+      process.env.CREATOR_BROKER_API_ACCOUNT_ID?.trim() || "",
+    creatorBrokerApiSecretKey:
+      process.env.CREATOR_BROKER_API_SECRET_KEY?.trim() || "",
   };
   switch (deploymentEnv) {
     case "mainnet":
