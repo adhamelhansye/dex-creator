@@ -1115,7 +1115,7 @@ export function GraduationForm({
 
   if (graduationStatus?.isGraduated) {
     return (
-      <Card className="w-full max-w-lg mx-auto slide-fade-in">
+      <Card className="w-full max-w-2xl mx-auto slide-fade-in">
         <div className="text-center">
           <div className="i-mdi:check-circle text-6xl text-success mx-auto mb-2"></div>
           <div className="bg-success/10 rounded-full text-success px-4 py-2 inline-block text-sm font-medium mb-4">
