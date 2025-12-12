@@ -6,6 +6,13 @@ import { updateBrokerFees } from "../utils/orderly";
 import { useModal } from "../context/ModalContext";
 import { post } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "./select";
 
 const MIN_MAKER_FEE = 0;
 const MIN_TAKER_FEE = 30;
@@ -502,8 +509,8 @@ export const FeeConfigWithCalculator: React.FC<
     selectedTier
   );
 
-  const handleTierChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    setSelectedTier(e.target.value as keyof typeof tierBaseFees);
+  const handleTierChange = (value: keyof typeof tierBaseFees) => {
+    setSelectedTier(value);
   };
 
   return (
@@ -934,10 +941,14 @@ export const FeeConfigWithCalculator: React.FC<
                 >
                   Builder Staking Tier
                 </label>
-                <select
+                {/* <select
                   id="tierSelect"
                   value={selectedTier}
-                  onChange={handleTierChange}
+                  onChange={e =>
+                    handleTierChange(
+                      e.target.value as keyof typeof tierBaseFees
+                    )
+                  }
                   className="w-full h-[42px] px-3 py-2 bg-background-dark border border-light/10 rounded-lg"
                 >
                   {Object.entries(tierInfo).map(([key, info]) => (
@@ -945,7 +956,23 @@ export const FeeConfigWithCalculator: React.FC<
                       {info.name} ({info.fee})
                     </option>
                   ))}
-                </select>
+                </select> */}
+                <Select value={selectedTier} onValueChange={handleTierChange}>
+                  <SelectTrigger className="w-full h-[42px] px-3 py-5 bg-background-dark border border-light/10 rounded-lg">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(tierInfo).map(([key, info]) => (
+                      <SelectItem
+                        key={key}
+                        value={key}
+                        // className={selectedTier === key ? "bg-primary/10" : ""}
+                      >
+                        {info.name} ({info.fee})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <p className="text-xs text-gray-400 mt-1">
                   {tierInfo[selectedTier].requirement}
                 </p>

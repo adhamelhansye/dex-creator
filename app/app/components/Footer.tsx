@@ -182,7 +182,7 @@ export default function Footer() {
                 </div>
               )}
             </div>
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("about")}
@@ -232,7 +232,7 @@ export default function Footer() {
                 </div>
               )}
             </div>
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("legal")}
