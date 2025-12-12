@@ -1455,7 +1455,7 @@ export function GraduationForm({
   }
 
   return (
-    <Card className="w-full max-w-lg mx-auto slide-fade-in">
+    <Card className="w-full max-w-2xl mx-auto slide-fade-in">
       <h2 className="text-xl font-bold mb-4">Graduate Your DEX</h2>
 
       <div className="bg-light/5 rounded-lg p-4 mb-6">
@@ -1871,9 +1871,9 @@ export function GraduationForm({
 
           {/* Manual hash form - only show when toggled */}
           {showManualInput && (
-            <div className="border rounded-xl p-4 bg-background-card">
+            <div className="border rounded-xl p-4 bg-background-card border-base-contrast-12">
               <h3 className="text-md font-medium mb-2 flex items-center">
-                <div className="w-5 h-5 mr-2 i-mdi:file-document text-gray-400"></div>
+                <div className="w-5 h-5 mr-2 i-mdi:file-document text-base-contrast-12"></div>
                 Manual Transaction Verification
               </h3>
               <p className="text-sm text-gray-300 mb-4">

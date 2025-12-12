@@ -303,7 +303,7 @@ export function TokenSelectionModal({
         </div>
 
         {/* Token List */}
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-96 overflow-y-auto progress-tracker-scrollbar">
           {tokenOptions.map(token => (
             <button
               key={token.id}

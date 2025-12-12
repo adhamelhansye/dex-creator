@@ -6,6 +6,13 @@ import { apiClient } from "../utils/apiClient";
 import DexCard from "../components/DexCard";
 import Pagination from "../components/Pagination";
 import type { TimePeriod } from "../types/leaderboard";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../components/select";
 
 export const meta: MetaFunction = () => [
   { title: "Leaderboard - Orderly One" },
@@ -71,6 +78,25 @@ interface DexStats {
 }
 
 type SortOption = "volume" | "pnl" | "fee";
+
+const periods = [
+  {
+    label: "Daily",
+    value: "daily",
+  },
+  {
+    label: "Weekly",
+    value: "weekly",
+  },
+  {
+    label: "30 Days",
+    value: "30d",
+  },
+  {
+    label: "90 Days",
+    value: "90d",
+  },
+];
 
 export default function BoardRoute() {
   const [leaderboard, setLeaderboard] = useState<BrokerStats[]>([]);
@@ -236,7 +262,7 @@ export default function BoardRoute() {
             {/* Time Period Dropdown */}
             <div className="flex items-center gap-2">
               <span className="text-sm text-gray-300">Period:</span>
-              <select
+              {/* <select
                 value={timePeriod}
                 onChange={e =>
                   handleTimePeriodChange(e.target.value as TimePeriod)
@@ -247,7 +273,24 @@ export default function BoardRoute() {
                 <option value="weekly">Weekly</option>
                 <option value="30d">30 Days</option>
                 <option value="90d">90 Days</option>
-              </select>
+              </select> */}
+              <Select
+                value={timePeriod}
+                onValueChange={value =>
+                  handleTimePeriodChange(value as TimePeriod)
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {periods.map(period => (
+                    <SelectItem key={period.value} value={period.value}>
+                      {period.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
 
             <button
@@ -286,7 +329,7 @@ export default function BoardRoute() {
         )}
 
         {/* Loading State */}
-        {isLoading && leaderboard.length === 0 && (
+        {isLoading && (
           <div className="text-center py-12 slide-fade-in">
             <Icon
               icon="svg-spinners:pulse-rings-multiple"
