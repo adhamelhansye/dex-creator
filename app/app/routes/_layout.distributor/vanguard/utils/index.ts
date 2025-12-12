@@ -27,7 +27,15 @@ export const formatCurrency = (
   if (value == null || isNaN(value)) {
     return "--";
   }
-  return `$${formatNumber(value, options)}`;
+  const { floor = false, precison = 2 } = options;
+  if (floor && value > 0) {
+    const floored = Math.floor(value * 10 ** precison) / 10 ** precison;
+    if (floored === 0) {
+      return "<$0.01";
+    }
+  }
+
+  return `$${formatNumber(value, { floor, precison })}`;
 };
 
 // Format percentage with null safety
