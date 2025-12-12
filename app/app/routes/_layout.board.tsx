@@ -98,6 +98,8 @@ const periods = [
   },
 ];
 
+const filterTabs = ["volume", "fee"];
+
 export default function BoardRoute() {
   const [leaderboard, setLeaderboard] = useState<BrokerStats[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -243,7 +245,7 @@ export default function BoardRoute() {
         {/* Sort Controls */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8 slide-fade-in-delayed">
           <div className="flex flex-wrap gap-2">
-            {(["volume", "fee", "pnl"] as SortOption[]).map(sort => (
+            {(filterTabs as SortOption[]).map(sort => (
               <button
                 key={sort}
                 onClick={() => handleSortChange(sort)}
@@ -418,10 +420,10 @@ export default function BoardRoute() {
                   <strong>Fees:</strong> Total fees paid by users from trading
                   (includes both DEX revenue and infrastructure fees)
                 </li>
-                <li>
+                {/* <li>
                   <strong>PnL:</strong> Realized profit and loss across all
                   traders
-                </li>
+                </li> */}
               </ul>
             </div>
           </div>
