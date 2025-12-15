@@ -11,7 +11,7 @@ import { ToastContainer } from "react-toastify";
 import { useState } from "react";
 import { useEffect } from "react";
 import Footer from "../components/Footer";
-import { useInitAmplitude } from "../hooks/useInitAmplitude";
+import { useGoogleAnalysis } from "../hooks/useGoogleAnalysis";
 
 /**
  * This is a minimal layout route for preview content.
@@ -22,7 +22,7 @@ export default function Layout() {
   const [isMobile, setIsMobile] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
 
-  useInitAmplitude();
+  useGoogleAnalysis();
 
   useEffect(() => {
     const checkMobile = () => {
