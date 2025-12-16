@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { useVanguardRevenueShareDetails } from "../../hooks/useVanguard";
 import type { RevenueShareDetailsModalUIProps } from "./RevenueShareDetailsModal.ui";
 
@@ -15,6 +15,12 @@ export const useRevenueShareDetailsModalScript = (
 
   const [page, setPage] = useState(1);
   const pageSize = 10;
+
+  useEffect(() => {
+    if (open && data?.revenueShareId) {
+      setPage(1);
+    }
+  }, [open, data?.revenueShareId]);
 
   const {
     data: detailsData,
