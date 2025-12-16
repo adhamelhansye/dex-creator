@@ -345,7 +345,7 @@ export default function DexRoute() {
             Create Your DEX
           </h1>
           <div className="flex items-center justify-center mb-4">
-            <p className="text-gray-400 mr-3">Available on</p>
+            <p className="text-gray-400 mr-3">Via</p>
             {MainnetChains.map((chain, index) => (
               <div
                 style={{
@@ -368,9 +368,9 @@ export default function DexRoute() {
           <h2 className="text-lg md:text-xl">
             Join{" "}
             {distributorInfo.distributor_name
-              ? `${distributorInfo.distributor_name} and other`
+              ? `${distributorInfo.distributor_name} and other `
               : ""}
-            100+ Orderly builders to launch your no-code DEX
+            1K+ Orderly builders to launch your no-code DEX
           </h2>
           <div className="text-base-contrast-54 mt-4 mb-15">
             <p>Create your own omnichain perpetuals exchange in minutes.</p>
