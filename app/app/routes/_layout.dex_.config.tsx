@@ -68,8 +68,12 @@ export default function DexConfigRoute() {
 
   const handleCancelGeneratedTheme = () => {};
 
-  const handleGenerateTheme = async () => {
+  const handleGenerateTheme = async (prompt?: string) => {
     if (!token) return;
+
+    if (prompt !== undefined) {
+      form.setThemePrompt(prompt);
+    }
 
     form.setIsGeneratingTheme(true);
     await form.generateTheme(

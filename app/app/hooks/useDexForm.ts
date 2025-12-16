@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import { post, get } from "../utils/apiClient";
 import { toast } from "react-toastify";
-import { defaultTheme, ThemeTabType, DexData } from "../types/dex";
+import { defaultTheme, DexData } from "../types/dex";
 import {
   validateUrl,
   required,
@@ -40,7 +40,6 @@ export interface DexSectionProps {
   defaultTheme: string;
   showThemeEditor: boolean;
   viewCssCode: boolean;
-  activeThemeTab: "colors" | "fonts" | "rounded" | "spacing" | "tradingview";
   themePrompt: string;
   isGeneratingTheme: boolean;
   tradingViewColorConfig: string | null;
@@ -243,8 +242,6 @@ export interface UseDexFormReturn extends DexFormData {
   setShowThemeEditor: (value: boolean) => void;
   viewCssCode: boolean;
   setViewCssCode: (value: boolean) => void;
-  activeThemeTab: ThemeTabType;
-  setActiveThemeTab: (tab: ThemeTabType) => void;
   isGeneratingTheme: boolean;
   setIsGeneratingTheme: (value: boolean) => void;
   toggleThemeEditor: () => void;
@@ -308,7 +305,6 @@ export function useDexForm(): UseDexFormReturn {
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [showThemeEditor, setShowThemeEditor] = useState(false);
   const [viewCssCode, setViewCssCode] = useState(false);
-  const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
   const [isGeneratingTheme, setIsGeneratingTheme] = useState(false);
 
   const { updateCssValue, updateCssColor } = useThemeCSS(defaultTheme);
@@ -890,7 +886,6 @@ export function useDexForm(): UseDexFormReturn {
           if (!response.themeCSS) {
             setCurrentTheme(defaultTheme);
           }
-          setActiveThemeTab("colors");
 
           await loadImagesFromBase64({
             primaryLogo: response.primaryLogo,
@@ -932,7 +927,6 @@ export function useDexForm(): UseDexFormReturn {
       defaultTheme,
       showThemeEditor,
       viewCssCode,
-      activeThemeTab,
       themePrompt,
       isGeneratingTheme,
       tradingViewColorConfig,
@@ -1058,7 +1052,6 @@ export function useDexForm(): UseDexFormReturn {
       setEnableCampaigns,
       showThemeEditor,
       viewCssCode,
-      activeThemeTab,
       isGeneratingTheme,
       toggleThemeEditor,
       handleThemeEditorChange,
@@ -1164,8 +1157,6 @@ export function useDexForm(): UseDexFormReturn {
     setShowThemeEditor,
     viewCssCode,
     setViewCssCode,
-    activeThemeTab,
-    setActiveThemeTab,
     isGeneratingTheme,
     setIsGeneratingTheme,
     toggleThemeEditor,
