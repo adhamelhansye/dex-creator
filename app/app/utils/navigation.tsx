@@ -27,16 +27,16 @@ export const navigationItems: NavItem[] = [
     title: "Board",
   },
   {
-    path: "/dex",
-    title: "My DEX",
-  },
-  {
     path: "/case-studies",
     title: "Case Studies",
   },
   {
     path: "/distributor",
     title: "Distributor",
+  },
+  {
+    path: "/dex",
+    title: "My DEX",
   },
 ];
 
