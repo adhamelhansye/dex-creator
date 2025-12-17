@@ -7,7 +7,11 @@ import {
   getDexBrokerTier,
   invalidateDexFeesCache,
 } from "../models/graduation";
-import { getUserDex, convertDexToDexConfig } from "../models/dex";
+import {
+  getUserDex,
+  convertDexToDexConfig,
+  getCurrentEnvironment,
+} from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
 import {
@@ -17,7 +21,7 @@ import {
 import { getOrderlyApiBaseUrl, getAccountId } from "../utils/orderly.js";
 import { getSecret } from "../lib/secretManager.js";
 import { ALL_CHAINS, ChainName } from "../../../config";
-import { createBroker } from "../lib/createBroker";
+import { createAutomatedBrokerId } from "../lib/brokerCreation";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -132,17 +136,20 @@ graduationRoutes.post(
         );
       }
 
-      const brokerCreationResult = await createBroker({
-        broker_id: brokerId,
-        broker_name: dex.brokerName,
-        chain_id: chainId,
-        chain_type,
-        address: user.address,
-        default_maker_fee_rate: makerFee,
-        default_taker_fee_rate: takerFee,
-        default_rwa_maker_fee_rate: rwaMakerFee,
-        default_rwa_taker_fee_rate: rwaTakerFee,
-      });
+      const brokerCreationResult = await createAutomatedBrokerId(
+        brokerId,
+        getCurrentEnvironment(),
+        {
+          brokerName: dex.brokerName,
+          makerFee: makerFee,
+          takerFee: takerFee,
+          rwaMakerFee: rwaMakerFee,
+          rwaTakerFee: rwaTakerFee,
+          address: user.address,
+          chain_id: chainId,
+          chain_type,
+        }
+      );
 
       if (!brokerCreationResult.success) {
         return c.json(brokerCreationResult, { status: 400 });
