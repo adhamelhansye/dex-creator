@@ -14,14 +14,12 @@ import {
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
-import {
-  updateBrokerAdminAccountId,
-  getAdminAccountIdFromOrderlyDb,
-} from "../lib/orderlyDb.js";
+import { getAdminAccountIdFromOrderlyDb } from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl, getAccountId } from "../utils/orderly.js";
 import { getSecret } from "../lib/secretManager.js";
 import { ALL_CHAINS, ChainName } from "../../../config";
 import { createAutomatedBrokerId } from "../lib/brokerCreation";
+import { updateAdminAccount } from "../lib/adminAccount";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -437,10 +435,15 @@ graduationRoutes.post(
           `🔄 Updating admin account ID for broker ${dex.brokerId} to ${adminAccountId}`
         );
 
-        const updateResult = await updateBrokerAdminAccountId(
-          dex.brokerId,
-          adminAccountId
-        );
+        // const updateResult = await updateBrokerAdminAccountId(
+        //   dex.brokerId,
+        //   adminAccountId
+        // );
+
+        const updateResult = await updateAdminAccount({
+          broker_id: dex.brokerId,
+          admin_account_id: adminAccountId,
+        });
 
         if (updateResult.success) {
           console.log(
@@ -448,13 +451,17 @@ graduationRoutes.post(
           );
         } else {
           console.warn(
-            `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.error}`
+            `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.message}`
           );
         }
-      } catch (orderlyDbError) {
+
+        if (!updateResult.success) {
+          return c.json(updateResult, { status: 400 });
+        }
+      } catch (error) {
         console.error(
           `❌ Error updating admin account ID for broker ${dex.brokerId}:`,
-          orderlyDbError
+          error
         );
       }
 
