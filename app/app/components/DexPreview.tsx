@@ -104,6 +104,11 @@ const DexPreview: FC<DexPreviewProps> = ({
   }, [initialSymbol]);
 
   useEffect(() => {
+    const oldOverrideStyles = document.querySelectorAll(
+      'style[id^="ai-override-"]'
+    );
+    oldOverrideStyles.forEach(style => style.remove());
+
     if (!customStyles) return;
 
     const fontFamilyMatch = customStyles.match(/--oui-font-family:\s*([^;]+);/);
@@ -223,12 +228,10 @@ const DexPreview: FC<DexPreviewProps> = ({
     <div
       className={`relative h-full w-full orderly-app-container orderly-scrollbar bg-[rgb(var(--oui-color-base-7))] text-[rgb(var(--oui-color-base-foreground))] ${className}`}
     >
-      {customStyles && (
-        <style
-          key={`theme-${customStyles}`}
-          dangerouslySetInnerHTML={{ __html: customStyles }}
-        />
-      )}
+      <style
+        key={`theme-${customStyles || "empty"}`}
+        dangerouslySetInnerHTML={{ __html: customStyles || "" }}
+      />
 
       <WalletConnectorProvider
         solanaInitial={{

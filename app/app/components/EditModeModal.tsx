@@ -36,7 +36,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
   tradingViewColorConfig,
   setTradingViewColorConfig,
 }) => {
-  const { openModal } = useModal();
+  const { openModal, currentModalType } = useModal();
   const [selectedElement, setSelectedElement] = useState<HTMLElement | null>(
     null
   );
@@ -59,6 +59,28 @@ const EditModeModal: FC<EditModeModalProps> = ({
       onThemeChange(newTheme);
     },
     [currentTheme, defaultTheme, onThemeChange]
+  );
+
+  const handleApplyCSSOverrides = useCallback(
+    (_element: HTMLElement, overrides: string) => {
+      if (!overrides.trim()) return;
+
+      let baseTheme = currentTheme || "";
+      if (baseTheme) {
+        baseTheme = baseTheme.replace(
+          /\/\*\s*AI Fine-Tune Overrides\s*\*\/[\s\S]*?(?=\/\*\s*AI Fine-Tune Overrides\s*\*\/|$)/g,
+          ""
+        );
+        baseTheme = baseTheme.replace(/\n{3,}/g, "\n\n").trim();
+      }
+
+      const updatedTheme = baseTheme
+        ? `${baseTheme}\n\n/* AI Fine-Tune Overrides */\n${overrides.trim()}`
+        : `/* AI Fine-Tune Overrides */\n${overrides.trim()}`;
+
+      onThemeChange(updatedTheme);
+    },
+    [currentTheme, onThemeChange]
   );
 
   useEffect(() => {
@@ -107,7 +129,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
     highlight.style.width = `${rect.width}px`;
     highlight.style.height = `${rect.height}px`;
     highlight.style.pointerEvents = "none";
-    highlight.style.zIndex = "10000";
+    highlight.style.zIndex = "60";
     highlight.style.border = "2px solid #3b82f6";
     highlight.style.backgroundColor = "rgba(59, 130, 246, 0.1)";
     highlight.style.boxSizing = "border-box";
@@ -134,14 +156,92 @@ const EditModeModal: FC<EditModeModalProps> = ({
     };
   }, [selectedElement]);
 
+  const prevModalTypeRef = useRef<string | null>(null);
+  const prevThemeRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (
+      isOpen &&
+      prevModalTypeRef.current === "aiFineTunePreview" &&
+      currentModalType !== "aiFineTunePreview" &&
+      currentTheme
+    ) {
+      const fontFamilyMatch = currentTheme.match(
+        /--oui-font-family:\s*([^;]+);/
+      );
+      if (fontFamilyMatch) {
+        const fontFamily = fontFamilyMatch[1].trim();
+        const styleId = "dex-preview-font-override";
+
+        let style = document.getElementById(styleId);
+        if (!style) {
+          style = document.createElement("style");
+          style.id = styleId;
+          document.head.appendChild(style);
+        }
+
+        style.textContent = `
+          .orderly-app-container,
+          .orderly-app-container *,
+          .orderly-app-container *::before,
+          .orderly-app-container *::after {
+            font-family: ${fontFamily} !important;
+          }
+        `;
+      }
+    }
+    prevModalTypeRef.current = currentModalType || null;
+  }, [isOpen, currentModalType, currentTheme]);
+
+  useEffect(() => {
+    if (isOpen && currentTheme !== prevThemeRef.current) {
+      requestAnimationFrame(() => {
+        const themeToUse = currentTheme || defaultTheme;
+        const fontFamilyMatch = themeToUse.match(
+          /--oui-font-family:\s*([^;]+);/
+        );
+        if (fontFamilyMatch) {
+          const fontFamily = fontFamilyMatch[1].trim();
+          const styleId = "dex-preview-font-override";
+
+          let style = document.getElementById(styleId);
+          if (!style) {
+            style = document.createElement("style");
+            style.id = styleId;
+            document.head.appendChild(style);
+          }
+
+          style.textContent = `
+          .orderly-app-container,
+          .orderly-app-container *,
+          .orderly-app-container *::before,
+          .orderly-app-container *::after {
+            font-family: ${fontFamily} !important;
+          }
+        `;
+        }
+      });
+    }
+    prevThemeRef.current = currentTheme;
+  }, [isOpen, currentTheme, defaultTheme]);
+
   useEffect(() => {
     if (!isOpen) {
       setSelectedElement(null);
       setSelectedElementPath([]);
       setOriginalClickedElement(null);
       setIsCtrlHeld(false);
+      const oldOverrideStyles = document.querySelectorAll(
+        'style[id^="ai-override-"]'
+      );
+      oldOverrideStyles.forEach(style => style.remove());
       return;
     }
+
+    const oldOverrideStyles = document.querySelectorAll(
+      'style[id^="ai-override-"]'
+    );
+    oldOverrideStyles.forEach(style => style.remove());
 
     const isWithinHigherModal = (element: HTMLElement | null): boolean => {
       if (!element) return false;
@@ -195,9 +295,21 @@ const EditModeModal: FC<EditModeModalProps> = ({
         return;
       }
 
+      if (target.closest("[data-higher-modal]")) {
+        return;
+      }
+
       if (isWithinHigherModal(target)) {
         return;
       }
+
+      const cssInspector = document.querySelector(
+        '[data-higher-modal="true"][class*="z-[51]"]'
+      );
+      if (cssInspector && cssInspector.contains(target)) {
+        return;
+      }
+
       if (e.ctrlKey || e.metaKey) {
         return;
       }
@@ -216,6 +328,10 @@ const EditModeModal: FC<EditModeModalProps> = ({
       const target = e.target as HTMLElement;
 
       if (target.closest("[data-modal-header-button]")) {
+        return;
+      }
+
+      if (target.closest("[data-higher-modal]")) {
         return;
       }
 
@@ -468,7 +584,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
         >
           <DexPreview
             {...previewProps}
-            customStyles={currentTheme || undefined}
+            customStyles={currentTheme ?? ""}
             className="h-full w-full"
           />
         </div>
@@ -489,6 +605,8 @@ const EditModeModal: FC<EditModeModalProps> = ({
               setSelectedElementPath([]);
               setOriginalClickedElement(null);
             }}
+            onApplyCSSOverrides={handleApplyCSSOverrides}
+            previewProps={previewProps}
           />
         )}
       </div>

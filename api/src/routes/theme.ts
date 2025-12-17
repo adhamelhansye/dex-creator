@@ -4,16 +4,26 @@ import { z } from "zod";
 import { OpenAI } from "openai";
 import {
   themeRateLimiter,
+  fineTuneRateLimiter,
   createDeploymentRateLimit,
 } from "../lib/rateLimiter";
 
 const themeRoutes = new Hono();
 
 const themeRateLimit = createDeploymentRateLimit(themeRateLimiter);
+const fineTuneRateLimit = createDeploymentRateLimit(fineTuneRateLimiter);
 
 const themePromptSchema = z.object({
   prompt: z.string().min(3).max(100),
   currentTheme: z.string().optional(),
+});
+
+const fineTuneSchema = z.object({
+  prompt: z.string().min(3).max(200),
+  html: z.string().min(1),
+  computedStyles: z.record(z.string(), z.string()).or(z.string()),
+  elementSelector: z.string().optional(),
+  existingOverrides: z.string().optional(),
 });
 
 function createOpenAIClient() {
@@ -176,7 +186,7 @@ COLOR GUIDELINES:
    • Gradient-brand-end: Similar to primary`;
 
       const response = await openai.chat.completions.create({
-        model: "qwen-3-235b-a22b-instruct-2507",
+        model: "qwen-3-32b",
         messages: [
           {
             role: "system",
@@ -188,19 +198,194 @@ COLOR GUIDELINES:
           },
         ],
         temperature: 0.7,
-        max_tokens: 2000,
+        max_tokens: 3_000,
       });
 
-      const modifiedTheme = response.choices[0]?.message.content?.trim();
+      let modifiedTheme = response.choices[0]?.message.content?.trim();
 
       if (!modifiedTheme) {
         return c.json({ error: "Failed to generate theme" }, { status: 500 });
       }
 
+      modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*?<\/think>/gi, "");
+      modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*$/gi, "");
+
+      modifiedTheme = modifiedTheme.replace(/^```(?:css)?\s*/i, "");
+      modifiedTheme = modifiedTheme.replace(/\s*```$/i, "");
+      modifiedTheme = modifiedTheme.trim();
+
       return c.json({ theme: modifiedTheme }, { status: 200 });
     } catch (error) {
       console.error("Error modifying theme:", error);
       let message = "Failed to modify theme";
+
+      if (error instanceof Error) {
+        message = error.message;
+      }
+
+      return c.json({ error: message }, { status: 500 });
+    }
+  }
+);
+
+themeRoutes.post(
+  "/fine-tune",
+  fineTuneRateLimit,
+  zValidator("json", fineTuneSchema),
+  async c => {
+    try {
+      const {
+        prompt,
+        html,
+        computedStyles,
+        elementSelector,
+        existingOverrides,
+      } = c.req.valid("json");
+
+      const openai = createOpenAIClient();
+
+      const computedStylesStr =
+        typeof computedStyles === "string"
+          ? computedStyles
+          : Object.entries(computedStyles)
+              .map(([key, value]) => `${key}: ${value}`)
+              .join("; ");
+
+      const systemPrompt = `You are a CSS expert specializing in fine-grained UI customization for dark trading platforms.
+
+Your task is to generate CSS overrides that can be applied to an HTML element and its entire child structure to transform its appearance based on the user's description.
+
+CRITICAL REQUIREMENTS:
+1. Return ONLY pure CSS code - NO markdown formatting, NO code blocks, NO backticks, NO explanations
+2. Return ONLY valid CSS that can be applied as CSS classes or selectors targeting the structure
+3. Use RGB values with spaces for colors (e.g., "rgb(176 132 233)" or "176 132 233")
+4. Maintain readability - ensure sufficient contrast for dark backgrounds
+5. Preserve functionality - don't break layout or interactions
+6. Target the root element AND its child elements as needed based on the HTML structure
+7. Use CSS selectors (classes, element selectors, descendant selectors) to target specific parts of the structure
+8. Use !important only when necessary to override existing styles
+9. Return clean, minified CSS without comments
+10. DO NOT wrap the response in markdown code blocks (no code fences)
+11. DO NOT include any explanatory text before or after the CSS
+12. **CRITICAL**: ALL CSS rules MUST be complete with proper opening and closing braces. Every opening brace { MUST have a matching closing brace }. Incomplete rules will cause validation errors.
+13. **CRITICAL**: If existing CSS overrides are provided, you MUST return ALL overrides (existing + new combined). Include ALL existing overrides PLUS your new changes. You MAY modify existing overrides if the user's request conflicts with them or asks for changes. If an existing override targets the same element/selector and the user wants different styling, UPDATE that override rather than duplicating it. Return the COMPLETE set that includes everything (modified existing + new).
+14. **CRITICAL**: DO NOT include image data (base64 encoded images, data: URLs, url() with image data) in background properties. For backgrounds, use only color values (rgb, hex) or gradients (linear-gradient, radial-gradient). NO background-image with data URLs or base64 images allowed.
+15. **CRITICAL**: DO NOT use pseudo-elements (::before, ::after) with content that creates overlay effects or blocks user interactions. Pseudo-elements with absolute positioning and empty content can make entire screen regions unclickable. If you absolutely must use pseudo-elements for decorative effects, they MUST include "pointer-events: none" to prevent blocking clicks. Prefer using background gradients, box-shadow, or border effects directly on elements instead of pseudo-elements.
+
+OUTPUT FORMAT:
+- Return CSS class definitions with selectors targeting the structure (e.g., ".custom-override { color: rgb(255 255 255); } .custom-override > button { background-color: rgb(20 20 30); }")
+- Use descendant selectors to target child elements (e.g., ".parent > .child", ".parent .nested")
+- Return complete CSS rules, not inline styles
+- If existing overrides are provided, return ALL overrides (existing + new combined). Include every existing override PLUS your new changes.
+
+COLOR GUIDELINES:
+- Dark backgrounds: Use RGB values like "14 13 18" to "93 83 123"
+- Light text: Use RGB values like "255 255 255" or "240 240 240"
+- Accent colors: Use vibrant colors like "176 132 233" (purple), "41 233 169" (green), "245 97 139" (red)
+- Ensure contrast ratios meet WCAG AA standards (at least 4.5:1 for text)
+
+SPACING GUIDELINES:
+- **CRITICAL**: Do NOT add padding unless explicitly requested by the user
+- Preserve existing spacing and padding values unless the user specifically asks to change them
+- Only modify padding/margin when the user's description explicitly mentions spacing changes
+- If the user doesn't mention padding, spacing, or margins, DO NOT add or modify these properties
+- Focus on colors, borders, backgrounds, and visual effects rather than spacing
+
+The user will provide:
+- Complete HTML structure including the root element and all its children
+- Current computed styles of the root element
+- A description of how they want the element and its children to look
+- (Optional) Existing CSS overrides that must be INCLUDED in your response (return all existing + new combined)`;
+
+      const userPrompt = `Generate CSS overrides for this HTML structure (including all child elements) based on the following description: "${prompt}"
+
+Complete HTML Structure (root element and all children):
+${html}
+
+Root Element Computed Styles:
+${computedStylesStr}
+
+${elementSelector ? `Root Element Selector: ${elementSelector}` : ""}
+${
+  existingOverrides
+    ? `\nExisting CSS Overrides (INCLUDE ALL of these PLUS your new changes - return everything combined):\n${existingOverrides}`
+    : ""
+}
+
+Generate CSS overrides that will transform the root element and its child elements according to the description. ${
+        existingOverrides
+          ? "CRITICAL: You must return ALL overrides (existing + new combined). Include EVERY existing override PLUS your new changes. You MAY modify existing overrides if the user's request conflicts with them - update them rather than keeping duplicates. If an existing override targets the same selector and the user wants different styling, UPDATE that override. Do NOT remove or skip existing overrides unless they conflict with the user's request. Return the complete set that includes everything (modified existing + new)."
+          : ""
+      }
+
+IMPORTANT SPACING RULES:
+- Do NOT add padding or margin properties unless the user explicitly requests spacing changes
+- If the user's description doesn't mention "padding", "spacing", "margin", or "gap", DO NOT include these properties
+- Focus on visual changes: colors, backgrounds, borders, shadows, gradients, fonts - NOT spacing
+- Only modify spacing when the user specifically asks for it (e.g., "add more padding", "make it more spaced out")
+
+IMPORTANT BACKGROUND RULES:
+- **CRITICAL**: DO NOT use image data in background properties (no base64, no data: URLs, no url() with image data)
+- For background-color: use only color values (rgb, hex)
+- For background: use only color values or gradients (linear-gradient, radial-gradient)
+- If the user requests an image background, use a solid color or gradient instead
+- NO background-image property with data URLs or base64 encoded images
+- All other CSS properties (color, border, box-shadow, etc.) can use normal CSS values
+
+IMPORTANT PSEUDO-ELEMENT RULES:
+- **CRITICAL**: DO NOT create ::before or ::after pseudo-elements that overlay content or block interactions
+- Pseudo-elements with absolute positioning and empty content (content: "") can make entire screen regions unclickable
+- If you absolutely must use pseudo-elements for decorative effects, they MUST include "pointer-events: none" to prevent blocking clicks
+- **PREFERRED APPROACH**: Use background gradients, box-shadow, border effects, or backdrop-filter directly on elements instead of pseudo-elements
+- Avoid pseudo-elements entirely unless the user explicitly requests them and you ensure they won't interfere with interactions
+
+Use CSS class definitions with selectors to target specific parts of the structure. 
+
+CRITICAL VALIDATION REQUIREMENTS:
+- Every CSS rule MUST be complete: every { must have a matching }
+- Do NOT include incomplete rules or selectors without content
+- All CSS must be valid and parseable
+
+IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks. Do NOT include any explanations or text before or after the CSS. Return ONLY the CSS rules themselves. ${
+        existingOverrides
+          ? "Return ALL overrides (existing + new) - include everything, not just new changes."
+          : ""
+      }`;
+
+      const response = await openai.chat.completions.create({
+        model: "qwen-3-32b",
+        messages: [
+          {
+            role: "system",
+            content: systemPrompt,
+          },
+          {
+            role: "user",
+            content: userPrompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: 3_000,
+      });
+
+      let cssOverrides = response.choices[0]?.message.content?.trim();
+
+      if (!cssOverrides) {
+        return c.json(
+          { error: "Failed to generate CSS overrides" },
+          { status: 500 }
+        );
+      }
+
+      cssOverrides = cssOverrides.replace(/<think>[\s\S]*?<\/think>/gi, "");
+      cssOverrides = cssOverrides.replace(/^```(?:css)?\s*/i, "");
+      cssOverrides = cssOverrides.replace(/\s*```$/i, "");
+      cssOverrides = cssOverrides.trim();
+
+      return c.json({ overrides: cssOverrides }, { status: 200 });
+    } catch (error) {
+      console.error("Error fine-tuning element:", error);
+      let message = "Failed to fine-tune element";
 
       if (error instanceof Error) {
         message = error.message;

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect, useRef } from "react";
+import { FC, useState, useEffect, useRef, useCallback } from "react";
 import {
   extractCSSVariablesFromElement,
   getElementPath,
@@ -6,6 +6,8 @@ import {
 } from "../utils/elementCSSInspector";
 import { Button } from "./Button";
 import { isAllowedCSSVariable } from "../utils/allowedCSSVariables";
+import { useModal } from "../context/ModalContext";
+import { DexPreviewProps } from "./DexPreview";
 
 export interface CSSVariableInspectorProps {
   element: HTMLElement | null;
@@ -16,6 +18,8 @@ export interface CSSVariableInspectorProps {
   onVariableChange: (variableName: string, newValue: string) => void;
   onElementSelect?: (element: HTMLElement) => void;
   onClose: () => void;
+  onApplyCSSOverrides?: (element: HTMLElement, overrides: string) => void;
+  previewProps?: DexPreviewProps;
 }
 
 const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
@@ -27,7 +31,10 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
   onVariableChange,
   onElementSelect,
   onClose,
-}: CSSVariableInspectorProps) => {
+  onApplyCSSOverrides,
+  previewProps,
+}) => {
+  const { openModal } = useModal();
   const [variables, setVariables] = useState<
     ReturnType<typeof extractCSSVariablesFromElement>
   >([]);
@@ -40,6 +47,50 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const modalRef = useRef<HTMLDivElement>(null);
+  const fineTuneButtonRef = useRef<HTMLButtonElement>(null);
+
+  const handleFineTuneClick = useCallback(() => {
+    if (!element || !onApplyCSSOverrides) {
+      return;
+    }
+    openModal("aiFineTune", {
+      element,
+      currentTheme,
+      ...(previewProps && { previewProps }),
+      onApplyOverrides: (overrides: string) => {
+        if (element && onApplyCSSOverrides) {
+          onApplyCSSOverrides(element, overrides);
+        }
+      },
+    });
+  }, [element, currentTheme, previewProps, onApplyCSSOverrides, openModal]);
+
+  useEffect(() => {
+    const button = fineTuneButtonRef.current;
+    if (!button) {
+      return;
+    }
+
+    const handleClick = (e: MouseEvent) => {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      handleFineTuneClick();
+    };
+
+    button.addEventListener("click", handleClick, true);
+    button.addEventListener(
+      "mousedown",
+      e => {
+        e.stopPropagation();
+      },
+      true
+    );
+
+    return () => {
+      button.removeEventListener("click", handleClick, true);
+    };
+  }, [handleFineTuneClick]);
 
   useEffect(() => {
     if (originalClickedElement && !position) {
@@ -220,6 +271,7 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
         userSelect: isDragging ? "none" : "auto",
         WebkitUserSelect: isDragging ? "none" : "auto",
       }}
+      data-higher-modal="true"
     >
       <div
         className="flex items-center justify-between mb-4 cursor-grab active:cursor-grabbing"
@@ -272,6 +324,33 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
           })}
         </div>
       </div>
+
+      {element && onApplyCSSOverrides && (
+        <div className="mb-3 pt-3 border-t border-light/10">
+          <button
+            ref={fineTuneButtonRef}
+            onClick={e => {
+              console.log("React onClick fired!", e);
+              e.preventDefault();
+              e.stopPropagation();
+              handleFineTuneClick();
+            }}
+            onMouseDown={e => {
+              console.log("React onMouseDown fired!", e);
+              e.stopPropagation();
+            }}
+            className="w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium text-primary-light hover:text-primary-darken hover:bg-primary-light/10 rounded border border-primary-light/30 hover:border-primary-light/50 transition-colors"
+            type="button"
+            data-modal-header-button="true"
+          >
+            <div className="i-mdi:magic-wand h-4 w-4"></div>
+            <span>AI Fine-Tune This Element</span>
+          </button>
+          <p className="text-xs text-gray-400 mt-2 text-center">
+            Use AI to customize this element and its children
+          </p>
+        </div>
+      )}
 
       {variables.length === 0 ? (
         <div className="text-xs text-gray-400 text-center py-4">

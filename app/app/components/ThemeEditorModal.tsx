@@ -24,6 +24,12 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
     }
   }, [isOpen, currentTheme, defaultTheme]);
 
+  useEffect(() => {
+    if (isOpen && currentTheme !== undefined) {
+      setLocalTheme(currentTheme || defaultTheme);
+    }
+  }, [currentTheme, defaultTheme, isOpen]);
+
   if (!isOpen) return null;
 
   const handleChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
@@ -33,6 +39,23 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
   const handleApply = () => {
     onThemeChange(localTheme);
     onClose();
+  };
+
+  const hasAIFineTuneOverrides = (theme: string): boolean => {
+    return /\/\*\s*AI Fine-Tune Overrides\s*\*\//i.test(theme);
+  };
+
+  const handleResetAIFineTune = () => {
+    let cleanedTheme = localTheme;
+    if (hasAIFineTuneOverrides(cleanedTheme)) {
+      cleanedTheme = cleanedTheme.replace(
+        /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*[\s\S]*?(?=\/\*\s*AI Fine-Tune Overrides\s*\*\/|$)/gi,
+        ""
+      );
+      cleanedTheme = cleanedTheme.replace(/\n{3,}/g, "\n\n").trim();
+    }
+    setLocalTheme(cleanedTheme);
+    onThemeChange(cleanedTheme);
   };
 
   return (
@@ -61,6 +84,16 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
         </div>
         <div className="flex items-center justify-between p-4 border-t border-light/10 gap-2">
           <div className="flex gap-2">
+            {hasAIFineTuneOverrides(localTheme) && (
+              <Button
+                onClick={handleResetAIFineTune}
+                variant="secondary"
+                size="sm"
+                type="button"
+              >
+                Reset AI Fine-Tune
+              </Button>
+            )}
             <Button
               onClick={() => {
                 onThemeChange("");

@@ -25,6 +25,8 @@ import { SwapFeeWithdrawalModal } from "../components/SwapFeeWithdrawalModal";
 import ThemeEditorModal from "../components/ThemeEditorModal";
 import AIThemeGeneratorModal from "../components/AIThemeGeneratorModal";
 import CurrentThemeModal from "../components/CurrentThemeModal";
+import AIFineTuneModal from "../components/AIFineTuneModal";
+import AIFineTunePreviewModal from "../components/AIFineTunePreviewModal";
 
 export type ModalType =
   | "login"
@@ -46,6 +48,8 @@ export type ModalType =
   | "themeEditor"
   | "aiThemeGenerator"
   | "currentTheme"
+  | "aiFineTune"
+  | "aiFineTunePreview"
   | null;
 
 interface ModalContextType {
@@ -314,6 +318,29 @@ function ModalManager() {
           setTradingViewColorConfig={
             currentModalProps.setTradingViewColorConfig
           }
+        />
+      );
+    case "aiFineTune":
+      return (
+        <AIFineTuneModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          element={currentModalProps.element}
+          currentTheme={currentModalProps.currentTheme}
+          onApplyOverrides={currentModalProps.onApplyOverrides}
+          previewProps={currentModalProps.previewProps}
+        />
+      );
+    case "aiFineTunePreview":
+      return (
+        <AIFineTunePreviewModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          oldTheme={currentModalProps.oldTheme}
+          newOverrides={currentModalProps.newOverrides}
+          previewProps={currentModalProps.previewProps}
+          onApply={currentModalProps.onApply}
+          onReject={currentModalProps.onReject}
         />
       );
     default:

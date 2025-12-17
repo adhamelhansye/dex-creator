@@ -233,7 +233,8 @@ export interface UseDexFormReturn extends DexFormData {
     originalThemeCSS: string | null | undefined,
     onApply: (theme: string) => void,
     onCancel: () => void,
-    openModal: (type: ModalType, props?: Record<string, unknown>) => void
+    openModal: (type: ModalType, props?: Record<string, unknown>) => void,
+    prompt?: string
   ) => Promise<void>;
   resetTheme: (originalThemeCSS: string | null | undefined) => void;
   resetThemeToDefault: () => void;
@@ -748,9 +749,11 @@ export function useDexForm(): UseDexFormReturn {
       originalThemeCSS: string | null | undefined,
       onApply: (theme: string) => void,
       onCancel: () => void,
-      openModal: (type: ModalType, props?: Record<string, unknown>) => void
+      openModal: (type: ModalType, props?: Record<string, unknown>) => void,
+      prompt?: string
     ) => {
-      if (!themePrompt.trim()) {
+      const effectivePrompt = prompt?.trim() || themePrompt.trim();
+      if (!effectivePrompt) {
         toast.error("Please enter a theme description");
         return;
       }
@@ -759,7 +762,7 @@ export function useDexForm(): UseDexFormReturn {
         const response = await post<{ theme: string }>(
           "api/theme/modify",
           {
-            prompt: themePrompt.trim(),
+            prompt: effectivePrompt,
             currentTheme: currentTheme || originalThemeCSS,
           },
           token

@@ -13,7 +13,7 @@ import DexSectionRenderer, {
   DEX_SECTIONS,
 } from "../components/DexSectionRenderer";
 import { useDexForm } from "../hooks/useDexForm";
-import { DexData, ThemeTabType, defaultTheme } from "../types/dex";
+import { DexData, defaultTheme } from "../types/dex";
 
 export const meta: MetaFunction = () => [
   { title: "Configure Your DEX - Orderly One" },
@@ -81,7 +81,8 @@ export default function DexConfigRoute() {
       form.dexData?.themeCSS,
       handleApplyGeneratedTheme,
       handleCancelGeneratedTheme,
-      openModal
+      openModal,
+      prompt
     );
     form.setIsGeneratingTheme(false);
   };
@@ -192,21 +193,11 @@ export default function DexConfigRoute() {
     }
   };
 
-  const ThemeTabButton = ({
-    tab,
-    label,
-  }: {
-    tab: ThemeTabType;
-    label: string;
-  }) => (
+  const ThemeTabButton = ({ label }: { label: string }) => (
     <button
-      className={`px-4 py-2 text-sm font-medium rounded-t-lg ${
-        form.activeThemeTab === tab
-          ? "bg-background-dark/50 text-white border-t border-l border-r border-light/10"
-          : "bg-transparent text-gray-400 hover:text-white"
-      }`}
-      onClick={() => form.setActiveThemeTab(tab)}
+      className="px-4 py-2 text-sm font-medium rounded-t-lg bg-transparent text-gray-400"
       type="button"
+      disabled
     >
       {label}
     </button>
@@ -306,12 +297,14 @@ export default function DexConfigRoute() {
           mode="direct"
           sections={DEX_SECTIONS}
           showProgressTracker={true}
-          sectionProps={form.getSectionProps({
-            handleGenerateTheme,
-            handleResetTheme,
-            handleResetToDefault,
-            ThemeTabButton,
-          })}
+          sectionProps={{
+            ...form.getSectionProps({
+              handleGenerateTheme,
+              handleResetTheme,
+              handleResetToDefault,
+              ThemeTabButton,
+            }),
+          }}
           idPrefix="config-"
         />
       </Form>
