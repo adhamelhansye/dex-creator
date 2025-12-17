@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import { post, get } from "../utils/apiClient";
 import { toast } from "react-toastify";
 import { defaultTheme, ThemeTabType, DexData } from "../types/dex";
@@ -9,9 +9,13 @@ import {
   maxLength,
   composeValidators,
   alphanumericWithSpecialChars,
+  alphanumeric,
+  optionalMinLength,
 } from "../utils/validation";
 import { useThemeCSS } from "./useThemeCSS";
 import { ModalType } from "../context/ModalContext";
+import { useDistributorCode } from "./useDistrubutorInfo";
+import { useDistributor } from "../context/DistributorContext";
 
 const base64ToBlob = async (base64: string): Promise<Blob> => {
   const response = await fetch(base64);
@@ -108,6 +112,8 @@ export interface DexSectionProps {
   onRestrictedRegionsChange: (value: string) => void;
   whitelistedIps: string;
   onWhitelistedIpsChange: (value: string) => void;
+  distributorCode: string;
+  distributorCodeValidator: (value: string) => string | null;
 }
 
 export interface DexFormData {
@@ -150,6 +156,7 @@ export interface DexFormData {
   symbolList: string;
   restrictedRegions: string;
   whitelistedIps: string;
+  distributorCode: string;
 }
 
 export interface UseDexFormReturn extends DexFormData {
@@ -161,6 +168,7 @@ export interface UseDexFormReturn extends DexFormData {
     token: string | null,
     dexId?: string
   ) => Promise<DexData | null>;
+  setDistributorCode: (value: string) => void;
   setBrokerName: (value: string) => void;
   setTelegramLink: (value: string) => void;
   setDiscordLink: (value: string) => void;
@@ -260,6 +268,7 @@ export interface UseDexFormReturn extends DexFormData {
       label: string;
     }>;
   }) => DexSectionProps;
+  distributorCodeValidator: (value: string) => string | null;
 }
 
 const initialFormState: DexFormData = {
@@ -302,6 +311,7 @@ const initialFormState: DexFormData = {
   symbolList: "",
   restrictedRegions: "",
   whitelistedIps: "",
+  distributorCode: "",
 };
 
 export function useDexForm(): UseDexFormReturn {
@@ -318,6 +328,12 @@ export function useDexForm(): UseDexFormReturn {
     minLength(3, "Broker name"),
     maxLength(30, "Broker name"),
     alphanumericWithSpecialChars("Broker name")
+  );
+
+  const distributorCodeValidator = composeValidators(
+    optionalMinLength(4, "Distributor code"),
+    maxLength(10, "Distributor code"),
+    alphanumeric("Distributor code")
   );
 
   const urlValidator = validateUrl();
@@ -411,6 +427,20 @@ export function useDexForm(): UseDexFormReturn {
     initialFormState.whitelistedIps
   );
 
+  const urlDistributorCode = useDistributorCode();
+
+  const [distributorCode, setDistributorCode] = useState(
+    urlDistributorCode?.toLocaleUpperCase() || initialFormState.distributorCode
+  );
+
+  const { distributorInfo } = useDistributor();
+
+  useEffect(() => {
+    if (distributorInfo?.distributor_name) {
+      setDistributorCode(distributorInfo.distributor_name);
+    }
+  }, [distributorInfo]);
+
   const handleInputChange =
     (field: string) =>
     (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -466,6 +496,9 @@ export function useDexForm(): UseDexFormReturn {
           break;
         case "symbolList":
           setSymbolList(value);
+          break;
+        case "distributorCode":
+          setDistributorCode(value?.toLocaleUpperCase());
           break;
       }
     };
@@ -617,6 +650,7 @@ export function useDexForm(): UseDexFormReturn {
 
     return {
       formData: {
+        distributorCode,
         brokerName,
         telegramLink,
         discordLink,
@@ -700,6 +734,7 @@ export function useDexForm(): UseDexFormReturn {
     symbolList,
     restrictedRegions,
     whitelistedIps,
+    distributorCode,
   ]);
 
   const resetForm = () => {
@@ -744,6 +779,7 @@ export function useDexForm(): UseDexFormReturn {
     setSymbolList(initialFormState.symbolList);
     setRestrictedRegions(initialFormState.restrictedRegions);
     setWhitelistedIps(initialFormState.whitelistedIps);
+    setDistributorCode(initialFormState.distributorCode);
   };
 
   const generateTheme = useCallback(
@@ -997,6 +1033,8 @@ export function useDexForm(): UseDexFormReturn {
       onRestrictedRegionsChange: setRestrictedRegions,
       whitelistedIps,
       onWhitelistedIpsChange: setWhitelistedIps,
+      distributorCode,
+      distributorCodeValidator,
     }),
     [
       brokerName,
@@ -1027,6 +1065,7 @@ export function useDexForm(): UseDexFormReturn {
       symbolList,
       restrictedRegions,
       whitelistedIps,
+      distributorCode,
       walletConnectProjectId,
       privyAppId,
       privyTermsOfUse,
@@ -1064,6 +1103,7 @@ export function useDexForm(): UseDexFormReturn {
       handleThemeEditorChange,
       handleUpdateCssValue,
       handleUpdateCssColor,
+      distributorCodeValidator,
     ]
   );
 
@@ -1112,6 +1152,7 @@ export function useDexForm(): UseDexFormReturn {
     symbolList,
     restrictedRegions,
     whitelistedIps,
+    distributorCode,
     setBrokerName,
     setTelegramLink,
     setDiscordLink,
@@ -1151,6 +1192,7 @@ export function useDexForm(): UseDexFormReturn {
     setSymbolList,
     setRestrictedRegions,
     setWhitelistedIps,
+    setDistributorCode,
     handleInputChange,
     handleImageChange,
     handlePnLPosterChange,
@@ -1174,5 +1216,6 @@ export function useDexForm(): UseDexFormReturn {
     handleUpdateCssColor,
     getSectionProps,
     resetForm,
+    distributorCodeValidator,
   };
 }

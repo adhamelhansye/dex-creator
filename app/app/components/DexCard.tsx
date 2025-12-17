@@ -67,7 +67,7 @@ const getRankIcon = (index: number) => {
 };
 
 export default function DexCard({ broker, rank, timePeriod }: DexCardProps) {
-  const pnlFormatted = broker.totalPnl ? formatPnl(broker.totalPnl) : null;
+  // const pnlFormatted = broker.totalPnl ? formatPnl(broker.totalPnl) : null;
   const timePeriodString = timePeriod ? getTimePeriodString(timePeriod) : null;
 
   return (
@@ -150,7 +150,7 @@ export default function DexCard({ broker, rank, timePeriod }: DexCardProps) {
                     </div>
                   </div>
                 )}
-                <div className="flex-1">
+                {/* <div className="flex-1">
                   <div className="text-xs text-gray-400">
                     PnL ({timePeriodString})
                   </div>
@@ -161,7 +161,7 @@ export default function DexCard({ broker, rank, timePeriod }: DexCardProps) {
                   >
                     {pnlFormatted?.value}
                   </div>
-                </div>
+                </div> */}
               </div>
             )}
         </div>

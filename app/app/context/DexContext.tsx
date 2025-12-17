@@ -22,6 +22,7 @@ interface DexContextType {
   refreshDexData: () => Promise<void>;
   updateDexData: (newData: Partial<DexData>) => void;
   clearDexData: () => void;
+  setBrokerId: (id: string) => void;
 }
 
 const DexContext = createContext<DexContextType | undefined>(undefined);
@@ -33,6 +34,7 @@ export function DexProvider({ children }: { children: ReactNode }) {
   const [dexData, setDexData] = useState<DexData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [brokerId, setBrokerId] = useState<string | null>(null);
 
   const refreshDexData = useCallback(async () => {
     if (!isAuthenticated || !token) {
@@ -80,8 +82,14 @@ export function DexProvider({ children }: { children: ReactNode }) {
     }
   }, [isAuthenticated, token, refreshDexData, clearDexData]);
 
+  useEffect(() => {
+    if (dexData) {
+      setBrokerId(dexData.brokerId);
+    }
+  }, [dexData]);
+
   // Computed values
-  const brokerId = dexData?.brokerId || null;
+  const _brokerId = brokerId || dexData?.brokerId || null;
   const hasDex = Boolean(dexData);
   const isGraduationEligible = dexData?.brokerId === "demo";
   const isGraduated = Boolean(
@@ -97,7 +105,7 @@ export function DexProvider({ children }: { children: ReactNode }) {
         dexData,
         isLoading,
         error,
-        brokerId,
+        brokerId: _brokerId,
         hasDex,
         isGraduationEligible,
         isGraduated,
@@ -105,6 +113,7 @@ export function DexProvider({ children }: { children: ReactNode }) {
         refreshDexData,
         updateDexData,
         clearDexData,
+        setBrokerId,
       }}
     >
       {children}

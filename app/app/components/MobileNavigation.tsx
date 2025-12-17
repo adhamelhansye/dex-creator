@@ -1,7 +1,7 @@
-// Removed unused useState import
 import { Link, useLocation } from "@remix-run/react";
 import { Icon } from "@iconify/react";
-import { CampaignIcon } from "../icons/CampaignIcon";
+import { isPathActive, getPathWithSearch } from "../utils/navigation";
+import { useNavigationMenu } from "../hooks/useNavigationMenu";
 
 interface MobileNavigationProps {
   isOpen: boolean;
@@ -14,11 +14,7 @@ export default function MobileNavigation({
 }: MobileNavigationProps) {
   const location = useLocation();
 
-  const isActive = (path: string) => {
-    if (path === "/" && location.pathname === "/") return true;
-    if (path !== "/" && location.pathname.startsWith(path)) return true;
-    return false;
-  };
+  const menuItems = useNavigationMenu();
 
   const toggleMenu = () => {
     setIsOpen(!isOpen);
@@ -64,78 +60,30 @@ export default function MobileNavigation({
         <div className="px-6 py-4 overflow-y-auto flex-1">
           <h2 className="text-xl font-bold gradient-text mb-6">Menu</h2>
           <nav className="flex flex-col gap-4">
-            <Link
-              to="https://app.orderly.network/campaigns"
-              target="_blank"
-              className={`inline-flex items-center gap-1
-                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive("https://app.orderly.network/campaigns")
-                    ? "bg-light/10 text-white"
-                    : "text-gray-300 hover:bg-light/5 hover:text-white"
-                }
-              `}
-              onClick={closeMenu}
-            >
-              UCC
-              <CampaignIcon />
-            </Link>
-            <Link
-              to="/"
-              className={`
-                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive("/")
-                    ? "bg-light/10 text-white"
-                    : "text-gray-300 hover:bg-light/5 hover:text-white"
-                }
-              `}
-              onClick={closeMenu}
-            >
-              Home
-            </Link>
-            <Link
-              to="/board"
-              className={`
-                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive("/board")
-                    ? "bg-light/10 text-white"
-                    : "text-gray-300 hover:bg-light/5 hover:text-white"
-                }
-              `}
-              onClick={closeMenu}
-            >
-              Board
-            </Link>
-            <Link
-              to="/dex"
-              className={`
-                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive("/dex")
-                    ? "bg-light/10 text-white"
-                    : "text-gray-300 hover:bg-light/5 hover:text-white"
-                }
-              `}
-              onClick={closeMenu}
-            >
-              My DEX
-            </Link>
-            <Link
-              to="/case-studies"
-              className={`
-                py-3 px-4 rounded-lg font-medium text-base transition-all duration-200
-                ${
-                  isActive("/case-studies")
-                    ? "bg-light/10 text-white"
-                    : "text-gray-300 hover:bg-light/5 hover:text-white"
-                }
-              `}
-              onClick={closeMenu}
-            >
-              Case Studies
-            </Link>
+            {menuItems.map(item => {
+              const isActive = isPathActive(
+                location.pathname,
+                item.path,
+                item.target
+              );
+              const fullPath = getPathWithSearch(item.path, location.search);
+
+              return (
+                <Link
+                  key={item.path}
+                  to={fullPath}
+                  target={item.target}
+                  className={`inline-flex items-center gap-1 py-3 px-4 rounded-lg font-medium text-base transition-all duration-200 ${
+                    isActive
+                      ? "bg-light/10 text-white"
+                      : "text-gray-300 hover:bg-light/5 hover:text-white"
+                  }`}
+                  onClick={closeMenu}
+                >
+                  {item.title}
+                </Link>
+              );
+            })}
           </nav>
         </div>
       </div>

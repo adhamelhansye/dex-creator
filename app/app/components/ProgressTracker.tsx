@@ -120,15 +120,13 @@ const ProgressTracker: React.FC<ProgressTrackerProps> = ({
                       {isCompleted ? (
                         <div className="i-mdi:check text-xs"></div>
                       ) : (
-                        <span className="text-xs font-medium">
-                          {section.id}
-                        </span>
+                        <span className="text-xs font-medium">{index + 1}</span>
                       )}
                     </div>
 
                     <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium truncate">
-                        {section.title}
+                        {section.label || section.title}
                       </div>
                     </div>
                   </div>

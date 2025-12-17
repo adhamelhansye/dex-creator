@@ -125,7 +125,6 @@ export default function ReferralRoute() {
       openModal("orderlyKeyLogin", {
         onSuccess: (newKey: Uint8Array) => {
           setOrderlyKey(newKey);
-          toast.success("Orderly key created successfully!");
         },
         onCancel: () => {
           setIsCreatingKey(false);

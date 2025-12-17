@@ -14,6 +14,7 @@ import { get } from "../utils/apiClient";
 import { useAuth } from "../context/useAuth";
 import { cleanMultisigAddress } from "../utils/multisig";
 import { getChainById } from "../../../config";
+import { parseWalletError } from "../utils/wallet";
 
 interface OrderlyKeyLoginModalProps {
   isOpen: boolean;
@@ -163,9 +164,8 @@ export default function OrderlyKeyLoginModal({
     } catch (error) {
       console.error("Failed to create orderly key:", error);
       toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to create orderly key. Please try again."
+        parseWalletError(error) ||
+          "Failed to create orderly key. Please try again."
       );
     } finally {
       setIsCreating(false);
