@@ -109,10 +109,10 @@ const manualBrokerCreationSchema = z.object({
       value => !value.includes("orderly"),
       "Broker ID cannot contain 'orderly'"
     ),
-  makerFee: z.number().min(0).max(150),
-  takerFee: z.number().min(30).max(150),
-  rwaMakerFee: z.number().min(0).max(150).optional(),
-  rwaTakerFee: z.number().min(0).max(150).optional(),
+  makerFee: z.number().min(0).max(15),
+  takerFee: z.number().min(3).max(15),
+  rwaMakerFee: z.number().min(0).max(15).optional(),
+  rwaTakerFee: z.number().min(0).max(15).optional(),
   txHash: z
     .string()
     .min(10)

@@ -50,10 +50,10 @@ function getOrderReceiverAddress(): Promise<string> {
   return getSecret("orderReceiverAddress");
 }
 
-const DEFAULT_MAKER_FEE = 30; // Default maker fee (3 bps = 30 units)
-const DEFAULT_TAKER_FEE = 60; // Default taker fee (6 bps = 60 units)
-const DEFAULT_RWA_MAKER_FEE = 0; // Default RWA maker fee (0 bps = 0 units)
-const DEFAULT_RWA_TAKER_FEE = 50; // Default RWA taker fee (5 bps = 50 units)
+const DEFAULT_MAKER_FEE = 3; // Default maker fee
+const DEFAULT_TAKER_FEE = 6; // Default taker fee
+const DEFAULT_RWA_MAKER_FEE = 0; // Default RWA maker fee
+const DEFAULT_RWA_TAKER_FEE = 5; // Default RWA taker fee
 
 const ACCEPTED_CHAINS = [
   ...GRADUATION_SUPPORTED_CHAINS.mainnet,

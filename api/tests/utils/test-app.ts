@@ -204,7 +204,7 @@ vi.mock("../../src/models/graduation", () => ({
         });
       }
 
-      if (makerFee > 150 || takerFee < 30 || takerFee > 150) {
+      if (makerFee > 15 || takerFee < 3 || takerFee > 15) {
         return Promise.resolve({
           success: false,
           message: "Invalid fee values",
@@ -229,8 +229,8 @@ vi.mock("../../src/models/graduation", () => ({
 
     return Promise.resolve({
       success: true,
-      makerFee: 30,
-      takerFee: 60,
+      makerFee: 3,
+      takerFee: 6,
     });
   }),
 }));
@@ -243,15 +243,15 @@ vi.mock("../../src/lib/orderlyDb", async () => {
       return Promise.resolve({
         success: true,
         data: {
-          makerFee: 30,
-          takerFee: 60,
+          makerFee: 3,
+          takerFee: 6,
         },
       });
     }),
     updateBrokerFeesInOrderlyDb: vi
       .fn()
       .mockImplementation(async (brokerId, makerFee, takerFee) => {
-        if (makerFee > 150 || takerFee < 30 || takerFee > 150) {
+        if (makerFee > 15 || takerFee < 3 || takerFee > 15) {
           return Promise.resolve({
             success: false,
             error: "Invalid fee values",

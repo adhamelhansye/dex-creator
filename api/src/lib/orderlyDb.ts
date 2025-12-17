@@ -729,10 +729,10 @@ export async function getBrokerFeesFromOrderlyDb(
       };
     }
 
-    const makerFee = convertDecimalToFeeUnits(broker.defaultMakerFeeRate);
-    const takerFee = convertDecimalToFeeUnits(broker.defaultTakerFeeRate);
-    const rwaMakerFee = convertDecimalToFeeUnits(broker.rwaDefaultMakerFeeRate);
-    const rwaTakerFee = convertDecimalToFeeUnits(broker.rwaDefaultTakerFeeRate);
+    const makerFee = broker.defaultMakerFeeRate.toNumber();
+    const takerFee = broker.defaultTakerFeeRate.toNumber();
+    const rwaMakerFee = broker.rwaDefaultMakerFeeRate.toNumber();
+    const rwaTakerFee = broker.rwaDefaultTakerFeeRate.toNumber();
 
     brokerFeesCache.set(brokerId, {
       makerFee,
