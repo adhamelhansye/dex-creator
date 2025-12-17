@@ -39,10 +39,10 @@ const verifyTxSchema = z.object({
       value => !value.includes("orderly"),
       "Broker ID cannot contain 'orderly'"
     ),
-  makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
-  takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
-  rwaMakerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
-  rwaTakerFee: z.number().min(0).max(150), // 3-15 bps in 0.1 bps units
+  makerFee: z.number().min(0).max(15), // 0-15 bps
+  takerFee: z.number().min(3).max(15), // 3-15 bps
+  rwaMakerFee: z.number().min(0).max(15), // 0-15 bps
+  rwaTakerFee: z.number().min(0).max(15), // 3-15 bps
   paymentType: z.enum(["usdc", "order"]).default("order"),
 });
 

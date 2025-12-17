@@ -171,10 +171,10 @@ export function GraduationForm({
   const [showManualInput, setShowManualInput] = useState(false);
   const [existingBrokerIds, setExistingBrokerIds] = useState<string[]>([]);
 
-  const [makerFee, setMakerFee] = useState<number>(30); // 3 bps = 30 units
-  const [takerFee, setTakerFee] = useState<number>(60); // 6 bps = 60 units
-  const [rwaMakerFee, setRwaMakerFee] = useState<number>(0); // 0 bps = 0 units
-  const [rwaTakerFee, setRwaTakerFee] = useState<number>(50); // 5 bps = 50 units
+  const [makerFee, setMakerFee] = useState<number>(3);
+  const [takerFee, setTakerFee] = useState<number>(6);
+  const [rwaMakerFee, setRwaMakerFee] = useState<number>(0);
+  const [rwaTakerFee, setRwaTakerFee] = useState<number>(5);
 
   const [graduationStatus, setGraduationStatus] =
     useState<NewGraduationStatusResponse | null>(null);
@@ -1444,7 +1444,7 @@ export function GraduationForm({
               setMakerFee(newMakerFee);
               setTakerFee(newTakerFee);
               setRwaMakerFee(newRwaMakerFee || 0);
-              setRwaTakerFee(newRwaTakerFee || 50);
+              setRwaTakerFee(newRwaTakerFee || 5);
             }}
           />
 
@@ -1513,7 +1513,7 @@ export function GraduationForm({
               setMakerFee(newMakerFee);
               setTakerFee(newTakerFee);
               setRwaMakerFee(newRwaMakerFee || 0);
-              setRwaTakerFee(newRwaTakerFee || 50);
+              setRwaTakerFee(newRwaTakerFee || 5);
             }}
             defaultOpenCalculator={false}
             alwaysShowConfig={true}
