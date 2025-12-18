@@ -16,15 +16,17 @@ export function VanguardDistributorProgramme() {
                 Orderly empowers distributors to onboard projects to Orderly One
                 and earn a share of the fees.
               </p>
-              {/* <p className="text-xs md:text-base leading-[1.5] text-base-contrast-54 text-center">
+              <p className="text-xs md:text-base leading-[1.5] text-base-contrast-54 text-center">
                 <span>View detailed rules in </span>
                 <a
-                  href="#"
+                  href="https://orderly.network/docs/introduction/orderly-one/vanguard-distributor-program"
                   className="text-[#9c75ff] hover:text-[#b58fff] transition-colors"
+                  target="_blank"
+                  rel="noopener noreferrer"
                 >
                   Vanguard ↗
                 </a>
-              </p> */}
+              </p>
             </div>
           </div>
         </div>
