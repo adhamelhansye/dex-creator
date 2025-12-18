@@ -111,13 +111,14 @@ const manualBrokerCreationSchema = z.object({
     ),
   makerFee: z.number().min(0).max(15),
   takerFee: z.number().min(3).max(15),
-  rwaMakerFee: z.number().min(0).max(15).optional(),
-  rwaTakerFee: z.number().min(0).max(15).optional(),
+  rwaMakerFee: z.number().min(0).max(15),
+  rwaTakerFee: z.number().min(0).max(15),
   txHash: z
     .string()
     .min(10)
     .max(100, "Transaction hash must be between 10-100 characters"),
   chainId: z.number().int().optional(),
+  chain_type: z.enum(["EVM", "SOL"]).default("EVM"),
 });
 
 const customDomainOverrideSchema = z.object({
@@ -401,6 +402,7 @@ adminRoutes.post(
         rwaTakerFee,
         txHash,
         chainId,
+        chain_type,
       } = c.req.valid("json");
       const dexId = c.req.param("dexId");
 
@@ -410,6 +412,7 @@ adminRoutes.post(
         where: { id: dexId },
         include: { user: true },
       });
+
       if (!dex || !dex.repoUrl) {
         return c.json(
           {
@@ -448,6 +451,17 @@ adminRoutes.post(
         );
       }
 
+      const user = await prismaClient.user.findUnique({
+        where: { id: dex.userId },
+      });
+
+      if (!user) {
+        return c.json(
+          { success: false, message: "User not found" },
+          { status: 404 }
+        );
+      }
+
       const existingUsedTx = await prismaClient.usedTransactionHash.findUnique({
         where: {
           txHash: txHash,
@@ -472,8 +486,11 @@ adminRoutes.post(
           brokerName: dex.brokerName,
           makerFee: makerFee,
           takerFee: takerFee,
-          rwaMakerFee: rwaMakerFee,
-          rwaTakerFee: rwaTakerFee,
+          rwaMakerFee: rwaMakerFee!,
+          rwaTakerFee: rwaTakerFee!,
+          address: dex.user.address,
+          chain_id: chainId,
+          chain_type: chain_type,
         }
       );
 
