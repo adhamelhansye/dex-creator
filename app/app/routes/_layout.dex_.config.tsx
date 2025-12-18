@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from "react";
+import { useState, useEffect, FormEvent, useMemo } from "react";
 import type { MetaFunction } from "@remix-run/node";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
@@ -10,10 +10,15 @@ import { Card } from "../components/Card";
 import Form from "../components/Form";
 import { useNavigate, Link } from "@remix-run/react";
 import DexSectionRenderer, {
+  DEX_SECTION_KEYS,
   DEX_SECTIONS,
 } from "../components/DexSectionRenderer";
 import { useDexForm } from "../hooks/useDexForm";
 import { DexData, defaultTheme } from "../types/dex";
+import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
+import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
+import { useDistributor } from "../context/DistributorContext";
+import { useDex } from "../context/DexContext";
 
 export const meta: MetaFunction = () => [
   { title: "Configure Your DEX - Orderly One" },
@@ -32,6 +37,21 @@ export default function DexConfigRoute() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isLoadingDexData, setIsLoadingDexData] = useState(false);
+  const { isGraduated } = useDex();
+  const { distributorInfo } = useDistributor();
+
+  // when the DEX is graduated and the distributor code is not bound, we need to hide the distributor code section because it is not allowed to change the distributor code after the DEX is graduated
+  const filteredSections = useMemo(() => {
+    return isGraduated && !distributorInfo?.exist
+      ? DEX_SECTIONS.filter(
+          section => section.key !== DEX_SECTION_KEYS.DistributorCode
+        ).map((section, index) => ({
+          ...section,
+          // reset the id to the index + 1, others the progress tracker percentage will calculate incorrectly
+          id: index + 1,
+        }))
+      : DEX_SECTIONS;
+  }, [isGraduated, distributorInfo?.exist]);
 
   useEffect(() => {
     if (!isAuthenticated || !token) return;
@@ -102,7 +122,7 @@ export default function DexConfigRoute() {
     form.setViewCssCode(false);
   };
 
-  const validateAllSections = () => {
+  const validateAllSections = async () => {
     const sectionProps = form.getSectionProps({
       handleGenerateTheme,
       handleResetTheme,
@@ -113,20 +133,28 @@ export default function DexConfigRoute() {
     const validationErrors: string[] = [];
 
     for (const section of DEX_SECTIONS) {
-      if (section.getValidationTest) {
+      if (section.key === DEX_SECTION_KEYS.DistributorCode) {
+        const code = form.distributorCode.trim();
+        if (code && !distributorInfo?.exist) {
+          const error =
+            form.distributorCodeValidator(code) ||
+            (await verifyDistributorCodeMessage(code));
+          error && validationErrors.push(error);
+        }
+      } else if (section.getValidationTest) {
         const isValid = section.getValidationTest(sectionProps);
+        // validate error
         if (!isValid) {
-          if (section.key === "brokerDetails") {
+          const commonErrorMessage = `${section.title}: validation failed`;
+          if (section.key === DEX_SECTION_KEYS.BrokerDetails) {
             const error = form.brokerNameValidator(form.brokerName.trim());
-            validationErrors.push(
-              error || `${section.title}: validation failed`
-            );
-          } else if (section.key === "privyConfiguration") {
+            validationErrors.push(error || commonErrorMessage);
+          } else if (section.key === DEX_SECTION_KEYS.PrivyConfiguration) {
             validationErrors.push(
               `${section.title}: Please enter a valid Terms of Use URL`
             );
           } else {
-            validationErrors.push(`${section.title}: validation failed`);
+            validationErrors.push(commonErrorMessage);
           }
         }
       }
@@ -142,13 +170,23 @@ export default function DexConfigRoute() {
     return validationErrors;
   };
 
+  const { bindDistributorCode } = useBindDistrubutorCode();
+
   const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
-    const validationErrors = validateAllSections();
+    const validationErrors = await validateAllSections();
     if (validationErrors.length > 0) {
       toast.error(validationErrors[0]);
       return;
+    }
+
+    // only if it is not bound yet
+    if (!distributorInfo?.exist && form.distributorCode.trim()) {
+      const isBound = await bindDistributorCode(form.distributorCode.trim());
+      if (!isBound) {
+        return;
+      }
     }
 
     setIsSaving(true);
@@ -295,7 +333,7 @@ export default function DexConfigRoute() {
       >
         <DexSectionRenderer
           mode="direct"
-          sections={DEX_SECTIONS}
+          sections={filteredSections}
           showProgressTracker={true}
           sectionProps={{
             ...form.getSectionProps({
@@ -306,6 +344,14 @@ export default function DexConfigRoute() {
             }),
           }}
           idPrefix="config-"
+          customDescription={section => {
+            if (section.key === DEX_SECTION_KEYS.DistributorCode) {
+              return distributorInfo?.exist
+                ? "You have been invited by the following distributor."
+                : section.description;
+            }
+            return section.description;
+          }}
         />
       </Form>
     </div>

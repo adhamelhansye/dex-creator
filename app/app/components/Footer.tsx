@@ -38,7 +38,7 @@ export default function Footer() {
 
   return (
     <>
-      <div className="pt-[20px] border-t-[1px] border-gray-300 md:hidden">
+      <div className="pt-[20px] border-t-[1px] border-base-contrast-12 md:hidden">
         <div className="px-[20px]">
           <div className="flex justify-between items-center">
             <a href="/">
@@ -47,7 +47,7 @@ export default function Footer() {
             <SystemStatus isMaintenance={false} />
           </div>
           <div className="select-none mt-[20px]">
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("developers")}
@@ -90,7 +90,7 @@ export default function Footer() {
                 </div>
               )}
             </div>
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("traders")}
@@ -139,7 +139,7 @@ export default function Footer() {
                 </div>
               )}
             </div>
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("ecosystem")}
@@ -182,7 +182,7 @@ export default function Footer() {
                 </div>
               )}
             </div>
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("about")}
@@ -232,7 +232,7 @@ export default function Footer() {
                 </div>
               )}
             </div>
-            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-gray-300">
+            <div className="text-gray-400 text-sm py-[24px] cursor-pointer border-t-[1px] border-base-contrast-12">
               <div
                 className="flex justify-between items-center"
                 onClick={() => toggleSection("legal")}
@@ -266,15 +266,15 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      <div className="pt-[40px] lg:pt-[60px] border-t-[1px] border-gray-300 hidden md:block">
-        <div className="md:max-w-[688px] lg:max-w-[904px] m-auto">
-          <div className="flex justify-between items-center">
+      <div className="pt-[40px] lg:pt-[60px] border-t-[1px] border-base-contrast-12 hidden md:block">
+        <div className="md:max-w-[688px] lg:max-w-[904px] 2xl:max-w-[1280px] 2xl:flex m-auto 2xl:items-center 2xl:gap-20">
+          <div className="flex justify-between items-center 2xl:flex-col 2xl:items-start 2xl:shrink-0 2xl:self-stretch 2xl:pt-2 2xl:pb-5">
             <a href="/">
               <img src="/orderly.min.svg" alt="Orderly" className="size-10" />
             </a>
             <SystemStatus isMaintenance={false} />
           </div>
-          <div className="flex justify-between mt-[60px]">
+          <div className="flex justify-between mt-[60px] 2xl:mt-0 2xl:w-full">
             <div className="text-sm font-bold">
               Developers
               <div className="flex flex-col mt-[8px] font-normal text-gray-300">
@@ -409,7 +409,7 @@ export default function Footer() {
           </div>
         </div>
       </div>
-      <div className="mt-[48px] lg:mt-[68px] border-t-[1px] border-gray-300">
+      <div className="mt-[48px] lg:mt-[68px] border-t-[1px] border-base-contrast-12">
         <div className="flex justify-between px-4 py-8 md:max-w-[688px] lg:max-w-[904px] m-auto">
           <div className="text-sm text-[#8C8C8C]">© 2025 Orderly.</div>
           <div className="flex items-center">

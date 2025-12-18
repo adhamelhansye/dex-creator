@@ -9,8 +9,8 @@ import {
 } from "../models/graduation";
 import {
   getUserDex,
-  getCurrentEnvironment,
   convertDexToDexConfig,
+  getCurrentEnvironment,
 } from "../models/dex";
 import { getPrisma } from "../lib/prisma";
 import { setupRepositoryWithSingleCommit } from "../lib/github.js";
@@ -19,9 +19,9 @@ import {
   getAdminAccountIdFromOrderlyDb,
 } from "../lib/orderlyDb.js";
 import { getOrderlyApiBaseUrl, getAccountId } from "../utils/orderly.js";
-import { createAutomatedBrokerId } from "../lib/brokerCreation.js";
 import { getSecret } from "../lib/secretManager.js";
 import { ALL_CHAINS, ChainName } from "../../../config";
+import { createAutomatedBrokerId } from "../lib/brokerCreation";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
@@ -29,6 +29,8 @@ const CACHE_TTL = 60 * 1000;
 const verifyTxSchema = z.object({
   txHash: z.string().min(10).max(100),
   chain: z.string().min(1).max(50),
+  chainId: z.number().int(),
+  chain_type: z.enum(["EVM", "SOL"]).default("EVM"),
   brokerId: z
     .string()
     .min(5, "Broker ID must be at least 5 characters")
@@ -41,8 +43,10 @@ const verifyTxSchema = z.object({
       value => !value.includes("orderly"),
       "Broker ID cannot contain 'orderly'"
     ),
-  makerFee: z.number().min(0).max(150), // 0-15 bps in 0.1 bps units
-  takerFee: z.number().min(30).max(150), // 3-15 bps in 0.1 bps units
+  makerFee: z.number().min(0).max(15), // 0-15 bps
+  takerFee: z.number().min(3).max(15), // 3-15 bps
+  rwaMakerFee: z.number().min(0).max(15), // 0-15 bps
+  rwaTakerFee: z.number().min(0).max(15), // 3-15 bps
   paymentType: z.enum(["usdc", "order"]).default("order"),
 });
 
@@ -58,10 +62,20 @@ graduationRoutes.post(
   zValidator("json", verifyTxSchema),
   async c => {
     try {
-      const userId = c.get("userId");
+      const {
+        txHash,
+        chain,
+        chainId,
+        chain_type,
+        brokerId,
+        makerFee,
+        takerFee,
+        rwaMakerFee,
+        rwaTakerFee,
+        paymentType,
+      } = c.req.valid("json");
 
-      const { txHash, chain, brokerId, makerFee, takerFee, paymentType } =
-        c.req.valid("json");
+      const userId = c.get("userId");
 
       const dex = await getUserDex(userId);
       if (!dex || !dex.repoUrl) {
@@ -129,6 +143,11 @@ graduationRoutes.post(
           brokerName: dex.brokerName,
           makerFee: makerFee,
           takerFee: takerFee,
+          rwaMakerFee: rwaMakerFee,
+          rwaTakerFee: rwaTakerFee,
+          address: user.address,
+          chain_id: chainId,
+          chain_type,
         }
       );
 

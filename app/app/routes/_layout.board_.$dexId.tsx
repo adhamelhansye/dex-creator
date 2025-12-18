@@ -332,7 +332,7 @@ export default function DexDetailRoute() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 slide-fade-in-delayed">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8 slide-fade-in-delayed">
           {/* Volume */}
           <div className="bg-background-card border border-gray-600 rounded-lg p-6">
             <div className="flex items-center gap-3 mb-4">
@@ -394,7 +394,7 @@ export default function DexDetailRoute() {
           </div>
 
           {/* PnL */}
-          <div className="bg-background-card border border-gray-600 rounded-lg p-6">
+          {/* <div className="bg-background-card border border-gray-600 rounded-lg p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="w-10 h-10 bg-success/20 rounded-lg flex items-center justify-center">
                 <Icon
@@ -415,7 +415,7 @@ export default function DexDetailRoute() {
             >
               {pnlFormatted.value}
             </div>
-          </div>
+          </div> */}
         </div>
 
         {/* GeckoTerminal Chart */}
@@ -525,14 +525,14 @@ export default function DexDetailRoute() {
                       <th className="text-right py-3 px-2 text-gray-400">
                         Revenue
                       </th>
-                      <th className="text-right py-3 px-2 text-gray-400">
+                      {/* <th className="text-right py-3 px-2 text-gray-400">
                         PnL
-                      </th>
+                      </th> */}
                     </tr>
                   </thead>
                   <tbody>
                     {dailyStats.map((stat, index) => {
-                      const pnl = formatPnl(stat.realized_pnl);
+                      // const pnl = formatPnl(stat.realized_pnl);
                       return (
                         <tr
                           key={index}
@@ -550,13 +550,13 @@ export default function DexDetailRoute() {
                           <td className="py-3 px-2 text-right text-white">
                             ${formatFee(stat.broker_fee)}
                           </td>
-                          <td
+                          {/* <td
                             className={`py-3 px-2 text-right font-medium ${
                               pnl.isNegative ? "text-error" : "text-success"
                             }`}
                           >
                             {pnl.value}
-                          </td>
+                          </td> */}
                         </tr>
                       );
                     })}

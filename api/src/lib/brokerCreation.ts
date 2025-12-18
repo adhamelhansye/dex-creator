@@ -13,7 +13,6 @@ import {
   SolConnector__factory,
   Ledger__factory,
 } from "../../types/index";
-import { addBrokerToAllDatabases } from "./orderlyDb";
 import { getNextBrokerIndex, createBrokerIndex } from "./brokerIndex";
 import { getSecret } from "./secretManager";
 import { createProvider } from "./fallbackProvider";
@@ -23,6 +22,7 @@ import { SystemProgram } from "@solana/web3.js";
 import { solidityPackedKeccak256 } from "ethers";
 import { IDL, type SolanaVault } from "../interface/types/solana_vault";
 import { default as bs58 } from "bs58";
+import { createBroker } from "./createBroker";
 
 export const BROKER_MANAGER_ROLE = "BrokerManagerRole";
 export const ACCESS_CONTROL_SEED = "AccessControl";
@@ -304,10 +304,14 @@ export async function createAutomatedBrokerId(
     brokerName: string;
     makerFee: number;
     takerFee: number;
-    rwaMakerFee?: number;
-    rwaTakerFee?: number;
+    rwaMakerFee: number;
+    rwaTakerFee: number;
+    address: string;
+    chain_id?: number;
+    chain_type?: "EVM" | "SOL";
   }
 ): Promise<BrokerCreationResult> {
+  console.log("createAutomatedBrokerId", brokerId, brokerData);
   if (brokerCreationLock) {
     console.log(`⏳ Broker creation already in progress, waiting...`);
     try {
@@ -347,8 +351,11 @@ async function createAutomatedBrokerIdInternal(
     brokerName: string;
     makerFee: number;
     takerFee: number;
-    rwaMakerFee?: number;
-    rwaTakerFee?: number;
+    rwaMakerFee: number;
+    rwaTakerFee: number;
+    address: string;
+    chain_id?: number;
+    chain_type?: "EVM" | "SOL";
   }
 ): Promise<BrokerCreationResult> {
   try {
@@ -531,30 +538,58 @@ async function createAutomatedBrokerIdInternal(
       };
     }
 
-    const orderlyDbResult = await addBrokerToAllDatabases({
-      brokerId: brokerId,
-      brokerName: brokerData.brokerName,
-      makerFee: brokerData.makerFee,
-      takerFee: brokerData.takerFee,
-      rwaMakerFee: brokerData.rwaMakerFee,
-      rwaTakerFee: brokerData.rwaTakerFee,
+    const brokerCreationResult = await createBroker({
+      broker_id: brokerId,
+      broker_name: brokerData.brokerName,
+      chain_id: brokerData.chain_id!,
+      chain_type: brokerData.chain_type,
+      address: brokerData.address,
+      default_maker_fee_rate: brokerData.makerFee,
+      default_taker_fee_rate: brokerData.takerFee,
+      default_rwa_maker_fee_rate: brokerData.rwaMakerFee,
+      default_rwa_taker_fee_rate: brokerData.rwaTakerFee,
     });
 
-    if (!orderlyDbResult.success) {
+    if (!brokerCreationResult.success) {
       console.error(
-        `❌ Failed to add broker to Orderly databases: ${orderlyDbResult.error}`
+        `❌ Failed to create broker: ${brokerCreationResult.message}`
       );
       return {
         success: false,
         brokerId,
         transactionHashes,
         errors: [
-          `Blockchain transactions succeeded but Orderly database operation failed: ${orderlyDbResult.error}`,
+          `Blockchain transactions succeeded but Orderly database operation failed: ${brokerCreationResult.message}`,
           "Local broker index was created successfully",
           "Manual database intervention may be required to sync with Orderly state",
         ],
       };
     }
+
+    // const orderlyDbResult = await addBrokerToAllDatabases({
+    //   brokerId: brokerId,
+    //   brokerName: brokerData.brokerName,
+    //   makerFee: brokerData.makerFee,
+    //   takerFee: brokerData.takerFee,
+    //   rwaMakerFee: brokerData.rwaMakerFee,
+    //   rwaTakerFee: brokerData.rwaTakerFee,
+    // });
+
+    // if (!orderlyDbResult.success) {
+    //   console.error(
+    //     `❌ Failed to add broker to Orderly databases: ${orderlyDbResult.error}`
+    //   );
+    //   return {
+    //     success: false,
+    //     brokerId,
+    //     transactionHashes,
+    //     errors: [
+    //       `Blockchain transactions succeeded but Orderly database operation failed: ${orderlyDbResult.error}`,
+    //       "Local broker index was created successfully",
+    //       "Manual database intervention may be required to sync with Orderly state",
+    //     ],
+    //   };
+    // }
 
     console.log(`✅ Broker added to all databases with index: ${brokerIndex}`);
 

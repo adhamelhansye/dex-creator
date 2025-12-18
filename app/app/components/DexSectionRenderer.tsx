@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, ReactNode } from "react";
 import AccordionItem from "./AccordionItem";
 import BrokerDetailsSection from "./BrokerDetailsSection";
 import BrandingSection from "./BrandingSection";
@@ -12,15 +12,18 @@ import PrivyConfigSection from "./PrivyConfigSection";
 import BlockchainConfigSection from "./BlockchainConfigSection";
 import LanguageSupportSection from "./LanguageSupportSection";
 import NavigationMenuSection from "./NavigationMenuSection";
-import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
+import ServiceRestrictionsSection from "./ServiceRestrictionsSection";
 import AssetFilterSection from "./AssetFilterSection";
 import ProgressTracker from "./ProgressTracker";
 import { DexSectionProps } from "../hooks/useDexForm";
+import DistributorCodeSection from "./DistributorCodeSection";
+import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
 
 export interface DexSectionConfig {
   id: number;
   key: string;
   title: string;
+  label?: string;
   description: string;
   isOptional: boolean;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,12 +31,53 @@ export interface DexSectionConfig {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   getProps: (sectionProps: DexSectionProps) => any;
   getValidationTest?: (sectionProps: DexSectionProps) => boolean;
+  /** get the value of the section */
+  getValue?: (sectionProps: DexSectionProps) => any;
+}
+
+export enum DEX_SECTION_KEYS {
+  DistributorCode = "distributorCode",
+  BrokerDetails = "brokerDetails",
+  Branding = "branding",
+  ThemeCustomization = "themeCustomization",
+  PnLPosters = "pnlPosters",
+  SocialLinks = "socialLinks",
+  SEOConfiguration = "seoConfiguration",
+  AnalyticsConfiguration = "analyticsConfiguration",
+  ReownConfiguration = "reownConfiguration",
+  PrivyConfiguration = "privyConfiguration",
+  BlockchainConfiguration = "blockchainConfiguration",
+  LanguageSupport = "languageSupport",
+  AssetFilter = "assetFilter",
+  NavigationMenus = "navigationMenus",
+  ServiceDisclaimer = "serviceDisclaimer",
+  ServiceRestrictions = "serviceRestrictions",
 }
 
 export const DEX_SECTIONS: DexSectionConfig[] = [
   {
     id: 1,
-    key: "brokerDetails",
+    key: DEX_SECTION_KEYS.DistributorCode,
+    title: "Are you invited by any distributor? ",
+    label: "Distributor code",
+    description:
+      "If you have been referred by a distributor and given a distributor code, please input below for binding.",
+    isOptional: true,
+    component: DistributorCodeSection,
+    getProps: props => ({
+      distributorCode: props.distributorCode,
+      handleInputChange: props.handleInputChange,
+      distributorCodeValidator: props.distributorCodeValidator,
+    }),
+    getValidationTest: props =>
+      props.distributorCode.trim()
+        ? props.distributorCodeValidator(props.distributorCode.trim()) === null
+        : true,
+    getValue: props => props.distributorCode,
+  },
+  {
+    id: 2,
+    key: DEX_SECTION_KEYS.BrokerDetails,
     title: "Broker Details",
     description:
       "Configure your DEX's basic information and trading broker details. Broker name can only contain letters, numbers, spaces, dots, hyphens, and underscores.",
@@ -46,10 +90,11 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
     getValidationTest: props =>
       props.brokerNameValidator(props.brokerName.trim()) === null,
+    getValue: props => props.brokerName,
   },
   {
-    id: 2,
-    key: "branding",
+    id: 3,
+    key: DEX_SECTION_KEYS.Branding,
     title: "Branding",
     description:
       "Customize your DEX with your own branding by pasting your logos below. Copy an image to your clipboard (from any image editor or browser), then click in the paste area and press Ctrl+V or ⌘+V. All branding fields are optional.",
@@ -63,8 +108,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 3,
-    key: "themeCustomization",
+    id: 4,
+    key: DEX_SECTION_KEYS.ThemeCustomization,
     title: "Theme Customization",
     description:
       "Customize your DEX's colors and theme by editing the CSS directly or describing how you want it to look for AI-assisted generation. Theme customization is completely optional - your DEX will work great with the default theme.",
@@ -96,8 +141,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 4,
-    key: "pnlPosters",
+    id: 5,
+    key: DEX_SECTION_KEYS.PnLPosters,
     title: "PnL Posters",
     description:
       "Upload custom background images for PnL sharing posters. Users can share their trading performance with these backgrounds. You can upload up to 8 custom poster backgrounds. Leave empty to use default poster designs.",
@@ -109,8 +154,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 5,
-    key: "socialLinks",
+    id: 6,
+    key: DEX_SECTION_KEYS.SocialLinks,
     title: "Social Media Links",
     description:
       "Add social media links that will appear in your DEX footer. All social media links are optional. Leave empty if not applicable.",
@@ -125,8 +170,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 6,
-    key: "seoConfiguration",
+    id: 7,
+    key: DEX_SECTION_KEYS.SEOConfiguration,
     title: "SEO Configuration",
     description:
       "Configure SEO settings to optimize how your DEX appears in search engines and social media sharing. All SEO fields are optional but recommended for better discoverability.",
@@ -145,8 +190,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 7,
-    key: "analyticsConfiguration",
+    id: 8,
+    key: DEX_SECTION_KEYS.AnalyticsConfiguration,
     title: "Analytics Configuration",
     description:
       "Add your analytics tracking script to monitor usage and performance of your DEX. Supports Google Analytics, Plausible, Matomo, and other analytics services. This is completely optional.",
@@ -158,8 +203,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 8,
-    key: "reownConfiguration",
+    id: 9,
+    key: DEX_SECTION_KEYS.ReownConfiguration,
     title: "Reown Configuration",
     description:
       "Add your Reown Project ID to enable enhanced wallet connectivity functionality in your DEX. This is completely optional - your DEX will work without it.",
@@ -171,8 +216,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 9,
-    key: "privyConfiguration",
+    id: 10,
+    key: DEX_SECTION_KEYS.PrivyConfiguration,
     title: "Privy Configuration",
     description:
       "Add your Privy credentials to enable social login, email authentication, and other wallet connection options in your DEX. This is completely optional. Only the App ID is required if you want to use Privy.",
@@ -198,8 +243,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
         : true,
   },
   {
-    id: 10,
-    key: "blockchainConfiguration",
+    id: 11,
+    key: DEX_SECTION_KEYS.BlockchainConfiguration,
     title: "Blockchain Configuration",
     description:
       "Choose which blockchains your DEX will support for trading. This is optional - your DEX will support all available blockchains by default.",
@@ -217,8 +262,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 11,
-    key: "assetFilter",
+    id: 12,
+    key: DEX_SECTION_KEYS.AssetFilter,
     title: "Asset Filtering",
     description:
       "Select which trading pairs will be displayed in your DEX. Leave empty to show all available assets. This is optional - your DEX will show all assets by default.",
@@ -230,8 +275,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 12,
-    key: "languageSupport",
+    id: 13,
+    key: DEX_SECTION_KEYS.LanguageSupport,
     title: "Language Support",
     description:
       "Select the languages you want to support in your DEX interface. This is optional - your DEX will default to English only.",
@@ -243,8 +288,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 13,
-    key: "navigationMenus",
+    id: 14,
+    key: DEX_SECTION_KEYS.NavigationMenus,
     title: "Navigation Menus",
     description:
       "Customize which navigation links appear in your DEX. This is optional - if you don't select any menus, the default menus will be displayed.",
@@ -262,8 +307,8 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
     }),
   },
   {
-    id: 14,
-    key: "serviceDisclaimer",
+    id: 15,
+    key: DEX_SECTION_KEYS.ServiceDisclaimer,
     title: "Service Disclaimer",
     description:
       "Enable a one-time disclaimer dialog that informs users about the platform's use of Orderly Network's infrastructure. This is optional and can help set proper expectations for users.",
@@ -273,6 +318,17 @@ export const DEX_SECTIONS: DexSectionConfig[] = [
       enableServiceDisclaimerDialog: props.enableServiceDisclaimerDialog,
       onEnableServiceDisclaimerDialogChange:
         props.onEnableServiceDisclaimerDialogChange,
+    }),
+  },
+  {
+    id: 16,
+    key: DEX_SECTION_KEYS.ServiceRestrictions,
+    title: "Service Restrictions",
+    description:
+      "Configure geo-restrictions to limit access to your DEX by region.",
+    isOptional: true,
+    component: ServiceRestrictionsSection,
+    getProps: props => ({
       restrictedRegions: props.restrictedRegions,
       onRestrictedRegionsChange: props.onRestrictedRegionsChange,
       whitelistedIps: props.whitelistedIps,
@@ -288,11 +344,15 @@ interface DexSectionRendererProps {
   currentStep?: number;
   completedSteps?: Record<number, boolean>;
   setCurrentStep?: (step: number) => void;
-  handleNextStep?: (step: number) => void;
+  handleNextStep?: (step: number, skip?: boolean) => Promise<void>;
   allRequiredPreviousStepsCompleted?: (stepNumber: number) => boolean;
   showSectionHeaders?: boolean;
   idPrefix?: string;
   showProgressTracker?: boolean;
+  customRender?: (children: ReactNode, section: DexSectionConfig) => ReactNode;
+  shouldShowSkip?: (section: DexSectionConfig) => boolean;
+  customDescription?: (section: DexSectionConfig) => ReactNode;
+  isValidating?: boolean;
 }
 
 const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
@@ -307,6 +367,10 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
   showSectionHeaders = true,
   idPrefix = "",
   showProgressTracker = false,
+  customRender,
+  shouldShowSkip,
+  customDescription,
+  isValidating,
 }) => {
   const [currentSection, setCurrentSection] = useState(1);
   const sectionRefsRef = useRef<Record<number, HTMLElement | null>>({});
@@ -381,13 +445,14 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
         return null;
       }
 
-      return (
+      const accordionItem = (
         <AccordionItem
           key={section.key}
           title={section.title}
           stepNumber={section.id}
           isOptional={section.isOptional}
-          onNextInternal={() => handleNextStep(section.id)}
+          showSkip={shouldShowSkip?.(section)}
+          onNextInternal={(skip?: boolean) => handleNextStep(section.id, skip)}
           isStepContentValidTest={
             section.getValidationTest
               ? section.getValidationTest(sectionProps)
@@ -401,13 +466,23 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
           }
           setCurrentStep={setCurrentStep}
           allRequiredPreviousStepsCompleted={allRequiredPreviousStepsCompleted}
+          value={section.getValue ? section.getValue(sectionProps) : undefined}
+          isValidating={isValidating}
         >
-          <p className="text-xs text-gray-400 mb-4">{section.description}</p>
+          <p className="text-xs text-gray-400 mb-4">
+            {customDescription?.(section) || section.description}
+          </p>
           <Component {...componentProps} />
         </AccordionItem>
       );
+
+      if (typeof customRender === "function") {
+        return customRender(accordionItem, section);
+      }
+
+      return accordionItem;
     } else {
-      return (
+      const content = (
         <div
           key={section.key}
           ref={el => {
@@ -429,13 +504,18 @@ const DexSectionRenderer: React.FC<DexSectionRendererProps> = ({
                 )}
               </h3>
               <p className="text-xs text-gray-400 mb-4">
-                {section.description}
+                {customDescription?.(section) || section.description}
               </p>
             </>
           )}
           <Component {...componentProps} />
         </div>
       );
+
+      if (typeof customRender === "function") {
+        return customRender(content, section);
+      }
+      return content;
     }
   };
 
