@@ -1,16 +1,20 @@
 import { useCreateOrderlyKey } from "../../hooks/useCreateOrderlyKey";
-import { SuccessStepCard } from "./components/SuccessStepCard";
 import { OrderlyKeyCard } from "./components/OrderlyKeyCard";
 import { DistributorNameCard } from "./components/DistributorNameCard";
 import { DistributorHeader } from "./components/DistributorHeader";
+import { AccountCreationCard } from "./components/AccountCreationCard";
+import { useDistributor } from "../../context/DistributorContext";
 
 type CompleteDistributorProfileProps = {
-  onSuccess: () => void;
+  brokerId: string;
+  onCreateAmbassadorSuccess: () => void;
+  onUpdateDistributorNameSuccess: () => void;
 };
 
 export function CompleteAmbassadorProfile(
   props: CompleteDistributorProfileProps
 ) {
+  const { isAmbassador } = useDistributor();
   const { hasValidKey } = useCreateOrderlyKey();
 
   return (
@@ -22,16 +26,20 @@ export function CompleteAmbassadorProfile(
         {/* Main Content */}
         <div className="flex flex-col gap-5 items-start w-full">
           {/* Step 1 */}
-          <SuccessStepCard
-            title="What describes you best?"
-            value="Ambassador"
+          <AccountCreationCard
+            brokerId={props.brokerId}
+            onSuccess={props.onCreateAmbassadorSuccess}
           />
 
           {/* Step 2 */}
-          <OrderlyKeyCard />
+          {isAmbassador && <OrderlyKeyCard />}
 
           {/* Step 3 */}
-          {hasValidKey && <DistributorNameCard onSuccess={props.onSuccess} />}
+          {hasValidKey && (
+            <DistributorNameCard
+              onSuccess={props.onUpdateDistributorNameSuccess}
+            />
+          )}
         </div>
       </div>
     </div>
