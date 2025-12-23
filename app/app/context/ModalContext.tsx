@@ -27,6 +27,7 @@ import AIThemeGeneratorModal from "../components/AIThemeGeneratorModal";
 import CurrentThemeModal from "../components/CurrentThemeModal";
 import AIFineTuneModal from "../components/AIFineTuneModal";
 import AIFineTunePreviewModal from "../components/AIFineTunePreviewModal";
+import ThemePresetPreviewModal from "../components/ThemePresetPreviewModal";
 
 export type ModalType =
   | "login"
@@ -50,6 +51,7 @@ export type ModalType =
   | "currentTheme"
   | "aiFineTune"
   | "aiFineTunePreview"
+  | "themePresetPreview"
   | null;
 
 interface ModalContextType {
@@ -192,7 +194,10 @@ function ModalManager() {
             closeModal();
           }}
           onCancel={currentModalProps.onCancel}
-          css={currentModalProps.theme}
+          oldTheme={currentModalProps.oldTheme}
+          themes={currentModalProps.themes}
+          previewProps={currentModalProps.previewProps}
+          viewMode={currentModalProps.viewMode}
         />
       );
     case "tradingViewLicense":
@@ -293,6 +298,7 @@ function ModalManager() {
           onClose={closeModal}
           currentTheme={currentModalProps.currentTheme}
           defaultTheme={currentModalProps.defaultTheme}
+          savedTheme={currentModalProps.savedTheme}
           onThemeChange={currentModalProps.onThemeChange}
         />
       );
@@ -329,6 +335,7 @@ function ModalManager() {
           currentTheme={currentModalProps.currentTheme}
           onApplyOverrides={currentModalProps.onApplyOverrides}
           previewProps={currentModalProps.previewProps}
+          viewMode={currentModalProps.viewMode}
         />
       );
     case "aiFineTunePreview":
@@ -339,8 +346,21 @@ function ModalManager() {
           oldTheme={currentModalProps.oldTheme}
           newOverrides={currentModalProps.newOverrides}
           previewProps={currentModalProps.previewProps}
+          viewMode={currentModalProps.viewMode}
           onApply={currentModalProps.onApply}
           onReject={currentModalProps.onReject}
+        />
+      );
+    case "themePresetPreview":
+      return (
+        <ThemePresetPreviewModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          previewProps={currentModalProps.previewProps}
+          viewMode={currentModalProps.viewMode}
+          currentTheme={currentModalProps.currentTheme}
+          onApply={currentModalProps.onApply}
+          onPreviewChange={currentModalProps.onPreviewChange}
         />
       );
     default:

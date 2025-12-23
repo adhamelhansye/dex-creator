@@ -112,7 +112,7 @@ class RateLimiter {
   }
 }
 
-export const deploymentRateLimiter = new RateLimiter(5);
+export const deploymentRateLimiter = new RateLimiter(2);
 export const themeRateLimiter = new RateLimiter(0.5);
 export const fineTuneRateLimiter = new RateLimiter(10 / 60);
 

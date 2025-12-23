@@ -21,8 +21,13 @@ const themePromptSchema = z.object({
 const fineTuneSchema = z.object({
   prompt: z.string().min(3).max(200),
   html: z.string().min(1),
-  computedStyles: z.record(z.string(), z.string()).or(z.string()),
-  elementSelector: z.string().optional(),
+  elements: z.array(
+    z.object({
+      elementSelector: z.string(),
+      computedStyles: z.record(z.string(), z.string()),
+    })
+  ),
+  cssVariables: z.record(z.string(), z.string()),
   existingOverrides: z.string().optional(),
 });
 
@@ -185,36 +190,65 @@ COLOR GUIDELINES:
    • Gradient-brand-start: Similar to primary-light
    • Gradient-brand-end: Similar to primary`;
 
-      const response = await openai.chat.completions.create({
-        model: "qwen-3-32b",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: `Please modify this CSS theme based on the following description: ${prompt}\n\nCurrent theme:\n${baseTheme}`,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 3_000,
-      });
+      const themesArray: string[] = [];
 
-      let modifiedTheme = response.choices[0]?.message.content?.trim();
+      for (let index = 0; index < 3; index++) {
+        try {
+          const response = await openai.chat.completions.create({
+            model: "qwen-3-32b",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: `Please modify this CSS theme based on the following description: ${prompt}\n\nCurrent theme:\n${baseTheme}`,
+              },
+            ],
+            temperature: 0.7 + index * 0.1,
+          });
 
-      if (!modifiedTheme) {
-        return c.json({ error: "Failed to generate theme" }, { status: 500 });
+          let modifiedTheme = response.choices[0]?.message.content?.trim();
+
+          if (!modifiedTheme) {
+            throw new Error(`Failed to generate theme variant ${index + 1}`);
+          }
+
+          modifiedTheme = modifiedTheme.replace(
+            /<think>[\s\S]*?<\/think>/gi,
+            ""
+          );
+          modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*$/gi, "");
+
+          modifiedTheme = modifiedTheme.replace(/^```(?:css)?\s*/i, "");
+          modifiedTheme = modifiedTheme.replace(/\s*```$/i, "");
+          modifiedTheme = modifiedTheme.trim();
+
+          themesArray.push(modifiedTheme);
+        } catch (error) {
+          console.error(`Error generating theme variant ${index + 1}:`, error);
+          if (themesArray.length === 0) {
+            throw error;
+          }
+          if (themesArray.length > 0) {
+            themesArray.push(themesArray[themesArray.length - 1]);
+          }
+        }
       }
 
-      modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*?<\/think>/gi, "");
-      modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*$/gi, "");
+      if (themesArray.length === 0) {
+        return c.json(
+          { error: "Failed to generate any theme variants" },
+          { status: 500 }
+        );
+      }
 
-      modifiedTheme = modifiedTheme.replace(/^```(?:css)?\s*/i, "");
-      modifiedTheme = modifiedTheme.replace(/\s*```$/i, "");
-      modifiedTheme = modifiedTheme.trim();
+      while (themesArray.length < 3) {
+        themesArray.push(themesArray[themesArray.length - 1]);
+      }
 
-      return c.json({ theme: modifiedTheme }, { status: 200 });
+      return c.json({ themes: themesArray.slice(0, 3) }, { status: 200 });
     } catch (error) {
       console.error("Error modifying theme:", error);
       let message = "Failed to modify theme";
@@ -234,22 +268,28 @@ themeRoutes.post(
   zValidator("json", fineTuneSchema),
   async c => {
     try {
-      const {
-        prompt,
-        html,
-        computedStyles,
-        elementSelector,
-        existingOverrides,
-      } = c.req.valid("json");
+      const { prompt, html, elements, cssVariables, existingOverrides } =
+        c.req.valid("json");
 
       const openai = createOpenAIClient();
 
-      const computedStylesStr =
-        typeof computedStyles === "string"
-          ? computedStyles
-          : Object.entries(computedStyles)
-              .map(([key, value]) => `${key}: ${value}`)
-              .join("; ");
+      const elementsData = elements
+        .map(
+          (el, index) => `Element ${index} (${el.elementSelector}):
+Computed Styles (excluding CSS variables):
+${Object.entries(el.computedStyles)
+  .map(([key, value]) => `  ${key}: ${value}`)
+  .join("\n")}`
+        )
+        .join("\n\n");
+
+      const cssVariablesStr =
+        Object.keys(cssVariables).length > 0
+          ? `CSS Variables (--oui-*) from root:
+${Object.entries(cssVariables)
+  .map(([key, value]) => `  ${key}: ${value}`)
+  .join("\n")}`
+          : "";
 
       const systemPrompt = `You are a CSS expert specializing in fine-grained UI customization for dark trading platforms.
 
@@ -292,20 +332,21 @@ SPACING GUIDELINES:
 - Focus on colors, borders, backgrounds, and visual effects rather than spacing
 
 The user will provide:
-- Complete HTML structure including the root element and all its children
-- Current computed styles of the root element
+- Complete HTML structure including the root element and all its children (up to depth 3)
+- Computed styles for multiple elements in the hierarchy (depth 0 = selected element, depth 1-3 = child elements)
+- CSS variables (--oui-*) extracted separately for each element
 - A description of how they want the element and its children to look
-- (Optional) Existing CSS overrides that must be INCLUDED in your response (return all existing + new combined)`;
+- (Optional) Existing CSS overrides that must be INCLUDED in your response (return all existing + new combined)
+
+You will receive computed styles for multiple elements in the hierarchy. Use this context to understand the styling relationships and generate more accurate CSS overrides.`;
 
       const userPrompt = `Generate CSS overrides for this HTML structure (including all child elements) based on the following description: "${prompt}"
 
-Complete HTML Structure (root element and all children):
+Complete HTML Structure (root element and all children up to depth 3):
 ${html}
 
-Root Element Computed Styles:
-${computedStylesStr}
-
-${elementSelector ? `Root Element Selector: ${elementSelector}` : ""}
+${cssVariablesStr ? `${cssVariablesStr}\n\n` : ""}Elements and Their Styles:
+${elementsData}
 ${
   existingOverrides
     ? `\nExisting CSS Overrides (INCLUDE ALL of these PLUS your new changes - return everything combined):\n${existingOverrides}`
@@ -352,37 +393,62 @@ IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks
           : ""
       }`;
 
-      const response = await openai.chat.completions.create({
-        model: "qwen-3-32b",
-        messages: [
-          {
-            role: "system",
-            content: systemPrompt,
-          },
-          {
-            role: "user",
-            content: userPrompt,
-          },
-        ],
-        temperature: 0.7,
-        max_tokens: 3_000,
-      });
+      const overridesArray: string[] = [];
 
-      let cssOverrides = response.choices[0]?.message.content?.trim();
+      for (let index = 0; index < 3; index++) {
+        try {
+          const response = await openai.chat.completions.create({
+            model: "qwen-3-32b",
+            messages: [
+              {
+                role: "system",
+                content: systemPrompt,
+              },
+              {
+                role: "user",
+                content: userPrompt,
+              },
+            ],
+            temperature: 0.7 + index * 0.1,
+          });
 
-      if (!cssOverrides) {
+          let cssOverrides = response.choices[0]?.message.content?.trim();
+
+          if (!cssOverrides) {
+            throw new Error(
+              `Failed to generate CSS override variant ${index + 1}`
+            );
+          }
+
+          cssOverrides = cssOverrides.replace(/<think>[\s\S]*?<\/think>/gi, "");
+          cssOverrides = cssOverrides.replace(/^```(?:css)?\s*/i, "");
+          cssOverrides = cssOverrides.replace(/\s*```$/i, "");
+          cssOverrides = cssOverrides.trim();
+
+          overridesArray.push(cssOverrides);
+        } catch (error) {
+          console.error(`Error generating variant ${index + 1}:`, error);
+          if (overridesArray.length === 0) {
+            throw error;
+          }
+          if (overridesArray.length > 0) {
+            overridesArray.push(overridesArray[overridesArray.length - 1]);
+          }
+        }
+      }
+
+      if (overridesArray.length === 0) {
         return c.json(
-          { error: "Failed to generate CSS overrides" },
+          { error: "Failed to generate any CSS override variants" },
           { status: 500 }
         );
       }
 
-      cssOverrides = cssOverrides.replace(/<think>[\s\S]*?<\/think>/gi, "");
-      cssOverrides = cssOverrides.replace(/^```(?:css)?\s*/i, "");
-      cssOverrides = cssOverrides.replace(/\s*```$/i, "");
-      cssOverrides = cssOverrides.trim();
+      while (overridesArray.length < 3) {
+        overridesArray.push(overridesArray[overridesArray.length - 1]);
+      }
 
-      return c.json({ overrides: cssOverrides }, { status: 200 });
+      return c.json({ overrides: overridesArray.slice(0, 3) }, { status: 200 });
     } catch (error) {
       console.error("Error fine-tuning element:", error);
       let message = "Failed to fine-tune element";

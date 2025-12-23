@@ -13,16 +13,24 @@ export interface AIThemeGeneratorModalProps {
 const AIThemeGeneratorModal: FC<AIThemeGeneratorModalProps> = ({
   isOpen,
   onClose,
-  isGeneratingTheme,
+  isGeneratingTheme: externalIsGeneratingTheme,
   onGenerateTheme,
 }) => {
   const [themePrompt, setThemePrompt] = useState("");
+  const [localIsGenerating, setLocalIsGenerating] = useState(false);
+
+  const isGeneratingTheme = localIsGenerating || externalIsGeneratingTheme;
 
   useEffect(() => {
     if (!isOpen) {
       setThemePrompt("");
+      setLocalIsGenerating(false);
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    setLocalIsGenerating(externalIsGeneratingTheme);
+  }, [externalIsGeneratingTheme]);
 
   if (!isOpen) return null;
 
@@ -64,9 +72,6 @@ const AIThemeGeneratorModal: FC<AIThemeGeneratorModalProps> = ({
                   <ul className="text-xs text-gray-300 list-disc pl-4 space-y-0.5">
                     <li>Review the theme in the preview modal</li>
                     <li>Make adjustments to colors as needed</li>
-                    <li>
-                      Use the DEX preview button to see your theme in context
-                    </li>
                   </ul>
                 </div>
               </div>
@@ -86,9 +91,10 @@ const AIThemeGeneratorModal: FC<AIThemeGeneratorModalProps> = ({
         <div className="flex items-center justify-end p-4 border-t border-light/10">
           <Button
             onClick={() => {
-              if (!themePrompt.trim()) {
+              if (!themePrompt.trim() || isGeneratingTheme) {
                 return;
               }
+              setLocalIsGenerating(true);
               onGenerateTheme(themePrompt);
             }}
             isLoading={isGeneratingTheme}

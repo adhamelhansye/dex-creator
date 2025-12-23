@@ -6,6 +6,7 @@ export interface ThemeEditorModalProps {
   onClose: () => void;
   currentTheme: string | null;
   defaultTheme: string;
+  savedTheme: string | null;
   onThemeChange: (newTheme: string) => void;
 }
 
@@ -14,6 +15,7 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
   onClose,
   currentTheme,
   defaultTheme,
+  savedTheme,
   onThemeChange,
 }) => {
   const [localTheme, setLocalTheme] = useState(currentTheme || defaultTheme);
@@ -23,12 +25,6 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
       setLocalTheme(currentTheme || defaultTheme);
     }
   }, [isOpen, currentTheme, defaultTheme]);
-
-  useEffect(() => {
-    if (isOpen && currentTheme !== undefined) {
-      setLocalTheme(currentTheme || defaultTheme);
-    }
-  }, [currentTheme, defaultTheme, isOpen]);
 
   if (!isOpen) return null;
 
@@ -96,7 +92,8 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
             )}
             <Button
               onClick={() => {
-                onThemeChange("");
+                const resetValue = savedTheme ?? defaultTheme;
+                onThemeChange(resetValue);
                 onClose();
               }}
               variant="danger"
@@ -104,17 +101,6 @@ const ThemeEditorModal: FC<ThemeEditorModalProps> = ({
               type="button"
             >
               Reset
-            </Button>
-            <Button
-              onClick={() => {
-                onThemeChange(defaultTheme);
-                onClose();
-              }}
-              variant="danger"
-              size="sm"
-              type="button"
-            >
-              Reset to Default
             </Button>
           </div>
           <Button

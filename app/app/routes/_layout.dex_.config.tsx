@@ -19,6 +19,7 @@ import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
 import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
 import { useDistributor } from "../context/DistributorContext";
 import { useDex } from "../context/DexContext";
+import { DexPreviewProps } from "../components/DexPreview";
 
 export const meta: MetaFunction = () => [
   { title: "Configure Your DEX - Orderly One" },
@@ -88,7 +89,11 @@ export default function DexConfigRoute() {
 
   const handleCancelGeneratedTheme = () => {};
 
-  const handleGenerateTheme = async (prompt?: string) => {
+  const handleGenerateTheme = async (
+    prompt?: string,
+    previewProps?: DexPreviewProps,
+    viewMode?: "desktop" | "mobile"
+  ) => {
     if (!token) return;
 
     if (prompt !== undefined) {
@@ -102,7 +107,9 @@ export default function DexConfigRoute() {
       handleApplyGeneratedTheme,
       handleCancelGeneratedTheme,
       openModal,
-      prompt
+      prompt,
+      previewProps,
+      viewMode
     );
     form.setIsGeneratingTheme(false);
   };
@@ -124,7 +131,6 @@ export default function DexConfigRoute() {
 
   const validateAllSections = async () => {
     const sectionProps = form.getSectionProps({
-      handleGenerateTheme,
       handleResetTheme,
       handleResetToDefault,
       ThemeTabButton,
@@ -335,14 +341,12 @@ export default function DexConfigRoute() {
           mode="direct"
           sections={filteredSections}
           showProgressTracker={true}
-          sectionProps={{
-            ...form.getSectionProps({
-              handleGenerateTheme,
-              handleResetTheme,
-              handleResetToDefault,
-              ThemeTabButton,
-            }),
-          }}
+          sectionProps={form.getSectionProps({
+            handleResetTheme,
+            handleResetToDefault,
+            ThemeTabButton,
+          })}
+          handleGenerateTheme={handleGenerateTheme}
           idPrefix="config-"
           customDescription={section => {
             if (section.key === DEX_SECTION_KEYS.DistributorCode) {

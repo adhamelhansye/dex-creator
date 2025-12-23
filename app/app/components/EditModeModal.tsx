@@ -11,6 +11,7 @@ export interface EditModeModalProps {
   previewProps: DexPreviewProps;
   currentTheme: string | null;
   defaultTheme: string;
+  savedTheme: string | null;
   onThemeChange: (newTheme: string) => void;
   viewMode: "desktop" | "mobile";
   isGeneratingTheme?: boolean;
@@ -27,6 +28,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
   previewProps,
   currentTheme,
   defaultTheme,
+  savedTheme,
   onThemeChange,
   viewMode,
   isGeneratingTheme = false,
@@ -276,18 +278,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
       }
     };
 
-    const handleSubmit = (e: Event) => {
-      const target = e.target as HTMLElement;
-      if (isWithinHigherModal(target)) {
-        return;
-      }
-      if (modalRef.current && modalRef.current.contains(target)) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-      }
-    };
-
     const handleButtonClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
@@ -312,15 +302,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
 
       if (e.ctrlKey || e.metaKey) {
         return;
-      }
-
-      if (modalRef.current && modalRef.current.contains(target)) {
-        const button = target.closest("button");
-        if (button && button.type === "submit") {
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation();
-        }
       }
     };
 
@@ -416,7 +397,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
     };
 
     const timeout = setTimeout(() => {
-      document.addEventListener("submit", handleSubmit, true);
       document.addEventListener("click", handleButtonClick, true);
       document.addEventListener("click", handleClick, true);
       document.addEventListener("keydown", handleEscape);
@@ -426,7 +406,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
 
     return () => {
       clearTimeout(timeout);
-      document.removeEventListener("submit", handleSubmit, true);
       document.removeEventListener("click", handleButtonClick, true);
       document.removeEventListener("click", handleClick, true);
       document.removeEventListener("keydown", handleEscape);
@@ -480,9 +459,35 @@ const EditModeModal: FC<EditModeModalProps> = ({
           <Button
             onClick={e => {
               e.stopPropagation();
+              openModal("themePresetPreview", {
+                previewProps,
+                viewMode,
+                currentTheme,
+                onApply: (theme: string) => {
+                  onThemeChange(theme);
+                },
+                onPreviewChange: (theme: string) => {
+                  onThemeChange(theme);
+                },
+              });
+            }}
+            variant="secondary"
+            size="sm"
+            type="button"
+            data-modal-header-button="true"
+          >
+            <span className="flex items-center gap-1">
+              <div className="i-mdi:swatch h-4 w-4"></div>
+              Presets
+            </span>
+          </Button>
+          <Button
+            onClick={e => {
+              e.stopPropagation();
               openModal("themeEditor", {
                 currentTheme,
                 defaultTheme,
+                savedTheme,
                 onThemeChange,
               });
             }}
@@ -493,7 +498,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
           >
             <span className="flex items-center gap-1">
               <div className="i-mdi:pencil h-4 w-4"></div>
-              Edit CSS
+              CSS
             </span>
           </Button>
           <Button
@@ -525,7 +530,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
           >
             <span className="flex items-center gap-1">
               <div className="i-mdi:palette h-4 w-4"></div>
-              Current Theme
+              Theme
             </span>
           </Button>
           <Button
@@ -545,7 +550,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
           >
             <span className="flex items-center gap-1">
               <div className="i-mdi:magic-wand h-4 w-4"></div>
-              AI Generator
+              AI
             </span>
           </Button>
           <Button onClick={onClose} variant="secondary" size="sm" type="button">
@@ -583,7 +588,12 @@ const EditModeModal: FC<EditModeModalProps> = ({
           }
         >
           <DexPreview
-            {...previewProps}
+            {...(({
+              customStyles: _,
+              fontFamily: __,
+              fontSize: ___,
+              ...rest
+            }) => rest)(previewProps)}
             customStyles={currentTheme ?? ""}
             className="h-full w-full"
           />
@@ -606,7 +616,9 @@ const EditModeModal: FC<EditModeModalProps> = ({
               setOriginalClickedElement(null);
             }}
             onApplyCSSOverrides={handleApplyCSSOverrides}
+            onThemeChange={onThemeChange}
             previewProps={previewProps}
+            viewMode={viewMode}
           />
         )}
       </div>

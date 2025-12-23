@@ -1,4 +1,4 @@
-import { FC, useState } from "react";
+import { FC, useState, useEffect, useRef } from "react";
 import { Button } from "./Button";
 import DexPreview, { DexPreviewProps } from "./DexPreview";
 
@@ -8,8 +8,9 @@ export interface AIFineTunePreviewModalProps {
   onApply: (overrides: string) => void;
   onReject: () => void;
   oldTheme: string | null;
-  newOverrides: string;
+  newOverrides: string[];
   previewProps: DexPreviewProps;
+  viewMode?: "desktop" | "mobile";
 }
 
 const AIFineTunePreviewModal: FC<AIFineTunePreviewModalProps> = ({
@@ -20,25 +21,64 @@ const AIFineTunePreviewModal: FC<AIFineTunePreviewModalProps> = ({
   oldTheme,
   newOverrides,
   previewProps,
+  viewMode = "desktop",
 }) => {
-  console.log("AIFineTunePreviewModal rendered", {
-    isOpen,
-    oldTheme,
-    newOverrides,
-    previewProps,
-  });
-  const [showNew, setShowNew] = useState(true);
+  const [selectedVariant, setSelectedVariant] = useState<"old" | 0 | 1 | 2>(0);
+  const originalMatchMediaRef = useRef<typeof window.matchMedia | null>(null);
+
+  useEffect(() => {
+    if (viewMode === "mobile" && isOpen) {
+      const originalMatchMedia = window.matchMedia.bind(window);
+      originalMatchMediaRef.current = originalMatchMedia;
+      window.matchMedia = (query: string) => {
+        if (query === "(max-width: 768px)") {
+          return {
+            matches: true,
+            media: query,
+            onchange: null,
+            addListener: () => {},
+            removeListener: () => {},
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            dispatchEvent: () => true,
+          } as MediaQueryList;
+        }
+        return originalMatchMedia(query);
+      };
+    } else if (originalMatchMediaRef.current) {
+      window.matchMedia = originalMatchMediaRef.current;
+      originalMatchMediaRef.current = null;
+    }
+
+    return () => {
+      if (originalMatchMediaRef.current) {
+        window.matchMedia = originalMatchMediaRef.current;
+        originalMatchMediaRef.current = null;
+      }
+    };
+  }, [viewMode, isOpen]);
 
   if (!isOpen) return null;
 
-  const newTheme = oldTheme
-    ? `${oldTheme}\n\n/* AI Fine-Tune Overrides */\n${newOverrides}`
-    : `/* AI Fine-Tune Overrides */\n${newOverrides}`;
+  const getCurrentTheme = () => {
+    if (selectedVariant === "old") {
+      return oldTheme || "";
+    }
+    const selectedOverrides = newOverrides[selectedVariant];
+    return oldTheme
+      ? `${oldTheme}\n\n/* AI Fine-Tune Overrides */\n${selectedOverrides}`
+      : `/* AI Fine-Tune Overrides */\n${selectedOverrides}`;
+  };
 
-  const currentTheme = showNew ? newTheme : oldTheme || "";
+  const currentTheme = getCurrentTheme();
 
   const handleApply = () => {
-    onApply(newOverrides);
+    if (selectedVariant === "old") {
+      onReject();
+      onClose();
+      return;
+    }
+    onApply(newOverrides[selectedVariant]);
     onClose();
   };
 
@@ -63,9 +103,9 @@ const AIFineTunePreviewModal: FC<AIFineTunePreviewModalProps> = ({
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-background-card border border-light/20 rounded-lg p-1">
             <button
-              onClick={() => setShowNew(false)}
+              onClick={() => setSelectedVariant("old")}
               className={`px-3 py-1.5 text-sm rounded transition-colors ${
-                !showNew
+                selectedVariant === "old"
                   ? "bg-primary text-white"
                   : "text-gray-400 hover:text-gray-200"
               }`}
@@ -73,17 +113,20 @@ const AIFineTunePreviewModal: FC<AIFineTunePreviewModalProps> = ({
             >
               Old
             </button>
-            <button
-              onClick={() => setShowNew(true)}
-              className={`px-3 py-1.5 text-sm rounded transition-colors ${
-                showNew
-                  ? "bg-primary text-white"
-                  : "text-gray-400 hover:text-gray-200"
-              }`}
-              type="button"
-            >
-              New
-            </button>
+            {[0, 1, 2].map(index => (
+              <button
+                key={index}
+                onClick={() => setSelectedVariant(index as 0 | 1 | 2)}
+                className={`px-3 py-1.5 text-sm rounded transition-colors ${
+                  selectedVariant === index
+                    ? "bg-primary text-white"
+                    : "text-gray-400 hover:text-gray-200"
+                }`}
+                type="button"
+              >
+                {index + 1}
+              </button>
+            ))}
           </div>
           <Button
             onClick={handleReject}
@@ -98,18 +141,30 @@ const AIFineTunePreviewModal: FC<AIFineTunePreviewModalProps> = ({
             variant="primary"
             size="md"
             type="button"
+            disabled={selectedVariant === "old"}
           >
-            Accept Changes
+            {selectedVariant === "old" ? "Select a Variant" : "Accept Changes"}
           </Button>
         </div>
       </div>
 
-      <div className="flex-1 relative overflow-hidden min-h-0">
-        <div className="h-full w-full">
+      <div
+        className={`flex-1 relative min-h-0 ${
+          viewMode === "mobile"
+            ? "overflow-y-auto overflow-x-hidden"
+            : "overflow-hidden"
+        }`}
+      >
+        <div
+          data-preview-container
+          className={`${
+            viewMode === "mobile" ? "max-w-md mx-auto py-4" : "h-full"
+          } w-full`}
+        >
           <DexPreview
             {...previewProps}
             customStyles={currentTheme}
-            className="h-full w-full"
+            className={viewMode === "mobile" ? "w-full" : "h-full w-full"}
           />
         </div>
       </div>

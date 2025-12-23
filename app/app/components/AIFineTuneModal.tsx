@@ -8,6 +8,114 @@ import { useAuth } from "../context/useAuth";
 import { useModal } from "../context/ModalContext";
 import { DexPreviewProps } from "./DexPreview";
 
+const MAX_ELEMENTS = 15;
+const MAX_DEPTH_ELEMENTS = 4;
+const MAX_DEPTH_HTML = 5;
+
+const DEFAULT_CSS_VALUES = new Set([
+  "none",
+  "normal",
+  "auto",
+  "initial",
+  "inherit",
+  "unset",
+  "revert",
+  "transparent",
+  "rgba(0, 0, 0, 0)",
+  "0px",
+  "0",
+]);
+
+const IMPORTANT_CSS_PROPERTIES = new Set([
+  // Layout & positioning
+  "display",
+  "position",
+  "top",
+  "right",
+  "bottom",
+  "left",
+  "z-index",
+  "float",
+  "clear",
+  // Flexbox
+  "flex",
+  "flex-direction",
+  "flex-wrap",
+  "justify-content",
+  "align-items",
+  "align-content",
+  "gap",
+  // Grid
+  "grid",
+  "grid-template-columns",
+  "grid-template-rows",
+  "grid-template-areas",
+  "grid-column",
+  "grid-row",
+  "grid-area",
+  // Sizing
+  "width",
+  "height",
+  "min-width",
+  "min-height",
+  "max-width",
+  "max-height",
+  "box-sizing",
+  // Spacing
+  "margin",
+  "margin-top",
+  "margin-right",
+  "margin-bottom",
+  "margin-left",
+  "padding",
+  "padding-top",
+  "padding-right",
+  "padding-bottom",
+  "padding-left",
+  // Visual appearance
+  "color",
+  "background",
+  "background-color",
+  "background-image",
+  "background-size",
+  "background-position",
+  "background-repeat",
+  "border",
+  "border-top",
+  "border-right",
+  "border-bottom",
+  "border-left",
+  "border-width",
+  "border-style",
+  "border-color",
+  "border-radius",
+  "box-shadow",
+  "outline",
+  "opacity",
+  "visibility",
+  "overflow",
+  "overflow-x",
+  "overflow-y",
+  // Typography
+  "font-family",
+  "font-size",
+  "font-weight",
+  "font-style",
+  "line-height",
+  "text-align",
+  "text-decoration",
+  "text-transform",
+  "letter-spacing",
+  "word-spacing",
+  "white-space",
+  // Transform & effects
+  "transform",
+  "transition",
+  "cursor",
+  "pointer-events",
+  "user-select",
+]);
+
 export interface AIFineTuneModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -15,6 +123,7 @@ export interface AIFineTuneModalProps {
   currentTheme: string | null;
   onApplyOverrides: (overrides: string) => void;
   previewProps?: DexPreviewProps;
+  viewMode?: "desktop" | "mobile";
 }
 
 const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
@@ -24,6 +133,7 @@ const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
   currentTheme: _currentTheme,
   onApplyOverrides,
   previewProps,
+  viewMode = "desktop",
 }) => {
   const { token: authToken } = useAuth();
   const { openModal } = useModal();
@@ -31,23 +141,117 @@ const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
   const [prompt, setPrompt] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
   const [htmlStructure, setHtmlStructure] = useState<string>("");
-  const [computedStyles, setComputedStyles] = useState<Record<string, string>>(
-    {}
-  );
-  const [elementSelector, setElementSelector] = useState<string>("");
+  const [elements, setElements] = useState<
+    Array<{
+      elementSelector: string;
+      computedStyles: Record<string, string>;
+    }>
+  >([]);
+  const [cssVariables, setCssVariables] = useState<Record<string, string>>({});
+
+  const getSelector = (el: HTMLElement | Element): string => {
+    if (el.id) return `#${el.id}`;
+    const className = el.className;
+    if (className) {
+      let classNameStr: string;
+      if (typeof className === "string") {
+        classNameStr = className;
+      } else if (
+        typeof className === "object" &&
+        className !== null &&
+        "baseVal" in className
+      ) {
+        classNameStr = (className as { baseVal: string }).baseVal;
+      } else {
+        classNameStr = String(className);
+      }
+      if (classNameStr) {
+        const classes = classNameStr
+          .split(" ")
+          .filter(c => c && !c.startsWith("orderly-"))
+          .slice(0, 3)
+          .join(".");
+        if (classes) return `.${classes}`;
+      }
+    }
+    return el.tagName.toLowerCase();
+  };
+
+  const extractElementData = (el: HTMLElement): Record<string, string> => {
+    const styles = window.getComputedStyle(el);
+    const computedStyles: Record<string, string> = {};
+
+    for (let i = 0; i < styles.length; i++) {
+      const prop = styles[i];
+      if (prop.startsWith("-") || !IMPORTANT_CSS_PROPERTIES.has(prop)) {
+        continue;
+      }
+      const value = styles.getPropertyValue(prop);
+      const trimmedValue = value.trim();
+      if (
+        !trimmedValue ||
+        prop === "cssText" ||
+        DEFAULT_CSS_VALUES.has(trimmedValue)
+      ) {
+        continue;
+      }
+      computedStyles[prop] = trimmedValue;
+    }
+
+    return computedStyles;
+  };
+
+  const extractCSSVariables = (): Record<string, string> => {
+    const cssVariables: Record<string, string> = {};
+
+    try {
+      for (let i = 0; i < document.styleSheets.length; i++) {
+        try {
+          const sheet = document.styleSheets[i];
+          const rules = sheet.cssRules || sheet.rules;
+          if (rules) {
+            for (let j = 0; j < rules.length; j++) {
+              const rule = rules[j];
+              if (
+                rule instanceof CSSStyleRule &&
+                (rule.selectorText === ":root" ||
+                  rule.selectorText === "html" ||
+                  rule.selectorText === "html, body")
+              ) {
+                const style = rule.style;
+                for (let k = 0; k < style.length; k++) {
+                  const prop = style[k];
+                  if (prop.startsWith("--oui-")) {
+                    const value = style.getPropertyValue(prop);
+                    if (value) {
+                      cssVariables[prop] = value;
+                    }
+                  }
+                }
+              }
+            }
+          }
+        } catch (_e) {
+          continue;
+        }
+      }
+    } catch (_e) {}
+
+    return cssVariables;
+  };
 
   useEffect(() => {
     if (!isOpen || !element) {
       setPrompt("");
       setHtmlStructure("");
-      setComputedStyles({});
-      setElementSelector("");
+      setElements([]);
+      setCssVariables({});
       return;
     }
 
     const clone = element.cloneNode(true) as HTMLElement;
     const limitDepth = (el: HTMLElement, depth: number = 0): void => {
-      if (depth >= 5) {
+      if (depth >= MAX_DEPTH_HTML) {
         el.innerHTML = "";
         return;
       }
@@ -59,30 +263,43 @@ const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
     const html = clone.outerHTML;
     setHtmlStructure(html);
 
-    const styles = window.getComputedStyle(element);
-    const styleMap: Record<string, string> = {};
-    for (let i = 0; i < styles.length; i++) {
-      const prop = styles[i];
-      const value = styles.getPropertyValue(prop);
-      if (value && prop !== "cssText") {
-        styleMap[prop] = value;
+    const rootCssVariables = extractCSSVariables();
+    setCssVariables(rootCssVariables);
+
+    const collectedElements: Array<{
+      elementSelector: string;
+      computedStyles: Record<string, string>;
+    }> = [];
+
+    const queue: Array<{ element: HTMLElement; depth: number }> = [
+      { element, depth: 0 },
+    ];
+
+    while (queue.length > 0 && collectedElements.length < MAX_ELEMENTS) {
+      const { element: currentEl, depth } = queue.shift()!;
+
+      if (depth > MAX_DEPTH_ELEMENTS) continue;
+      if (!(currentEl instanceof HTMLElement)) continue;
+
+      const computedStyles = extractElementData(currentEl);
+      collectedElements.push({
+        elementSelector: getSelector(currentEl),
+        computedStyles,
+      });
+
+      if (
+        depth < MAX_DEPTH_ELEMENTS &&
+        collectedElements.length < MAX_ELEMENTS
+      ) {
+        Array.from(currentEl.children).forEach(child => {
+          if (child instanceof HTMLElement) {
+            queue.push({ element: child, depth: depth + 1 });
+          }
+        });
       }
     }
-    setComputedStyles(styleMap);
 
-    const getSelector = (el: HTMLElement): string => {
-      if (el.id) return `#${el.id}`;
-      if (el.className) {
-        const classes = el.className
-          .split(" ")
-          .filter(c => c && !c.startsWith("orderly-"))
-          .slice(0, 3)
-          .join(".");
-        if (classes) return `.${classes}`;
-      }
-      return el.tagName.toLowerCase();
-    };
-    setElementSelector(getSelector(element));
+    setElements(collectedElements);
   }, [isOpen, element]);
 
   const handleGenerate = async () => {
@@ -113,22 +330,25 @@ const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
           existingOverrides = overrideMatch[1].trim();
         }
       }
-      console.log("existingOverrides", existingOverrides);
 
-      const response = await post<{ overrides: string }>(
+      const response = await post<{ overrides: string[] }>(
         "api/theme/fine-tune",
         {
           prompt: prompt.trim(),
           html: htmlStructure,
-          computedStyles,
-          elementSelector,
+          elements,
+          cssVariables,
           existingOverrides: existingOverrides || undefined,
         },
         token
       );
 
-      console.log("response", response);
-      if (response && response.overrides) {
+      if (
+        response &&
+        response.overrides &&
+        Array.isArray(response.overrides) &&
+        response.overrides.length === 3
+      ) {
         let oldTheme = _currentTheme || "";
         if (oldTheme) {
           const overrideMatch = oldTheme.match(
@@ -144,20 +364,20 @@ const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
           }
         }
 
-        console.log("previewProps", previewProps);
         if (previewProps) {
-          console.log("Opening AIFineTunePreviewModal");
           openModal("aiFineTunePreview", {
             oldTheme,
             newOverrides: response.overrides,
             previewProps,
+            viewMode,
             onApply: (overrides: string) => {
               onApplyOverrides(overrides);
             },
             onReject: () => {},
           });
         } else {
-          onApplyOverrides(response.overrides);
+          // If no preview, apply the first variant
+          onApplyOverrides(response.overrides[0]);
           toast.success("CSS overrides generated successfully!");
           onClose();
         }
@@ -224,11 +444,12 @@ const AIFineTuneModal: FC<AIFineTuneModalProps> = ({
                 </div>
               </div>
             </Card>
-            {elementSelector && (
+            {elements.length > 0 && (
               <div className="text-xs text-gray-400">
-                <span className="font-medium">Element:</span>{" "}
+                <span className="font-medium">Elements:</span>{" "}
                 <code className="bg-background-dark/50 px-1.5 py-0.5 rounded">
-                  {elementSelector}
+                  {elements.length} element{elements.length > 1 ? "s" : ""}{" "}
+                  {"(depth 0-3)"}
                 </code>
               </div>
             )}

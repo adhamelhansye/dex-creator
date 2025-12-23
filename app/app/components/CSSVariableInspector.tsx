@@ -3,11 +3,17 @@ import {
   extractCSSVariablesFromElement,
   getElementPath,
   ElementCSSVariable,
+  extractAIFineTuneRulesForElement,
+  AIFineTuneRule,
 } from "../utils/elementCSSInspector";
 import { Button } from "./Button";
 import { isAllowedCSSVariable } from "../utils/allowedCSSVariables";
 import { useModal } from "../context/ModalContext";
 import { DexPreviewProps } from "./DexPreview";
+import {
+  hexToRgbSpaceSeparated,
+  rgbSpaceSeparatedToHex,
+} from "../utils/colorUtils";
 
 export interface CSSVariableInspectorProps {
   element: HTMLElement | null;
@@ -19,7 +25,9 @@ export interface CSSVariableInspectorProps {
   onElementSelect?: (element: HTMLElement) => void;
   onClose: () => void;
   onApplyCSSOverrides?: (element: HTMLElement, overrides: string) => void;
+  onThemeChange?: (newTheme: string) => void;
   previewProps?: DexPreviewProps;
+  viewMode?: "desktop" | "mobile";
 }
 
 const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
@@ -32,15 +40,20 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
   onElementSelect,
   onClose,
   onApplyCSSOverrides,
+  onThemeChange,
   previewProps,
+  viewMode = "desktop",
 }) => {
   const { openModal } = useModal();
   const [variables, setVariables] = useState<
     ReturnType<typeof extractCSSVariablesFromElement>
   >([]);
   const [elementPath, setElementPath] = useState<string>("");
+  const [aiFineTuneRules, setAIFineTuneRules] = useState<AIFineTuneRule[]>([]);
   const [editingVariable, setEditingVariable] = useState<string | null>(null);
   const [editValue, setEditValue] = useState<string>("");
+  const [editingRuleIndex, setEditingRuleIndex] = useState<number | null>(null);
+  const [editRuleProperties, setEditRuleProperties] = useState<string>("");
   const [position, setPosition] = useState<{ x: number; y: number } | null>(
     null
   );
@@ -57,6 +70,7 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
       element,
       currentTheme,
       ...(previewProps && { previewProps }),
+      viewMode,
       onApplyOverrides: (overrides: string) => {
         if (element && onApplyCSSOverrides) {
           onApplyCSSOverrides(element, overrides);
@@ -136,14 +150,21 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
           .reverse()
           .map(el => getElementPath(el).split(" > ").pop() || "");
         setElementPath(pathStrings.join(" > "));
+
+        const aiRules = extractAIFineTuneRulesForElement(currentTheme, element);
+        setAIFineTuneRules(aiRules);
       } else if (element) {
         const extracted = extractCSSVariablesFromElement(element);
         const filtered = extracted.filter(v => isAllowedCSSVariable(v.name));
         setVariables(filtered);
         setElementPath(getElementPath(element));
+
+        const aiRules = extractAIFineTuneRulesForElement(currentTheme, element);
+        setAIFineTuneRules(aiRules);
       } else {
         setVariables([]);
         setElementPath("");
+        setAIFineTuneRules([]);
       }
     }, 50);
 
@@ -210,25 +231,124 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
   const handleCancel = () => {
     setEditingVariable(null);
     setEditValue("");
+    setEditingRuleIndex(null);
+    setEditRuleProperties("");
   };
 
-  const rgbToHex = (rgb: string): string => {
-    const parts = rgb.trim().split(/\s+/);
-    if (parts.length === 3) {
-      const r = parseInt(parts[0], 10);
-      const g = parseInt(parts[1], 10);
-      const b = parseInt(parts[2], 10);
-      return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+  const handleRuleEdit = (index: number, properties: string) => {
+    setEditingRuleIndex(index);
+    setEditRuleProperties(properties);
+  };
+
+  const handleRuleSave = () => {
+    if (editingRuleIndex === null || !onThemeChange || !currentTheme) {
+      return;
     }
-    return "";
+
+    const rule = aiFineTuneRules[editingRuleIndex];
+    if (!rule) {
+      return;
+    }
+
+    let baseTheme = currentTheme;
+    const overrideMatch = baseTheme.match(
+      /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*([\s\S]*?)(?=\/\*|$)/
+    );
+    if (overrideMatch) {
+      baseTheme = baseTheme.replace(
+        /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*[\s\S]*?(?=\/\*|$)/,
+        ""
+      );
+      baseTheme = baseTheme.replace(/\n{3,}/g, "\n\n").trim();
+    }
+
+    let existingOverrides = "";
+    if (overrideMatch && overrideMatch[1]) {
+      existingOverrides = overrideMatch[1].trim();
+    }
+
+    const ruleRegex = /([^{]+)\{([^}]+)\}/g;
+    const rules: Array<{ selector: string; properties: string }> = [];
+    let match;
+    let foundEditedRule = false;
+
+    while ((match = ruleRegex.exec(existingOverrides)) !== null) {
+      const selector = match[1].trim();
+      const properties = match[2].trim();
+
+      if (selector === rule.selector && !foundEditedRule) {
+        rules.push({
+          selector,
+          properties: editRuleProperties.trim(),
+        });
+        foundEditedRule = true;
+      } else {
+        rules.push({ selector, properties });
+      }
+    }
+
+    if (!foundEditedRule) {
+      rules.push({
+        selector: rule.selector,
+        properties: editRuleProperties.trim(),
+      });
+    }
+
+    const updatedOverrides = rules
+      .map(r => `${r.selector} { ${r.properties} }`)
+      .join("\n");
+
+    const updatedTheme = baseTheme
+      ? `${baseTheme}\n\n/* AI Fine-Tune Overrides */\n${updatedOverrides}`
+      : `/* AI Fine-Tune Overrides */\n${updatedOverrides}`;
+
+    onThemeChange(updatedTheme);
+    setEditingRuleIndex(null);
+    setEditRuleProperties("");
   };
 
-  const hexToRgb = (hex: string): string => {
-    hex = hex.replace("#", "");
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return `${r} ${g} ${b}`;
+  const handleRuleDelete = (index: number) => {
+    if (!onThemeChange || !currentTheme) {
+      return;
+    }
+
+    const rule = aiFineTuneRules[index];
+    if (!rule) {
+      return;
+    }
+
+    let baseTheme = currentTheme;
+    const overrideMatch = baseTheme.match(
+      /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*([\s\S]*?)(?=\/\*|$)/
+    );
+    if (overrideMatch) {
+      baseTheme = baseTheme.replace(
+        /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*[\s\S]*?(?=\/\*|$)/,
+        ""
+      );
+      baseTheme = baseTheme.replace(/\n{3,}/g, "\n\n").trim();
+    }
+
+    let existingOverrides = "";
+    if (overrideMatch && overrideMatch[1]) {
+      existingOverrides = overrideMatch[1].trim();
+    }
+
+    const ruleToDelete = rule.rawRule || rule.fullRule;
+
+    const escapedRule = ruleToDelete.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const ruleRegex = new RegExp(escapedRule.replace(/\s+/g, "\\s*"), "g");
+
+    const updatedOverrides = existingOverrides.replace(ruleRegex, "").trim();
+
+    if (updatedOverrides) {
+      const updatedTheme = baseTheme
+        ? `${baseTheme}\n\n/* AI Fine-Tune Overrides */\n${updatedOverrides}`
+        : `/* AI Fine-Tune Overrides */\n${updatedOverrides}`;
+      onThemeChange(updatedTheme);
+    } else {
+      onThemeChange(baseTheme || "");
+    }
   };
 
   const isColorVariable = (varName: string): boolean => {
@@ -325,6 +445,86 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
         </div>
       </div>
 
+      {aiFineTuneRules.length > 0 && (
+        <div className="mb-3 pt-3 border-t border-light/10">
+          <h4 className="text-xs font-semibold text-gray-300 mb-2 flex items-center gap-1">
+            <div className="i-mdi:magic-wand h-3 w-3 text-primary-light"></div>
+            AI Fine-Tune Overrides
+          </h4>
+          <div className="space-y-2 max-h-48 overflow-y-auto">
+            {aiFineTuneRules.map((rule, index) => {
+              const isEditing = editingRuleIndex === index;
+              const propertiesToShow = isEditing
+                ? editRuleProperties
+                : rule.properties;
+
+              return (
+                <div
+                  key={index}
+                  className="bg-background-dark/50 p-2 rounded border border-primary-light/20"
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="text-xs font-mono text-primary-light/80 break-all flex-1">
+                      {rule.selector}
+                    </div>
+                    {!isEditing && onThemeChange && (
+                      <div className="flex gap-1 ml-2">
+                        <button
+                          onClick={() => handleRuleEdit(index, rule.properties)}
+                          className="text-xs text-primary-light hover:text-primary-light/80 transition-colors"
+                          type="button"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => handleRuleDelete(index)}
+                          className="text-xs text-red-400 hover:text-red-300 transition-colors"
+                          type="button"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                  {isEditing ? (
+                    <div className="mt-2 space-y-2">
+                      <textarea
+                        value={propertiesToShow}
+                        onChange={e => setEditRuleProperties(e.target.value)}
+                        className="w-full bg-background-dark border border-light/20 rounded px-2 py-1 text-xs text-gray-200 font-mono min-h-[60px] resize-y"
+                        placeholder="CSS properties..."
+                      />
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={handleRuleSave}
+                          variant="primary"
+                          size="xs"
+                          type="button"
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          onClick={handleCancel}
+                          variant="secondary"
+                          size="xs"
+                          type="button"
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-gray-400 font-mono whitespace-pre-wrap break-all">
+                      {rule.properties}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
       {element && onApplyCSSOverrides && (
         <div className="mb-3 pt-3 border-t border-light/10">
           <button
@@ -362,7 +562,7 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
             const isEditing = editingVariable === variable.name;
             const isColor = isColorVariable(variable.name);
             const valueToUse = isEditing ? editValue : variable.value;
-            const hexValue = isColor ? rgbToHex(valueToUse) : "";
+            const hexValue = isColor ? rgbSpaceSeparatedToHex(valueToUse) : "";
 
             return (
               <div
@@ -393,7 +593,9 @@ const CSSVariableInspector: FC<CSSVariableInspectorProps> = ({
                         <input
                           type="color"
                           value={hexValue || "#000000"}
-                          onChange={e => setEditValue(hexToRgb(e.target.value))}
+                          onChange={e =>
+                            setEditValue(hexToRgbSpaceSeparated(e.target.value))
+                          }
                           className="w-12 h-8 rounded border border-light/20 cursor-pointer"
                         />
                         <div

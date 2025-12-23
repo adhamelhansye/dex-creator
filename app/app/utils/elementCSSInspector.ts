@@ -51,18 +51,12 @@ export function extractCSSVariablesFromElement(
                     });
                   }
                 }
-              } catch {
-                // Invalid selector, skip
-              }
+              } catch {}
             }
           }
-        } catch {
-          // Cross-origin stylesheet, skip
-        }
+        } catch {}
       }
-    } catch {
-      // Stylesheet access failed
-    }
+    } catch {}
   }
 
   processElement(element);
@@ -149,4 +143,170 @@ export function getElementPath(element: HTMLElement): string {
   }
 
   return path.join(" > ");
+}
+
+export interface AIFineTuneRule {
+  selector: string;
+  properties: string;
+  fullRule: string;
+  rawRule?: string; // Raw CSS string from the original theme (for deletion matching)
+}
+
+/**
+ * Strips pseudo-classes (like :hover, :focus, :active) from a CSS selector
+ * to allow matching elements regardless of their current state
+ */
+function stripPseudoClasses(selector: string): string {
+  const pseudoElementPlaceholders: string[] = [];
+  let protectedSelector = selector;
+  let placeholderIndex = 0;
+
+  protectedSelector = protectedSelector.replace(/::[a-zA-Z-]+/g, match => {
+    const placeholder = `__PSEUDO_ELEMENT_${placeholderIndex++}__`;
+    pseudoElementPlaceholders.push(match);
+    return placeholder;
+  });
+
+  protectedSelector = protectedSelector.replace(
+    /:([a-zA-Z-]+(\([^)]*\))?)/g,
+    ""
+  );
+
+  pseudoElementPlaceholders.forEach((pseudoElement, index) => {
+    protectedSelector = protectedSelector.replace(
+      `__PSEUDO_ELEMENT_${index}__`,
+      pseudoElement
+    );
+  });
+
+  return protectedSelector.replace(/\s+/g, " ").trim();
+}
+
+/**
+ * Extracts AI fine-tune CSS overrides from theme string and finds rules that match the given element
+ */
+export function extractAIFineTuneRulesForElement(
+  theme: string | null,
+  element: HTMLElement
+): AIFineTuneRule[] {
+  if (!theme) return [];
+
+  const overrideMatch = theme.match(
+    /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*([\s\S]*?)(?=\/\*|$)/
+  );
+  if (!overrideMatch || !overrideMatch[1]) return [];
+
+  const overrideCSS = overrideMatch[1].trim();
+  if (!overrideCSS) return [];
+
+  const tempStyle = document.createElement("style");
+  tempStyle.id = "temp-ai-finetune-check";
+  tempStyle.textContent = overrideCSS;
+  document.head.appendChild(tempStyle);
+
+  try {
+    const stylesheets = Array.from(document.styleSheets);
+    const tempSheet = stylesheets.find(sheet => sheet.ownerNode === tempStyle);
+
+    const rules: AIFineTuneRule[] = [];
+    const elementsToCheck = [element];
+
+    // First, try regex parsing to get raw CSS (preserves formatting)
+    const ruleRegex = /([^{]+)\{([^}]+)\}/g;
+    let match;
+    const rawRules: Array<{
+      selector: string;
+      properties: string;
+      rawRule: string;
+    }> = [];
+
+    while ((match = ruleRegex.exec(overrideCSS)) !== null) {
+      const selector = match[1].trim();
+      const properties = match[2].trim();
+
+      if (!properties.trim()) {
+        continue;
+      }
+
+      for (const elToCheck of elementsToCheck) {
+        try {
+          if (elToCheck.matches(selector)) {
+            rawRules.push({
+              selector,
+              properties,
+              rawRule: match[0],
+            });
+            break;
+          }
+        } catch {
+          try {
+            const baseSelector = stripPseudoClasses(selector);
+            if (baseSelector && elToCheck.matches(baseSelector)) {
+              rawRules.push({
+                selector,
+                properties,
+                rawRule: match[0],
+              });
+              break;
+            }
+          } catch {}
+        }
+      }
+    }
+
+    // If we found rules via regex, use them (they have raw CSS)
+    if (rawRules.length > 0) {
+      for (const rawRule of rawRules) {
+        rules.push({
+          selector: rawRule.selector,
+          properties: rawRule.properties,
+          fullRule: rawRule.rawRule,
+          rawRule: rawRule.rawRule,
+        });
+      }
+    } else {
+      // Fallback to CSSStyleRule parsing (normalized, but more reliable for complex CSS)
+      if (tempSheet) {
+        try {
+          const cssRules = Array.from(tempSheet.cssRules || []);
+          for (const rule of cssRules) {
+            if (rule instanceof CSSStyleRule) {
+              const selector = rule.selectorText;
+              const properties = rule.style.cssText || "";
+
+              let matches = false;
+              for (const elToCheck of elementsToCheck) {
+                try {
+                  if (elToCheck.matches(selector)) {
+                    matches = true;
+                    break;
+                  }
+                } catch {
+                  try {
+                    const baseSelector = stripPseudoClasses(selector);
+                    if (baseSelector && elToCheck.matches(baseSelector)) {
+                      matches = true;
+                      break;
+                    }
+                  } catch {}
+                }
+              }
+
+              if (matches && properties.trim()) {
+                rules.push({
+                  selector,
+                  properties,
+                  fullRule: `${selector} { ${properties} }`,
+                });
+              }
+            }
+          }
+        } catch {}
+      }
+    }
+
+    return rules;
+  } finally {
+    tempStyle.remove();
+  }
 }

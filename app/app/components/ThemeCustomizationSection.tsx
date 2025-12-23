@@ -9,6 +9,7 @@ import { previewConfig } from "../utils/config";
 import { extractFontValues } from "../utils/cssParser";
 import { createElement } from "react";
 import type { DexPreviewProps } from "./DexPreview";
+import { useModal } from "../context/ModalContext";
 
 const Textarea = ({
   value,
@@ -39,6 +40,7 @@ export type ThemeTabType =
 export interface ThemeCustomizationProps {
   currentTheme: string | null;
   defaultTheme: string;
+  savedTheme: string | null;
   showThemeEditor: boolean;
   viewCssCode: boolean;
   themePrompt: string;
@@ -58,7 +60,11 @@ export interface ThemeCustomizationProps {
   handleInputChange: (
     field: string
   ) => (e: React.ChangeEvent<HTMLInputElement>) => void;
-  handleGenerateTheme: (prompt?: string) => void;
+  handleGenerateTheme: (
+    prompt?: string,
+    previewProps?: DexPreviewProps,
+    viewMode?: "desktop" | "mobile"
+  ) => void;
   setTradingViewColorConfig: (config: string | null) => void;
   idPrefix?: string;
 }
@@ -66,6 +72,7 @@ export interface ThemeCustomizationProps {
 const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   currentTheme,
   defaultTheme,
+  savedTheme,
   showThemeEditor,
   viewCssCode,
   themePrompt,
@@ -76,7 +83,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   tradingViewColorConfig,
   toggleThemeEditor,
   handleResetTheme,
-  handleResetToDefault,
   handleThemeEditorChange,
   setViewCssCode,
   updateCssColor,
@@ -90,6 +96,7 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
   const [primaryLogoUrl, setPrimaryLogoUrl] = useState<string | null>(null);
   const [secondaryLogoUrl, setSecondaryLogoUrl] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
+  const { openModal } = useModal();
 
   const LocalThemeTabButton: React.FC<{ tab: ThemeTabType; label: string }> = ({
     tab,
@@ -207,10 +214,11 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
             previewProps={previewProps}
             currentTheme={currentTheme}
             defaultTheme={defaultTheme}
+            savedTheme={savedTheme}
             onThemeChange={handleThemeChange}
             isGeneratingTheme={isGeneratingTheme}
             onGenerateTheme={(prompt: string) => {
-              handleGenerateTheme(prompt);
+              handleGenerateTheme(prompt, previewProps, "desktop");
             }}
             updateCssColor={updateCssColor}
             updateCssValue={updateCssValue}
@@ -221,6 +229,40 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
       )}
       {isMobile && (
         <div className="mt-4 rounded-lg overflow-hidden border border-light/10 p-4 bg-base-7/50">
+          {/* Preset Selection */}
+          <div className="mb-4 pb-4 border-b border-light/10">
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-gray-300">
+                Theme Presets
+              </span>
+            </div>
+            <Button
+              onClick={() => {
+                openModal("themePresetPreview", {
+                  previewProps: undefined,
+                  viewMode: "mobile",
+                  currentTheme,
+                  onApply: (theme: string) => {
+                    handleThemeChange(theme);
+                  },
+                  onPreviewChange: (theme: string) => {
+                    handleThemeChange(theme);
+                  },
+                });
+              }}
+              variant="secondary"
+              size="xs"
+              className="w-full"
+              type="button"
+            >
+              <span className="flex items-center gap-1 justify-center">
+                <div className="i-mdi:swatch h-3.5 w-3.5"></div>
+                Select Preset
+              </span>
+            </Button>
+          </div>
+
+          {/* Current Theme */}
           <div className="flex justify-between mb-2 flex-col sm:flex-row gap-2 sm:gap-0">
             <span className="text-sm font-medium mb-2 text-gray-300">
               Current Theme
@@ -252,15 +294,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
                 type="button"
               >
                 Reset
-              </Button>
-              <Button
-                onClick={handleResetToDefault}
-                variant="danger"
-                size="xs"
-                className="w-full sm:w-auto"
-                type="button"
-              >
-                Reset to Default
               </Button>
             </div>
           </div>
@@ -333,9 +366,6 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
                   <ul className="text-xs text-gray-300 list-disc pl-4 space-y-0.5">
                     <li>Review the theme in the preview modal</li>
                     <li>Make adjustments to colors as needed</li>
-                    <li>
-                      Use the DEX preview button to see your theme in context
-                    </li>
                   </ul>
                 </div>
               </div>
@@ -353,7 +383,9 @@ const ThemeCustomizationSection: React.FC<ThemeCustomizationProps> = ({
           </div>
           <div className="mt-1">
             <Button
-              onClick={() => handleGenerateTheme()}
+              onClick={() =>
+                handleGenerateTheme(undefined, undefined, "mobile")
+              }
               isLoading={isGeneratingTheme}
               loadingText="Generating..."
               disabled={!themePrompt.trim() || isGeneratingTheme}

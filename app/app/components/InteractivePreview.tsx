@@ -7,6 +7,7 @@ export interface InteractivePreviewProps {
   previewProps: DexPreviewProps;
   currentTheme: string | null;
   defaultTheme: string;
+  savedTheme: string | null;
   onThemeChange: (newTheme: string) => void;
   isGeneratingTheme?: boolean;
   onGenerateTheme: (prompt: string) => void;
@@ -20,6 +21,7 @@ const InteractivePreview: FC<InteractivePreviewProps> = ({
   previewProps,
   currentTheme,
   defaultTheme,
+  savedTheme,
   onThemeChange,
   isGeneratingTheme,
   onGenerateTheme,
@@ -123,6 +125,7 @@ const InteractivePreview: FC<InteractivePreviewProps> = ({
           previewProps={previewProps}
           currentTheme={currentTheme}
           defaultTheme={defaultTheme}
+          savedTheme={savedTheme}
           onThemeChange={onThemeChange}
           viewMode={editMode}
           isGeneratingTheme={isGeneratingTheme}
