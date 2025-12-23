@@ -11,6 +11,8 @@ export const userSchema = z.object({
 
 export type User = z.infer<typeof userSchema>;
 
+export const TOKEN_EXPIRATION_HOURS = 72;
+
 const ethereumAddressSchema = z
   .string()
   .regex(/^0x[a-fA-F0-9]{40}$/, "Invalid Ethereum address format");
@@ -88,7 +90,7 @@ class UserStore {
     const token = crypto.randomUUID();
 
     const expiresAt = new Date();
-    expiresAt.setHours(expiresAt.getHours() + 24);
+    expiresAt.setHours(expiresAt.getHours() + TOKEN_EXPIRATION_HOURS);
 
     const prismaClient = await getPrisma();
     await prismaClient.token.create({
