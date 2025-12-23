@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import { useAuth } from "../../context/useAuth";
 import { CompleteAmbassadorProfile } from "./CompleteAmbassadorProfile";
-import { CreateDistributorProfile } from "./CreateDistributorProfile";
 import { VanguardDistributorProgramme } from "./VanguardDistributorProgramme";
 import { CompleteBuilderProfile } from "./CompleteBuilderProfile";
 import { useOrderlyKey } from "../../context/OrderlyKeyContext";
@@ -39,7 +38,7 @@ export default function DistributorRoute() {
     mutateAccountInfo();
   };
 
-  const handleCompleteAmbassador = () => {
+  const handleUpdateDistributorNameSuccess = () => {
     mutateAmbassadorInfo();
   };
 
@@ -79,14 +78,22 @@ export default function DistributorRoute() {
     return <CompleteBuilderProfile />;
   }
 
-  if (isAmbassador) {
-    return <CompleteAmbassadorProfile onSuccess={handleCompleteAmbassador} />;
-  }
-
   return (
-    <CreateDistributorProfile
+    <CompleteAmbassadorProfile
       brokerId={AMBASSADOR_BROKER_ID}
-      onSuccess={handleCreateAmbassador}
+      onCreateAmbassadorSuccess={handleCreateAmbassador}
+      onUpdateDistributorNameSuccess={handleUpdateDistributorNameSuccess}
     />
   );
+
+  // if (isAmbassador) {
+  //   return <CompleteAmbassadorProfile onSuccess={handleCompleteAmbassador} />;
+  // }
+
+  // return (
+  //   <CreateDistributorProfile
+  //     brokerId={AMBASSADOR_BROKER_ID}
+  //     onSuccess={handleCreateAmbassador}
+  //   />
+  // );
 }

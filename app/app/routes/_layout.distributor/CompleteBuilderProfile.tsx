@@ -17,14 +17,13 @@ export function CompleteBuilderProfile() {
         {/* Main Content */}
         <div className="flex flex-col gap-5 w-full">
           {/* Step 1 */}
-          <SuccessStepCard title="What describes you best?" value="Builder" />
+          <SuccessStepCard title="Account creation" />
 
           {/* Step 2 */}
           <DexCreationCard />
 
           {/* Step 3 */}
           <DexGraduationCard />
-
           {/* Step 4 */}
           {dexData && dexData.isGraduated && <OrderlyKeyCard />}
         </div>
