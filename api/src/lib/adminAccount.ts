@@ -7,7 +7,7 @@ type UpdateAdminAccountData = {
 
 export async function updateAdminAccount(data: UpdateAdminAccountData) {
   return signedRequest({
-    url: "/v1/orderly_one/broker/adminAccount",
+    url: "/v1/broker/adminAccount",
     method: "POST",
     data,
   });
