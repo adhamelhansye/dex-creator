@@ -1,4 +1,5 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
+import { APP_ANALYTICS_EVENT, AnalyticsEvent } from "~/analytics/tracking";
 
 const getGAID = () => {
   if (typeof window === "undefined") return "";
@@ -6,6 +7,14 @@ const getGAID = () => {
     return "G-N1SWYG7W4E";
   }
   return "G-7TY9TF6N3K";
+};
+
+const getGtag = (): ((...args: any[]) => void) => {
+  if (typeof window === "undefined") {
+    return () => {};
+  }
+  // @ts-ignore
+  return window.gtag || (() => {});
 };
 
 export function useGoogleAnalysis() {
@@ -27,14 +36,15 @@ export function useGoogleAnalysis() {
     // @ts-ignore
     window.gtag("js", new Date());
     // @ts-ignore
-    window.gtag("config", gaID);
-    // @ts-ignore
-    // window.gtag("config", gaID, { 'debug_mode': true });
+    window.gtag("config", gaID, { debug_mode: true });
 
     const script = document.createElement("script");
     script.async = true;
     script.src = `https://www.googletagmanager.com/gtag/js?id=${gaID}`;
     document.head.appendChild(script);
+
+    const gtag = getGtag();
+    gtag("config", gaID);
 
     const handleClick = (e: MouseEvent) => {
       let target = e.target as HTMLElement | null;
@@ -82,8 +92,8 @@ export function useGoogleAnalysis() {
             }
           }
 
-          // @ts-ignore
-          window.gtag("event", "element_click", {
+          const gtag = getGtag();
+          gtag("event", "element_click", {
             button_text: buttonText,
             element_id: elementId,
             element_class: elementClass,
@@ -97,34 +107,45 @@ export function useGoogleAnalysis() {
       }
     };
 
+    // Handle custom analytics events
+    const handleAnalyticsEvent = (e: CustomEvent<AnalyticsEvent>) => {
+      const { eventName, params } = e.detail;
+      const gtag = getGtag();
+
+      try {
+        gtag("event", eventName, params);
+      } catch (error) {
+        console.error(`Error handling analytics event ${eventName}:`, error);
+      }
+    };
+
     document.addEventListener("click", handleClick);
+    window.addEventListener(
+      APP_ANALYTICS_EVENT,
+      handleAnalyticsEvent as EventListener
+    );
 
     return () => {
-      document.head.removeChild(script);
+      if (document.head.contains(script)) {
+        document.head.removeChild(script);
+      }
       document.removeEventListener("click", handleClick);
+      window.removeEventListener(
+        APP_ANALYTICS_EVENT,
+        handleAnalyticsEvent as EventListener
+      );
     };
   }, []);
 }
 
 export function useGoogleUserId(address?: string | null) {
-  const prevAddress = useRef<string | null | undefined>(undefined);
-
   useEffect(() => {
     if (typeof window === "undefined") return;
 
     const gaID = getGAID();
     if (!gaID) return;
 
-    // @ts-ignore
-    const gtag = window.gtag
-      ? // @ts-ignore
-        window.gtag
-      : (..._args: any[]) => {
-          // @ts-ignore
-          window.dataLayer = window.dataLayer || [];
-          // @ts-ignore
-          window.dataLayer.push(arguments);
-        };
+    const gtag = getGtag();
 
     try {
       gtag("config", gaID, {
@@ -133,12 +154,6 @@ export function useGoogleUserId(address?: string | null) {
       gtag("set", {
         user_id: address ?? null,
       });
-      if (address && address !== prevAddress.current) {
-        gtag("event", "connect_wallet_success", {
-          address: `addr_${address}`,
-        });
-        prevAddress.current = address;
-      }
     } catch (e) {
       console.error("Failed to set GA user_id", e);
     }

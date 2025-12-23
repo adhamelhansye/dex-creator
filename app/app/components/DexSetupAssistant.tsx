@@ -15,6 +15,7 @@ import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
 import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
 import { useDistributorCode } from "../hooks/useDistrubutorInfo";
 import { useDistributor } from "../context/DistributorContext";
+import { trackEvent } from "~/analytics/tracking";
 
 const TOTAL_STEPS = DEX_SECTIONS.length;
 
@@ -304,6 +305,8 @@ export default function DexSetupAssistant({
         toast.warning("Repository could not be forked. You can retry later.");
       }
 
+      trackEvent("create_dex_success");
+
       if (options.onSuccess) {
         await options.onSuccess(savedData);
       }
@@ -329,6 +332,7 @@ export default function DexSetupAssistant({
   };
 
   const handleQuickSetup = async () => {
+    trackEvent("click_quick_setup");
     await createDex({
       forkingStatus: "Creating DEX with current settings...",
       successMessageWithRepo:
