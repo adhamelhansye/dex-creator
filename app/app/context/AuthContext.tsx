@@ -10,6 +10,7 @@ import { API_BASE_URL } from "../utils/wagmiConfig";
 import { toast } from "react-toastify";
 import { setGlobalDisconnect } from "../utils/globalDisconnect";
 import { useGoogleUserId } from "../hooks/useGoogleAnalysis";
+import { trackEvent } from "~/analytics/tracking";
 
 interface User {
   id: string;
@@ -39,7 +40,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [error, setError] = useState<string | null>(null);
   const [previousAddress, setPreviousAddress] = useState<string | null>(null);
 
-  const { address, isConnected } = useAccount();
+  const { address, isConnected, connector } = useAccount();
   const { signMessageAsync } = useSignMessage();
   const { disconnect } = useDisconnect();
   useGoogleUserId(address);
@@ -161,6 +162,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       toast.info("Wallet switched. Please sign in with the new wallet.");
     }
 
+    // Track wallet connection when address first becomes available or changes
+    if (address && address !== previousAddress) {
+      trackEvent("connect_wallet_success", {
+        address: `addr_${address}`,
+        wallet: connector?.name ?? "unknown",
+      });
+    }
+
     setPreviousAddress(address || null);
   }, [address, previousAddress]);
 
@@ -195,6 +204,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const { message } = await nonceResponse.json();
 
       const signature = await signMessageAsync({ message });
+
+      trackEvent("sign_message_success", {
+        address: `addr_${address}`,
+        wallet: connector?.name ?? "unknown",
+      });
 
       const verifyResponse = await fetch(`${API_BASE_URL}/api/auth/verify`, {
         method: "POST",
