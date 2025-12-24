@@ -36,7 +36,7 @@ export function useGoogleAnalysis() {
     // @ts-ignore
     window.gtag("js", new Date());
     // @ts-ignore
-    window.gtag("config", gaID, { debug_mode: true });
+    // window.gtag("config", gaID, { debug_mode: true });
 
     const script = document.createElement("script");
     script.async = true;
