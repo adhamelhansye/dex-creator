@@ -56,6 +56,7 @@ import {
   getChainIcon,
 } from "../../../config";
 import { SwapFeeWithdrawal } from "./SwapFeeWithdrawal";
+import { parseWalletError } from "../utils/wallet";
 
 const ERC20_ABI = [
   {
@@ -676,11 +677,9 @@ export function GraduationForm({
       }
     } catch (error) {
       console.error("Error finalizing admin wallet:", error);
-      toast.error(
-        error instanceof Error
-          ? error.message
-          : "Failed to finalize admin wallet setup"
-      );
+      const message =
+        parseWalletError(error) || "Failed to finalize admin wallet setup";
+      toast.error(message);
     } finally {
       setIsFinalizingAdminWallet(false);
     }
