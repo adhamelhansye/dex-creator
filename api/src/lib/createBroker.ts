@@ -1,6 +1,4 @@
-import { getOrderlyApiBaseUrl } from "../utils/orderly";
-import { getSignature } from "./sign";
-import { getSecret } from "./secretManager";
+import { signedRequest } from "./signedRequest";
 
 type CreateBrokerData = {
   broker_id: string;
@@ -15,33 +13,9 @@ type CreateBrokerData = {
 };
 
 export async function createBroker(data: CreateBrokerData) {
-  const accountId = await getSecret("creatorBrokerApiAccountId");
-  const secretKey = await getSecret("creatorBrokerApiSecretKey");
-
-  const path = "/v1/orderly_one/broker";
-  const fullUrl = `${getOrderlyApiBaseUrl()}/v1/orderly_one/broker`;
-
-  const payload = {
-    url: path,
+  return signedRequest({
+    url: "/v1/orderly_one/broker",
     method: "POST",
     data,
-  };
-
-  const signature = await getSignature(
-    accountId,
-    // remove ed25519: prefix from secret key
-    secretKey?.replace("ed25519:", ""),
-    payload
-  );
-
-  const response = await fetch(fullUrl, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      ...signature,
-    },
-    body: JSON.stringify(data),
   });
-
-  return response.json();
 }
