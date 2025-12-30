@@ -1,5 +1,4 @@
 import { HTMLAttributeAnchorTarget, ReactNode } from "react";
-import { CampaignIcon } from "../icons/CampaignIcon";
 
 export interface NavItem {
   path: string;
@@ -9,15 +8,6 @@ export interface NavItem {
 }
 
 export const navigationItems: NavItem[] = [
-  {
-    path: "https://app.orderly.network/campaigns",
-    title: (
-      <div className="flex items-center gap-1">
-        <span>UCC</span> <CampaignIcon />
-      </div>
-    ),
-    target: "_blank",
-  },
   {
     path: "/",
     title: "Home",
