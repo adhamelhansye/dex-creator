@@ -51,6 +51,12 @@ const AVAILABLE_MENUS = [
     icon: "i-mdi:shield-outline",
     isDefault: false,
   },
+  {
+    id: "Points",
+    label: "Points",
+    icon: "i-mdi:trophy",
+    isDefault: false,
+  },
 ];
 
 const MENU_INFO: Record<

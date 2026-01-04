@@ -4,7 +4,7 @@ import { PointCampaignForm } from "./components/PointCampaignForm";
 import { PointCampaignList } from "~/routes/_layout.points/components/PointCampaignList";
 import { EnablePointsCard } from "~/routes/_layout.points/components/EnablePointsCard";
 import { OrderlyKeyAuthGrard } from "~/components/authGrard/OrderlyKeyAuthGuard";
-import { modal, startViewTransition } from "@orderly.network/ui";
+import { modal } from "@orderly.network/ui";
 import { GraduationAuthGuard } from "~/components/authGrard/GraduationAuthGuard";
 import { PointCampaign } from "~/types/points";
 import {
@@ -24,9 +24,7 @@ export default function PointRoute() {
     useDeletePointsStage();
 
   const handleCreate = () => {
-    startViewTransition(() => {
-      setType("create");
-    });
+    setType("create");
   };
 
   const handleEdit = (campaign: PointCampaign) => {
@@ -36,9 +34,7 @@ export default function PointRoute() {
 
   const handleView = (campaign: PointCampaign) => {
     setCurrentPoints(campaign);
-    startViewTransition(() => {
-      setType("view");
-    });
+    setType("view");
   };
 
   const handleDelete = (campaign: PointCampaign) => {
@@ -60,9 +56,7 @@ export default function PointRoute() {
   };
 
   const onClose = () => {
-    startViewTransition(() => {
-      setType(null);
-    });
+    setType(null);
     setCurrentPoints(null);
   };
 
@@ -71,7 +65,7 @@ export default function PointRoute() {
   };
 
   const nextStage = useMemo(() => {
-    return data?.length ? (data[data.length - 1].epoch_period || 0) + 1 : 0;
+    return data?.length ? (data[0].epoch_period || 0) + 1 : 0;
   }, [data, currentPoints]);
 
   const renderContent = () => {
