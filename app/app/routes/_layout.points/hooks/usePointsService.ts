@@ -12,10 +12,7 @@ export function usePointsStages() {
 
 export function usePointsDetail(stage_id?: number) {
   return usePrivateQuery<PointCampaignDetail>(
-    stage_id ? `/v1/admin/points/stage?stage_id=${stage_id}` : null,
-    {
-      formatter: data => data?.rows?.[0],
-    }
+    stage_id ? `/v1/admin/points/stage?stage_id=${stage_id}` : null
   );
 }
 
