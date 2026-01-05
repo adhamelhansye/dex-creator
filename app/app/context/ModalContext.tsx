@@ -22,7 +22,7 @@ import SafeInstructionsModal from "../components/SafeInstructions";
 import { FeeWithdrawalModal } from "../components/FeeWithdrawalModal";
 import SwapFeeConfigModal from "../components/SwapFeeConfigModal";
 import { SwapFeeWithdrawalModal } from "../components/SwapFeeWithdrawalModal";
-import ThemeEditorModal from "../components/ThemeEditorModal";
+import ThemeEditorTabsModal from "../components/ThemeEditorTabsModal";
 import AIThemeGeneratorModal from "../components/AIThemeGeneratorModal";
 import CurrentThemeModal from "../components/CurrentThemeModal";
 import AIFineTuneModal from "../components/AIFineTuneModal";
@@ -46,7 +46,7 @@ export type ModalType =
   | "feeWithdrawal"
   | "swapFeeConfig"
   | "swapFeeWithdrawal"
-  | "themeEditor"
+  | "themeEditorTabs"
   | "aiThemeGenerator"
   | "currentTheme"
   | "aiFineTune"
@@ -291,14 +291,13 @@ function ModalManager() {
           address={currentModalProps.address}
         />
       );
-    case "themeEditor":
+    case "themeEditorTabs":
       return (
-        <ThemeEditorModal
+        <ThemeEditorTabsModal
           isOpen={isModalOpen}
           onClose={closeModal}
           currentTheme={currentModalProps.currentTheme}
           defaultTheme={currentModalProps.defaultTheme}
-          savedTheme={currentModalProps.savedTheme}
           onThemeChange={currentModalProps.onThemeChange}
         />
       );
@@ -318,12 +317,14 @@ function ModalManager() {
           onClose={closeModal}
           currentTheme={currentModalProps.currentTheme}
           defaultTheme={currentModalProps.defaultTheme}
+          savedTheme={currentModalProps.savedTheme}
           updateCssColor={currentModalProps.updateCssColor}
           updateCssValue={currentModalProps.updateCssValue}
           tradingViewColorConfig={currentModalProps.tradingViewColorConfig}
           setTradingViewColorConfig={
             currentModalProps.setTradingViewColorConfig
           }
+          onThemeChange={currentModalProps.onThemeChange}
         />
       );
     case "aiFineTune":
