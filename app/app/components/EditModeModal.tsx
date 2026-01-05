@@ -484,26 +484,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
           <Button
             onClick={e => {
               e.stopPropagation();
-              openModal("themeEditor", {
-                currentTheme,
-                defaultTheme,
-                savedTheme,
-                onThemeChange,
-              });
-            }}
-            variant="secondary"
-            size="sm"
-            type="button"
-            data-modal-header-button="true"
-          >
-            <span className="flex items-center gap-1">
-              <div className="i-mdi:pencil h-4 w-4"></div>
-              CSS
-            </span>
-          </Button>
-          <Button
-            onClick={e => {
-              e.stopPropagation();
               if (
                 !updateCssColor ||
                 !updateCssValue ||
@@ -514,10 +494,12 @@ const EditModeModal: FC<EditModeModalProps> = ({
               openModal("currentTheme", {
                 currentTheme,
                 defaultTheme,
+                savedTheme,
                 updateCssColor,
                 updateCssValue,
                 tradingViewColorConfig,
                 setTradingViewColorConfig,
+                onThemeChange,
               });
             }}
             variant="secondary"

@@ -1,4 +1,4 @@
-import { FC, useState, useEffect } from "react";
+import { FC, useState, useEffect, ChangeEvent } from "react";
 import { Button } from "./Button";
 import CurrentThemeEditor from "./CurrentThemeEditor";
 import type { ThemeTabType } from "./ThemeCustomizationSection";
@@ -8,10 +8,12 @@ export interface CurrentThemeModalProps {
   onClose: () => void;
   currentTheme: string | null;
   defaultTheme: string;
+  savedTheme?: string | null;
   updateCssColor: (variableName: string, newColorHex: string) => void;
   updateCssValue: (variableName: string, newValue: string) => void;
   tradingViewColorConfig: string | null;
   setTradingViewColorConfig: (config: string | null) => void;
+  onThemeChange?: (newTheme: string) => void;
 }
 
 const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
@@ -19,18 +21,60 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
   onClose,
   currentTheme,
   defaultTheme,
+  savedTheme,
   updateCssColor,
   updateCssValue,
   tradingViewColorConfig,
   setTradingViewColorConfig,
+  onThemeChange,
 }) => {
   const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
+  const [showThemeEditor, setShowThemeEditor] = useState(false);
+  const [viewCssCode, setViewCssCode] = useState(false);
+  const [localTheme, setLocalTheme] = useState(currentTheme || defaultTheme);
 
   useEffect(() => {
     if (!isOpen) {
       setActiveThemeTab("colors");
+      setShowThemeEditor(false);
+      setViewCssCode(false);
+    } else {
+      setLocalTheme(currentTheme || defaultTheme);
     }
-  }, [isOpen]);
+  }, [isOpen, currentTheme, defaultTheme]);
+
+  const handleThemeEditorChange = (value: string) => {
+    setLocalTheme(value);
+    if (onThemeChange) {
+      onThemeChange(value);
+    }
+  };
+
+  const handleApply = () => {
+    if (onThemeChange) {
+      onThemeChange(localTheme);
+    }
+    onClose();
+  };
+
+  const hasAIFineTuneOverrides = (theme: string): boolean => {
+    return /\/\*\s*AI Fine-Tune Overrides\s*\*\//i.test(theme);
+  };
+
+  const handleResetAIFineTune = () => {
+    let cleanedTheme = localTheme;
+    if (hasAIFineTuneOverrides(cleanedTheme)) {
+      cleanedTheme = cleanedTheme.replace(
+        /\/\*\s*AI Fine-Tune Overrides\s*\*\/\s*[\s\S]*?(?=\/\*\s*AI Fine-Tune Overrides\s*\*\/|$)/gi,
+        ""
+      );
+      cleanedTheme = cleanedTheme.replace(/\n{3,}/g, "\n\n").trim();
+    }
+    setLocalTheme(cleanedTheme);
+    if (onThemeChange) {
+      onThemeChange(cleanedTheme);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -68,6 +112,61 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
           </Button>
         </div>
         <div className="flex-1 overflow-auto p-4">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="flex gap-2">
+              <Button
+                onClick={() => setShowThemeEditor(!showThemeEditor)}
+                variant="secondary"
+                size="sm"
+                type="button"
+              >
+                <span className="flex items-center gap-1">
+                  <div
+                    className={
+                      showThemeEditor
+                        ? "i-mdi:eye h-4 w-4"
+                        : "i-mdi:pencil h-4 w-4"
+                    }
+                  ></div>
+                  {showThemeEditor ? "Hide Editor" : "Edit CSS"}
+                </span>
+              </Button>
+            </div>
+          </div>
+
+          {showThemeEditor && (
+            <div className="mb-4 slide-fade-in">
+              <textarea
+                value={localTheme}
+                onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
+                  handleThemeEditorChange(e.target.value)
+                }
+                className="w-full h-80 bg-black/80 text-xs text-gray-300 font-mono p-3 rounded border border-light/10"
+                placeholder="Edit your CSS theme here..."
+              />
+            </div>
+          )}
+
+          {!showThemeEditor && (
+            <div className="mb-4 text-xs">
+              <button
+                onClick={() => setViewCssCode(!viewCssCode)}
+                className="cursor-pointer text-gray-400 hover:text-gray-300 transition-colors flex items-center"
+                type="button"
+              >
+                <span>{viewCssCode ? "Hide" : "View"} CSS code</span>
+                <div
+                  className={`i-mdi:chevron-down h-4 w-4 ml-1 transition-transform ${viewCssCode ? "rotate-180" : ""}`}
+                ></div>
+              </button>
+              {viewCssCode && (
+                <div className="bg-base-8/50 p-4 rounded-lg overflow-auto text-xs max-h-[300px] mt-2 slide-fade-in">
+                  <pre className="language-css">{localTheme}</pre>
+                </div>
+              )}
+            </div>
+          )}
+
           <CurrentThemeEditor
             currentTheme={currentTheme}
             defaultTheme={defaultTheme}
@@ -78,6 +177,42 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
             setTradingViewColorConfig={setTradingViewColorConfig}
             ThemeTabButton={ModalTabButton}
           />
+        </div>
+        <div className="flex items-center justify-between p-4 border-t border-light/10 gap-2">
+          <div className="flex gap-2">
+            {hasAIFineTuneOverrides(localTheme) && (
+              <Button
+                onClick={handleResetAIFineTune}
+                variant="secondary"
+                size="sm"
+                type="button"
+              >
+                Reset AI Fine-Tune
+              </Button>
+            )}
+            <Button
+              onClick={() => {
+                const resetValue = savedTheme ?? defaultTheme;
+                if (onThemeChange) {
+                  onThemeChange(resetValue);
+                }
+                onClose();
+              }}
+              variant="danger"
+              size="sm"
+              type="button"
+            >
+              Reset
+            </Button>
+          </div>
+          <Button
+            onClick={handleApply}
+            variant="primary"
+            size="sm"
+            type="button"
+          >
+            Apply Changes
+          </Button>
         </div>
       </div>
     </div>
