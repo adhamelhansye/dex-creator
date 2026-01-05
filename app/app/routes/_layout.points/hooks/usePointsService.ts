@@ -26,7 +26,7 @@ export function useUpdatePointsStage() {
 
 export function useDeletePointsStage(stage_id?: number) {
   return useMutation(
-    stage_id ? `/v1/admin/points/stage/${stage_id}` : "",
+    stage_id ? `/v1/admin/points/stage?stage_id=${stage_id}` : "",
     "DELETE"
   );
 }

@@ -7,13 +7,7 @@ import { Button } from "../../../components/Button";
 import { useMemo } from "react";
 import { formatUTCDate } from "../../../utils/date";
 import { cn } from "~/utils/css";
-import { PointCampaign } from "~/types/points";
-
-enum PointCampaignStatus {
-  ReadyToGo = "Ready to go",
-  Ongoing = "Ongoing",
-  Ended = "Ended",
-}
+import { PointCampaign, PointCampaignStatus } from "~/types/points";
 
 type PointCampaignListProps = {
   data?: PointCampaign[];
@@ -171,6 +165,7 @@ export function PointCampaignList(props: PointCampaignListProps) {
 // Current Time ≥ End Time
 const getStatus = (record: PointCampaign) => {
   const { start_time, end_time } = record;
+
   const currentTime = Date.now();
 
   if (currentTime < start_time * 1000) {

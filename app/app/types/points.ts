@@ -24,3 +24,15 @@ export type PointCampaignDetail = {
   l1_referral_boost: number;
   l2_referral_boost: number;
 };
+
+export enum PointCampaignStatus {
+  ReadyToGo = "Ready to go",
+  Ongoing = "Ongoing",
+  Ended = "Ended",
+}
+
+export enum PointCampaignFormType {
+  Create = "create",
+  Edit = "edit",
+  View = "view",
+}

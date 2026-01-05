@@ -11,14 +11,14 @@ import { formatDate } from "~/utils/date";
 import { add } from "date-fns";
 import { toast } from "react-toastify";
 import { cn } from "~/utils/css";
-import { PointCampaign } from "~/types/points";
+import { PointCampaign, PointCampaignFormType } from "~/types/points";
 import {
   useUpdatePointsStage,
   usePointsDetail,
 } from "../hooks/usePointsService";
 
 type PointCampaignFormProps = {
-  type: "create" | "edit" | "view";
+  type: PointCampaignFormType;
   currentPoints?: PointCampaign | null;
   nextStage: number;
   close: () => void;
@@ -50,7 +50,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
   const { data: pointDetail } = usePointsDetail(currentPoints?.stage_id);
 
   useEffect(() => {
-    if (type !== "create" && pointDetail) {
+    if (type !== PointCampaignFormType.Create && pointDetail) {
       const {
         stage_name,
         stage_description,
@@ -75,7 +75,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
   }, [type, pointDetail, nextStage]);
 
   const stages =
-    type === "create"
+    type === PointCampaignFormType.Create
       ? nextStage?.toString()
       : pointDetail?.epoch_period?.toString();
 
@@ -100,7 +100,10 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
   const operateCampaign = async () => {
     try {
       const res = await updatePointCampaign({
-        stage_id: type === "edit" ? pointDetail?.stage_id : undefined,
+        stage_id:
+          type === PointCampaignFormType.Edit
+            ? pointDetail?.stage_id
+            : undefined,
         stage_name: stageName,
         stage_description: description,
         start_date: formatDate(startDate, "yyyy-MM-dd"),
@@ -113,7 +116,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
       });
 
       if (res.success) {
-        if (type === "create") {
+        if (type === PointCampaignFormType.Create) {
           toast.success(
             <div>
               Campaign created successfully
@@ -122,7 +125,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
               </div>
             </div>
           );
-        } else if (type === "edit") {
+        } else if (type === PointCampaignFormType.Edit) {
           toast.success(
             <div>
               Campaign updated successfully
@@ -232,16 +235,16 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
   const tomorrow = add(new Date(), { days: 1 });
 
   const getTitle = () => {
-    if (type === "create") {
+    if (type === PointCampaignFormType.Create) {
       return "Create Your Points Campaign";
-    } else if (type === "edit") {
+    } else if (type === PointCampaignFormType.Edit) {
       return "Edit Your Points Campaign";
-    } else if (type === "view") {
+    } else if (type === PointCampaignFormType.View) {
       return "View Your Points Campaign";
     }
   };
 
-  const readonly = type === "view";
+  const readonly = type === PointCampaignFormType.View;
 
   return (
     <div>

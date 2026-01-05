@@ -6,35 +6,66 @@ import { EnablePointsCard } from "~/routes/_layout.points/components/EnablePoint
 import { OrderlyKeyAuthGrard } from "~/components/authGrard/OrderlyKeyAuthGuard";
 import { modal } from "@orderly.network/ui";
 import { GraduationAuthGuard } from "~/components/authGrard/GraduationAuthGuard";
-import { PointCampaign } from "~/types/points";
+import { PointCampaign, PointCampaignFormType } from "~/types/points";
 import {
   useDeletePointsStage,
   usePointsStages,
 } from "./hooks/usePointsService";
+import { toast } from "react-toastify";
 
 export default function PointRoute() {
-  const [type, setType] = useState<"create" | "edit" | "view" | null>(null);
+  const [type, setType] = useState<PointCampaignFormType | null>(null);
   const [currentPoints, setCurrentPoints] = useState<PointCampaign | null>(
     null
   );
 
   const { data, mutate: mutatePointsStages } = usePointsStages();
 
-  const [deletePointCampaign, { isMutating: isDeleting }] =
-    useDeletePointsStage();
+  const [deletePointCampaign] = useDeletePointsStage(currentPoints?.stage_id);
 
   const handleCreate = () => {
-    setType("create");
+    setType(PointCampaignFormType.Create);
   };
 
   const handleEdit = (campaign: PointCampaign) => {
     setCurrentPoints(campaign);
-    setType("edit");
+    setType(PointCampaignFormType.Edit);
   };
 
   const handleView = (campaign: PointCampaign) => {
     setCurrentPoints(campaign);
-    setType("view");
+    setType(PointCampaignFormType.View);
+  };
+
+  const onClose = () => {
+    setType(null);
+    setCurrentPoints(null);
+  };
+
+  const onRefresh = () => {
+    mutatePointsStages();
+  };
+
+  const doDelete = async () => {
+    try {
+      const res = await deletePointCampaign({});
+      if (res.success) {
+        toast.success(
+          <div>
+            Campaign deleted
+            <div className="text-[13px] text-base-contrast-54">
+              The campaign has been successfully removed.
+            </div>
+          </div>
+        );
+        onRefresh();
+      } else {
+        toast.error(res?.message || "Campaign delete failed");
+      }
+    } catch (err: any) {
+      console.error("Error deleting campaign:", err);
+      toast.error(err?.message || "Campaign delete failed");
+    }
   };
 
   const handleDelete = (campaign: PointCampaign) => {
@@ -49,19 +80,8 @@ export default function PointRoute() {
         </span>
       ),
       size: "md",
-      onOk: () => {
-        return deletePointCampaign({});
-      },
+      onOk: doDelete,
     });
-  };
-
-  const onClose = () => {
-    setType(null);
-    setCurrentPoints(null);
-  };
-
-  const onRefresh = () => {
-    mutatePointsStages();
   };
 
   const nextStage = useMemo(() => {
