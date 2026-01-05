@@ -85,7 +85,7 @@ export default function PointRoute() {
   };
 
   const nextStage = useMemo(() => {
-    return data?.length ? (data[0].epoch_period || 0) + 1 : 0;
+    return data?.length ? (data[0].epoch_period || 0) + 1 : 1;
   }, [data, currentPoints]);
 
   const renderContent = () => {
