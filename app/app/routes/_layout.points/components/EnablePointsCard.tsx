@@ -98,8 +98,7 @@ export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
             onCheckedChange={onCheckedChange}
             className="flex-shrink-0"
             // The toggle becomes uneditable once the Point System is switched on in this phase.
-            disabled={isLoading}
-            // disabled={isLoading || pointEnabled}
+            disabled={isLoading || pointEnabled}
           />
         )}
       </div>
