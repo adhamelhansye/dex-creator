@@ -17,7 +17,7 @@ const caseStudies = [
     dexUrl: "https://aden.io",
     socialUrl: "https://x.com/aden",
     stats: [
-      { value: "$6.5B+", label: "TOTAL TRADING VOLUME" },
+      { value: "$45B+", label: "TOTAL TRADING VOLUME" },
       { value: "2K+", label: "DAILY ACTIVE USERS" },
       { value: "#2", label: "RANKING ON CMC" },
     ],
@@ -232,11 +232,12 @@ export default function CaseStudies() {
                   ))}
                 </div>
 
-                <p className="text-sm text-white/60">
-                  *All figures are based on the first{" "}
-                  {activeCaseStudy.id === "aden" ? "twenty days" : "two months"}{" "}
-                  following the DEX's launch.
-                </p>
+                {activeCaseStudy.id !== "aden" && (
+                  <p className="text-sm text-white/60">
+                    *All figures are based on the first two months following the
+                    DEX's launch.
+                  </p>
+                )}
               </div>
 
               {/* Treasury Features */}
