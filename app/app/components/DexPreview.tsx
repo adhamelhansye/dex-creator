@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useEffect, useState, useRef } from "react";
 import { WalletConnectorProvider } from "@orderly.network/wallet-connector";
 import { OrderlyAppProvider, AppLogos } from "@orderly.network/react-app";
 import {
@@ -100,41 +100,87 @@ const DexPreview: FC<DexPreviewProps> = ({
     setCurrentSymbol(initialSymbol || DEFAULT_SYMBOL);
   }, [initialSymbol]);
 
+  const previewContainerRef = useRef<HTMLDivElement>(null);
+  const styleIdRef = useRef<string | null>(null);
+  const containerIdRef = useRef<string | null>(null);
+
   useEffect(() => {
     const oldOverrideStyles = document.querySelectorAll(
       'style[id^="ai-override-"]'
     );
     oldOverrideStyles.forEach(style => style.remove());
 
-    if (!customStyles) return;
+    if (!containerIdRef.current) {
+      containerIdRef.current = `dex-preview-container-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+    }
+    const containerId = containerIdRef.current;
 
-    const fontFamilyMatch = customStyles.match(/--oui-font-family:\s*([^;]+);/);
-    if (!fontFamilyMatch) return;
-
-    const fontFamily = fontFamilyMatch[1].trim();
-    const styleId = "dex-preview-font-override";
-
-    const existingStyle = document.getElementById(styleId);
-    if (existingStyle) {
-      existingStyle.remove();
+    if (previewContainerRef.current) {
+      previewContainerRef.current.setAttribute("data-preview-id", containerId);
     }
 
-    const style = document.createElement("style");
-    style.id = styleId;
-    style.textContent = `
-      .orderly-app-container,
-      .orderly-app-container *,
-      .orderly-app-container *::before,
-      .orderly-app-container *::after {
-        font-family: ${fontFamily} !important;
+    if (!customStyles) {
+      if (styleIdRef.current) {
+        const styleToRemove = document.getElementById(styleIdRef.current);
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+        styleIdRef.current = null;
       }
-    `;
-    document.head.appendChild(style);
+      return;
+    }
+
+    const fontFamilyMatch = customStyles.match(/--oui-font-family:\s*([^;]+);/);
+    if (!fontFamilyMatch) {
+      if (styleIdRef.current) {
+        const styleToRemove = document.getElementById(styleIdRef.current);
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+        styleIdRef.current = null;
+      }
+      return;
+    }
+
+    const fontFamily = fontFamilyMatch[1].trim();
+
+    if (!styleIdRef.current) {
+      styleIdRef.current = `dex-preview-font-override-${Math.random()
+        .toString(36)
+        .substr(2, 9)}`;
+    }
+    const styleId = styleIdRef.current;
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const existingStyle = document.getElementById(styleId);
+        if (existingStyle) {
+          existingStyle.remove();
+        }
+
+        const style = document.createElement("style");
+        style.id = styleId;
+        style.textContent = `
+          [data-preview-id="${containerId}"] .orderly-app-container,
+          [data-preview-id="${containerId}"] .orderly-app-container *,
+          [data-preview-id="${containerId}"] .orderly-app-container *::before,
+          [data-preview-id="${containerId}"] .orderly-app-container *::after {
+            font-family: ${fontFamily} !important;
+          }
+        `;
+        document.head.appendChild(style);
+      });
+    });
 
     return () => {
-      const styleToRemove = document.getElementById(styleId);
-      if (styleToRemove) {
-        styleToRemove.remove();
+      if (styleIdRef.current) {
+        const styleToRemove = document.getElementById(styleIdRef.current);
+        if (styleToRemove) {
+          styleToRemove.remove();
+        }
+        styleIdRef.current = null;
       }
     };
   }, [customStyles]);
@@ -223,6 +269,7 @@ const DexPreview: FC<DexPreviewProps> = ({
 
   return (
     <div
+      ref={previewContainerRef}
       className={`relative h-full w-full orderly-app-container orderly-scrollbar bg-[rgb(var(--oui-color-base-7))] text-[rgb(var(--oui-color-base-foreground))] ${className}`}
     >
       <style
