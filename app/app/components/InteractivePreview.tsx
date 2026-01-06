@@ -55,22 +55,23 @@ const InteractivePreview: FC<InteractivePreviewProps> = ({
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="bg-background-card border border-light/10 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-medium text-gray-300">
                 Desktop Preview
               </h4>
-              <Button
-                onClick={() => handleOpenEditMode("desktop")}
-                variant="primary"
-                size="xs"
-                type="button"
-              >
-                <span className="flex items-center gap-1">
-                  <div className="i-mdi:pencil h-3.5 w-3.5"></div>
-                  Edit Desktop
-                </span>
-              </Button>
             </div>
+            <Button
+              onClick={() => handleOpenEditMode("desktop")}
+              variant="primary"
+              size="md"
+              className="w-full mb-3"
+              type="button"
+            >
+              <span className="flex items-center gap-2 justify-center">
+                <div className="i-mdi:pencil h-5 w-5"></div>
+                Edit Desktop
+              </span>
+            </Button>
             <div
               className="relative border border-light/10 rounded overflow-hidden bg-background-dark flex items-center justify-center"
               style={{ height: "180px" }}
@@ -86,22 +87,23 @@ const InteractivePreview: FC<InteractivePreviewProps> = ({
           </div>
 
           <div className="bg-background-card border border-light/10 rounded-lg p-4">
-            <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center justify-between mb-4">
               <h4 className="text-sm font-medium text-gray-300">
                 Mobile Preview
               </h4>
-              <Button
-                onClick={() => handleOpenEditMode("mobile")}
-                variant="primary"
-                size="xs"
-                type="button"
-              >
-                <span className="flex items-center gap-1">
-                  <div className="i-mdi:pencil h-3.5 w-3.5"></div>
-                  Edit Mobile
-                </span>
-              </Button>
             </div>
+            <Button
+              onClick={() => handleOpenEditMode("mobile")}
+              variant="primary"
+              size="md"
+              className="w-full mb-3"
+              type="button"
+            >
+              <span className="flex items-center gap-2 justify-center">
+                <div className="i-mdi:pencil h-5 w-5"></div>
+                Edit Mobile
+              </span>
+            </Button>
             <div
               className="relative border border-light/10 rounded overflow-hidden bg-background-dark mx-auto flex items-center justify-center"
               style={{ width: "100px", height: "180px" }}
