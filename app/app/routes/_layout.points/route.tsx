@@ -12,11 +12,19 @@ import {
   usePointsStages,
 } from "./hooks/usePointsService";
 import { toast } from "react-toastify";
+import { useDex } from "~/context/DexContext";
 
 export default function PointRoute() {
   const [type, setType] = useState<PointCampaignFormType | null>(null);
   const [currentPoints, setCurrentPoints] = useState<PointCampaign | null>(
     null
+  );
+
+  const { dexData } = useDex();
+
+  const enabledMenus = useMemo(
+    () => parseMenus(dexData?.enabledMenus!),
+    [dexData?.enabledMenus]
   );
 
   const { data, mutate: mutatePointsStages } = usePointsStages();
@@ -88,6 +96,10 @@ export default function PointRoute() {
     return data?.length ? (data[0].epoch_period || 0) + 1 : 1;
   }, [data, currentPoints]);
 
+  const disabledCreate = useMemo(() => {
+    return !enabledMenus.includes("Points");
+  }, [enabledMenus]);
+
   const renderContent = () => {
     if (type) {
       return (
@@ -111,13 +123,14 @@ export default function PointRoute() {
 
         <OrderlyKeyAuthGrard className="mt-10">
           <GraduationAuthGuard className="mt-10">
-            <EnablePointsCard />
+            <EnablePointsCard enabledMenus={enabledMenus} />
             <PointCampaignList
               data={data}
               onView={handleView}
               onEdit={handleEdit}
               onDelete={handleDelete}
               onCreate={handleCreate}
+              disabledCreate={disabledCreate}
             />
           </GraduationAuthGuard>
         </OrderlyKeyAuthGrard>
@@ -130,4 +143,12 @@ export default function PointRoute() {
       {renderContent()}
     </div>
   );
+}
+
+function parseMenus(menuString?: string): string[] {
+  if (!menuString) return [];
+  return menuString
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean);
 }

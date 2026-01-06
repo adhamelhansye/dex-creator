@@ -8,6 +8,7 @@ import { useMemo } from "react";
 import { formatUTCDate } from "../../../utils/date";
 import { cn } from "~/utils/css";
 import { PointCampaign, PointCampaignStatus } from "~/types/points";
+import { Tooltip } from "~/components/tooltip";
 
 type PointCampaignListProps = {
   data?: PointCampaign[];
@@ -15,10 +16,11 @@ type PointCampaignListProps = {
   onEdit: (campaign: PointCampaign) => void;
   onCreate: () => void;
   onDelete: (campaign: PointCampaign) => void;
+  disabledCreate: boolean;
 };
 
 export function PointCampaignList(props: PointCampaignListProps) {
-  const { data } = props;
+  const { data, disabledCreate } = props;
   const { page, pageSize, parsePagination } = usePagination();
 
   const pagination = useMemo(
@@ -129,9 +131,16 @@ export function PointCampaignList(props: PointCampaignListProps) {
           Point Campaign List
         </div>
 
-        <Button variant="primary" size="sm" onClick={props.onCreate}>
-          Create
-        </Button>
+        <Tooltip content="Please enable the Point System first to create a campaign.">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={props.onCreate}
+            disabled={disabledCreate}
+          >
+            Create
+          </Button>
+        </Tooltip>
       </div>
 
       <DataTable

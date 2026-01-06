@@ -1,10 +1,69 @@
-import { Card } from "../../../components/Card";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { PointSystemIcon } from "~/icons/PointSystemIcon";
 import { Switch } from "../../../components/switch";
+import { DexData } from "~/types/dex";
+import { createDexFormData, putFormData } from "~/utils/apiClient";
+import { useAuth } from "~/context/useAuth";
+import { useDex } from "~/context/DexContext";
+import { Card } from "../../../components/Card";
+import { toast } from "react-toastify";
 
-export function EnablePointsCard() {
+type EnablePointsCardProps = {
+  enabledMenus: string[];
+};
+
+export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
   const [pointEnabled, setPointEnabled] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { token } = useAuth();
+
+  const { dexData, updateDexData } = useDex();
+
+  useEffect(() => {
+    setPointEnabled(enabledMenus.includes("Points"));
+  }, [enabledMenus]);
+
+  const handleEnablePoints = async (checked: boolean) => {
+    setIsLoading(true);
+
+    try {
+      const newEnabledMenus = enabledMenus.includes("Points")
+        ? enabledMenus.filter(menu => menu !== "Points").join(",")
+        : [...enabledMenus, "Points"].join(",");
+
+      const formData = createDexFormData({
+        newEnabledMenus,
+      });
+
+      const savedData = await putFormData<DexData>(
+        `api/dex/${dexData?.id}`,
+        formData,
+        token,
+        { showToastOnError: false }
+      );
+
+      toast.success(
+        <div>
+          Point system enabled
+          <div className="text-[13px] text-base-contrast-54">
+            You can now create campaigns and manage distributions
+          </div>
+        </div>
+      );
+      setPointEnabled(checked);
+      updateDexData({ enabledMenus: newEnabledMenus });
+    } catch (error) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to enable point system"
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const onCheckedChange = (checked: boolean) => {
+    handleEnablePoints(checked);
+  };
 
   return (
     <Card className={`my-6 md:my-12 border-line-6`}>
@@ -24,8 +83,10 @@ export function EnablePointsCard() {
         </div>
         <Switch
           checked={pointEnabled}
-          onCheckedChange={setPointEnabled}
+          onCheckedChange={onCheckedChange}
           className="flex-shrink-0"
+          // The toggle becomes uneditable once the Point System is switched on in this phase.
+          disabled={isLoading}
         />
       </div>
     </Card>
