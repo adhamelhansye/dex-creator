@@ -16,7 +16,6 @@ import PreviewErrorBoundary from "./PreviewErrorBoundary";
 export interface DexPreviewProps {
   brokerId: string;
   brokerName: string;
-  networkId?: NetworkId;
 
   mainNavProps?: MainNavWidgetProps;
   footerProps?: FooterProps;
@@ -39,7 +38,6 @@ export interface DexPreviewProps {
 const DexPreview: FC<DexPreviewProps> = ({
   brokerId,
   brokerName,
-  networkId,
   mainNavProps = {
     initialMenu: "/",
     mainMenus: [{ name: "Trading", href: "/" }],
@@ -75,8 +73,7 @@ const DexPreview: FC<DexPreviewProps> = ({
   onLoad,
 }) => {
   const resolvedNetworkId: NetworkId =
-    networkId ||
-    (import.meta.env.VITE_DEPLOYMENT_ENV === "mainnet" ? "mainnet" : "testnet");
+    import.meta.env.VITE_DEPLOYMENT_ENV === "mainnet" ? "mainnet" : "testnet";
 
   const DEFAULT_SYMBOL = "PERP_BTC_USDC";
   const [currentSymbol, setCurrentSymbol] = useState(
