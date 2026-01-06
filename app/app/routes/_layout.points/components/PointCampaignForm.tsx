@@ -176,12 +176,18 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
     if (startDate === undefined) {
       newErrors.startDate = "Start date is required";
     }
+    console.log("endDate", startDate, endDate);
 
     if (!isRecurring) {
       if (endDate === undefined) {
         newErrors.endDate = "End date is required";
-      } else if (startDate && endDate.valueOf() < startDate.valueOf()) {
-        newErrors.endDate = "End date must be after start date";
+      } else {
+        const startTime = `${formatDate(startDate!, "yyyy-MM-dd")}T00:00:00Z`;
+        const endTime = `${formatDate(endDate!, "yyyy-MM-dd")}T23:59:59Z`;
+
+        if (endTime < startTime) {
+          newErrors.endDate = "End date must be after start date";
+        }
       }
     }
 

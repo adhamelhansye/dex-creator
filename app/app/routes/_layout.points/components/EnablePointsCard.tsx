@@ -8,6 +8,7 @@ import { useDex } from "~/context/DexContext";
 import { Card } from "../../../components/Card";
 import { toast } from "react-toastify";
 import { AVAILABLE_MENUS } from "~/components/NavigationMenuEditor";
+import { Spinner } from "@orderly.network/ui";
 
 type EnablePointsCardProps = {
   enabledMenus: string[];
@@ -89,13 +90,18 @@ export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
             </p>
           </div>
         </div>
-        <Switch
-          checked={pointEnabled}
-          onCheckedChange={onCheckedChange}
-          className="flex-shrink-0"
-          // The toggle becomes uneditable once the Point System is switched on in this phase.
-          disabled={isLoading || pointEnabled}
-        />
+        {isLoading ? (
+          <Spinner size="md" />
+        ) : (
+          <Switch
+            checked={pointEnabled}
+            onCheckedChange={onCheckedChange}
+            className="flex-shrink-0"
+            // The toggle becomes uneditable once the Point System is switched on in this phase.
+            disabled={isLoading}
+            // disabled={isLoading || pointEnabled}
+          />
+        )}
       </div>
     </Card>
   );

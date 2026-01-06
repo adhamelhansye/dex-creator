@@ -181,8 +181,18 @@ const getStatus = (record: PointCampaign) => {
     return PointCampaignStatus.ReadyToGo;
   }
 
-  if (currentTime >= start_time * 1000 && currentTime < end_time * 1000) {
-    return PointCampaignStatus.Ongoing;
+  if (currentTime >= start_time * 1000) {
+    if (!end_time) {
+      return PointCampaignStatus.Ongoing;
+    }
+
+    if (currentTime < end_time * 1000) {
+      return PointCampaignStatus.Ongoing;
+    }
+
+    if (currentTime >= end_time * 1000) {
+      return PointCampaignStatus.Ended;
+    }
   }
 
   return PointCampaignStatus.Ended;
