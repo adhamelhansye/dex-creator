@@ -9,7 +9,7 @@ interface NavigationMenuEditorProps {
   onOpenSwapFeeConfig: () => void;
 }
 
-const AVAILABLE_MENUS = [
+export const AVAILABLE_MENUS = [
   {
     id: "Trading",
     label: "Trading",

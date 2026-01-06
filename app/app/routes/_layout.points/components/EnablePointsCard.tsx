@@ -7,6 +7,7 @@ import { useAuth } from "~/context/useAuth";
 import { useDex } from "~/context/DexContext";
 import { Card } from "../../../components/Card";
 import { toast } from "react-toastify";
+import { AVAILABLE_MENUS } from "~/components/NavigationMenuEditor";
 
 type EnablePointsCardProps = {
   enabledMenus: string[];
@@ -27,12 +28,19 @@ export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
     setIsLoading(true);
 
     try {
+      const defaultEnabledMenus = AVAILABLE_MENUS.filter(
+        menu => menu.isDefault
+      ).map(menu => menu.id);
+
       const newEnabledMenus = enabledMenus.includes("Points")
         ? enabledMenus.filter(menu => menu !== "Points").join(",")
-        : [...enabledMenus, "Points"].join(",");
+        : [
+            enabledMenus.length > 0 ? enabledMenus : defaultEnabledMenus,
+            "Points",
+          ].join(",");
 
       const formData = createDexFormData({
-        newEnabledMenus,
+        enabledMenus: newEnabledMenus,
       });
 
       const savedData = await putFormData<DexData>(
