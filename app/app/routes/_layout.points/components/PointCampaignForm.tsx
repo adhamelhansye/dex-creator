@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DatePicker, modal } from "@orderly.network/ui";
 import { Switch } from "../../../components/switch";
 import { Card } from "../../../components/Card";
@@ -11,11 +11,16 @@ import { formatDate } from "~/utils/date";
 import { add } from "date-fns";
 import { toast } from "react-toastify";
 import { cn } from "~/utils/css";
-import { PointCampaign, PointCampaignFormType } from "~/types/points";
+import {
+  PointCampaign,
+  PointCampaignFormType,
+  PointCampaignStatus,
+} from "~/types/points";
 import {
   useUpdatePointsStage,
   usePointsDetail,
 } from "../hooks/usePointsService";
+import { getStatusByTime } from "../utils";
 
 type PointCampaignFormProps = {
   type: PointCampaignFormType;
@@ -48,6 +53,8 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
   }>({});
 
   const { data: pointDetail } = usePointsDetail(currentPoints?.stage_id);
+
+  const [updatePointCampaign, { isMutating }] = useUpdatePointsStage();
 
   useEffect(() => {
     if (type !== PointCampaignFormType.Create && pointDetail) {
@@ -94,8 +101,6 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
       setErrors({});
     }
   }, [type]);
-
-  const [updatePointCampaign, { isMutating }] = useUpdatePointsStage();
 
   const operateCampaign = async () => {
     try {
@@ -252,6 +257,20 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
 
   const readonly = type === PointCampaignFormType.View;
 
+  const disabledStartDate = useMemo(() => {
+    if (type === PointCampaignFormType.Edit && pointDetail) {
+      return (
+        readonly ||
+        getStatusByTime(
+          new Date(pointDetail.start_date!).getTime(),
+          new Date(pointDetail.end_date!).getTime()
+        ) === PointCampaignStatus.ReadyToGo
+      );
+    }
+
+    return readonly;
+  }, [type, pointDetail, readonly]);
+
   return (
     <div>
       <div
@@ -278,6 +297,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
               <div className="flex-1">
                 <PointFormInput
                   label="Campaign Title"
+                  placeholder="Name your campaign title"
                   value={stageName}
                   onChange={e => {
                     setStageName(e.target.value);
@@ -304,6 +324,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
             <div>
               <PointFormInput
                 label="Description"
+                placeholder="Description..."
                 type="textarea"
                 value={description}
                 onChange={e => {
@@ -321,7 +342,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
             {/* Start Date and End Date row */}
             <div className="flex flex-col md:flex-row gap-4">
               <div className="flex-1">
-                <div>
+                <div className={cn(disabledStartDate && "cursor-not-allowed")}>
                   <FormLabel label="Start Date (UTC)" className="h-5" />
                   <DatePicker
                     value={startDate}
@@ -337,7 +358,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
                       errors.startDate
                         ? "border-error focus:border-error"
                         : "border-transparent",
-                      readonly && "pointer-events-none"
+                      disabledStartDate && "pointer-events-none"
                     )}
                     placeholder="Select a date"
                   />
@@ -359,7 +380,7 @@ export function PointCampaignForm(props: PointCampaignFormProps) {
                 </div>
               </div>
               <div className="flex-1">
-                <div>
+                <div className={cn(readonly && "cursor-not-allowed")}>
                   <div className="flex items-center justify-between gap-1 mb-1 md:mb-2 flex-wrap">
                     <FormLabel
                       label="End Date (UTC)"

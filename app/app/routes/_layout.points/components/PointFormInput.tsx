@@ -75,18 +75,6 @@ export function PointFormInput({
               "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           )}
         />
-        // <FormInput
-        //   type={type}
-        //   value={value}
-        //   onChange={onChange}
-        //   placeholder={placeholder}
-        //   disabled={disabled}
-        //   className={cn(
-        //     // inputClasses,
-        //     type === "number" &&
-        //       "[appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-        //   )}
-        // />
       )}
       {errorMessage && (
         <div className="flex items-center gap-1 mt-1 pl-1">

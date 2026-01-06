@@ -9,6 +9,7 @@ import { formatUTCDate } from "../../../utils/date";
 import { cn } from "~/utils/css";
 import { PointCampaign, PointCampaignStatus } from "~/types/points";
 import { Tooltip } from "~/components/tooltip";
+import { getPointCampaignStatus } from "../utils";
 
 type PointCampaignListProps = {
   data?: PointCampaign[];
@@ -33,96 +34,102 @@ export function PointCampaignList(props: PointCampaignListProps) {
     [parsePagination, page, pageSize, data?.length]
   );
 
-  const columns = [
-    {
-      title: "Stage",
-      dataIndex: "epoch_period",
-      width: 50,
-    },
-    {
-      title: "Status",
-      dataIndex: "status",
-      width: 60,
-      render: (_: any, record: PointCampaign) => {
-        const status = getStatus(record);
-        return (
-          <span
-            className={cn({
-              "text-base-contrast-80": status === PointCampaignStatus.ReadyToGo,
-              "text-success": status === PointCampaignStatus.Ongoing,
-              "text-base-contrast-54": status === PointCampaignStatus.Ended,
-            })}
-          >
-            {status}
-          </span>
-        );
+  const columns = useMemo(
+    () => [
+      {
+        title: "Stage",
+        dataIndex: "epoch_period",
+        width: 50,
       },
-    },
-    {
-      title: "Title",
-      dataIndex: "stage_name",
-      render: (stage_name: string) => {
-        return <div className="py-2">{stage_name}</div>;
+      {
+        title: "Status",
+        dataIndex: "status",
+        width: 60,
+        render: (_: any, record: PointCampaign) => {
+          const status = getPointCampaignStatus(record);
+          return (
+            <span
+              className={cn({
+                "text-base-contrast-80":
+                  status === PointCampaignStatus.ReadyToGo,
+                "text-success": status === PointCampaignStatus.Ongoing,
+                "text-base-contrast-36": status === PointCampaignStatus.Ended,
+              })}
+            >
+              {status}
+            </span>
+          );
+        },
       },
-    },
-    {
-      title: "Time",
-      dataIndex: "start_time",
-      render: (_: any, record: PointCampaign) => {
-        const { start_time, end_time } = record;
-        const formatStr = "MM/dd/yyyy";
-        return (
-          <span>
-            {formatUTCDate(start_time * 1000, formatStr)} -{" "}
-            {end_time ? formatUTCDate(end_time * 1000, formatStr) : "Recurring"}
-          </span>
-        );
+      {
+        title: "Title",
+        dataIndex: "stage_name",
+        render: (stage_name: string) => {
+          return <div className="py-2">{stage_name}</div>;
+        },
       },
-    },
-    {
-      title: "Action",
-      dataIndex: "action",
-      width: 80,
-      render: (_: any, record: PointCampaign) => {
-        const status = getStatus(record);
-        return (
-          <div>
-            {status === PointCampaignStatus.Ended && (
-              <OrderlyButton
-                variant="text"
-                color="primary"
-                size="sm"
-                onClick={() => props.onView(record)}
-              >
-                View
-              </OrderlyButton>
-            )}
-            {status !== PointCampaignStatus.Ended && (
-              <OrderlyButton
-                variant="text"
-                color="primary"
-                size="sm"
-                onClick={() => props.onEdit(record)}
-              >
-                Edit
-              </OrderlyButton>
-            )}
+      {
+        title: "Time",
+        dataIndex: "start_time",
+        render: (_: any, record: PointCampaign) => {
+          const { start_time, end_time } = record;
+          const formatStr = "MM/dd/yyyy";
+          return (
+            <span>
+              {formatUTCDate(start_time * 1000, formatStr)} -{" "}
+              {end_time
+                ? formatUTCDate(end_time * 1000, formatStr)
+                : "Recurring"}
+            </span>
+          );
+        },
+      },
+      {
+        title: "Action",
+        dataIndex: "action",
+        width: 80,
+        render: (_: any, record: PointCampaign) => {
+          const status = getPointCampaignStatus(record);
+          return (
+            <div>
+              {status === PointCampaignStatus.Ended && (
+                <OrderlyButton
+                  variant="text"
+                  color="primary"
+                  size="sm"
+                  onClick={() => props.onView(record)}
+                >
+                  View
+                </OrderlyButton>
+              )}
+              {status !== PointCampaignStatus.Ended && (
+                <OrderlyButton
+                  variant="text"
+                  color="primary"
+                  size="sm"
+                  onClick={() => props.onEdit(record)}
+                >
+                  Edit
+                </OrderlyButton>
+              )}
 
-            {status === PointCampaignStatus.ReadyToGo && (
-              <OrderlyButton
-                variant="text"
-                color="danger"
-                size="sm"
-                onClick={() => props.onDelete(record)}
-              >
-                Delete
-              </OrderlyButton>
-            )}
-          </div>
-        );
+              {status === PointCampaignStatus.ReadyToGo && (
+                <OrderlyButton
+                  variant="text"
+                  color="danger"
+                  size="sm"
+                  onClick={() => props.onDelete(record)}
+                >
+                  Delete
+                </OrderlyButton>
+              )}
+            </div>
+          );
+        },
       },
-    },
-  ];
+    ],
+    []
+  );
 
   return (
     <div>
@@ -147,6 +154,7 @@ export function PointCampaignList(props: PointCampaignListProps) {
         classNames={{
           root: "mt-4 px-3 rounded bg-[rgb(19,21,25)]",
           header: "border-b border-b-line-4",
+          body: "font-medium",
         }}
         columns={columns}
         dataSource={data}
@@ -160,40 +168,3 @@ export function PointCampaignList(props: PointCampaignListProps) {
     </div>
   );
 }
-
-// Ready to go
-// Status = Published
-// Current Time < Start Time
-
-// Ongoing:
-// Status = Published
-// Current Time ≥ Start Time
-// Current Time < End Time OR End Time is TBD
-
-// Ended:
-// Current Time ≥ End Time
-const getStatus = (record: PointCampaign) => {
-  const { start_time, end_time } = record;
-
-  const currentTime = Date.now();
-
-  if (currentTime < start_time * 1000) {
-    return PointCampaignStatus.ReadyToGo;
-  }
-
-  if (currentTime >= start_time * 1000) {
-    if (!end_time) {
-      return PointCampaignStatus.Ongoing;
-    }
-
-    if (currentTime < end_time * 1000) {
-      return PointCampaignStatus.Ongoing;
-    }
-
-    if (currentTime >= end_time * 1000) {
-      return PointCampaignStatus.Ended;
-    }
-  }
-
-  return PointCampaignStatus.Ended;
-};

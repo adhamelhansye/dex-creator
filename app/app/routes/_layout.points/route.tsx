@@ -139,7 +139,7 @@ export default function PointRoute() {
   };
 
   return (
-    <div className="container mx-auto p-4 max-w-3xl mt-26 pb-52 font-semibold">
+    <div className="container mx-auto p-4 max-w-3xl mt-26 pb-52">
       {renderContent()}
     </div>
   );
