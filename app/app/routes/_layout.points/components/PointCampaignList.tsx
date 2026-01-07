@@ -156,7 +156,7 @@ export function PointCampaignList(props: PointCampaignListProps) {
           delayDuration={100}
           content={
             hasRecurring
-              ? "Please set an end date for the ongoing stage first."
+              ? "Please set an end date for the last stage first."
               : "Please enable the Point System first to create a campaign."
           }
         >
