@@ -6,10 +6,7 @@ export type PointCampaign = {
   status: string;
   stage_name: string;
   stage_description: string;
-  volume_boost: number;
-  pnl_boost: number;
-  l1_referral_boost: number;
-  l2_referral_boost: number;
+  is_continuous: boolean;
 };
 
 export type PointCampaignDetail = {
@@ -25,10 +22,26 @@ export type PointCampaignDetail = {
   l2_referral_boost: number;
 };
 
+export type PointCampaignFormValues = {
+  stage_name: string;
+  stage_description: string;
+  start_date?: Date;
+  end_date?: Date;
+  is_continuous: boolean;
+  volume_boost: string;
+  pnl_boost: string;
+  l1_referral_boost: string;
+  l2_referral_boost: string;
+};
+
+export type PointCampaignFormErrors = {
+  [key in keyof PointCampaignFormValues]?: string;
+};
+
 export enum PointCampaignStatus {
-  ReadyToGo = "Ready to go",
-  Ongoing = "Ongoing",
-  Ended = "Ended",
+  Pending = "pending",
+  Active = "active",
+  Completed = "completed",
 }
 
 export enum PointCampaignFormType {

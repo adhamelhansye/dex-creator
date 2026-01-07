@@ -9,7 +9,6 @@ import { formatUTCDate } from "../../../utils/date";
 import { cn } from "~/utils/css";
 import { PointCampaign, PointCampaignStatus } from "~/types/points";
 import { Tooltip } from "~/components/tooltip";
-import { getPointCampaignStatus } from "../utils";
 
 type PointCampaignListProps = {
   data?: PointCampaign[];
@@ -45,18 +44,22 @@ export function PointCampaignList(props: PointCampaignListProps) {
         title: "Status",
         dataIndex: "status",
         width: 60,
-        render: (_: any, record: PointCampaign) => {
-          const status = getPointCampaignStatus(record);
+        render: (status: PointCampaignStatus, record: PointCampaign) => {
+          const statusText = {
+            [PointCampaignStatus.Pending]: "Ready to go",
+            [PointCampaignStatus.Active]: "Ongoing",
+            [PointCampaignStatus.Completed]: "Ended",
+          };
           return (
             <span
               className={cn({
-                "text-base-contrast-80":
-                  status === PointCampaignStatus.ReadyToGo,
-                "text-success": status === PointCampaignStatus.Ongoing,
-                "text-base-contrast-36": status === PointCampaignStatus.Ended,
+                "text-base-contrast-80": status === PointCampaignStatus.Pending,
+                "text-success": status === PointCampaignStatus.Active,
+                "text-base-contrast-36":
+                  status === PointCampaignStatus.Completed,
               })}
             >
-              {status}
+              {statusText[status]}
             </span>
           );
         },
@@ -89,10 +92,10 @@ export function PointCampaignList(props: PointCampaignListProps) {
         dataIndex: "action",
         width: 80,
         render: (_: any, record: PointCampaign) => {
-          const status = getPointCampaignStatus(record);
+          const status = record.status;
           return (
             <div>
-              {status === PointCampaignStatus.Ended && (
+              {status === PointCampaignStatus.Completed && (
                 <OrderlyButton
                   variant="text"
                   color="primary"
@@ -102,7 +105,7 @@ export function PointCampaignList(props: PointCampaignListProps) {
                   View
                 </OrderlyButton>
               )}
-              {status !== PointCampaignStatus.Ended && (
+              {status !== PointCampaignStatus.Completed && (
                 <OrderlyButton
                   variant="text"
                   color="primary"
@@ -113,7 +116,7 @@ export function PointCampaignList(props: PointCampaignListProps) {
                 </OrderlyButton>
               )}
 
-              {status === PointCampaignStatus.ReadyToGo && (
+              {status === PointCampaignStatus.Pending && (
                 <OrderlyButton
                   variant="text"
                   color="danger"
@@ -131,6 +134,40 @@ export function PointCampaignList(props: PointCampaignListProps) {
     []
   );
 
+  const hasRecurring = useMemo(() => {
+    return data?.some(item => item.is_continuous);
+  }, [data]);
+
+  const renderCreateButton = () => {
+    const button = (
+      <Button
+        variant="primary"
+        size="sm"
+        onClick={props.onCreate}
+        disabled={disabledCreate || hasRecurring}
+      >
+        Create
+      </Button>
+    );
+
+    if (disabledCreate || hasRecurring) {
+      return (
+        <Tooltip
+          delayDuration={100}
+          content={
+            hasRecurring
+              ? "Please set an end date for the ongoing stage first."
+              : "Please enable the Point System first to create a campaign."
+          }
+        >
+          {button}
+        </Tooltip>
+      );
+    }
+
+    return button;
+  };
+
   return (
     <div>
       <div className="flex flex-row items-center justify-between gap-4">
@@ -138,16 +175,7 @@ export function PointCampaignList(props: PointCampaignListProps) {
           Point Campaign List
         </div>
 
-        <Tooltip content="Please enable the Point System first to create a campaign.">
-          <Button
-            variant="primary"
-            size="sm"
-            onClick={props.onCreate}
-            disabled={disabledCreate}
-          >
-            Create
-          </Button>
-        </Tooltip>
+        {renderCreateButton()}
       </div>
 
       <DataTable

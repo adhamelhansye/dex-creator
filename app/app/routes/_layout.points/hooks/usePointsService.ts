@@ -6,7 +6,14 @@ export function usePointsStages() {
   const { brokerId } = useDex();
 
   return useQuery<PointCampaign[]>(
-    brokerId ? `/v1/public/points/stages?broker_id=${brokerId}` : null
+    brokerId ? `/v1/public/points/stages?broker_id=${brokerId}` : null,
+    {
+      formatter: (data: any) => {
+        const list = [...(data?.rows || [])];
+        list.sort((a, b) => b.start_time - a.start_time);
+        return list;
+      },
+    }
   );
 }
 
@@ -17,7 +24,7 @@ export function usePointsDetail(stage_id?: number) {
 }
 
 // create and update points stage
-export function useUpdatePointsStage() {
+export function useOperatePointsStage() {
   return useMutation("/v1/admin/points/stage");
 }
 

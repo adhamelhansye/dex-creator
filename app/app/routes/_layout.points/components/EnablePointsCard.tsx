@@ -14,15 +14,19 @@ type EnablePointsCardProps = {
   enabledMenus: string[];
 };
 
+export const PointsMenuId = "Points";
+
 export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
-  const [pointEnabled, setPointEnabled] = useState(false);
+  const [pointEnabled, setPointEnabled] = useState(
+    enabledMenus.includes(PointsMenuId)
+  );
   const [isLoading, setIsLoading] = useState(false);
   const { token } = useAuth();
 
   const { dexData, updateDexData } = useDex();
 
   useEffect(() => {
-    setPointEnabled(enabledMenus.includes("Points"));
+    setPointEnabled(enabledMenus.includes(PointsMenuId));
   }, [enabledMenus]);
 
   const handleEnablePoints = async (checked: boolean) => {
@@ -33,11 +37,11 @@ export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
         menu => menu.isDefault
       ).map(menu => menu.id);
 
-      const newEnabledMenus = enabledMenus.includes("Points")
-        ? enabledMenus.filter(menu => menu !== "Points").join(",")
+      const newEnabledMenus = enabledMenus.includes(PointsMenuId)
+        ? enabledMenus.filter(menu => menu !== PointsMenuId).join(",")
         : [
             enabledMenus.length > 0 ? enabledMenus : defaultEnabledMenus,
-            "Points",
+            PointsMenuId,
           ].join(",");
 
       const formData = createDexFormData({

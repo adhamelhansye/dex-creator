@@ -1,20 +1,16 @@
 import { useMemo, useState } from "react";
 import { BackDexDashboard } from "../../components/BackDexDashboard";
-import { PointCampaignForm } from "./components/PointCampaignForm";
-import { PointCampaignList } from "~/routes/_layout.points/components/PointCampaignList";
-import { EnablePointsCard } from "~/routes/_layout.points/components/EnablePointsCard";
+import { PointCampaignForm } from "./components/form";
+import { PointCampaignList } from "./components/PointCampaignList";
+import { EnablePointsCard, PointsMenuId } from "./components/EnablePointsCard";
 import { OrderlyKeyAuthGrard } from "~/components/authGrard/OrderlyKeyAuthGuard";
-import { modal } from "@orderly.network/ui";
 import { GraduationAuthGuard } from "~/components/authGrard/GraduationAuthGuard";
 import { PointCampaign, PointCampaignFormType } from "~/types/points";
-import {
-  useDeletePointsStage,
-  usePointsStages,
-} from "./hooks/usePointsService";
-import { toast } from "react-toastify";
+import { usePointsStages } from "./hooks/usePointsService";
 import { useDex } from "~/context/DexContext";
+import { useDeleteStages } from "./hooks/useDeleteStages";
 
-export default function PointRoute() {
+export default function PointsRoute() {
   const [type, setType] = useState<PointCampaignFormType | null>(null);
   const [currentPoints, setCurrentPoints] = useState<PointCampaign | null>(
     null
@@ -29,7 +25,14 @@ export default function PointRoute() {
 
   const { data, mutate: mutatePointsStages } = usePointsStages();
 
-  const [deletePointCampaign] = useDeletePointsStage(currentPoints?.stage_id);
+  const onRefresh = () => {
+    mutatePointsStages();
+  };
+
+  const { onDelete } = useDeleteStages({
+    stage_id: currentPoints?.stage_id,
+    onSuccess: onRefresh,
+  });
 
   const handleCreate = () => {
     setType(PointCampaignFormType.Create);
@@ -50,54 +53,17 @@ export default function PointRoute() {
     setCurrentPoints(null);
   };
 
-  const onRefresh = () => {
-    mutatePointsStages();
-  };
-
-  const doDelete = async () => {
-    try {
-      const res = await deletePointCampaign({});
-      if (res.success) {
-        toast.success(
-          <div>
-            Campaign deleted
-            <div className="text-[13px] text-base-contrast-54">
-              The campaign has been successfully removed.
-            </div>
-          </div>
-        );
-        onRefresh();
-      } else {
-        toast.error(res?.message || "Campaign delete failed");
-      }
-    } catch (err: any) {
-      console.error("Error deleting campaign:", err);
-      toast.error(err?.message || "Campaign delete failed");
-    }
-  };
-
   const handleDelete = (campaign: PointCampaign) => {
     setCurrentPoints(campaign);
-    modal.confirm({
-      title: "Delete Campaign?",
-      okLabel: "Delete",
-      content: (
-        <span className="text-warning">
-          Are you sure you want to delete this campaign? This action cannot be
-          undone.
-        </span>
-      ),
-      size: "md",
-      onOk: doDelete,
-    });
+    onDelete();
   };
 
-  const nextStage = useMemo(() => {
-    return data?.length ? (data[0].epoch_period || 0) + 1 : 1;
-  }, [data, currentPoints]);
+  const latestPoints = useMemo(() => {
+    return data?.[0];
+  }, [data]);
 
   const disabledCreate = useMemo(() => {
-    return !enabledMenus.includes("Points");
+    return !enabledMenus.includes(PointsMenuId);
   }, [enabledMenus]);
 
   const renderContent = () => {
@@ -108,7 +74,7 @@ export default function PointRoute() {
           currentPoints={currentPoints}
           close={onClose}
           refresh={onRefresh}
-          nextStage={nextStage}
+          latestPoints={latestPoints}
         />
       );
     }
