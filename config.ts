@@ -10,7 +10,7 @@ export type Environment = "mainnet" | "staging" | "qa" | "dev";
 const BROKER_COUNT_BY_ENVIRONMENT: Record<Environment, number> = {
   mainnet: 2_000,
   staging: 100,
-  qa: 20,
+  qa: 100,
   dev: 0,
 };
 
