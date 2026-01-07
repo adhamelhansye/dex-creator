@@ -70,7 +70,7 @@ const AccordionItem: React.FC<AccordionItemProps> = ({
           >
             {title}
             {isOptional && (
-              <span className="text-sm text-gray-500">(Optional)</span>
+              <span className="text-sm text-gray-500"> (Optional)</span>
             )}
           </h3>
         </div>

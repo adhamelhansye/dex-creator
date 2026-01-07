@@ -1,4 +1,5 @@
 import { FC, useState } from "react";
+import { createPortal } from "react-dom";
 import { DexPreviewProps } from "./DexPreview";
 import EditModeModal from "./EditModeModal";
 import { Button } from "./Button";
@@ -120,24 +121,27 @@ const InteractivePreview: FC<InteractivePreviewProps> = ({
         </div>
       </div>
 
-      {editMode && (
-        <EditModeModal
-          isOpen={true}
-          onClose={handleCloseEditMode}
-          previewProps={previewProps}
-          currentTheme={currentTheme}
-          defaultTheme={defaultTheme}
-          savedTheme={savedTheme}
-          onThemeChange={onThemeChange}
-          viewMode={editMode}
-          isGeneratingTheme={isGeneratingTheme}
-          onGenerateTheme={onGenerateTheme}
-          updateCssColor={updateCssColor}
-          updateCssValue={updateCssValue}
-          tradingViewColorConfig={tradingViewColorConfig}
-          setTradingViewColorConfig={setTradingViewColorConfig}
-        />
-      )}
+      {editMode &&
+        typeof document !== "undefined" &&
+        createPortal(
+          <EditModeModal
+            isOpen={true}
+            onClose={handleCloseEditMode}
+            previewProps={previewProps}
+            currentTheme={currentTheme}
+            defaultTheme={defaultTheme}
+            savedTheme={savedTheme}
+            onThemeChange={onThemeChange}
+            viewMode={editMode}
+            isGeneratingTheme={isGeneratingTheme}
+            onGenerateTheme={onGenerateTheme}
+            updateCssColor={updateCssColor}
+            updateCssValue={updateCssValue}
+            tradingViewColorConfig={tradingViewColorConfig}
+            setTradingViewColorConfig={setTradingViewColorConfig}
+          />,
+          document.body
+        )}
     </>
   );
 };
