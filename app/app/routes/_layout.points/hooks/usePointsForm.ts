@@ -119,15 +119,23 @@ export function usePointsForm({ type, pointDetail }: UsePointsFormProps) {
 
     if (values.volume_boost === "") {
       newErrors.volume_boost = "Trading volume is required";
+    } else if (Number(values.volume_boost) < 0) {
+      newErrors.volume_boost = "Trading volume cannot be less than 0";
     }
     if (values.pnl_boost === "") {
       newErrors.pnl_boost = "PNL is required";
+    } else if (Number(values.pnl_boost) < 0) {
+      newErrors.pnl_boost = "PNL cannot be less than 0";
     }
     if (values.l1_referral_boost === "") {
       newErrors.l1_referral_boost = "L1 referral rate is required";
+    } else if (Number(values.l1_referral_boost) < 0) {
+      newErrors.l1_referral_boost = "L1 referral rate cannot be less than 0";
     }
     if (values.l2_referral_boost === "") {
       newErrors.l2_referral_boost = "L2 referral rate is required";
+    } else if (Number(values.l2_referral_boost) < 0) {
+      newErrors.l2_referral_boost = "L2 referral rate cannot be less than 0";
     }
 
     setErrors(newErrors);
