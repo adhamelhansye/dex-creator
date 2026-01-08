@@ -702,8 +702,9 @@ export async function simulateLedgerSetBrokerFromLedger(
     const gasEstimate = await ledger.setBrokerFromLedger.estimateGas(
       chainIds,
       brokerHash,
-      brokerIndex,
-      true
+      true,
+      true,
+      brokerIndex
     );
 
     const balance = await provider.getBalance(wallet.address);
@@ -899,8 +900,9 @@ async function executeLedgerSetBrokerFromLedger(
     const tx = await ledger.setBrokerFromLedger(
       chainIds,
       brokerHash,
-      brokerIndex,
-      true
+      true,
+      true,
+      brokerIndex
     );
     await tx.wait();
 
