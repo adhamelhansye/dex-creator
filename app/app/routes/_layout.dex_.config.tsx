@@ -101,17 +101,22 @@ export default function DexConfigRoute() {
     }
 
     form.setIsGeneratingTheme(true);
-    await form.generateTheme(
-      token,
-      form.dexData?.themeCSS,
-      handleApplyGeneratedTheme,
-      handleCancelGeneratedTheme,
-      openModal,
-      prompt,
-      previewProps,
-      viewMode
-    );
-    form.setIsGeneratingTheme(false);
+    try {
+      await form.generateTheme(
+        token,
+        form.dexData?.themeCSS,
+        handleApplyGeneratedTheme,
+        handleCancelGeneratedTheme,
+        openModal,
+        prompt,
+        previewProps,
+        viewMode
+      );
+    } catch (error) {
+      console.error("Error generating theme:", error);
+    } finally {
+      form.setIsGeneratingTheme(false);
+    }
   };
 
   const handleResetTheme = () => {

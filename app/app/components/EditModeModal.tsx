@@ -227,6 +227,16 @@ const EditModeModal: FC<EditModeModalProps> = ({
     prevThemeRef.current = currentTheme;
   }, [isOpen, currentTheme, defaultTheme]);
 
+  // Update AI theme generator modal props when isGeneratingTheme changes
+  useEffect(() => {
+    if (isOpen && currentModalType === "aiThemeGenerator") {
+      openModal("aiThemeGenerator", {
+        isGeneratingTheme,
+        onGenerateTheme,
+      });
+    }
+  }, [isOpen, isGeneratingTheme]);
+
   useEffect(() => {
     if (!isOpen) {
       setSelectedElement(null);
