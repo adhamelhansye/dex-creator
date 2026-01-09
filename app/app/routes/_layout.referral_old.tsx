@@ -8,6 +8,7 @@ import { useModal } from "../context/ModalContext";
 import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import WalletConnect from "../components/WalletConnect";
+import SegmentedControl from "../components/SegmentedControl";
 import { Link } from "@remix-run/react";
 import { useAccount } from "wagmi";
 import {
@@ -45,8 +46,14 @@ export default function ReferralRoute() {
   const [sliderPosition, setSliderPosition] = useState(50);
   const [description, setDescription] = useState("");
   const [isEnabled, setIsEnabled] = useState(true);
+  const [referralType, setReferralType] = useState("single-level");
 
   const [maxRebateError, setMaxRebateError] = useState<string | null>(null);
+
+  const referralTypeOptions = [
+    { value: "single-level", label: "Single-level" },
+    { value: "multi-level", label: "Multi-level" },
+  ];
 
   const stepSize = maxRebate > 0 ? 100 / maxRebate : 1;
   const referrerRebate = Math.round((maxRebate * sliderPosition) / 100);
@@ -429,6 +436,14 @@ export default function ReferralRoute() {
         </div>
       </div>
 
+      {/* Referral Type Selection */}
+
+      <SegmentedControl
+        options={referralTypeOptions}
+        value={referralType}
+        onChange={setReferralType}
+      />
+
       <div className="space-y-6">
         {/* Orderly Key Setup Section */}
         {!hasValidKey && (
@@ -472,137 +487,144 @@ export default function ReferralRoute() {
         {/* Referral Settings Form */}
         {hasValidKey && (
           <>
-            <Card>
-              <h2 className="text-xl font-medium mb-4">
-                Auto Referral Configuration
-              </h2>
-              <p className="text-gray-300 mb-6">
-                Configure your automatic referral program settings. Users who
-                meet the trading volume requirements will be automatically
-                enrolled in your referral program.
-              </p>
+            {referralType === "single-level" ? (
+              <>
+                {/* Single-level referral settings section */}
+                <Card>
+                  <h2 className="text-xl font-medium mb-4">
+                    Auto Referral Configuration
+                  </h2>
+                  <p className="text-gray-300 mb-6">
+                    Configure your automatic referral program settings. Users
+                    who meet the trading volume requirements will be
+                    automatically enrolled in your referral program.
+                  </p>
 
-              {isLoadingReferralInfo ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="i-svg-spinners:pulse-rings-multiple w-8 h-8 text-primary"></div>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Enable Toggle - Top of form */}
-                  <div className="flex items-center justify-between p-4 bg-background-dark/30 rounded-lg border border-light/10">
-                    <div className="flex-1 pr-4">
-                      <h3 className="text-sm font-medium mb-1">
-                        Auto Referral Program
-                      </h3>
-                      <p className="text-xs text-gray-400">
-                        Enable automatic enrollment for users who meet trading
-                        requirements
-                      </p>
+                  {isLoadingReferralInfo ? (
+                    <div className="flex items-center justify-center py-8">
+                      <div className="i-svg-spinners:pulse-rings-multiple w-8 h-8 text-primary"></div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsEnabled(!isEnabled)}
-                      className={`relative inline-flex h-6 w-12 flex-shrink-0 items-center rounded-full transition-colors ${
-                        isEnabled ? "bg-primary" : "bg-gray-600"
-                      }`}
-                    >
-                      <span
-                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                          isEnabled ? "translate-x-7" : "translate-x-1"
-                        }`}
-                      />
-                    </button>
-                  </div>
-
-                  {/* Form Fields */}
-                  <div
-                    className={`space-y-6 ${!isEnabled ? "opacity-60" : ""}`}
-                  >
-                    <div className="grid md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Required Trading Volume (USDC)
-                        </label>
-                        <input
-                          type="number"
-                          value={requiredTradingVolume}
-                          onChange={e =>
-                            setRequiredTradingVolume(Number(e.target.value))
-                          }
-                          className="w-full px-3 py-2 rounded-lg bg-background-dark border border-light/10 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                          min="0"
-                          step="1000"
-                          disabled={!isEnabled}
-                        />
-                        <p className="text-xs text-gray-400 mt-1">
-                          Minimum trading volume required to join referral
-                          program
-                        </p>
-                      </div>
-
-                      <div>
-                        <label className="block text-sm font-medium mb-2">
-                          Max Rebate (%)
-                        </label>
-                        <input
-                          type="number"
-                          value={maxRebate}
-                          onChange={e =>
-                            handleMaxRebateChange(Number(e.target.value))
-                          }
-                          className={`w-full px-3 py-2 rounded-lg bg-background-dark border text-white disabled:opacity-50 disabled:cursor-not-allowed ${
-                            maxRebateError
-                              ? "border-error focus:border-error"
-                              : "border-light/10 focus:border-primary"
+                  ) : (
+                    <div className="space-y-6">
+                      {/* Enable Toggle - Top of form */}
+                      <div className="flex items-center justify-between p-4 bg-background-dark/30 rounded-lg border border-light/10">
+                        <div className="flex-1 pr-4">
+                          <h3 className="text-sm font-medium mb-1">
+                            Auto Referral Program
+                          </h3>
+                          <p className="text-xs text-gray-400">
+                            Enable automatic enrollment for users who meet
+                            trading requirements
+                          </p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setIsEnabled(!isEnabled)}
+                          className={`relative inline-flex h-6 w-12 flex-shrink-0 items-center rounded-full transition-colors ${
+                            isEnabled ? "bg-primary" : "bg-gray-600"
                           }`}
-                          min="0"
-                          max="100"
-                          step="0.1"
-                          disabled={!isEnabled}
-                        />
-                        {maxRebateError ? (
-                          <p className="text-xs text-error mt-1">
-                            {maxRebateError}
-                          </p>
-                        ) : (
-                          <p className="text-xs text-gray-400 mt-1">
-                            Maximum rebate percentage for participants
-                          </p>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Rebate Split Slider */}
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <h4 className="text-sm font-medium text-gray-300">
-                            Default referrer rebate
-                          </h4>
-                          <p className="text-lg font-bold">{referrerRebate}%</p>
-                        </div>
-                        <div className="text-right">
-                          <h4 className="text-sm font-medium text-gray-300">
-                            Default referee rebate
-                          </h4>
-                          <p className="text-lg font-bold">{refereeRebate}%</p>
-                        </div>
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              isEnabled ? "translate-x-7" : "translate-x-1"
+                            }`}
+                          />
+                        </button>
                       </div>
 
-                      <div className="relative">
-                        <input
-                          type="range"
-                          min="0"
-                          max="100"
-                          step={stepSize}
-                          value={sliderPosition}
-                          onChange={e =>
-                            setSliderPosition(Number(e.target.value))
-                          }
-                          disabled={!isEnabled}
-                          className="w-full h-2 bg-gradient-to-r from-secondary to-primary rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed slider"
-                        />
-                        <style>{`
+                      {/* Form Fields */}
+                      <div
+                        className={`space-y-6 ${!isEnabled ? "opacity-60" : ""}`}
+                      >
+                        <div className="grid md:grid-cols-2 gap-4">
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Required Trading Volume (USDC)
+                            </label>
+                            <input
+                              type="number"
+                              value={requiredTradingVolume}
+                              onChange={e =>
+                                setRequiredTradingVolume(Number(e.target.value))
+                              }
+                              className="w-full px-3 py-2 rounded-lg bg-background-dark border border-light/10 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                              min="0"
+                              step="1000"
+                              disabled={!isEnabled}
+                            />
+                            <p className="text-xs text-gray-400 mt-1">
+                              Minimum trading volume required to join referral
+                              program
+                            </p>
+                          </div>
+
+                          <div>
+                            <label className="block text-sm font-medium mb-2">
+                              Max Rebate (%)
+                            </label>
+                            <input
+                              type="number"
+                              value={maxRebate}
+                              onChange={e =>
+                                handleMaxRebateChange(Number(e.target.value))
+                              }
+                              className={`w-full px-3 py-2 rounded-lg bg-background-dark border text-white disabled:opacity-50 disabled:cursor-not-allowed ${
+                                maxRebateError
+                                  ? "border-error focus:border-error"
+                                  : "border-light/10 focus:border-primary"
+                              }`}
+                              min="0"
+                              max="100"
+                              step="0.1"
+                              disabled={!isEnabled}
+                            />
+                            {maxRebateError ? (
+                              <p className="text-xs text-error mt-1">
+                                {maxRebateError}
+                              </p>
+                            ) : (
+                              <p className="text-xs text-gray-400 mt-1">
+                                Maximum rebate percentage for participants
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {/* Rebate Split Slider */}
+                        <div className="space-y-4">
+                          <div className="flex justify-between items-center">
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-300">
+                                Default referrer rebate
+                              </h4>
+                              <p className="text-lg font-bold">
+                                {referrerRebate}%
+                              </p>
+                            </div>
+                            <div className="text-right">
+                              <h4 className="text-sm font-medium text-gray-300">
+                                Default referee rebate
+                              </h4>
+                              <p className="text-lg font-bold">
+                                {refereeRebate}%
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="relative">
+                            <input
+                              type="range"
+                              min="0"
+                              max="100"
+                              step={stepSize}
+                              value={sliderPosition}
+                              onChange={e =>
+                                setSliderPosition(Number(e.target.value))
+                              }
+                              disabled={!isEnabled}
+                              className="w-full h-2 bg-gradient-to-r from-secondary to-primary rounded-lg appearance-none cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed slider"
+                            />
+                            <style>{`
                           .slider::-webkit-slider-thumb {
                             appearance: none;
                             width: 20px;
@@ -623,106 +645,124 @@ export default function ReferralRoute() {
                             box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
                           }
                         `}</style>
+                          </div>
+
+                          <p className="text-xs text-gray-400 text-center">
+                            Adjust the split between referrer and referee
+                            rebates. Total rebate: {maxRebate}%
+                          </p>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium mb-2">
+                            Description
+                          </label>
+                          <textarea
+                            value={description}
+                            onChange={e => setDescription(e.target.value)}
+                            className="w-full px-3 py-2 rounded-lg bg-background-dark border border-light/10 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+                            rows={3}
+                            placeholder="Describe your referral program..."
+                            disabled={!isEnabled}
+                          />
+                        </div>
                       </div>
 
-                      <p className="text-xs text-gray-400 text-center">
-                        Adjust the split between referrer and referee rebates.
-                        Total rebate: {maxRebate}%
-                      </p>
+                      <div className="flex gap-3 pt-4">
+                        <Button
+                          onClick={handleSaveReferralSettings}
+                          disabled={isSavingReferral || !!maxRebateError}
+                          className="flex items-center gap-2"
+                        >
+                          {isSavingReferral ? (
+                            <>
+                              <div className="i-svg-spinners:pulse-rings-multiple w-4 h-4"></div>
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <div className="i-mdi:content-save w-4 h-4"></div>
+                              Save Settings
+                            </>
+                          )}
+                        </Button>
+                      </div>
                     </div>
+                  )}
+                </Card>
 
-                    <div>
-                      <label className="block text-sm font-medium mb-2">
-                        Description
-                      </label>
-                      <textarea
-                        value={description}
-                        onChange={e => setDescription(e.target.value)}
-                        className="w-full px-3 py-2 rounded-lg bg-background-dark border border-light/10 text-white disabled:opacity-50 disabled:cursor-not-allowed"
-                        rows={3}
-                        placeholder="Describe your referral program..."
-                        disabled={!isEnabled}
-                      />
+                {/* Current Settings Display */}
+                {referralInfo && (
+                  <Card>
+                    <h3 className="text-lg font-medium mb-4">
+                      Current Settings
+                    </h3>
+                    <div className="grid md:grid-cols-2 gap-4 text-sm">
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">
+                            Trading Volume Required:
+                          </span>
+                          <span>
+                            {referralInfo.required_trading_volume.toLocaleString()}{" "}
+                            USDC
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Max Rebate:</span>
+                          <span>
+                            {(referralInfo.max_rebate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">
+                            Referrer Rebate:
+                          </span>
+                          <span>
+                            {(referralInfo.referrer_rebate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Referee Rebate:</span>
+                          <span>
+                            {(referralInfo.referee_rebate * 100).toFixed(1)}%
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-gray-400">Status:</span>
+                          <span
+                            className={
+                              referralInfo.enable
+                                ? "text-success"
+                                : "text-warning"
+                            }
+                          >
+                            {referralInfo.enable ? "Enabled" : "Disabled"}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="flex gap-3 pt-4">
-                    <Button
-                      onClick={handleSaveReferralSettings}
-                      disabled={isSavingReferral || !!maxRebateError}
-                      className="flex items-center gap-2"
-                    >
-                      {isSavingReferral ? (
-                        <>
-                          <div className="i-svg-spinners:pulse-rings-multiple w-4 h-4"></div>
-                          Saving...
-                        </>
-                      ) : (
-                        <>
-                          <div className="i-mdi:content-save w-4 h-4"></div>
-                          Save Settings
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </Card>
-
-            {/* Current Settings Display */}
-            {referralInfo && (
-              <Card>
-                <h3 className="text-lg font-medium mb-4">Current Settings</h3>
-                <div className="grid md:grid-cols-2 gap-4 text-sm">
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">
-                        Trading Volume Required:
-                      </span>
-                      <span>
-                        {referralInfo.required_trading_volume.toLocaleString()}{" "}
-                        USDC
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Max Rebate:</span>
-                      <span>{(referralInfo.max_rebate * 100).toFixed(1)}%</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Referrer Rebate:</span>
-                      <span>
-                        {(referralInfo.referrer_rebate * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Referee Rebate:</span>
-                      <span>
-                        {(referralInfo.referee_rebate * 100).toFixed(1)}%
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-gray-400">Status:</span>
-                      <span
-                        className={
-                          referralInfo.enable ? "text-success" : "text-warning"
-                        }
-                      >
-                        {referralInfo.enable ? "Enabled" : "Disabled"}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                {referralInfo.description && (
-                  <div className="mt-4 pt-4 border-t border-light/10">
-                    <span className="text-gray-400 text-sm">Description:</span>
-                    <p className="text-sm mt-1">{referralInfo.description}</p>
-                  </div>
+                    {referralInfo.description && (
+                      <div className="mt-4 pt-4 border-t border-light/10">
+                        <span className="text-gray-400 text-sm">
+                          Description:
+                        </span>
+                        <p className="text-sm mt-1">
+                          {referralInfo.description}
+                        </p>
+                      </div>
+                    )}
+                  </Card>
                 )}
-              </Card>
+              </>
+            ) : (
+              <>
+                {/* Multi-level referral settings section */}
+                <div>123</div>
+              </>
             )}
-
             {/* Advanced Referral Management */}
             <Card className="bg-gradient-to-r from-primary/10 to-secondary/10 border border-primary/20">
               <div className="flex gap-4 items-start">
