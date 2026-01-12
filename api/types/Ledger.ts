@@ -606,6 +606,55 @@ export declare namespace EventTypes {
     clientId: bigint;
   };
 
+  export type Withdraw2ContractV2Struct = {
+    tokenAmount: BigNumberish;
+    fee: BigNumberish;
+    senderChainType: BigNumberish;
+    receiverChainType: BigNumberish;
+    chainId: BigNumberish;
+    accountId: BytesLike;
+    vaultType: BigNumberish;
+    sender: BytesLike;
+    withdrawNonce: BigNumberish;
+    receiver: BytesLike;
+    timestamp: BigNumberish;
+    brokerHash: BytesLike;
+    tokenHash: BytesLike;
+    clientId: BigNumberish;
+  };
+
+  export type Withdraw2ContractV2StructOutput = [
+    tokenAmount: bigint,
+    fee: bigint,
+    senderChainType: bigint,
+    receiverChainType: bigint,
+    chainId: bigint,
+    accountId: string,
+    vaultType: bigint,
+    sender: string,
+    withdrawNonce: bigint,
+    receiver: string,
+    timestamp: bigint,
+    brokerHash: string,
+    tokenHash: string,
+    clientId: bigint
+  ] & {
+    tokenAmount: bigint;
+    fee: bigint;
+    senderChainType: bigint;
+    receiverChainType: bigint;
+    chainId: bigint;
+    accountId: string;
+    vaultType: bigint;
+    sender: string;
+    withdrawNonce: bigint;
+    receiver: string;
+    timestamp: bigint;
+    brokerHash: string;
+    tokenHash: string;
+    clientId: bigint;
+  };
+
   export type WithdrawDataSolStruct = {
     tokenAmount: BigNumberish;
     fee: BigNumberish;
@@ -832,7 +881,6 @@ export interface LedgerInterface extends Interface {
     nameOrSignature:
       | "BROKER_MANAGER_ROLE"
       | "DEFAULT_ADMIN_ROLE"
-      | "SYMBOL_MANAGER_ROLE"
       | "accountDeposit"
       | "accountDepositSol"
       | "accountWithDrawFinish"
@@ -857,11 +905,13 @@ export interface LedgerInterface extends Interface {
       | "executeSettlement"
       | "executeSwapResultUpload"
       | "executeWithdraw2Contract"
+      | "executeWithdraw2ContractV2"
       | "executeWithdrawAction"
       | "executeWithdrawSolAction"
       | "feeManager"
       | "getBalanceTransferState"
       | "getFrozenWithdrawNonce"
+      | "getLedgerImpl"
       | "getRoleAdmin"
       | "getUserEscrowBalance"
       | "getUserTokenBalance"
@@ -871,7 +921,9 @@ export interface LedgerInterface extends Interface {
       | "grantRole"
       | "hasRole"
       | "idToPrimeWallet"
+      | "idToSolanaPrimeWallet"
       | "initialize"
+      | "isValidVault"
       | "marketManager"
       | "operatorManagerAddress"
       | "owner"
@@ -891,10 +943,11 @@ export interface LedgerInterface extends Interface {
       | "setMarketManager"
       | "setOperatorManagerAddress"
       | "setPrimeWallet"
+      | "setSolanaPrimeWallet"
+      | "setValidVault"
       | "setVaultManager"
       | "transferOwnership"
       | "vaultManager"
-      | "version"
   ): FunctionFragment;
 
   getEvent(
@@ -912,8 +965,10 @@ export interface LedgerInterface extends Interface {
       | "AccountWithdrawFail(bytes32,uint64,uint64,bytes32,address,address,uint256,bytes32,uint128,uint128,uint256,uint8)"
       | "AccountWithdrawFinish(bytes32,uint64,uint64,bytes32,address,address,uint256,bytes32,uint128,uint128)"
       | "AccountWithdrawFinish(bytes32,uint64,uint64,bytes32,address,address,uint256,bytes32,uint128,uint128,uint256)"
-      | "AccountWithdrawSolApprove"
-      | "AccountWithdrawSolFail"
+      | "AccountWithdrawSolApprove(bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128)"
+      | "AccountWithdrawSolApprove(bytes32,uint64,uint64,uint8,uint8,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128)"
+      | "AccountWithdrawSolFail(bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128,uint8)"
+      | "AccountWithdrawSolFail(bytes32,uint64,uint64,uint8,uint8,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128,uint8)"
       | "AdlResult"
       | "AdlResultV2"
       | "BalanceTransfer"
@@ -945,7 +1000,9 @@ export interface LedgerInterface extends Interface {
       | "SetBrokerFromLedgerInitiated"
       | "SettlementExecution"
       | "SettlementResult"
+      | "SolanaPrimeWalletSet"
       | "SwapResultUploaded"
+      | "VaultSet"
   ): EventFragment;
 
   encodeFunctionData(
@@ -954,10 +1011,6 @@ export interface LedgerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "DEFAULT_ADMIN_ROLE",
-    values?: undefined
-  ): string;
-  encodeFunctionData(
-    functionFragment: "SYMBOL_MANAGER_ROLE",
     values?: undefined
   ): string;
   encodeFunctionData(
@@ -1057,6 +1110,10 @@ export interface LedgerInterface extends Interface {
     values: [EventTypes.Withdraw2ContractStruct, BigNumberish]
   ): string;
   encodeFunctionData(
+    functionFragment: "executeWithdraw2ContractV2",
+    values: [EventTypes.Withdraw2ContractV2Struct, BigNumberish]
+  ): string;
+  encodeFunctionData(
     functionFragment: "executeWithdrawAction",
     values: [EventTypes.WithdrawDataStruct, BigNumberish]
   ): string;
@@ -1075,6 +1132,10 @@ export interface LedgerInterface extends Interface {
   encodeFunctionData(
     functionFragment: "getFrozenWithdrawNonce",
     values: [BytesLike, BigNumberish, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "getLedgerImpl",
+    values?: undefined
   ): string;
   encodeFunctionData(
     functionFragment: "getRoleAdmin",
@@ -1113,8 +1174,16 @@ export interface LedgerInterface extends Interface {
     values: [BytesLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "idToSolanaPrimeWallet",
+    values: [BytesLike]
+  ): string;
+  encodeFunctionData(
     functionFragment: "initialize",
     values?: undefined
+  ): string;
+  encodeFunctionData(
+    functionFragment: "isValidVault",
+    values: [AddressLike]
   ): string;
   encodeFunctionData(
     functionFragment: "marketManager",
@@ -1147,7 +1216,7 @@ export interface LedgerInterface extends Interface {
   ): string;
   encodeFunctionData(
     functionFragment: "setBrokerFromLedger",
-    values: [BigNumberish[], BytesLike, BigNumberish, boolean]
+    values: [BigNumberish[], BytesLike, boolean, boolean, BigNumberish]
   ): string;
   encodeFunctionData(
     functionFragment: "setCrossChainManager",
@@ -1190,6 +1259,14 @@ export interface LedgerInterface extends Interface {
     values: [BytesLike, AddressLike]
   ): string;
   encodeFunctionData(
+    functionFragment: "setSolanaPrimeWallet",
+    values: [BytesLike, BytesLike]
+  ): string;
+  encodeFunctionData(
+    functionFragment: "setValidVault",
+    values: [AddressLike, boolean]
+  ): string;
+  encodeFunctionData(
     functionFragment: "setVaultManager",
     values: [AddressLike]
   ): string;
@@ -1201,7 +1278,6 @@ export interface LedgerInterface extends Interface {
     functionFragment: "vaultManager",
     values?: undefined
   ): string;
-  encodeFunctionData(functionFragment: "version", values?: undefined): string;
 
   decodeFunctionResult(
     functionFragment: "BROKER_MANAGER_ROLE",
@@ -1209,10 +1285,6 @@ export interface LedgerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "DEFAULT_ADMIN_ROLE",
-    data: BytesLike
-  ): Result;
-  decodeFunctionResult(
-    functionFragment: "SYMBOL_MANAGER_ROLE",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -1309,6 +1381,10 @@ export interface LedgerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "executeWithdraw2ContractV2",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "executeWithdrawAction",
     data: BytesLike
   ): Result;
@@ -1323,6 +1399,10 @@ export interface LedgerInterface extends Interface {
   ): Result;
   decodeFunctionResult(
     functionFragment: "getFrozenWithdrawNonce",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "getLedgerImpl",
     data: BytesLike
   ): Result;
   decodeFunctionResult(
@@ -1355,7 +1435,15 @@ export interface LedgerInterface extends Interface {
     functionFragment: "idToPrimeWallet",
     data: BytesLike
   ): Result;
+  decodeFunctionResult(
+    functionFragment: "idToSolanaPrimeWallet",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(functionFragment: "initialize", data: BytesLike): Result;
+  decodeFunctionResult(
+    functionFragment: "isValidVault",
+    data: BytesLike
+  ): Result;
   decodeFunctionResult(
     functionFragment: "marketManager",
     data: BytesLike
@@ -1427,6 +1515,14 @@ export interface LedgerInterface extends Interface {
     data: BytesLike
   ): Result;
   decodeFunctionResult(
+    functionFragment: "setSolanaPrimeWallet",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
+    functionFragment: "setValidVault",
+    data: BytesLike
+  ): Result;
+  decodeFunctionResult(
     functionFragment: "setVaultManager",
     data: BytesLike
   ): Result;
@@ -1438,7 +1534,6 @@ export interface LedgerInterface extends Interface {
     functionFragment: "vaultManager",
     data: BytesLike
   ): Result;
-  decodeFunctionResult(functionFragment: "version", data: BytesLike): Result;
 }
 
 export namespace AccountDeposit_bytes32_uint64_uint64_address_bytes32_uint128_uint256_uint64_bytes32_Event {
@@ -1943,7 +2038,7 @@ export namespace AccountWithdrawFinish_bytes32_uint64_uint64_bytes32_address_add
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace AccountWithdrawSolApproveEvent {
+export namespace AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event {
   export type InputTuple = [
     accountId: BytesLike,
     withdrawNonce: BigNumberish,
@@ -1986,7 +2081,56 @@ export namespace AccountWithdrawSolApproveEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
-export namespace AccountWithdrawSolFailEvent {
+export namespace AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event {
+  export type InputTuple = [
+    accountId: BytesLike,
+    withdrawNonce: BigNumberish,
+    eventId: BigNumberish,
+    senderChainType: BigNumberish,
+    receiverChainType: BigNumberish,
+    brokerHash: BytesLike,
+    sender: BytesLike,
+    receiver: BytesLike,
+    chainId: BigNumberish,
+    tokenHash: BytesLike,
+    tokenAmount: BigNumberish,
+    fee: BigNumberish
+  ];
+  export type OutputTuple = [
+    accountId: string,
+    withdrawNonce: bigint,
+    eventId: bigint,
+    senderChainType: bigint,
+    receiverChainType: bigint,
+    brokerHash: string,
+    sender: string,
+    receiver: string,
+    chainId: bigint,
+    tokenHash: string,
+    tokenAmount: bigint,
+    fee: bigint
+  ];
+  export interface OutputObject {
+    accountId: string;
+    withdrawNonce: bigint;
+    eventId: bigint;
+    senderChainType: bigint;
+    receiverChainType: bigint;
+    brokerHash: string;
+    sender: string;
+    receiver: string;
+    chainId: bigint;
+    tokenHash: string;
+    tokenAmount: bigint;
+    fee: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event {
   export type InputTuple = [
     accountId: BytesLike,
     withdrawNonce: BigNumberish,
@@ -2017,6 +2161,58 @@ export namespace AccountWithdrawSolFailEvent {
     accountId: string;
     withdrawNonce: bigint;
     eventId: bigint;
+    brokerHash: string;
+    sender: string;
+    receiver: string;
+    chainId: bigint;
+    tokenHash: string;
+    tokenAmount: bigint;
+    fee: bigint;
+    failReason: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event {
+  export type InputTuple = [
+    accountId: BytesLike,
+    withdrawNonce: BigNumberish,
+    eventId: BigNumberish,
+    senderChainType: BigNumberish,
+    receiverChainType: BigNumberish,
+    brokerHash: BytesLike,
+    sender: BytesLike,
+    receiver: BytesLike,
+    chainId: BigNumberish,
+    tokenHash: BytesLike,
+    tokenAmount: BigNumberish,
+    fee: BigNumberish,
+    failReason: BigNumberish
+  ];
+  export type OutputTuple = [
+    accountId: string,
+    withdrawNonce: bigint,
+    eventId: bigint,
+    senderChainType: bigint,
+    receiverChainType: bigint,
+    brokerHash: string,
+    sender: string,
+    receiver: string,
+    chainId: bigint,
+    tokenHash: string,
+    tokenAmount: bigint,
+    fee: bigint,
+    failReason: bigint
+  ];
+  export interface OutputObject {
+    accountId: string;
+    withdrawNonce: bigint;
+    eventId: bigint;
+    senderChainType: bigint;
+    receiverChainType: bigint;
     brokerHash: string;
     sender: string;
     receiver: string;
@@ -2777,6 +2973,19 @@ export namespace SettlementResultEvent {
   export type LogDescription = TypedLogDescription<Event>;
 }
 
+export namespace SolanaPrimeWalletSetEvent {
+  export type InputTuple = [id: BytesLike, solanaPrimeWallet: BytesLike];
+  export type OutputTuple = [id: string, solanaPrimeWallet: string];
+  export interface OutputObject {
+    id: string;
+    solanaPrimeWallet: string;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
 export namespace SwapResultUploadedEvent {
   export type InputTuple = [
     eventId: BigNumberish,
@@ -2807,6 +3016,19 @@ export namespace SwapResultUploadedEvent {
     sellQuantity: bigint;
     chainId: bigint;
     swapStatus: bigint;
+  }
+  export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
+  export type Filter = TypedDeferredTopicFilter<Event>;
+  export type Log = TypedEventLog<Event>;
+  export type LogDescription = TypedLogDescription<Event>;
+}
+
+export namespace VaultSetEvent {
+  export type InputTuple = [vault: AddressLike, isValid: boolean];
+  export type OutputTuple = [vault: string, isValid: boolean];
+  export interface OutputObject {
+    vault: string;
+    isValid: boolean;
   }
   export type Event = TypedContractEvent<InputTuple, OutputTuple, OutputObject>;
   export type Filter = TypedDeferredTopicFilter<Event>;
@@ -2860,8 +3082,6 @@ export interface Ledger extends BaseContract {
   BROKER_MANAGER_ROLE: TypedContractMethod<[], [string], "view">;
 
   DEFAULT_ADMIN_ROLE: TypedContractMethod<[], [string], "view">;
-
-  SYMBOL_MANAGER_ROLE: TypedContractMethod<[], [string], "view">;
 
   accountDeposit: TypedContractMethod<
     [data: AccountTypes.AccountDepositStruct],
@@ -2999,6 +3219,15 @@ export interface Ledger extends BaseContract {
     "nonpayable"
   >;
 
+  executeWithdraw2ContractV2: TypedContractMethod<
+    [
+      withdraw2ContractV2: EventTypes.Withdraw2ContractV2Struct,
+      eventId: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+
   executeWithdrawAction: TypedContractMethod<
     [withdraw: EventTypes.WithdrawDataStruct, eventId: BigNumberish],
     [void],
@@ -3022,6 +3251,12 @@ export interface Ledger extends BaseContract {
   getFrozenWithdrawNonce: TypedContractMethod<
     [accountId: BytesLike, withdrawNonce: BigNumberish, tokenHash: BytesLike],
     [bigint],
+    "view"
+  >;
+
+  getLedgerImpl: TypedContractMethod<
+    [],
+    [[string, string, string, string]],
     "view"
   >;
 
@@ -3063,7 +3298,15 @@ export interface Ledger extends BaseContract {
 
   idToPrimeWallet: TypedContractMethod<[arg0: BytesLike], [string], "view">;
 
+  idToSolanaPrimeWallet: TypedContractMethod<
+    [arg0: BytesLike],
+    [string],
+    "view"
+  >;
+
   initialize: TypedContractMethod<[], [void], "nonpayable">;
+
+  isValidVault: TypedContractMethod<[vault: AddressLike], [boolean], "view">;
 
   marketManager: TypedContractMethod<[], [string], "view">;
 
@@ -3101,8 +3344,9 @@ export interface Ledger extends BaseContract {
     [
       chainIds: BigNumberish[],
       brokerHash: BytesLike,
-      brokerIndex: BigNumberish,
-      allowed: boolean
+      allowed: boolean,
+      setBrokerIndex: boolean,
+      brokerIndex: BigNumberish
     ],
     [void],
     "nonpayable"
@@ -3168,6 +3412,18 @@ export interface Ledger extends BaseContract {
     "nonpayable"
   >;
 
+  setSolanaPrimeWallet: TypedContractMethod<
+    [_id: BytesLike, _solanaPrimeWallet: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+
+  setValidVault: TypedContractMethod<
+    [vault: AddressLike, isValid: boolean],
+    [void],
+    "nonpayable"
+  >;
+
   setVaultManager: TypedContractMethod<
     [_vaultManagerAddress: AddressLike],
     [void],
@@ -3182,8 +3438,6 @@ export interface Ledger extends BaseContract {
 
   vaultManager: TypedContractMethod<[], [string], "view">;
 
-  version: TypedContractMethod<[], [string], "view">;
-
   getFunction<T extends ContractMethod = ContractMethod>(
     key: string | FunctionFragment
   ): T;
@@ -3193,9 +3447,6 @@ export interface Ledger extends BaseContract {
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "DEFAULT_ADMIN_ROLE"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "SYMBOL_MANAGER_ROLE"
   ): TypedContractMethod<[], [string], "view">;
   getFunction(
     nameOrSignature: "accountDeposit"
@@ -3358,6 +3609,16 @@ export interface Ledger extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "executeWithdraw2ContractV2"
+  ): TypedContractMethod<
+    [
+      withdraw2ContractV2: EventTypes.Withdraw2ContractV2Struct,
+      eventId: BigNumberish
+    ],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "executeWithdrawAction"
   ): TypedContractMethod<
     [withdraw: EventTypes.WithdrawDataStruct, eventId: BigNumberish],
@@ -3388,6 +3649,9 @@ export interface Ledger extends BaseContract {
     [bigint],
     "view"
   >;
+  getFunction(
+    nameOrSignature: "getLedgerImpl"
+  ): TypedContractMethod<[], [[string, string, string, string]], "view">;
   getFunction(
     nameOrSignature: "getRoleAdmin"
   ): TypedContractMethod<[role: BytesLike], [string], "view">;
@@ -3436,8 +3700,14 @@ export interface Ledger extends BaseContract {
     nameOrSignature: "idToPrimeWallet"
   ): TypedContractMethod<[arg0: BytesLike], [string], "view">;
   getFunction(
+    nameOrSignature: "idToSolanaPrimeWallet"
+  ): TypedContractMethod<[arg0: BytesLike], [string], "view">;
+  getFunction(
     nameOrSignature: "initialize"
   ): TypedContractMethod<[], [void], "nonpayable">;
+  getFunction(
+    nameOrSignature: "isValidVault"
+  ): TypedContractMethod<[vault: AddressLike], [boolean], "view">;
   getFunction(
     nameOrSignature: "marketManager"
   ): TypedContractMethod<[], [string], "view">;
@@ -3484,8 +3754,9 @@ export interface Ledger extends BaseContract {
     [
       chainIds: BigNumberish[],
       brokerHash: BytesLike,
-      brokerIndex: BigNumberish,
-      allowed: boolean
+      allowed: boolean,
+      setBrokerIndex: boolean,
+      brokerIndex: BigNumberish
     ],
     [void],
     "nonpayable"
@@ -3545,6 +3816,20 @@ export interface Ledger extends BaseContract {
     "nonpayable"
   >;
   getFunction(
+    nameOrSignature: "setSolanaPrimeWallet"
+  ): TypedContractMethod<
+    [_id: BytesLike, _solanaPrimeWallet: BytesLike],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
+    nameOrSignature: "setValidVault"
+  ): TypedContractMethod<
+    [vault: AddressLike, isValid: boolean],
+    [void],
+    "nonpayable"
+  >;
+  getFunction(
     nameOrSignature: "setVaultManager"
   ): TypedContractMethod<
     [_vaultManagerAddress: AddressLike],
@@ -3556,9 +3841,6 @@ export interface Ledger extends BaseContract {
   ): TypedContractMethod<[newOwner: AddressLike], [void], "nonpayable">;
   getFunction(
     nameOrSignature: "vaultManager"
-  ): TypedContractMethod<[], [string], "view">;
-  getFunction(
-    nameOrSignature: "version"
   ): TypedContractMethod<[], [string], "view">;
 
   getEvent(
@@ -3653,18 +3935,32 @@ export interface Ledger extends BaseContract {
     AccountWithdrawFinish_bytes32_uint64_uint64_bytes32_address_address_uint256_bytes32_uint128_uint128_uint256_Event.OutputObject
   >;
   getEvent(
-    key: "AccountWithdrawSolApprove"
+    key: "AccountWithdrawSolApprove(bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128)"
   ): TypedContractEvent<
-    AccountWithdrawSolApproveEvent.InputTuple,
-    AccountWithdrawSolApproveEvent.OutputTuple,
-    AccountWithdrawSolApproveEvent.OutputObject
+    AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.InputTuple,
+    AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputTuple,
+    AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputObject
   >;
   getEvent(
-    key: "AccountWithdrawSolFail"
+    key: "AccountWithdrawSolApprove(bytes32,uint64,uint64,uint8,uint8,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128)"
   ): TypedContractEvent<
-    AccountWithdrawSolFailEvent.InputTuple,
-    AccountWithdrawSolFailEvent.OutputTuple,
-    AccountWithdrawSolFailEvent.OutputObject
+    AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.InputTuple,
+    AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputTuple,
+    AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputObject
+  >;
+  getEvent(
+    key: "AccountWithdrawSolFail(bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128,uint8)"
+  ): TypedContractEvent<
+    AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.InputTuple,
+    AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputTuple,
+    AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputObject
+  >;
+  getEvent(
+    key: "AccountWithdrawSolFail(bytes32,uint64,uint64,uint8,uint8,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128,uint8)"
+  ): TypedContractEvent<
+    AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.InputTuple,
+    AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputTuple,
+    AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputObject
   >;
   getEvent(
     key: "AdlResult"
@@ -3884,11 +4180,25 @@ export interface Ledger extends BaseContract {
     SettlementResultEvent.OutputObject
   >;
   getEvent(
+    key: "SolanaPrimeWalletSet"
+  ): TypedContractEvent<
+    SolanaPrimeWalletSetEvent.InputTuple,
+    SolanaPrimeWalletSetEvent.OutputTuple,
+    SolanaPrimeWalletSetEvent.OutputObject
+  >;
+  getEvent(
     key: "SwapResultUploaded"
   ): TypedContractEvent<
     SwapResultUploadedEvent.InputTuple,
     SwapResultUploadedEvent.OutputTuple,
     SwapResultUploadedEvent.OutputObject
+  >;
+  getEvent(
+    key: "VaultSet"
+  ): TypedContractEvent<
+    VaultSetEvent.InputTuple,
+    VaultSetEvent.OutputTuple,
+    VaultSetEvent.OutputObject
   >;
 
   filters: {
@@ -3971,27 +4281,25 @@ export interface Ledger extends BaseContract {
       AccountWithdrawFinish_bytes32_uint64_uint64_bytes32_address_address_uint256_bytes32_uint128_uint128_uint256_Event.OutputTuple,
       AccountWithdrawFinish_bytes32_uint64_uint64_bytes32_address_address_uint256_bytes32_uint128_uint128_uint256_Event.OutputObject
     >;
-
     "AccountWithdrawSolApprove(bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128)": TypedContractEvent<
-      AccountWithdrawSolApproveEvent.InputTuple,
-      AccountWithdrawSolApproveEvent.OutputTuple,
-      AccountWithdrawSolApproveEvent.OutputObject
+      AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.InputTuple,
+      AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputTuple,
+      AccountWithdrawSolApprove_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputObject
     >;
-    AccountWithdrawSolApprove: TypedContractEvent<
-      AccountWithdrawSolApproveEvent.InputTuple,
-      AccountWithdrawSolApproveEvent.OutputTuple,
-      AccountWithdrawSolApproveEvent.OutputObject
+    "AccountWithdrawSolApprove(bytes32,uint64,uint64,uint8,uint8,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128)": TypedContractEvent<
+      AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.InputTuple,
+      AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputTuple,
+      AccountWithdrawSolApprove_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_Event.OutputObject
     >;
-
     "AccountWithdrawSolFail(bytes32,uint64,uint64,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128,uint8)": TypedContractEvent<
-      AccountWithdrawSolFailEvent.InputTuple,
-      AccountWithdrawSolFailEvent.OutputTuple,
-      AccountWithdrawSolFailEvent.OutputObject
+      AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.InputTuple,
+      AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputTuple,
+      AccountWithdrawSolFail_bytes32_uint64_uint64_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputObject
     >;
-    AccountWithdrawSolFail: TypedContractEvent<
-      AccountWithdrawSolFailEvent.InputTuple,
-      AccountWithdrawSolFailEvent.OutputTuple,
-      AccountWithdrawSolFailEvent.OutputObject
+    "AccountWithdrawSolFail(bytes32,uint64,uint64,uint8,uint8,bytes32,bytes32,bytes32,uint256,bytes32,uint128,uint128,uint8)": TypedContractEvent<
+      AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.InputTuple,
+      AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputTuple,
+      AccountWithdrawSolFail_bytes32_uint64_uint64_uint8_uint8_bytes32_bytes32_bytes32_uint256_bytes32_uint128_uint128_uint8_Event.OutputObject
     >;
 
     "AdlResult(uint64,bytes32,bytes32,bytes32,int128,int128,uint128,int128,uint64)": TypedContractEvent<
@@ -4324,6 +4632,17 @@ export interface Ledger extends BaseContract {
       SettlementResultEvent.OutputObject
     >;
 
+    "SolanaPrimeWalletSet(bytes32,bytes32)": TypedContractEvent<
+      SolanaPrimeWalletSetEvent.InputTuple,
+      SolanaPrimeWalletSetEvent.OutputTuple,
+      SolanaPrimeWalletSetEvent.OutputObject
+    >;
+    SolanaPrimeWalletSet: TypedContractEvent<
+      SolanaPrimeWalletSetEvent.InputTuple,
+      SolanaPrimeWalletSetEvent.OutputTuple,
+      SolanaPrimeWalletSetEvent.OutputObject
+    >;
+
     "SwapResultUploaded(uint64,bytes32,bytes32,bytes32,int128,int128,uint256,uint8)": TypedContractEvent<
       SwapResultUploadedEvent.InputTuple,
       SwapResultUploadedEvent.OutputTuple,
@@ -4333,6 +4652,17 @@ export interface Ledger extends BaseContract {
       SwapResultUploadedEvent.InputTuple,
       SwapResultUploadedEvent.OutputTuple,
       SwapResultUploadedEvent.OutputObject
+    >;
+
+    "VaultSet(address,bool)": TypedContractEvent<
+      VaultSetEvent.InputTuple,
+      VaultSetEvent.OutputTuple,
+      VaultSetEvent.OutputObject
+    >;
+    VaultSet: TypedContractEvent<
+      VaultSetEvent.InputTuple,
+      VaultSetEvent.OutputTuple,
+      VaultSetEvent.OutputObject
     >;
   };
 }
