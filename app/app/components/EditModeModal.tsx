@@ -14,8 +14,7 @@ export interface EditModeModalProps {
   savedTheme: string | null;
   onThemeChange: (newTheme: string) => void;
   viewMode: "desktop" | "mobile";
-  isGeneratingTheme?: boolean;
-  onGenerateTheme?: (prompt: string) => void;
+  onGenerateTheme?: (prompt: string, viewMode: "desktop" | "mobile") => void;
   updateCssColor?: (variableName: string, newColorHex: string) => void;
   updateCssValue?: (variableName: string, newValue: string) => void;
   tradingViewColorConfig?: string | null;
@@ -31,7 +30,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
   savedTheme,
   onThemeChange,
   viewMode,
-  isGeneratingTheme = false,
   onGenerateTheme,
   updateCssColor,
   updateCssValue,
@@ -227,15 +225,14 @@ const EditModeModal: FC<EditModeModalProps> = ({
     prevThemeRef.current = currentTheme;
   }, [isOpen, currentTheme, defaultTheme]);
 
-  // Update AI theme generator modal props when isGeneratingTheme changes
-  useEffect(() => {
-    if (isOpen && currentModalType === "aiThemeGenerator") {
-      openModal("aiThemeGenerator", {
-        isGeneratingTheme,
-        onGenerateTheme,
-      });
-    }
-  }, [isOpen, isGeneratingTheme]);
+  const wrappedOnGenerateTheme = useCallback(
+    (prompt: string, vm: "desktop" | "mobile") => {
+      if (onGenerateTheme) {
+        onGenerateTheme(prompt, vm);
+      }
+    },
+    [onGenerateTheme]
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -530,8 +527,8 @@ const EditModeModal: FC<EditModeModalProps> = ({
               e.stopPropagation();
               if (!onGenerateTheme) return;
               openModal("aiThemeGenerator", {
-                isGeneratingTheme,
-                onGenerateTheme,
+                viewMode,
+                onGenerateTheme: wrappedOnGenerateTheme,
               });
             }}
             variant="secondary"
