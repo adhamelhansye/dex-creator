@@ -80,10 +80,17 @@ jobs:
           echo "sync_happened=false" >> $GITHUB_OUTPUT
           git remote add upstream https://github.com/OrderlyNetworkDexCreator/dex-creator-template.git || true
           git fetch upstream
-          
+
+          # Determine branch based on VITE_DEPLOYMENT_ENV
+          if [ "${{ vars.VITE_DEPLOYMENT_ENV }}" = "mainnet" ]; then
+            UPSTREAM_BRANCH="main"
+          else
+            UPSTREAM_BRANCH="testnet"
+          fi
+
           BEFORE_MERGE=$(git rev-parse HEAD)
-          
-          if git merge upstream/main --no-edit; then
+
+          if git merge upstream/$UPSTREAM_BRANCH --no-edit; then
             AFTER_MERGE=$(git rev-parse HEAD)
             
             if [ "$BEFORE_MERGE" != "$AFTER_MERGE" ]; then
