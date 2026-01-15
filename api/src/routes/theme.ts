@@ -7,7 +7,7 @@ import {
   fineTuneRateLimiter,
   createDeploymentRateLimit,
 } from "../lib/rateLimiter";
-import { validateCSS } from "../lib/cssValidator";
+import { validateCSS, sanitizeInvalidSelectors } from "../lib/cssValidator";
 
 const themeRoutes = new Hono();
 
@@ -226,6 +226,9 @@ COLOR GUIDELINES:
           modifiedTheme = modifiedTheme.replace(/\s*```$/i, "");
           modifiedTheme = modifiedTheme.trim();
 
+          // Sanitize invalid Tailwind-style selectors (e.g., .class/10 or .class-[10px])
+          modifiedTheme = sanitizeInvalidSelectors(modifiedTheme);
+
           // Validate generated CSS
           const validation = validateCSS(modifiedTheme);
           if (!validation.isValid) {
@@ -328,6 +331,7 @@ CRITICAL REQUIREMENTS:
 13. **CRITICAL**: If existing CSS overrides are provided, you MUST return ALL overrides (existing + new combined). Include ALL existing overrides PLUS your new changes. You MAY modify existing overrides if the user's request conflicts with them or asks for changes. If an existing override targets the same element/selector and the user wants different styling, UPDATE that override rather than duplicating it. Return the COMPLETE set that includes everything (modified existing + new).
 14. **CRITICAL**: DO NOT include image data (base64 encoded images, data: URLs, url() with image data) in background properties. For backgrounds, use only color values (rgb, hex) or gradients (linear-gradient, radial-gradient). NO background-image with data URLs or base64 images allowed.
 15. **CRITICAL**: DO NOT use pseudo-elements (::before, ::after) with content that creates overlay effects or blocks user interactions. Pseudo-elements with absolute positioning and empty content can make entire screen regions unclickable. If you absolutely must use pseudo-elements for decorative effects, they MUST include "pointer-events: none" to prevent blocking clicks. Prefer using background gradients, box-shadow, or border effects directly on elements instead of pseudo-elements.
+16. **CRITICAL**: CSS selectors MUST use valid CSS syntax. DO NOT use Tailwind-style class names with special characters like "/" (slash) or "[]" (square brackets) in selectors. Examples of INVALID selectors: ".oui-bg-trade-profit/10" or ".class-name-[10px]" - these are Tailwind syntax, not valid CSS. Use ".oui-bg-trade-profit-10" or ".class-name-10px" instead. Class selectors can only contain letters, numbers, hyphens, and underscores. If you need to target a class with special characters, use attribute selectors like "[class*='trade-profit/10']", but prefer renaming to valid CSS class names.
 
 OUTPUT FORMAT:
 - Return CSS class definitions with selectors targeting the structure (e.g., ".custom-override { color: rgb(255 255 255); } .custom-override > button { background-color: rgb(20 20 30); }")
@@ -403,6 +407,7 @@ CRITICAL VALIDATION REQUIREMENTS:
 - Every CSS rule MUST be complete: every { must have a matching }
 - Do NOT include incomplete rules or selectors without content
 - All CSS must be valid and parseable
+- **CRITICAL**: CSS selectors MUST be valid CSS syntax. Class selectors (starting with .) cannot contain slashes (/) or square brackets ([]). Examples of INVALID selectors: ".class-name/10" or ".class-name-[10px]" - these are Tailwind syntax, not valid CSS. Use ".class-name-10" or ".class-name-10px" instead. If you must target a class with special characters, use attribute selectors like "[class*='class-name/10']", but prefer valid CSS class names.
 
 IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks. Do NOT include any explanations or text before or after the CSS. Return ONLY the CSS rules themselves. ${
         existingOverrides
@@ -442,6 +447,9 @@ IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks
           cssOverrides = cssOverrides.replace(/^```(?:css)?\s*/i, "");
           cssOverrides = cssOverrides.replace(/\s*```$/i, "");
           cssOverrides = cssOverrides.trim();
+
+          // Sanitize invalid Tailwind-style selectors (e.g., .class/10 or .class-[10px])
+          cssOverrides = sanitizeInvalidSelectors(cssOverrides);
 
           // Validate generated CSS
           const validation = validateCSS(cssOverrides);
