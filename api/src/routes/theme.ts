@@ -196,7 +196,7 @@ COLOR GUIDELINES:
       for (let index = 0; index < 3; index++) {
         try {
           const response = await openai.chat.completions.create({
-            model: "qwen-3-32b",
+            model: "qwen-3-235b-a22b-instruct-2507",
             messages: [
               {
                 role: "system",
@@ -420,7 +420,7 @@ IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks
       for (let index = 0; index < 3; index++) {
         try {
           const response = await openai.chat.completions.create({
-            model: "qwen-3-32b",
+            model: "qwen-3-235b-a22b-instruct-2507",
             messages: [
               {
                 role: "system",
