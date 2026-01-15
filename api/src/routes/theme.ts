@@ -427,6 +427,7 @@ IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks
               },
             ],
             temperature: 0.7 + index * 0.1,
+            max_completion_tokens: 8_000,
           });
 
           let cssOverrides = response.choices[0]?.message.content?.trim();
