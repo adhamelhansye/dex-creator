@@ -1457,15 +1457,11 @@ export async function checkForTemplateUpdates(
   try {
     const octokit = await getOctokit();
 
-    // Determine branch based on DEPLOYMENT_ENV
-    const deploymentEnv = process.env.DEPLOYMENT_ENV;
-    const templateBranch = deploymentEnv === "mainnet" ? "main" : "testnet";
-
     const [templateRef, userRef] = await Promise.all([
       octokit.rest.git.getRef({
         owner: templateOwner,
         repo: templateRepoName,
-        ref: `heads/${templateBranch}`,
+        ref: "heads/main",
       }),
       octokit.rest.git.getRef({
         owner,
