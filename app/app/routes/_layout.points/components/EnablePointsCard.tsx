@@ -59,7 +59,7 @@ export function EnablePointsCard({ enabledMenus }: EnablePointsCardProps) {
         <div>
           Point system enabled
           <div className="text-[13px] text-base-contrast-54">
-            You can now create campaigns and manage distributions
+            The feature will show on your DEX UI within 5 minutes.
           </div>
         </div>
       );
