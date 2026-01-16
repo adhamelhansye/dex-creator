@@ -82,10 +82,10 @@ jobs:
           git fetch upstream
 
           # Determine branch based on VITE_DEPLOYMENT_ENV
-          if [ "${{ vars.VITE_DEPLOYMENT_ENV }}" = "mainnet" ]; then
-            UPSTREAM_BRANCH="main"
+          if [ "${{ vars.VITE_DEPLOYMENT_ENV }}" = "qa" ]; then
+            UPSTREAM_BRANCH="qa"
           else
-            UPSTREAM_BRANCH="testnet"
+            UPSTREAM_BRANCH="main"
           fi
 
           BEFORE_MERGE=$(git rev-parse HEAD)

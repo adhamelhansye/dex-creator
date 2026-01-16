@@ -1459,7 +1459,7 @@ export async function checkForTemplateUpdates(
 
     // Determine branch based on DEPLOYMENT_ENV
     const deploymentEnv = process.env.DEPLOYMENT_ENV;
-    const templateBranch = deploymentEnv === "mainnet" ? "main" : "testnet";
+    const templateBranch = deploymentEnv === "qa" ? "qa" : "main";
 
     const [templateRef, userRef] = await Promise.all([
       octokit.rest.git.getRef({
