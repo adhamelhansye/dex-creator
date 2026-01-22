@@ -97,7 +97,7 @@ export default function ReferralRoute() {
     loadMultiLevelReferralInfo();
     const interval = setInterval(() => {
       loadMultiLevelReferralInfo();
-    }, 60000);
+    }, 600000);
     return () => {
       clearInterval(interval);
     };
@@ -434,35 +434,48 @@ export default function ReferralRoute() {
           {/* Referral Settings Form */}
           {hasValidKey && !isCheckingSingleLevel && (
             <>
-              {hasUsedSingleLevel && (
-                <div hidden={referralType !== "single-level"}>
-                  <SingleLevelSettings
-                    hasValidKey={hasValidKey}
-                    accountId={accountId}
-                    orderlyKey={orderlyKey}
-                    isMultiLevelEnabled={multiLevelInfo?.enable ?? true}
-                  />
+              {isLoadingMultiLevel ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="i-svg-spinners:pulse-rings-multiple w-8 h-8 mx-auto text-primary mb-4"></div>
+                    <div className="text-sm text-gray-400">
+                      Loading referral settings...
+                    </div>
+                  </div>
                 </div>
+              ) : (
+                <>
+                  {hasUsedSingleLevel && (
+                    <div hidden={referralType !== "single-level"}>
+                      <SingleLevelSettings
+                        hasValidKey={hasValidKey}
+                        accountId={accountId}
+                        orderlyKey={orderlyKey}
+                        isMultiLevelEnabled={multiLevelInfo?.enable ?? false}
+                      />
+                    </div>
+                  )}
+
+                  {/* Multi-level tab content */}
+                  <div hidden={referralType !== "multi-level"}>
+                    <MultiLevelSettings
+                      onUpgradeClick={handleOpenUpgradeModal}
+                      isMultiLevelEnabled={multiLevelInfo?.enable ?? false}
+                      multiLevelInfo={multiLevelInfo}
+                      isLoading={isLoadingMultiLevel}
+                      accountId={accountId}
+                      orderlyKey={orderlyKey}
+                      onSaved={loadMultiLevelReferralInfo}
+                    />
+                  </div>
+
+                  <AdvancedReferralManagement
+                    hasValidKey={hasValidKey}
+                    onOpenAdminLogin={handleOpenAdminLogin}
+                    hideFirstFeature={referralType === "multi-level"}
+                  />
+                </>
               )}
-
-              {/* Multi-level tab content */}
-              <div hidden={referralType !== "multi-level"}>
-                <MultiLevelSettings
-                  onUpgradeClick={handleOpenUpgradeModal}
-                  isMultiLevelEnabled={multiLevelInfo?.enable ?? true}
-                  multiLevelInfo={multiLevelInfo}
-                  isLoading={isLoadingMultiLevel}
-                  accountId={accountId}
-                  orderlyKey={orderlyKey}
-                  onSaved={loadMultiLevelReferralInfo}
-                />
-              </div>
-
-              <AdvancedReferralManagement
-                hasValidKey={hasValidKey}
-                onOpenAdminLogin={handleOpenAdminLogin}
-                hideFirstFeature={referralType === "multi-level"}
-              />
             </>
           )}
         </div>

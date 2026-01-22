@@ -100,9 +100,13 @@ export default function SingleLevelSettings({
       // If multi-level referral is enabled, skip toast if permission denied
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      const shouldSkipToast = errorMessage.includes(
-        "Permission denied. Multilevel referral is already enabled."
-      );
+      const shouldSkipToast =
+        errorMessage.includes(
+          "Permission denied. Multilevel referral is already enabled."
+        ) ||
+        errorMessage.includes(
+          "You have exceeded the rate limit, please try again in 1 seconds."
+        );
 
       if (shouldSkipToast) {
         console.warn(

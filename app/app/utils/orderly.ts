@@ -792,7 +792,7 @@ export async function getMultiLevelReferralInfo(
   }
 
   return {
-    enable: json.data?.enable ?? true,
+    enable: json.data?.enable,
     required_volume: json.data?.required_volume,
     max_rebate_rate: json.data?.max_rebate_rate,
   };
