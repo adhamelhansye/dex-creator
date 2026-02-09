@@ -34,8 +34,14 @@ export const meta: MetaFunction = () => [
 
 export default function ReferralRoute() {
   const { isAuthenticated, isLoading } = useAuth();
-  const { dexData, brokerId, isGraduated } = useDex();
-  const { orderlyKey, accountId, hasValidKey, setOrderlyKey } = useOrderlyKey();
+  const { dexData, brokerId, isGraduated, isLoading: isDexLoading } = useDex();
+  const {
+    orderlyKey,
+    accountId,
+    hasValidKey,
+    setOrderlyKey,
+    isOrderlyKeyReady,
+  } = useOrderlyKey();
   const { openModal } = useModal();
   const { address } = useAccount();
 
@@ -169,7 +175,16 @@ export default function ReferralRoute() {
     });
   };
 
-  if (isLoading) {
+  const isPageLoading =
+    isLoading ||
+    (isAuthenticated && isDexLoading) ||
+    (!!dexData && isGraduated && !isOrderlyKeyReady) ||
+    (!!dexData &&
+      isGraduated &&
+      hasValidKey &&
+      (isCheckingSingleLevel || isLoadingMultiLevel));
+
+  if (isPageLoading) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center px-4 mt-26 pb-52">
         <div className="text-center">
