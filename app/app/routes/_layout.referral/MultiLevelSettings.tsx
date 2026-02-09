@@ -117,7 +117,12 @@ export default function MultiLevelSettings({
   };
 
   const commissionPercentNumber = Number(defaultCommissionRate) || 0;
-  const remainingPercent = Math.max(0, 100 - commissionPercentNumber);
+  const directBonusPercent =
+    (multiLevelInfo?.direct_bonus_rebate_rate ?? 0) * 100;
+  const remainingPercent = Math.max(
+    0,
+    100 - commissionPercentNumber - directBonusPercent
+  );
 
   // Check if values have changed
   const hasChanges =
@@ -195,8 +200,10 @@ export default function MultiLevelSettings({
               <div className="flex gap-1 items-center pl-1">
                 <div className="size-1 rounded-full bg-base-contrast-54 shrink-0 self-center" />
                 <p className="flex-1 text-xs font-medium leading-[18px] tracking-[0.36px] text-base-contrast-54">
-                  Sets the base commission percentage for Level 1 referrers. The
-                  remaining {remainingPercent}% is retained by you.
+                  Sets the base commission percentage for Level 1 affiliates. A{" "}
+                  {directBonusPercent}% fixed bonus is also paid to the direct
+                  referrer. Based on this setting, you will retain{" "}
+                  {remainingPercent}%.
                 </p>
               </div>
             </div>

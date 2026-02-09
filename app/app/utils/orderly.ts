@@ -771,6 +771,7 @@ export type MultiLevelReferralInfo = {
   enable: boolean;
   required_volume?: number;
   max_rebate_rate?: number;
+  direct_bonus_rebate_rate?: number;
 };
 
 export async function getMultiLevelReferralInfo(
@@ -795,6 +796,7 @@ export async function getMultiLevelReferralInfo(
     enable: json.data?.enable,
     required_volume: json.data?.required_volume,
     max_rebate_rate: json.data?.max_rebate_rate,
+    direct_bonus_rebate_rate: json.data?.direct_bonus_rebate_rate,
   };
 }
 
