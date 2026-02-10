@@ -1,4 +1,4 @@
-import { FC, useEffect, useState, useRef } from "react";
+import { FC, useEffect, useState, useRef, useMemo } from "react";
 import { WalletConnectorProvider } from "@orderly.network/wallet-connector";
 import { OrderlyAppProvider, AppLogos } from "@orderly.network/react-app";
 import {
@@ -69,6 +69,7 @@ const DexPreview: FC<DexPreviewProps> = ({
   },
   appIcons,
   customStyles,
+  fontFamily: fontFamilyProp,
   className = "",
   onLoad,
 }) => {
@@ -104,6 +105,19 @@ const DexPreview: FC<DexPreviewProps> = ({
   const styleIdRef = useRef<string | null>(null);
   const containerIdRef = useRef<string | null>(null);
 
+  const fontFamily = useMemo(() => {
+    if (customStyles) {
+      const fontFamilyMatch = customStyles.match(
+        /--oui-font-family:\s*([^;]+);/
+      );
+      if (fontFamilyMatch) {
+        return fontFamilyMatch[1].trim();
+      }
+    }
+    // Fall back to prop if customStyles doesn't have font-family
+    return fontFamilyProp || null;
+  }, [customStyles, fontFamilyProp]);
+
   useEffect(() => {
     const oldOverrideStyles = document.querySelectorAll(
       'style[id^="ai-override-"]'
@@ -117,11 +131,15 @@ const DexPreview: FC<DexPreviewProps> = ({
     }
     const containerId = containerIdRef.current;
 
-    if (previewContainerRef.current) {
+    if (
+      previewContainerRef.current &&
+      previewContainerRef.current.getAttribute("data-preview-id") !==
+        containerId
+    ) {
       previewContainerRef.current.setAttribute("data-preview-id", containerId);
     }
 
-    if (!customStyles) {
+    if (!fontFamily) {
       if (styleIdRef.current) {
         const styleToRemove = document.getElementById(styleIdRef.current);
         if (styleToRemove) {
@@ -131,20 +149,6 @@ const DexPreview: FC<DexPreviewProps> = ({
       }
       return;
     }
-
-    const fontFamilyMatch = customStyles.match(/--oui-font-family:\s*([^;]+);/);
-    if (!fontFamilyMatch) {
-      if (styleIdRef.current) {
-        const styleToRemove = document.getElementById(styleIdRef.current);
-        if (styleToRemove) {
-          styleToRemove.remove();
-        }
-        styleIdRef.current = null;
-      }
-      return;
-    }
-
-    const fontFamily = fontFamilyMatch[1].trim();
 
     if (!styleIdRef.current) {
       styleIdRef.current = `dex-preview-font-override-${Math.random()
@@ -162,10 +166,16 @@ const DexPreview: FC<DexPreviewProps> = ({
 
         const style = document.createElement("style");
         style.id = styleId;
+        // Target the container itself (which has both data-preview-id and orderly-app-container)
+        // AND any descendant orderly-app-container elements, plus all their descendants
         style.textContent = `
+          [data-preview-id="${containerId}"].orderly-app-container,
           [data-preview-id="${containerId}"] .orderly-app-container,
+          [data-preview-id="${containerId}"].orderly-app-container *,
           [data-preview-id="${containerId}"] .orderly-app-container *,
+          [data-preview-id="${containerId}"].orderly-app-container *::before,
           [data-preview-id="${containerId}"] .orderly-app-container *::before,
+          [data-preview-id="${containerId}"].orderly-app-container *::after,
           [data-preview-id="${containerId}"] .orderly-app-container *::after {
             font-family: ${fontFamily} !important;
           }
@@ -183,7 +193,7 @@ const DexPreview: FC<DexPreviewProps> = ({
         styleIdRef.current = null;
       }
     };
-  }, [customStyles]);
+  }, [customStyles, fontFamily]);
 
   useEffect(() => {
     const originalError = console.error;

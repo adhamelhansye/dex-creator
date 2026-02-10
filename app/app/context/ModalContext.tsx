@@ -308,7 +308,7 @@ function ModalManager() {
         <AIThemeGeneratorModal
           isOpen={isModalOpen}
           onClose={closeModal}
-          isGeneratingTheme={currentModalProps.isGeneratingTheme}
+          viewMode={currentModalProps.viewMode}
           onGenerateTheme={currentModalProps.onGenerateTheme}
         />
       );

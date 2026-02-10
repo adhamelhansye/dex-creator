@@ -2,7 +2,6 @@ import { useState, useEffect, FormEvent, useMemo } from "react";
 import type { MetaFunction } from "@remix-run/node";
 import { toast } from "react-toastify";
 import { useAuth } from "../context/useAuth";
-import { useModal } from "../context/ModalContext";
 import { putFormData, createDexFormData } from "../utils/apiClient";
 import { buildDexDataToSend } from "../utils/dexDataBuilder";
 import WalletConnect from "../components/WalletConnect";
@@ -19,7 +18,8 @@ import { useBindDistrubutorCode } from "../hooks/useBindDistrubutorCode";
 import { verifyDistributorCodeMessage } from "../service/distrubutorCode";
 import { useDistributor } from "../context/DistributorContext";
 import { useDex } from "../context/DexContext";
-import { DexPreviewProps } from "../components/DexPreview";
+import { BackDexDashboard } from "../components/BackDexDashboard";
+import { useThemeHandlers } from "../hooks/useThemeHandlers";
 
 export const meta: MetaFunction = () => [
   { title: "Configure Your DEX - Orderly One" },
@@ -32,7 +32,6 @@ export const meta: MetaFunction = () => [
 
 export default function DexConfigRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
-  const { openModal } = useModal();
   const navigate = useNavigate();
   const form = useDexForm();
 
@@ -83,55 +82,17 @@ export default function DexConfigRoute() {
     }
   }, [form]);
 
-  const handleApplyGeneratedTheme = (modifiedCss: string) => {
-    form.setCurrentTheme(modifiedCss);
-  };
-
-  const handleCancelGeneratedTheme = () => {};
-
-  const handleGenerateTheme = async (
-    prompt?: string,
-    previewProps?: DexPreviewProps,
-    viewMode?: "desktop" | "mobile"
-  ) => {
-    if (!token) return;
-
-    if (prompt !== undefined) {
-      form.setThemePrompt(prompt);
-    }
-
-    form.setIsGeneratingTheme(true);
-    await form.generateTheme(
+  const { handleGenerateTheme, handleResetTheme, handleResetToDefault } =
+    useThemeHandlers({
       token,
-      form.dexData?.themeCSS,
-      handleApplyGeneratedTheme,
-      handleCancelGeneratedTheme,
-      openModal,
-      prompt,
-      previewProps,
-      viewMode
-    );
-    form.setIsGeneratingTheme(false);
-  };
-
-  const handleResetTheme = () => {
-    form.resetTheme(form.dexData?.themeCSS);
-    form.setTradingViewColorConfig(
-      form.dexData?.tradingViewColorConfig ?? null
-    );
-    form.setShowThemeEditor(false);
-    form.setViewCssCode(false);
-  };
-
-  const handleResetToDefault = () => {
-    form.resetThemeToDefault();
-    form.setShowThemeEditor(false);
-    form.setViewCssCode(false);
-  };
+      form,
+      originalThemeCSS: form.dexData?.themeCSS,
+      tradingViewColorConfig: form.dexData?.tradingViewColorConfig,
+    });
 
   const validateAllSections = async () => {
     const sectionProps = form.getSectionProps({
-      handleResetTheme,
+      handleResetTheme: () => handleResetTheme(true),
       handleResetToDefault,
       ThemeTabButton,
     });
@@ -315,13 +276,7 @@ export default function DexConfigRoute() {
     <div className="container mx-auto p-4 max-w-7xl mt-26 pb-52">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <div>
-          <Link
-            to="/dex"
-            className="text-sm text-gray-400 hover:text-primary-light mb-2 inline-flex items-center"
-          >
-            <div className="i-mdi:arrow-left h-4 w-4 mr-1"></div>
-            Back to DEX Dashboard
-          </Link>
+          <BackDexDashboard />
           <h1 className="text-2xl md:text-3xl font-bold gradient-text">
             DEX Configuration
           </h1>

@@ -238,6 +238,11 @@ const _abi = [
   },
   {
     inputs: [],
+    name: "InvalidVault",
+    type: "error",
+  },
+  {
+    inputs: [],
     name: "LedgerAddressZero",
     type: "error",
   },
@@ -279,22 +284,6 @@ const _abi = [
   {
     inputs: [],
     name: "OperatorManagerAddressZero",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "want",
-        type: "address",
-      },
-      {
-        internalType: "address",
-        name: "got",
-        type: "address",
-      },
-    ],
-    name: "ProtocolVaultAddressMismatch",
     type: "error",
   },
   {
@@ -408,6 +397,11 @@ const _abi = [
     type: "error",
   },
   {
+    inputs: [],
+    name: "UnsupportChainType",
+    type: "error",
+  },
+  {
     inputs: [
       {
         internalType: "bytes32",
@@ -437,22 +431,6 @@ const _abi = [
       },
     ],
     name: "WithdrawBalanceNotEnough",
-    type: "error",
-  },
-  {
-    inputs: [
-      {
-        internalType: "int128",
-        name: "availableBalance",
-        type: "int128",
-      },
-      {
-        internalType: "uint128",
-        name: "withdrawAmount",
-        type: "uint128",
-      },
-    ],
-    name: "WithdrawEscrowBalanceNotEnough",
     type: "error",
   },
   {
@@ -1351,6 +1329,170 @@ const _abi = [
         internalType: "uint64",
         name: "eventId",
         type: "uint64",
+      },
+      {
+        indexed: false,
+        internalType: "enum EventTypes.ChainType",
+        name: "senderChainType",
+        type: "uint8",
+      },
+      {
+        indexed: false,
+        internalType: "enum EventTypes.ChainType",
+        name: "receiverChainType",
+        type: "uint8",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "brokerHash",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "sender",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "receiver",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "chainId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "tokenHash",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "uint128",
+        name: "tokenAmount",
+        type: "uint128",
+      },
+      {
+        indexed: false,
+        internalType: "uint128",
+        name: "fee",
+        type: "uint128",
+      },
+    ],
+    name: "AccountWithdrawSolApprove",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "accountId",
+        type: "bytes32",
+      },
+      {
+        indexed: true,
+        internalType: "uint64",
+        name: "withdrawNonce",
+        type: "uint64",
+      },
+      {
+        indexed: true,
+        internalType: "uint64",
+        name: "eventId",
+        type: "uint64",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "brokerHash",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "sender",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "receiver",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "chainId",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "tokenHash",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "uint128",
+        name: "tokenAmount",
+        type: "uint128",
+      },
+      {
+        indexed: false,
+        internalType: "uint128",
+        name: "fee",
+        type: "uint128",
+      },
+      {
+        indexed: false,
+        internalType: "uint8",
+        name: "failReason",
+        type: "uint8",
+      },
+    ],
+    name: "AccountWithdrawSolFail",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: true,
+        internalType: "bytes32",
+        name: "accountId",
+        type: "bytes32",
+      },
+      {
+        indexed: true,
+        internalType: "uint64",
+        name: "withdrawNonce",
+        type: "uint64",
+      },
+      {
+        indexed: true,
+        internalType: "uint64",
+        name: "eventId",
+        type: "uint64",
+      },
+      {
+        indexed: false,
+        internalType: "enum EventTypes.ChainType",
+        name: "senderChainType",
+        type: "uint8",
+      },
+      {
+        indexed: false,
+        internalType: "enum EventTypes.ChainType",
+        name: "receiverChainType",
+        type: "uint8",
       },
       {
         indexed: false,
@@ -2477,6 +2619,25 @@ const _abi = [
     anonymous: false,
     inputs: [
       {
+        indexed: false,
+        internalType: "bytes32",
+        name: "id",
+        type: "bytes32",
+      },
+      {
+        indexed: false,
+        internalType: "bytes32",
+        name: "solanaPrimeWallet",
+        type: "bytes32",
+      },
+    ],
+    name: "SolanaPrimeWalletSet",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
         indexed: true,
         internalType: "uint64",
         name: "eventId",
@@ -2529,6 +2690,25 @@ const _abi = [
     type: "event",
   },
   {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "address",
+        name: "vault",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "bool",
+        name: "isValid",
+        type: "bool",
+      },
+    ],
+    name: "VaultSet",
+    type: "event",
+  },
+  {
     inputs: [],
     name: "BROKER_MANAGER_ROLE",
     outputs: [
@@ -2544,19 +2724,6 @@ const _abi = [
   {
     inputs: [],
     name: "DEFAULT_ADMIN_ROLE",
-    outputs: [
-      {
-        internalType: "bytes32",
-        name: "",
-        type: "bytes32",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "SYMBOL_MANAGER_ROLE",
     outputs: [
       {
         internalType: "bytes32",
@@ -4148,6 +4315,96 @@ const _abi = [
             type: "uint128",
           },
           {
+            internalType: "enum EventTypes.ChainType",
+            name: "senderChainType",
+            type: "uint8",
+          },
+          {
+            internalType: "enum EventTypes.ChainType",
+            name: "receiverChainType",
+            type: "uint8",
+          },
+          {
+            internalType: "uint256",
+            name: "chainId",
+            type: "uint256",
+          },
+          {
+            internalType: "bytes32",
+            name: "accountId",
+            type: "bytes32",
+          },
+          {
+            internalType: "enum EventTypes.VaultEnum",
+            name: "vaultType",
+            type: "uint8",
+          },
+          {
+            internalType: "bytes32",
+            name: "sender",
+            type: "bytes32",
+          },
+          {
+            internalType: "uint64",
+            name: "withdrawNonce",
+            type: "uint64",
+          },
+          {
+            internalType: "bytes32",
+            name: "receiver",
+            type: "bytes32",
+          },
+          {
+            internalType: "uint64",
+            name: "timestamp",
+            type: "uint64",
+          },
+          {
+            internalType: "bytes32",
+            name: "brokerHash",
+            type: "bytes32",
+          },
+          {
+            internalType: "bytes32",
+            name: "tokenHash",
+            type: "bytes32",
+          },
+          {
+            internalType: "uint256",
+            name: "clientId",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct EventTypes.Withdraw2ContractV2",
+        name: "withdraw2ContractV2",
+        type: "tuple",
+      },
+      {
+        internalType: "uint64",
+        name: "eventId",
+        type: "uint64",
+      },
+    ],
+    name: "executeWithdraw2ContractV2",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        components: [
+          {
+            internalType: "uint128",
+            name: "tokenAmount",
+            type: "uint128",
+          },
+          {
+            internalType: "uint128",
+            name: "fee",
+            type: "uint128",
+          },
+          {
             internalType: "uint256",
             name: "chainId",
             type: "uint256",
@@ -4377,6 +4634,34 @@ const _abi = [
     type: "function",
   },
   {
+    inputs: [],
+    name: "getLedgerImpl",
+    outputs: [
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+      {
+        internalType: "address",
+        name: "",
+        type: "address",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [
       {
         internalType: "bytes32",
@@ -4555,10 +4840,48 @@ const _abi = [
     type: "function",
   },
   {
+    inputs: [
+      {
+        internalType: "bytes32",
+        name: "",
+        type: "bytes32",
+      },
+    ],
+    name: "idToSolanaPrimeWallet",
+    outputs: [
+      {
+        internalType: "bytes32",
+        name: "",
+        type: "bytes32",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
     inputs: [],
     name: "initialize",
     outputs: [],
     stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "vault",
+        type: "address",
+      },
+    ],
+    name: "isValidVault",
+    outputs: [
+      {
+        internalType: "bool",
+        name: "",
+        type: "bool",
+      },
+    ],
+    stateMutability: "view",
     type: "function",
   },
   {
@@ -4746,14 +5069,19 @@ const _abi = [
         type: "bytes32",
       },
       {
-        internalType: "uint16",
-        name: "brokerIndex",
-        type: "uint16",
-      },
-      {
         internalType: "bool",
         name: "allowed",
         type: "bool",
+      },
+      {
+        internalType: "bool",
+        name: "setBrokerIndex",
+        type: "bool",
+      },
+      {
+        internalType: "uint16",
+        name: "brokerIndex",
+        type: "uint16",
       },
     ],
     name: "setBrokerFromLedger",
@@ -4899,6 +5227,42 @@ const _abi = [
   {
     inputs: [
       {
+        internalType: "bytes32",
+        name: "_id",
+        type: "bytes32",
+      },
+      {
+        internalType: "bytes32",
+        name: "_solanaPrimeWallet",
+        type: "bytes32",
+      },
+    ],
+    name: "setSolanaPrimeWallet",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "address",
+        name: "vault",
+        type: "address",
+      },
+      {
+        internalType: "bool",
+        name: "isValid",
+        type: "bool",
+      },
+    ],
+    name: "setValidVault",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
         internalType: "address",
         name: "_vaultManagerAddress",
         type: "address",
@@ -4933,19 +5297,6 @@ const _abi = [
       },
     ],
     stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [],
-    name: "version",
-    outputs: [
-      {
-        internalType: "string",
-        name: "",
-        type: "string",
-      },
-    ],
-    stateMutability: "pure",
     type: "function",
   },
 ] as const;

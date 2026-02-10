@@ -1,9 +1,24 @@
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useId } from "react";
 import { Button } from "./Button";
 import { Card } from "./Card";
 import DexPreview, { DexPreviewProps } from "./DexPreview";
 import ThemeEditingTabs from "./ThemeEditingTabs";
 import { useThemeEditor } from "../hooks/useThemeEditor";
+import { extractFontValues } from "../utils/cssParser";
+
+/**
+ * Transforms CSS to scope :root selectors to a specific container using data attribute.
+ * This ensures the CSS takes precedence over other :root styles that may be
+ * rendered by other components (like EditModeModal's DexPreview).
+ */
+function scopeThemeCssToContainer(css: string, containerId: string): string {
+  if (!css) return css;
+
+  return css.replace(
+    /:root\s*\{/g,
+    `:root[data-theme-preview-id="${containerId}"], [data-theme-preview-id="${containerId}"] {`
+  );
+}
 
 interface ThemePreviewModalProps {
   isOpen: boolean;
@@ -41,6 +56,7 @@ export default function ThemePreviewModal({
     resetCss,
   } = useThemeEditor(initialCss);
   const originalMatchMediaRef = useRef<typeof window.matchMedia | null>(null);
+  const themePreviewId = useId();
 
   const isActualMobileDevice = useMemo(() => {
     return window.innerWidth < 768;
@@ -128,6 +144,26 @@ export default function ThemePreviewModal({
     (!isActualMobileDevice || viewMode === "desktop")
   ) {
     const currentTheme = getCurrentTheme();
+    const { fontFamily, fontSize } = useMemo(
+      () => extractFontValues(currentTheme),
+      [currentTheme]
+    );
+
+    const scopedTheme = useMemo(
+      () => scopeThemeCssToContainer(currentTheme, themePreviewId),
+      [currentTheme, themePreviewId]
+    );
+
+    const cleanPreviewProps = useMemo(() => {
+      if (!previewProps) return undefined;
+      const {
+        customStyles: _customStyles,
+        fontFamily: _fontFamily,
+        fontSize: _fontSize,
+        ...rest
+      } = previewProps;
+      return rest;
+    }, [previewProps]);
 
     return (
       <div
@@ -199,15 +235,29 @@ export default function ThemePreviewModal({
         >
           <div
             data-preview-container
+            data-theme-preview-id={themePreviewId}
             className={`${
               viewMode === "mobile" ? "max-w-md mx-auto py-4" : "h-full"
             } w-full`}
+            style={
+              viewMode === "mobile"
+                ? {
+                    maxWidth: "450px",
+                    margin: "0 auto",
+                  }
+                : undefined
+            }
           >
-            <DexPreview
-              {...previewProps}
-              customStyles={currentTheme}
-              className={viewMode === "mobile" ? "w-full" : "h-full w-full"}
-            />
+            {cleanPreviewProps && (
+              <DexPreview
+                {...cleanPreviewProps}
+                customStyles={scopedTheme}
+                fontFamily={fontFamily}
+                fontSize={fontSize}
+                className={viewMode === "mobile" ? "w-full" : "h-full w-full"}
+                key={`theme-preview-${selectedVariant}-${themePreviewId}-${currentTheme?.substring(0, 50)}`}
+              />
+            )}
           </div>
         </div>
       </div>

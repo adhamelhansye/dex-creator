@@ -14,8 +14,7 @@ export interface EditModeModalProps {
   savedTheme: string | null;
   onThemeChange: (newTheme: string) => void;
   viewMode: "desktop" | "mobile";
-  isGeneratingTheme?: boolean;
-  onGenerateTheme?: (prompt: string) => void;
+  onGenerateTheme?: (prompt: string, viewMode: "desktop" | "mobile") => void;
   updateCssColor?: (variableName: string, newColorHex: string) => void;
   updateCssValue?: (variableName: string, newValue: string) => void;
   tradingViewColorConfig?: string | null;
@@ -31,7 +30,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
   savedTheme,
   onThemeChange,
   viewMode,
-  isGeneratingTheme = false,
   onGenerateTheme,
   updateCssColor,
   updateCssValue,
@@ -160,6 +158,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
 
   const prevModalTypeRef = useRef<string | null>(null);
   const prevThemeRef = useRef<string | null>(null);
+  const hasInitializedFontRef = useRef(false);
 
   useEffect(() => {
     if (
@@ -196,7 +195,11 @@ const EditModeModal: FC<EditModeModalProps> = ({
   }, [isOpen, currentModalType, currentTheme]);
 
   useEffect(() => {
-    if (isOpen && currentTheme !== prevThemeRef.current) {
+    const isFirstMount = !hasInitializedFontRef.current;
+    const themeChanged = currentTheme !== prevThemeRef.current;
+
+    if (isOpen && (isFirstMount || themeChanged)) {
+      hasInitializedFontRef.current = true;
       requestAnimationFrame(() => {
         const themeToUse = currentTheme || defaultTheme;
         const fontFamilyMatch = themeToUse.match(
@@ -226,6 +229,15 @@ const EditModeModal: FC<EditModeModalProps> = ({
     }
     prevThemeRef.current = currentTheme;
   }, [isOpen, currentTheme, defaultTheme]);
+
+  const wrappedOnGenerateTheme = useCallback(
+    (prompt: string, vm: "desktop" | "mobile") => {
+      if (onGenerateTheme) {
+        onGenerateTheme(prompt, vm);
+      }
+    },
+    [onGenerateTheme]
+  );
 
   useEffect(() => {
     if (!isOpen) {
@@ -520,8 +532,8 @@ const EditModeModal: FC<EditModeModalProps> = ({
               e.stopPropagation();
               if (!onGenerateTheme) return;
               openModal("aiThemeGenerator", {
-                isGeneratingTheme,
-                onGenerateTheme,
+                viewMode,
+                onGenerateTheme: wrappedOnGenerateTheme,
               });
             }}
             variant="secondary"
@@ -576,7 +588,7 @@ const EditModeModal: FC<EditModeModalProps> = ({
               fontSize: ___,
               ...rest
             }) => rest)(previewProps)}
-            customStyles={currentTheme ?? ""}
+            customStyles={currentTheme || defaultTheme}
             className="h-full w-full"
           />
         </div>
