@@ -43,20 +43,21 @@ export default function MultiLevelSettings({
 }: MultiLevelSettingsProps) {
   const [requiredVolume, setRequiredVolume] = useState<string>("0");
   const [defaultCommissionRate, setDefaultCommissionRate] =
-    useState<string>("40");
+    useState<string>("0");
   const [isSaving, setIsSaving] = useState(false);
   const [initialRequiredVolume, setInitialRequiredVolume] =
     useState<string>("0");
   const [initialDefaultCommissionRate, setInitialDefaultCommissionRate] =
-    useState<string>("40");
+    useState<string>("0");
 
-  // Initialize form values from multiLevelInfo
   useEffect(() => {
     if (multiLevelInfo) {
       const volume = multiLevelInfo.required_volume?.toString() ?? "0";
-      const commissionRate = multiLevelInfo.max_rebate_rate
-        ? (multiLevelInfo.max_rebate_rate * 100).toString()
-        : "40";
+      const commissionRate =
+        multiLevelInfo.max_rebate_rate != null &&
+        multiLevelInfo.max_rebate_rate > 0
+          ? (multiLevelInfo.max_rebate_rate * 100).toString()
+          : "0";
 
       setRequiredVolume(volume);
       setDefaultCommissionRate(commissionRate);
