@@ -28,6 +28,7 @@ import CurrentThemeModal from "../components/CurrentThemeModal";
 import AIFineTuneModal from "../components/AIFineTuneModal";
 import AIFineTunePreviewModal from "../components/AIFineTunePreviewModal";
 import ThemePresetPreviewModal from "../components/ThemePresetPreviewModal";
+import MLRConfirmModal from "../components/MLRConfirmModal";
 
 export type ModalType =
   | "login"
@@ -52,6 +53,7 @@ export type ModalType =
   | "aiFineTune"
   | "aiFineTunePreview"
   | "themePresetPreview"
+  | "mlrConfirm"
   | null;
 
 interface ModalContextType {
@@ -362,6 +364,14 @@ function ModalManager() {
           currentTheme={currentModalProps.currentTheme}
           onApply={currentModalProps.onApply}
           onPreviewChange={currentModalProps.onPreviewChange}
+        />
+      );
+    case "mlrConfirm":
+      return (
+        <MLRConfirmModal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          onConfirm={currentModalProps.onConfirm}
         />
       );
     default:
