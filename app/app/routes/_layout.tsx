@@ -55,12 +55,12 @@ export default function Layout() {
                       <div className="flex flex-col h-full">
                         <header className="fixed top-0 left-0 right-0 z-49 bg-gradient-to-b from-purple-900/80 to-transparent backdrop-blur-[1px]">
                           <div className="flex justify-between items-center py-4 px-4 md:py-6 md:px-8">
-                            <div className="flex items-center justify-between w-full mr-8">
+                            <div className="flex items-center justify-between flex-1 mr-8">
                               <Link to="/">
                                 <img
                                   src="/orderly-one.min.svg"
                                   alt="Orderly One"
-                                  className="h-9 lg:h-10 hidden md:block"
+                                  className="w-auto h-auto max-h-9 lg:max-h-10 hidden md:block max-w-full"
                                 />
                                 <img
                                   src="/orderly-one-small.svg"
