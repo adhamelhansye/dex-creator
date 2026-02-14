@@ -1,17 +1,17 @@
 export function HowItWorks() {
   const steps = [
     {
-      icon: "distributor/icon-create.svg",
+      icon: "/distributor/icon-create.svg",
       title: "1. Create profile",
       desc: "Create your distributor profile directly on Orderly One. Not a builder? No problem! You can register as an ambassador.",
     },
     {
-      icon: "distributor/icon-refer.svg",
+      icon: "/distributor/icon-refer.svg",
       title: "2. Refer builders",
       desc: "Share your distributor link or code with your network. Builders in your network can use it to setup their DEXes.",
     },
     {
-      icon: "distributor/icon-earn.svg",
+      icon: "/distributor/icon-earn.svg",
       title: "3. Earn revenue share",
       desc: "Immediately start earning revenue share once your invitees have successfully setup their DEXes and graduated.",
     },

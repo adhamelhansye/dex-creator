@@ -16,7 +16,7 @@ export function CaseStudy() {
             <div className="absolute inset-0 bg-[url('/distributor/case-study-bg.png')] bg-cover bg-center opacity-25 z-[2]"></div>
 
             <img
-              src="distributor/inbum.png"
+              src="/distributor/inbum.png"
               alt="Inbum DEX"
               className="max-w-[240px] h-auto relative z-[3]"
             />

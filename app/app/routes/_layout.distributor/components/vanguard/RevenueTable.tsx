@@ -4,31 +4,31 @@ export function RevenueTable() {
       tier: "Public",
       stake: "0 $ORDER",
       vals: ["$100", "$750", "$4,500", "$100K", "$2M"],
-      icon: "distributor/tier-public.png",
+      icon: "/distributor/tier-public.png",
     },
     {
       tier: "Silver",
       stake: "100K $ORDER",
       vals: ["$250", "$750", "$4,500", "$100K", "$2M"],
-      icon: "distributor/tier-silver.png",
+      icon: "/distributor/tier-silver.png",
     },
     {
       tier: "Gold",
       stake: "250K $ORDER",
       vals: ["$500", "$1,500", "$4,500", "$100K", "$2M"],
-      icon: "distributor/tier-gold.png",
+      icon: "/distributor/tier-gold.png",
     },
     {
       tier: "Platinum",
       stake: "2M $ORDER",
       vals: ["$1,000", "$3,000", "$9,000", "$100K", "$2M"],
-      icon: "distributor/tier-platinum.png",
+      icon: "/distributor/tier-platinum.png",
     },
     {
       tier: "Diamond",
       stake: "7M $ORDER",
       vals: ["$2,000", "$6,000", "$18,000", "$200K", "$2M"],
-      icon: "distributor/tier-diamond.png",
+      icon: "/distributor/tier-diamond.png",
     },
   ];
 

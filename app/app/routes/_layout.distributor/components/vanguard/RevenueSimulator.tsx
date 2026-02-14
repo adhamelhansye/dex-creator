@@ -204,7 +204,7 @@ export function RevenueSimulator() {
                 <div className="w-12 h-16 flex items-center justify-center">
                   <img
                     id="userTierIcon"
-                    src={`/${TIER_CONFIG[userTier].icon}`}
+                    src={TIER_CONFIG[userTier].icon}
                     alt={userTier}
                     className="w-full h-full object-contain"
                   />
@@ -245,7 +245,7 @@ export function RevenueSimulator() {
                     <div className="flex items-center gap-2 p-6 w-[188px] h-[70px] bg-purple-dark border border-line-6 rounded-2xl shrink-0 relative isolate max-md:w-full">
                       <img
                         className="w-8 h-8 opacity-100"
-                        src={`/${TIER_CONFIG[invitee.tier].icon}`}
+                        src={TIER_CONFIG[invitee.tier].icon}
                         alt={invitee.tier}
                       />
                       <select
@@ -332,7 +332,7 @@ export function RevenueSimulator() {
                         className={`flex items-center gap-2 ${isUpgrade ? "opacity-30" : ""}`}
                       >
                         <img
-                          src={`/${TIER_CONFIG[userTier].icon}`}
+                          src={TIER_CONFIG[userTier].icon}
                           alt={userTier}
                           className="w-5 h-5 opacity-100"
                         />
@@ -363,7 +363,7 @@ export function RevenueSimulator() {
                           </div>
                           <div className="flex items-center gap-2">
                             <img
-                              src={`/${TIER_CONFIG[projectedTier].icon}`}
+                              src={TIER_CONFIG[projectedTier].icon}
                               alt={projectedTier}
                               className="w-5 h-5 opacity-100"
                             />
