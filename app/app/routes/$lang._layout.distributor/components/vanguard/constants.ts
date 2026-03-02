@@ -25,5 +25,4 @@ export const TIER_CONFIG: Record<
   },
 };
 
-export const TIER_ORDER = ["Public", "Silver", "Gold", "Platinum", "Diamond"];
 export const ALPHA_GUARANTEE = 0.00001; // 0.1 bps minimum margin

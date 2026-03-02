@@ -1,9 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useAccount } from "wagmi";
 import { useAppKit } from "@reown/appkit/react";
 import { useModal } from "../../../../context/ModalContext";
 import { useAuth } from "../../../../context/useAuth";
-import { TIER_CONFIG, TIER_ORDER, ALPHA_GUARANTEE } from "./constants";
+import { TIER_CONFIG, ALPHA_GUARANTEE } from "./constants";
 import { useTranslation } from "~/i18n";
 
 export function RevenueSimulator() {
@@ -13,6 +13,36 @@ export function RevenueSimulator() {
     tier: string;
     volume: number | "";
   }
+
+  const tierOrder = useMemo(() => {
+    return [
+      {
+        label: t("distributor.public"),
+        value: "Public",
+      },
+      {
+        label: t("distributor.silver"),
+        value: "Silver",
+      },
+      {
+        label: t("distributor.gold"),
+        value: "Gold",
+      },
+      {
+        label: t("distributor.platinum"),
+        value: "Platinum",
+      },
+      {
+        label: t("distributor.diamond"),
+        value: "Diamond",
+      },
+    ];
+  }, [t]);
+
+  const getTierLabel = (tier: string) => {
+    const option = tierOrder.find(item => item.value === tier);
+    return option ? option.label : tier;
+  };
 
   // Hooks
   const { isConnected } = useAccount();
@@ -45,8 +75,9 @@ export function RevenueSimulator() {
   };
 
   const getTierFromVolume = (volume: number) => {
-    for (let i = TIER_ORDER.length - 1; i >= 0; i--) {
-      const tier = TIER_ORDER[i];
+    const tierValues = tierOrder.map(option => option.value);
+    for (let i = tierValues.length - 1; i >= 0; i--) {
+      const tier = tierValues[i];
       if (volume >= TIER_CONFIG[tier].threshold) {
         return tier;
       }
@@ -55,7 +86,8 @@ export function RevenueSimulator() {
   };
 
   const getTierIndex = (tier: string) => {
-    return TIER_ORDER.indexOf(tier);
+    const tierValues = tierOrder.map(option => option.value);
+    return tierValues.indexOf(tier);
   };
 
   // derived state
@@ -186,7 +218,7 @@ export function RevenueSimulator() {
                   </h3>
                   <div className="flex items-center gap-2 flex-1 relative group">
                     <span className="text-2xl font-medium leading-[1.2] text-base-contrast">
-                      {userTier}
+                      {getTierLabel(userTier)}
                     </span>
                     <img
                       src="/distributor/icon-chevron-down.svg"
@@ -199,9 +231,9 @@ export function RevenueSimulator() {
                       onChange={handleUserTierChange}
                       className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                     >
-                      {TIER_ORDER.map(tier => (
-                        <option key={tier} value={tier}>
-                          {tier}
+                      {tierOrder.map(option => (
+                        <option key={option.value} value={option.value}>
+                          {option.label}
                         </option>
                       ))}
                     </select>
@@ -261,9 +293,9 @@ export function RevenueSimulator() {
                           handleInviteeTierChange(invitee.id, e.target.value)
                         }
                       >
-                        {TIER_ORDER.map(tier => (
-                          <option key={tier} value={tier}>
-                            {tier}
+                        {tierOrder.map(option => (
+                          <option key={option.value} value={option.value}>
+                            {option.label}
                           </option>
                         ))}
                       </select>
@@ -343,7 +375,7 @@ export function RevenueSimulator() {
                           className="w-5 h-5 opacity-100"
                         />
                         <span className="text-base font-medium leading-[1.2] text-base-contrast">
-                          {userTier}
+                          {getTierLabel(userTier)}
                         </span>
                       </div>
 
@@ -374,7 +406,7 @@ export function RevenueSimulator() {
                               className="w-5 h-5 opacity-100"
                             />
                             <span className="text-base font-medium leading-[1.2] text-base-contrast">
-                              {projectedTier}
+                              {getTierLabel(projectedTier)}
                             </span>
                           </div>
                         </>
