@@ -11,6 +11,7 @@ import Form from "../components/Form";
 import ImagePaste from "../components/ImagePaste";
 import BoardVisibilitySection from "../components/BoardVisibilitySection";
 import { useNavigate } from "@remix-run/react";
+import { useLocalizedPath } from "../utils/localizedRoute";
 import { maxLength, composeValidators } from "../utils/validation";
 import FuzzySearchInput from "../components/FuzzySearchInput";
 import DexCard from "../components/DexCard";
@@ -37,6 +38,7 @@ export default function DexCardRoute() {
   const { isAuthenticated, token, isLoading } = useAuth();
   const { dexData, isLoading: isDexLoading, refreshDexData } = useDex();
   const navigate = useNavigate();
+  const localizedPath = useLocalizedPath();
 
   const [description, setDescription] = useState("");
   const [banner, setBanner] = useState<Blob | null>(null);
@@ -306,7 +308,7 @@ export default function DexCardRoute() {
 
       toast.success(t("dexCard.success.updated"));
       await refreshDexData();
-      navigate("/dex");
+      navigate(localizedPath("/dex"));
     } catch (error) {
       console.error("Error updating DEX card:", error);
       toast.error(t("dexCard.error.updateFailed"));
@@ -365,7 +367,7 @@ export default function DexCardRoute() {
             <p className="mb-4 md:mb-6 text-sm md:text-base text-gray-300">
               {t("dexCard.dexRequired.description")}
             </p>
-            <Button onClick={() => navigate("/dex")}>
+            <Button onClick={() => navigate(localizedPath("/dex"))}>
               {t("dexCard.dexRequired.createButton")}
             </Button>
           </Card>

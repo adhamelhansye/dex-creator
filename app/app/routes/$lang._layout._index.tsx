@@ -3,6 +3,7 @@ import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { useAuth } from "../context/useAuth";
 import { Outlet, useNavigate } from "@remix-run/react";
+import { useLocalizedPath } from "../utils/localizedRoute";
 import { useAppKit } from "@reown/appkit/react";
 import { useTranslation } from "~/i18n";
 
@@ -17,12 +18,13 @@ export function Layout() {
 export default function Index() {
   const { isAuthenticated } = useAuth();
   const navigate = useNavigate();
+  const localizedPath = useLocalizedPath();
   const appKit = useAppKit();
   const { t } = useTranslation();
 
   const handleStartBuilding = () => {
     if (isAuthenticated) {
-      navigate("/dex");
+      navigate(localizedPath("/dex"));
     } else {
       appKit?.open({
         namespace: "eip155",
@@ -64,7 +66,12 @@ export default function Index() {
             <Button variant="primary" size="lg" onClick={handleStartBuilding}>
               {t("home.hero.startBuilding")}
             </Button>
-            <Button variant="secondary" size="lg" as="a" href="/board">
+            <Button
+              variant="secondary"
+              size="lg"
+              as="a"
+              href={localizedPath("/board")}
+            >
               {t("home.hero.viewBoard")}
             </Button>
           </div>

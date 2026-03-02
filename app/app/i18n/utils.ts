@@ -1,4 +1,4 @@
-import { LocaleEnum } from "./constant";
+import { LocaleEnum, i18nCookieKey, i18nLocalStorageKey } from "./constant";
 import i18n from "./i18n";
 import type { LocaleCode } from "./types";
 
@@ -50,13 +50,16 @@ export function parseI18nLang(
  * removeLangPrefix('/en/markets') => '/markets'
  * removeLangPrefix('/perp/PERP_ETH_USDC') => '/perp/PERP_ETH_USDC'
  * removeLangPrefix('/markets') => '/markets'
+ * removeLangPrefix('/en') => '/'
  */
 export function removeLangPrefix(pathname: string, localeCodes?: string[]) {
   const localePath = getLocalePathFromPathname(pathname, localeCodes);
 
-  return localePath
-    ? pathname.replace(new RegExp(`^/${localePath}(?=/)`), "")
-    : pathname;
+  if (!localePath) return pathname;
+
+  // Remove "/${localePath}" prefix; if nothing remains (e.g. "/en"), return "/"
+  const stripped = pathname.replace(new RegExp(`^/${localePath}(?=/|$)`), "");
+  return stripped || "/";
 }
 
 /**
@@ -76,6 +79,25 @@ export function getLocalePathFromPathname(
   const locale = pathname.split("/")[1];
   localeCodes = localeCodes || Object.values(LocaleEnum);
   return localeCodes.includes(locale as LocaleEnum) ? locale : null;
+}
+
+/**
+ * Detect user's preferred language from cookie / localStorage / browser language.
+ * Mirrors the logic in routes/_index.tsx for consistent language selection.
+ */
+export function getPreferredLang(): string {
+  if (typeof document === "undefined") return LocaleEnum.en;
+  const cookieMatch = document.cookie.match(
+    new RegExp(`${i18nCookieKey}=([^;]+)`, "i")
+  );
+  const cookieLang = cookieMatch?.[1]?.trim();
+  const stored =
+    typeof localStorage !== "undefined"
+      ? localStorage.getItem(i18nLocalStorageKey)
+      : null;
+  const acceptLanguage =
+    typeof navigator !== "undefined" ? navigator.language : "";
+  return parseI18nLang(cookieLang || stored || acceptLanguage || LocaleEnum.en);
 }
 
 /**
@@ -105,7 +127,7 @@ export function generatePath(params: {
 }) {
   const { path, locale, search } = params;
   const searchUrl =
-    search || (typeof window !== "undefined" ? window.location.search : "");
+    search ?? (typeof window !== "undefined" ? window.location.search : "");
 
   let localePath = getLocalePathFromPathname(path);
 

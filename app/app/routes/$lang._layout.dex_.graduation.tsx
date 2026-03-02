@@ -1,6 +1,7 @@
 import type { MetaFunction } from "@remix-run/node";
 import { GraduationForm } from "../components/GraduationForm";
 import { useAuth } from "../context/useAuth";
+import { useLocalizedPath } from "../utils/localizedRoute";
 import { useDex } from "../context/DexContext";
 import { Card } from "../components/Card";
 import WalletConnect from "../components/WalletConnect";
@@ -21,6 +22,7 @@ export const meta: MetaFunction = () => [
 
 export default function GraduationRoute() {
   const { t } = useTranslation();
+  const localizedPath = useLocalizedPath();
   const { isAuthenticated, isLoading } = useAuth();
   const { refreshDexData } = useDex();
   const [noDexSetup, setNoDexSetup] = useState(false);
@@ -63,7 +65,7 @@ export default function GraduationRoute() {
                   {t("graduation.dexSetupRequired.description")}
                 </p>
                 <a
-                  href="/"
+                  href={localizedPath("/")}
                   className="inline-flex items-center px-4 py-2 rounded-full bg-warning/10 text-warning hover:bg-warning/20 transition-colors"
                 >
                   <div className="i-mdi:rocket-launch w-4 h-4 mr-2"></div>

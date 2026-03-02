@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { defaultLanguages, i18n } from "~/i18n";
+import { useNavigate, useLocation } from "@remix-run/react";
+import { defaultLanguages, i18n, removeLangPrefix, generatePath } from "~/i18n";
 
 export type LanguageSwitcherScriptReturn = ReturnType<
   typeof useLanguageSwitcherScript
@@ -10,13 +11,20 @@ export const useLanguageSwitcherScript = () => {
   const [loading, setLoading] = useState(false);
   const [selectedLang, setSelectedLang] = useState(i18n.language);
   const languages = defaultLanguages;
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  const onLangChange = async (lang: string, displayName: string) => {
+  const onLangChange = async (lang: string, _displayName: string) => {
     setLoading(true);
     setSelectedLang(lang);
-    // await onLanguageBeforeChanged(lang);
     await i18n.changeLanguage(lang);
-    // await onLanguageChanged(lang);
+    const pathWithoutLang = removeLangPrefix(location.pathname);
+    const newPath = generatePath({
+      path: pathWithoutLang,
+      locale: lang,
+      search: location.search,
+    });
+    navigate(newPath, { replace: true });
     setLoading(false);
     setOpen(false);
   };

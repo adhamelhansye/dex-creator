@@ -5,14 +5,16 @@ import { StepCard } from "./StepCard";
 import { useDex } from "../../../context/DexContext";
 import { SuccessStepCard } from "./SuccessStepCard";
 import { useTranslation } from "~/i18n";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 export const DexGraduationCard = () => {
   const { t } = useTranslation();
   const { dexData } = useDex();
   const navigate = useNavigate();
+  const localizedPath = useLocalizedPath();
 
   const handleGraduate = () => {
-    navigate("/dex/graduation");
+    navigate(localizedPath("/dex/graduation"));
   };
 
   if (!dexData) {

@@ -1,21 +1,32 @@
 import { Link, useLocation } from "@remix-run/react";
 import { isPathActive, getPathWithSearch } from "../utils/navigation";
 import { useNavigationMenu } from "../hooks/useNavigationMenu";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 export default function Navigation() {
   const location = useLocation();
+  const localizedPath = useLocalizedPath();
   const menuItems = useNavigationMenu();
 
   return (
     <nav className="flex items-center">
       <div className="flex lg:gap-4">
         {menuItems.map(item => {
-          const isActive = isPathActive(
-            location.pathname,
-            item.path,
-            item.target
+          const localizedTargetPath = localizedPath(item.path);
+          const isActive =
+            item.path === "/"
+              ? location.pathname === localizedTargetPath ||
+                location.pathname === `${localizedTargetPath}/` ||
+                location.pathname === localizedTargetPath.replace(/\/$/, "")
+              : isPathActive(
+                  location.pathname,
+                  localizedTargetPath,
+                  item.target
+                );
+          const fullPath = getPathWithSearch(
+            localizedTargetPath,
+            location.search
           );
-          const fullPath = getPathWithSearch(item.path, location.search);
 
           return (
             <Link

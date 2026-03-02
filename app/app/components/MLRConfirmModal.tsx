@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useTranslation } from "~/i18n";
-import { MLRUpgradeWarning } from "~/routes/_layout.referral/MultiLevelSettings";
-import { CloseIcon } from "~/routes/_layout.distributor/vanguard/icons";
+import { MLRUpgradeWarning } from "~/routes/$lang._layout.referral/MultiLevelSettings";
+import { CloseIcon } from "~/routes/$lang._layout.distributor/vanguard/icons";
 import { Button } from "./Button";
 
 interface MLRConfirmModalProps {

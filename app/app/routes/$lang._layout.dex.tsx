@@ -9,6 +9,7 @@ import WalletConnect from "../components/WalletConnect";
 import { Button } from "../components/Button";
 import { Card } from "../components/Card";
 import { useLocation, useNavigate } from "@remix-run/react";
+import { useLocalizedPath } from "../utils/localizedRoute";
 import DexCreationStatus from "../components/DexCreationStatus";
 import CustomDomainSection from "../components/CustomDomainSection";
 import DexSetupAssistant from "../components/DexSetupAssistant";
@@ -46,6 +47,7 @@ export default function DexRoute() {
   } = useDex();
   const { openModal } = useModal();
   const navigate = useNavigate();
+  const localizedPath = useLocalizedPath();
   const form = useDexForm();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -205,7 +207,7 @@ export default function DexRoute() {
   useEffect(() => {
     // if user is ambassador, redirect to distributor page
     if (isAmbassador) {
-      navigate(`/distributor${location.search}`);
+      navigate(`${localizedPath("/distributor")}${location.search}`);
     }
   }, [isAmbassador]);
 
@@ -278,7 +280,7 @@ export default function DexRoute() {
 
       clearDexData();
 
-      navigate("/");
+      navigate(localizedPath("/"));
     } catch (error) {
       console.error("Error deleting DEX:", error);
       toast.error(t("dex.deleteFailed"));
@@ -423,7 +425,7 @@ export default function DexRoute() {
         </div>
         <Button
           as="a"
-          href="/dex/config"
+          href={localizedPath("/dex/config")}
           className="whitespace-nowrap flex-shrink-0"
         >
           {t("dex.openSettings")}
@@ -448,7 +450,7 @@ export default function DexRoute() {
         </div>
         <Button
           as="a"
-          href="/dex/graduation"
+          href={localizedPath("/dex/graduation")}
           className="whitespace-nowrap flex-shrink-0"
         >
           {t("common.graduateNow")}
@@ -473,7 +475,7 @@ export default function DexRoute() {
         </div>
         <Button
           as="a"
-          href="/dex/card"
+          href={localizedPath("/dex/card")}
           className="whitespace-nowrap flex-shrink-0"
         >
           {t("dex.setupDexCard")}
@@ -516,7 +518,7 @@ export default function DexRoute() {
                   components={[
                     <a
                       key="0"
-                      href="/dex/graduation"
+                      href={localizedPath("/dex/graduation")}
                       className="text-primary-light hover:underline"
                     />,
                   ]}
@@ -535,7 +537,7 @@ export default function DexRoute() {
         </div>
         <Button
           as="a"
-          href="/dex/graduation"
+          href={localizedPath("/dex/graduation")}
           variant={isGraduated ? "success" : "primary"}
           leftIcon={
             <div
@@ -578,7 +580,7 @@ export default function DexRoute() {
         {isGraduated ? (
           <Button
             as="a"
-            href="/points"
+            href={localizedPath("/points")}
             className="whitespace-nowrap flex-shrink-0"
           >
             {t("dex.setupPointSystem")}
@@ -586,7 +588,7 @@ export default function DexRoute() {
         ) : (
           <Button
             as="a"
-            href="/dex/graduation"
+            href={localizedPath("/dex/graduation")}
             variant="secondary"
             className="whitespace-nowrap flex-shrink-0"
           >
@@ -634,7 +636,7 @@ export default function DexRoute() {
         {isGraduated ? (
           <Button
             as="a"
-            href="/referral"
+            href={localizedPath("/referral")}
             className="whitespace-nowrap flex-shrink-0"
           >
             {t("dex.manageReferrals")}
@@ -642,7 +644,7 @@ export default function DexRoute() {
         ) : (
           <Button
             as="a"
-            href="/dex/graduation"
+            href={localizedPath("/dex/graduation")}
             variant="secondary"
             className="whitespace-nowrap flex-shrink-0"
           >

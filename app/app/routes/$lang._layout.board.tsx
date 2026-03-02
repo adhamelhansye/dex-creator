@@ -14,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../components/select";
+import { LocalizedLink } from "~/utils/localizedRoute";
 
 export const meta: MetaFunction = () => [
   { title: "Leaderboard - Orderly One" },
@@ -346,7 +347,7 @@ export default function BoardRoute() {
             {leaderboard.map((broker, index) => {
               const globalRank = (currentPage - 1) * pageSize + index;
               return (
-                <Link
+                <LocalizedLink
                   key={broker.brokerId}
                   to={`/board/${broker.brokerId}`}
                   className="staggered-item block h-full"
@@ -359,7 +360,7 @@ export default function BoardRoute() {
                     rank={globalRank}
                     timePeriod={timePeriod}
                   />
-                </Link>
+                </LocalizedLink>
               );
             })}
           </div>

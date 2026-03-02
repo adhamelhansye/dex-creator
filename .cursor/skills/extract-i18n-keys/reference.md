@@ -21,7 +21,6 @@
 
 | File path | Prefix |
 |-----------|--------|
-| `app/app/components/ThemePreviewModal.tsx` | `themePreviewModal` |
 | `app/app/components/languageSwitcher/languageSwitcher.ui.tsx` | `languageSwitcher` |
 | `app/app/components/select/index.tsx` | `select` |
 | `app/app/components/tooltip/tooltip.tsx` | `tooltip` |

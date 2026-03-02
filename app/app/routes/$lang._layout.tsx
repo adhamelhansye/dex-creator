@@ -1,4 +1,5 @@
-import { Link, Outlet } from "@remix-run/react";
+import { Outlet } from "@remix-run/react";
+import { LocalizedLink } from "../utils/localizedRoute";
 import WalletConnect from "../components/WalletConnect";
 import { ModalProvider } from "../context/ModalContext";
 import { AuthProvider } from "../context/AuthContext";
@@ -59,7 +60,7 @@ export default function Layout() {
                           <header className="fixed top-0 left-0 right-0 z-49 bg-gradient-to-b from-purple-900/80 to-transparent backdrop-blur-[1px]">
                             <div className="flex justify-between items-center py-4 px-4 md:py-6 md:px-8">
                               <div className="flex items-center justify-between flex-1 mr-8">
-                                <Link to="/">
+                                <LocalizedLink to="/">
                                   <img
                                     src="/orderly-one.min.svg"
                                     alt="Orderly One"
@@ -70,7 +71,7 @@ export default function Layout() {
                                     alt="Orderly One"
                                     className="h-9 md:hidden"
                                   />
-                                </Link>
+                                </LocalizedLink>
                                 <div className="hidden md:block ml-8">
                                   <Navigation />
                                 </div>

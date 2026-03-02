@@ -3,6 +3,7 @@ import { useTranslation } from "~/i18n";
 import { Icon } from "@iconify/react";
 import { isPathActive, getPathWithSearch } from "../utils/navigation";
 import { useNavigationMenu } from "../hooks/useNavigationMenu";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 interface MobileNavigationProps {
   isOpen: boolean;
@@ -15,7 +16,7 @@ export default function MobileNavigation({
 }: MobileNavigationProps) {
   const { t } = useTranslation();
   const location = useLocation();
-
+  const localizedPath = useLocalizedPath();
   const menuItems = useNavigationMenu();
 
   const toggleMenu = () => {
@@ -65,12 +66,21 @@ export default function MobileNavigation({
           </h2>
           <nav className="flex flex-col gap-4">
             {menuItems.map(item => {
-              const isActive = isPathActive(
-                location.pathname,
-                item.path,
-                item.target
+              const localizedTargetPath = localizedPath(item.path);
+              const isActive =
+                item.path === "/"
+                  ? location.pathname === localizedTargetPath ||
+                    location.pathname === `${localizedTargetPath}/` ||
+                    location.pathname === localizedTargetPath.replace(/\/$/, "")
+                  : isPathActive(
+                      location.pathname,
+                      localizedTargetPath,
+                      item.target
+                    );
+              const fullPath = getPathWithSearch(
+                localizedTargetPath,
+                location.search
               );
-              const fullPath = getPathWithSearch(item.path, location.search);
 
               return (
                 <Link

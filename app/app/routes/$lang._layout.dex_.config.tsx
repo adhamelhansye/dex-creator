@@ -7,7 +7,8 @@ import { buildDexDataToSend } from "../utils/dexDataBuilder";
 import WalletConnect from "../components/WalletConnect";
 import { Card } from "../components/Card";
 import Form from "../components/Form";
-import { useNavigate, Link } from "@remix-run/react";
+import { useNavigate } from "@remix-run/react";
+import { useLocalizedPath, LocalizedLink } from "../utils/localizedRoute";
 import DexSectionRenderer, {
   DEX_SECTION_KEYS,
   getDexSections,
@@ -35,6 +36,7 @@ export default function DexConfigRoute() {
   const { t } = useTranslation();
   const { isAuthenticated, token, isLoading } = useAuth();
   const navigate = useNavigate();
+  const localizedPath = useLocalizedPath();
   const form = useDexForm();
 
   const [isSaving, setIsSaving] = useState(false);
@@ -80,12 +82,12 @@ export default function DexConfigRoute() {
         const response = await form.updateDexData(token);
 
         if (!response) {
-          navigate("/dex");
+          navigate(localizedPath("/dex"));
           return;
         }
       } catch (error) {
         console.error("Failed to load DEX data", error);
-        navigate("/dex");
+        navigate(localizedPath("/dex"));
       } finally {
         setIsLoadingDexData(false);
       }
@@ -202,7 +204,7 @@ export default function DexConfigRoute() {
 
         form.setDexData(savedData);
         toast.success(t("dex.config.updatedSuccess"));
-        navigate("/dex#dex-creation-status");
+        navigate(`${localizedPath("/dex")}#dex-creation-status`);
       }
     } catch (error) {
       console.error("Error updating DEX:", error);
@@ -280,9 +282,9 @@ export default function DexConfigRoute() {
               {t("dex.config.createDexFirst")}
             </p>
             <div className="flex justify-center">
-              <Link to="/dex" className="btn-connect">
+              <LocalizedLink to="/dex" className="btn-connect">
                 {t("dex.createYourDex")}
-              </Link>
+              </LocalizedLink>
             </div>
           </Card>
         </div>

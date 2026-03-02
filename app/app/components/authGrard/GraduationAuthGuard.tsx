@@ -3,6 +3,7 @@ import { useDex } from "~/context/DexContext";
 import { Card } from "../Card";
 import { Button } from "../Button";
 import { cn } from "~/utils/css";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 type GraduationAuthGuardProps = {
   children: React.ReactNode;
@@ -11,6 +12,7 @@ type GraduationAuthGuardProps = {
 
 export const GraduationAuthGuard = (props: GraduationAuthGuardProps) => {
   const { t } = useTranslation();
+  const localizedPath = useLocalizedPath();
   const { isGraduated } = useDex();
 
   if (isGraduated) {
@@ -33,7 +35,11 @@ export const GraduationAuthGuard = (props: GraduationAuthGuardProps) => {
             {t("graduationAuthGuard.description")}
           </p>
 
-          <Button as="a" href="/dex/graduation" className="inline-flex">
+          <Button
+            as="a"
+            href={localizedPath("/dex/graduation")}
+            className="inline-flex"
+          >
             <div className="i-mdi:rocket-launch w-4 h-4"></div>
             {t("graduationAuthGuard.graduateButton")}
           </Button>

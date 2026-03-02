@@ -8,7 +8,7 @@ import { useModal } from "../../context/ModalContext";
 import { Card } from "../../components/Card";
 import WalletConnect from "../../components/WalletConnect";
 import SegmentedControl from "../../components/SegmentedControl";
-import { Link } from "@remix-run/react";
+import { useLocalizedPath, LocalizedLink } from "~/utils/localizedRoute";
 import { useAccount } from "wagmi";
 import OrderlyKeyRequiredCard from "./OrderlyKeyRequiredCard";
 import SingleLevelSettings from "./SingleLevelSettings";
@@ -35,6 +35,7 @@ export const meta: MetaFunction = () => [
 
 export default function ReferralRoute() {
   const { t } = useTranslation();
+  const localizedPath = useLocalizedPath();
   const { isAuthenticated, isLoading } = useAuth();
   const { dexData, brokerId, isGraduated, isLoading: isDexLoading } = useDex();
   const {
@@ -229,13 +230,13 @@ export default function ReferralRoute() {
     return (
       <div className="w-full max-w-3xl mx-auto px-4 py-6 md:py-10 mt-26 pb-52">
         <div className="text-center">
-          <Link
+          <LocalizedLink
             to="/dex"
             className="text-sm text-gray-400 hover:text-primary-light mb-2 inline-flex items-center"
           >
             <div className="i-mdi:arrow-left h-4 w-4 mr-1"></div>
             {t("referral.backToDexDashboard")}
-          </Link>
+          </LocalizedLink>
           <h1 className="text-xl md:text-2xl lg:text-3xl font-bold mb-4 md:mb-6">
             {t("referral.referralSettings")}
           </h1>
@@ -247,9 +248,9 @@ export default function ReferralRoute() {
               {t("referral.noDex.description")}
             </p>
             <div className="flex justify-center">
-              <Link to="/dex" className="btn-connect">
+              <LocalizedLink to="/dex" className="btn-connect">
                 {t("referral.createYourDex")}
-              </Link>
+              </LocalizedLink>
             </div>
           </Card>
         </div>
@@ -262,13 +263,13 @@ export default function ReferralRoute() {
       <div className="container mx-auto p-4 max-w-3xl mt-26 pb-52">
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
           <div>
-            <Link
+            <LocalizedLink
               to="/dex"
               className="text-sm text-gray-400 hover:text-primary-light mb-2 inline-flex items-center"
             >
               <div className="i-mdi:arrow-left h-4 w-4 mr-1"></div>
               {t("referral.backToDexDashboard")}
-            </Link>
+            </LocalizedLink>
             <h1 className="text-2xl md:text-3xl font-bold gradient-text">
               {t("referral.referralSettings")}
             </h1>
@@ -310,7 +311,7 @@ export default function ReferralRoute() {
 
               <Button
                 as="a"
-                href="/dex/graduation"
+                href={localizedPath("/dex/graduation")}
                 className="flex items-center gap-2"
               >
                 <div className="i-mdi:rocket-launch w-4 h-4"></div>
@@ -402,13 +403,13 @@ export default function ReferralRoute() {
         {/* Header */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center">
           <div>
-            <Link
+            <LocalizedLink
               to="/dex"
               className="text-sm text-gray-400 hover:text-primary-light mb-2 inline-flex items-center"
             >
               <div className="i-mdi:arrow-left h-4 w-4 mr-1"></div>
               {t("referral.backToDexDashboard")}
-            </Link>
+            </LocalizedLink>
             <h1 className="text-2xl md:text-3xl font-bold gradient-text">
               {t("referral.referralSettings")}
             </h1>

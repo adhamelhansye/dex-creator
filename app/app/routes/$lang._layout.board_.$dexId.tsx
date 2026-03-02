@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "@remix-run/react";
+import { useParams } from "@remix-run/react";
+import { LocalizedLink } from "../utils/localizedRoute";
 import { Helmet } from "react-helmet-async";
 import { Icon } from "@iconify/react";
 import { useTranslation } from "~/i18n";
@@ -202,13 +203,13 @@ export default function DexDetailRoute() {
             <p className="text-gray-400 mb-6">
               {error || t("board.dexDetailNotFoundDescription")}
             </p>
-            <Link
+            <LocalizedLink
               to="/board"
               className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary-light text-white font-medium rounded-lg transition-colors"
             >
               <Icon icon="heroicons:arrow-left" width={20} />
               {t("board.backToBoard")}
-            </Link>
+            </LocalizedLink>
           </div>
         </div>
       </div>
@@ -236,13 +237,13 @@ export default function DexDetailRoute() {
         {/* Header */}
         <div className="mb-8 slide-fade-in">
           <div className="flex items-center gap-4 mb-6">
-            <Link
+            <LocalizedLink
               to="/board"
               className="inline-flex items-center gap-2 px-4 py-2 bg-background-card hover:bg-primary/20 text-gray-300 hover:text-white rounded-lg transition-colors"
             >
               <Icon icon="heroicons:arrow-left" width={20} />
               {t("board.backToBoard")}
-            </Link>
+            </LocalizedLink>
           </div>
 
           <div className="flex flex-col md:flex-row items-start md:items-center gap-6">

@@ -1,9 +1,11 @@
 import { useMemo, useState } from "react";
 import { useTranslation, i18n } from "~/i18n";
 import SystemStatus from "./SystemStatus";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 export default function Footer() {
   const { t } = useTranslation();
+  const localizedPath = useLocalizedPath();
   const [openSections, setOpenSections] = useState<Set<string>>(new Set());
 
   // TODO: define others section links here instead of hardcoding them
@@ -45,7 +47,7 @@ export default function Footer() {
       <div className="pt-[20px] border-t-[1px] border-base-contrast-12 md:hidden">
         <div className="px-[20px]">
           <div className="flex justify-between items-center">
-            <a href="/">
+            <a href={localizedPath("/")}>
               <img src="/orderly.min.svg" alt="Orderly" className="w-10 h-10" />
             </a>
             <SystemStatus isMaintenance={false} />
@@ -274,7 +276,7 @@ export default function Footer() {
       <div className="pt-[40px] lg:pt-[60px] border-t-[1px] border-base-contrast-12 hidden md:block">
         <div className="md:max-w-[688px] lg:max-w-[904px] 2xl:max-w-[1280px] 2xl:flex m-auto 2xl:items-center 2xl:gap-20">
           <div className="flex justify-between items-center 2xl:flex-col 2xl:items-start 2xl:shrink-0 2xl:self-stretch 2xl:pt-2 2xl:pb-5">
-            <a href="/">
+            <a href={localizedPath("/")}>
               <img src="/orderly.min.svg" alt="Orderly" className="size-10" />
             </a>
             <SystemStatus isMaintenance={false} />

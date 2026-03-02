@@ -9,7 +9,7 @@ import { Card } from "../components/Card";
 import { Button } from "../components/Button";
 import WalletConnect from "../components/WalletConnect";
 import SegmentedControl from "../components/SegmentedControl";
-import { Link } from "@remix-run/react";
+import { useLocalizedPath, LocalizedLink } from "../utils/localizedRoute";
 import { useAccount } from "wagmi";
 import {
   getAutoReferralInfo,
@@ -29,6 +29,7 @@ export const meta: MetaFunction = () => [
 ];
 
 export default function ReferralRoute() {
+  const localizedPath = useLocalizedPath();
   const { isAuthenticated, isLoading } = useAuth();
   const { dexData, brokerId, isGraduated } = useDex();
   const { orderlyKey, accountId, hasValidKey, setOrderlyKey } = useOrderlyKey();
@@ -252,9 +253,9 @@ export default function ReferralRoute() {
               You need to create a DEX first before you can set up referrals.
             </p>
             <div className="flex justify-center">
-              <Link to="/dex" className="btn-connect">
+              <LocalizedLink to="/dex" className="btn-connect">
                 Create Your DEX
-              </Link>
+              </LocalizedLink>
             </div>
           </Card>
         </div>
@@ -318,7 +319,7 @@ export default function ReferralRoute() {
 
               <Button
                 as="a"
-                href="/dex/graduation"
+                href={localizedPath("/dex/graduation")}
                 className="flex items-center gap-2"
               >
                 <div className="i-mdi:rocket-launch w-4 h-4"></div>

@@ -1,5 +1,6 @@
 import { Button } from "./Button";
 import { useTranslation } from "~/i18n";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 interface GraduationExplanationModalProps {
   isOpen: boolean;
@@ -11,6 +12,7 @@ export default function GraduationExplanationModal({
   onClose,
 }: GraduationExplanationModalProps) {
   const { t } = useTranslation();
+  const localizedPath = useLocalizedPath();
 
   if (!isOpen) return null;
 
@@ -151,7 +153,7 @@ export default function GraduationExplanationModal({
             </Button>
             <Button
               as="a"
-              href="/dex/graduation"
+              href={localizedPath("/dex/graduation")}
               variant="primary"
               className="w-full sm:w-auto"
               onClick={onClose}

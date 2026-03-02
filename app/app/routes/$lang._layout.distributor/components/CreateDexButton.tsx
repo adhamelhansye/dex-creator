@@ -1,13 +1,15 @@
 import { useNavigate } from "@remix-run/react";
 import { Button } from "../../../components/Button";
 import { useTranslation } from "~/i18n";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 export const CreateDexButton = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const localizedPath = useLocalizedPath();
 
   const handleCreate = () => {
-    navigate("/dex");
+    navigate(localizedPath("/dex"));
   };
 
   return (
