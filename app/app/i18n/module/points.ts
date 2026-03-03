@@ -63,7 +63,6 @@ export const points = {
     "The campaign has been successfully removed.",
   "points.delete.toast.error": "Campaign delete failed",
   "points.delete.modal.title": "Delete Campaign?",
-  "points.delete.modal.ok": "Delete",
   "points.delete.modal.content":
     "Are you sure you want to delete this campaign? This action cannot be undone.",
   "points.operate.create.toast.title": "Campaign created successfully",
@@ -72,7 +71,6 @@ export const points = {
   "points.operate.edit.toast.title": "Campaign updated successfully",
   "points.operate.edit.toast.description":
     "It may take some time for changes to process.",
-  "points.operate.error": "An error occurred",
   "points.operate.modal.title": "Publish Campaign?",
   "points.operate.modal.ok": "Confirm Publish",
   "points.operate.modal.content":

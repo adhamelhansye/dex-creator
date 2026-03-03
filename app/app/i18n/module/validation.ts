@@ -17,5 +17,4 @@ export const validation = {
   "validation.brokerIdNoOrderly": "Broker ID cannot contain 'orderly'",
   "validation.brokerIdTaken":
     "This broker ID is already taken. Please choose another one.",
-  "validation.errorOccurred": "An error occurred",
 };

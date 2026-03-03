@@ -36,9 +36,7 @@ export const BaseFeeExplanation: FC = () => {
 
           <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
-              <span className="font-medium">
-                {t("baseFeeExplanation.public")}
-              </span>
+              <span className="font-medium">{t("distributor.public")}</span>
             </div>
             <div className="p-2">{t("baseFeeExplanation.noRequirement")}</div>
             {/* i18n-ignore: symbol */}
@@ -49,7 +47,7 @@ export const BaseFeeExplanation: FC = () => {
           <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
               <span className="font-medium text-gray-100">
-                {t("baseFeeExplanation.silver")}
+                {t("distributor.silver")}
               </span>
             </div>
             <div className="p-2">
@@ -68,7 +66,7 @@ export const BaseFeeExplanation: FC = () => {
           <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
               <span className="font-medium text-warning">
-                {t("baseFeeExplanation.gold")}
+                {t("distributor.gold")}
               </span>
             </div>
             <div className="p-2">
@@ -87,7 +85,7 @@ export const BaseFeeExplanation: FC = () => {
           <div className="grid grid-cols-4 text-center border-b border-light/10 text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
               <span className="font-medium text-blue-300">
-                {t("baseFeeExplanation.platinum")}
+                {t("distributor.platinum")}
               </span>
             </div>
             <div className="p-2">
@@ -106,7 +104,7 @@ export const BaseFeeExplanation: FC = () => {
           <div className="grid grid-cols-4 text-center text-xs md:text-sm">
             <div className="p-2 flex flex-col justify-center">
               <span className="font-medium text-cyan-300">
-                {t("baseFeeExplanation.diamond")}
+                {t("distributor.diamond")}
               </span>
             </div>
             <div className="p-2">

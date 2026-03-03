@@ -71,7 +71,6 @@ export const distributor = {
   "distributor.historicalRevenueShare": "Historical revenue share",
   "distributor.historicalRevenueShareTooltip":
     "Your total revenue share to date from the Orderly Distributor Program.",
-  "distributor.howItWorks": "How it works",
   "distributor.inbumTitle": "Inbum: Top Korean KOL's eight-figure acquisition",
   "distributor.inviteeAddress": "Invitee address",
   "distributor.inviteeBrokerTier": "Invitee's broker tier",

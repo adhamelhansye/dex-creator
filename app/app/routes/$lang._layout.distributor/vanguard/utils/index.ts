@@ -1,3 +1,5 @@
+import { i18n } from "~/i18n";
+
 // Format number with precision
 export const formatNumber = (
   value: number,
@@ -75,7 +77,20 @@ export const formatAddress = (address: string): string => {
 // Format tier name: convert "PUBLIC" to "Public"
 export const formatTier = (tier: string | null | undefined): string => {
   if (!tier) return "--";
-  return tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase();
+  const normalized = tier.toLowerCase();
+
+  const tierKeyMap: Record<string, string> = {
+    public: i18n.t("distributor.public"),
+    silver: i18n.t("distributor.silver"),
+    gold: i18n.t("distributor.gold"),
+    platinum: i18n.t("distributor.platinum"),
+    diamond: i18n.t("distributor.diamond"),
+  };
+
+  return (
+    tierKeyMap[normalized] ||
+    tier.charAt(0).toUpperCase() + tier.slice(1).toLowerCase()
+  );
 };
 
 // Copy text to clipboard
