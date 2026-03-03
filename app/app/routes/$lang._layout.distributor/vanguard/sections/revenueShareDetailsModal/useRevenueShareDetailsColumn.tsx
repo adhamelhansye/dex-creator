@@ -1,12 +1,8 @@
 import { useMemo } from "react";
 import { toast } from "react-toastify";
 import { TableTitleWithTooltip, TableCellWithTooltip } from "../../components";
-import {
-  formatCurrency,
-  formatAddress,
-  copyText,
-  formatTier,
-} from "../../utils";
+import { formatCurrency, formatAddress, copyText } from "../../utils";
+import { formatTier } from "~/utils/format";
 import { CopyIcon } from "../../icons";
 import { useTranslation } from "~/i18n";
 

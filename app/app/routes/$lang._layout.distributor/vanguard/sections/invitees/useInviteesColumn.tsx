@@ -7,8 +7,8 @@ import {
   formatBps,
   copyText,
   formatUTCTimeToLocal,
-  formatTier,
 } from "../../utils";
+import { formatTier } from "~/utils/format";
 import { CopyIcon, EditIcon, ClockIcon } from "../../icons";
 import { useTranslation } from "~/i18n";
 

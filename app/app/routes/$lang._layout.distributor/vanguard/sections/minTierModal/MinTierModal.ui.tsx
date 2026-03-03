@@ -1,6 +1,7 @@
 import React from "react";
 import ConfirmDialog from "../../components/ConfirmDialog";
-import { cn, formatBps, formatUTCTimeToLocal, formatTier } from "../../utils";
+import { cn, formatBps, formatUTCTimeToLocal } from "../../utils";
+import { formatTier } from "~/utils/format";
 import { CopyIcon, InfoIcon } from "../../icons";
 import {
   Select,

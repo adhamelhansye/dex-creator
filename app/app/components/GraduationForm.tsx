@@ -58,6 +58,7 @@ import {
 import { SwapFeeWithdrawal } from "./SwapFeeWithdrawal";
 import { parseWalletError } from "../utils/wallet";
 import { Trans, useTranslation } from "~/i18n";
+import { formatTier } from "~/utils/format";
 
 const ERC20_ABI = [
   {
@@ -1266,7 +1267,7 @@ export function GraduationForm({
               <div className="flex items-center justify-between mb-4">
                 <div>
                   <div className="text-2xl font-bold text-primary-light">
-                    {brokerTier.tier}
+                    {formatTier(brokerTier.tier)}
                   </div>
                   <div className="text-xs text-gray-400 mt-1">
                     {t("graduation.form.currentTierLevel")}

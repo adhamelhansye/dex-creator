@@ -1,11 +1,7 @@
 import { useMemo, ReactNode } from "react";
 import { TableTitleWithTooltip } from "../../components";
-import {
-  formatCurrency,
-  getUserTimezone,
-  formatTier,
-  splitDateTime,
-} from "../../utils";
+import { formatCurrency, getUserTimezone, splitDateTime } from "../../utils";
+import { formatTier } from "~/utils/format";
 import { useTranslation } from "~/i18n";
 
 export interface Column {
