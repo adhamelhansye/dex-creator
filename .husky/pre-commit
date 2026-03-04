@@ -1,3 +1,4 @@
 # Run linting and formatting checks before commit
+npx lint-staged
 yarn lint
 yarn type-check

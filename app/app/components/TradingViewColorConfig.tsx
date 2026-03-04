@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card } from "./Card";
+import { i18n, useTranslation } from "~/i18n";
 
 interface ColorConfigInterface {
   upColor?: string;
@@ -23,27 +24,32 @@ const DEFAULT_COLORS: ColorConfigInterface = {
   chartBG: "#131722",
 };
 
-const COLOR_LABELS = {
-  upColor: "Candle Up Color",
-  downColor: "Candle Down Color",
-  pnlUpColor: "PnL Profit Color",
-  pnlDownColor: "PnL Loss Color",
-  chartBG: "Chart Background",
-};
+function getColorLabels(): Record<keyof ColorConfigInterface, string> {
+  return {
+    upColor: i18n.t("tradingView.colorConfig.candleUpColor"),
+    downColor: i18n.t("tradingView.colorConfig.candleDownColor"),
+    pnlUpColor: i18n.t("tradingView.colorConfig.pnlProfitColor"),
+    pnlDownColor: i18n.t("tradingView.colorConfig.pnlLossColor"),
+    chartBG: i18n.t("tradingView.colorConfig.chartBackground"),
+  };
+}
 
-const COLOR_DESCRIPTIONS = {
-  upColor: "Color for bullish/rising price candles",
-  downColor: "Color for bearish/falling price candles",
-  pnlUpColor: "Color for positive PnL values",
-  pnlDownColor: "Color for negative PnL values",
-  chartBG: "Background color of the chart area",
-};
+function getColorDescriptions(): Record<keyof ColorConfigInterface, string> {
+  return {
+    upColor: i18n.t("tradingView.colorConfig.candleUpDesc"),
+    downColor: i18n.t("tradingView.colorConfig.candleDownDesc"),
+    pnlUpColor: i18n.t("tradingView.colorConfig.pnlProfitDesc"),
+    pnlDownColor: i18n.t("tradingView.colorConfig.pnlLossDesc"),
+    chartBG: i18n.t("tradingView.colorConfig.chartBgDesc"),
+  };
+}
 
 export default function TradingViewColorConfig({
   value,
   onChange,
   disabled = false,
 }: TradingViewColorConfigProps) {
+  const { t } = useTranslation();
   const [isEnabled, setIsEnabled] = useState(false);
   const [colors, setColors] = useState<ColorConfigInterface>(DEFAULT_COLORS);
   const [savedColors, setSavedColors] =
@@ -97,10 +103,10 @@ export default function TradingViewColorConfig({
       <div className="flex items-center justify-between">
         <div>
           <h4 className="text-base font-bold text-gray-300">
-            TradingView Chart Colors
+            {t("tradingView.colorConfig.title")}
           </h4>
           <p className="text-xs text-gray-400 mt-1">
-            Customize the colors used in TradingView charts
+            {t("tradingView.colorConfig.description")}
           </p>
         </div>
         <label className="flex items-center gap-2 cursor-pointer">
@@ -123,7 +129,9 @@ export default function TradingViewColorConfig({
             />
           </div>
           <span className="text-xs text-gray-400">
-            {isEnabled ? "Enabled" : "Disabled"}
+            {isEnabled
+              ? t("tradingView.colorConfig.enabled")
+              : t("tradingView.colorConfig.disabled")}
           </span>
         </label>
       </div>
@@ -137,8 +145,8 @@ export default function TradingViewColorConfig({
               <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
               <span>
                 {isEnabled
-                  ? "These colors will override TradingView's default chart colors"
-                  : "Previously saved TradingView color configuration (currently disabled)"}
+                  ? t("tradingView.colorConfig.overrideDefault")
+                  : t("tradingView.colorConfig.savedConfigDisabled")}
               </span>
             </div>
 
@@ -147,16 +155,16 @@ export default function TradingViewColorConfig({
                 <div className="flex items-center gap-1 text-xs text-warning">
                   <div className="i-mdi:eye-off h-3.5 w-3.5"></div>
                   <span>
-                    Custom colors are disabled. Enable above to apply these
-                    colors.
+                    {t("tradingView.colorConfig.customColorsDisabled")}
                   </span>
                 </div>
               </div>
             )}
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {Object.entries(COLOR_LABELS).map(([colorKey, label]) => {
+              {Object.entries(getColorLabels()).map(([colorKey, label]) => {
                 const displayColors = isEnabled ? colors : savedColors;
+                const colorDescriptions = getColorDescriptions();
                 return (
                   <div key={colorKey} className="space-y-2">
                     <div className="flex items-center justify-between">
@@ -170,7 +178,7 @@ export default function TradingViewColorConfig({
                           className={`text-xs ${isEnabled ? "text-gray-400" : "text-gray-600"}`}
                         >
                           {
-                            COLOR_DESCRIPTIONS[
+                            colorDescriptions[
                               colorKey as keyof ColorConfigInterface
                             ]
                           }
@@ -227,7 +235,8 @@ export default function TradingViewColorConfig({
               <h5
                 className={`text-xs font-medium mb-2 ${isEnabled ? "text-gray-300" : "text-gray-500"}`}
               >
-                Preview {!isEnabled && "(Disabled)"}
+                {t("tradingView.colorConfig.preview")}{" "}
+                {!isEnabled && `(${t("tradingView.colorConfig.disabled")})`}
               </h5>
               <div className="flex items-center gap-4 text-xs">
                 <div className="flex items-center gap-2">
@@ -242,7 +251,7 @@ export default function TradingViewColorConfig({
                   <span
                     className={isEnabled ? "text-gray-400" : "text-gray-600"}
                   >
-                    Bullish
+                    {t("tradingView.colorConfig.bullish")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -257,7 +266,7 @@ export default function TradingViewColorConfig({
                   <span
                     className={isEnabled ? "text-gray-400" : "text-gray-600"}
                   >
-                    Bearish
+                    {t("tradingView.colorConfig.bearish")}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -272,7 +281,7 @@ export default function TradingViewColorConfig({
                   <span
                     className={isEnabled ? "text-gray-400" : "text-gray-600"}
                   >
-                    Chart BG
+                    {t("tradingView.colorConfig.chartBg")}
                   </span>
                 </div>
               </div>
@@ -283,18 +292,14 @@ export default function TradingViewColorConfig({
                 <div className="i-heroicons:exclamation-triangle h-4 w-4 text-amber-400 mt-0.5 flex-shrink-0"></div>
                 <div className="space-y-2">
                   <p className="text-xs text-amber-200">
-                    <span className="font-medium">Important Notes:</span>
+                    <span className="font-medium">
+                      {t("tradingView.importantNotes")}:
+                    </span>
                   </p>
                   <ul className="text-xs text-amber-300/90 space-y-1 list-disc list-inside ml-2">
-                    <li>Colors will not appear in the DEX preview mode</li>
-                    <li>
-                      After deployment, you may need to clear browser local
-                      storage to see color changes
-                    </li>
-                    <li>
-                      Disable this feature to use TradingView's default theme
-                      colors
-                    </li>
+                    <li>{t("tradingView.colorConfig.importantNotesDesc")}</li>
+                    <li>{t("tradingView.colorConfig.clearStorageNote")}</li>
+                    <li>{t("tradingView.colorConfig.disableForDefault")}</li>
                   </ul>
                 </div>
               </div>

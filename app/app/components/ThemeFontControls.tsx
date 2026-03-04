@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { i18n, useTranslation } from "~/i18n";
 import { extractFontValues as extractFontValuesUtil } from "../utils/cssParser";
 
 interface ThemeFontControlsProps {
@@ -11,74 +12,83 @@ interface FontValues {
   fontSize: string;
 }
 
-const FONT_FAMILIES = [
-  {
-    name: "Manrope",
-    value: "'Manrope', sans-serif",
-    preview: "Manrope",
-    category: "Default",
-  },
-  {
-    name: "Roboto",
-    value: "'Roboto', sans-serif",
-    preview: "Roboto",
-    category: "Modern",
-  },
-  {
-    name: "Open Sans",
-    value: "'Open Sans', sans-serif",
-    preview: "Open Sans",
-    category: "Readable",
-  },
-  {
-    name: "Lato",
-    value: "'Lato', sans-serif",
-    preview: "Lato",
-    category: "Readable",
-  },
-  {
-    name: "Poppins",
-    value: "'Poppins', sans-serif",
-    preview: "Poppins",
-    category: "Modern",
-  },
-  {
-    name: "Source Sans Pro",
-    value: "'Source Sans Pro', sans-serif",
-    preview: "Source Sans Pro",
-    category: "Readable",
-  },
-  {
-    name: "Nunito",
-    value: "'Nunito', sans-serif",
-    preview: "Nunito",
-    category: "Friendly",
-  },
-  {
-    name: "Montserrat",
-    value: "'Montserrat', sans-serif",
-    preview: "Montserrat",
-    category: "Modern",
-  },
-  {
-    name: "Raleway",
-    value: "'Raleway', sans-serif",
-    preview: "Raleway",
-    category: "Elegant",
-  },
-  {
-    name: "Ubuntu",
-    value: "'Ubuntu', sans-serif",
-    preview: "Ubuntu",
-    category: "Modern",
-  },
-  {
-    name: "Fira Sans",
-    value: "'Fira Sans', sans-serif",
-    preview: "Fira Sans",
-    category: "Technical",
-  },
-];
+interface FontFamilyOption {
+  name: string;
+  value: string;
+  preview: string;
+  category: string;
+}
+
+function getFontFamilies(): FontFamilyOption[] {
+  return [
+    {
+      name: "Manrope",
+      value: "'Manrope', sans-serif",
+      preview: "Manrope",
+      category: i18n.t("theme.fontControls.category.default"),
+    },
+    {
+      name: "Roboto",
+      value: "'Roboto', sans-serif",
+      preview: "Roboto",
+      category: i18n.t("theme.fontControls.category.modern"),
+    },
+    {
+      name: "Open Sans",
+      value: "'Open Sans', sans-serif",
+      preview: "Open Sans",
+      category: i18n.t("theme.fontControls.category.readable"),
+    },
+    {
+      name: "Lato",
+      value: "'Lato', sans-serif",
+      preview: "Lato",
+      category: i18n.t("theme.fontControls.category.readable"),
+    },
+    {
+      name: "Poppins",
+      value: "'Poppins', sans-serif",
+      preview: "Poppins",
+      category: i18n.t("theme.fontControls.category.modern"),
+    },
+    {
+      name: "Source Sans Pro",
+      value: "'Source Sans Pro', sans-serif",
+      preview: "Source Sans Pro",
+      category: i18n.t("theme.fontControls.category.readable"),
+    },
+    {
+      name: "Nunito",
+      value: "'Nunito', sans-serif",
+      preview: "Nunito",
+      category: i18n.t("theme.fontControls.category.friendly"),
+    },
+    {
+      name: "Montserrat",
+      value: "'Montserrat', sans-serif",
+      preview: "Montserrat",
+      category: i18n.t("theme.fontControls.category.modern"),
+    },
+    {
+      name: "Raleway",
+      value: "'Raleway', sans-serif",
+      preview: "Raleway",
+      category: i18n.t("theme.fontControls.category.elegant"),
+    },
+    {
+      name: "Ubuntu",
+      value: "'Ubuntu', sans-serif",
+      preview: "Ubuntu",
+      category: i18n.t("theme.fontControls.category.modern"),
+    },
+    {
+      name: "Fira Sans",
+      value: "'Fira Sans', sans-serif",
+      preview: "Fira Sans",
+      category: i18n.t("theme.fontControls.category.technical"),
+    },
+  ];
+}
 
 // Custom dropdown component for font selection
 const FontDropdown = ({
@@ -86,14 +96,16 @@ const FontDropdown = ({
   onChange,
   isOpen,
   onToggle,
+  fontFamilies,
 }: {
   value: string;
   onChange: (newValue: string) => void;
   isOpen: boolean;
   onToggle: () => void;
+  fontFamilies: FontFamilyOption[];
 }) => {
   const selectedFont =
-    FONT_FAMILIES.find(font => font.value === value) || FONT_FAMILIES[0];
+    fontFamilies.find(font => font.value === value) || fontFamilies[0];
 
   return (
     <div className="relative">
@@ -112,7 +124,7 @@ const FontDropdown = ({
 
       {isOpen && (
         <div className="absolute top-full left-0 right-0 mt-1 bg-background-dark/95 border border-light/20 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
-          {FONT_FAMILIES.map(font => (
+          {fontFamilies.map(font => (
             <button
               key={font.value}
               type="button"
@@ -152,6 +164,7 @@ export default function ThemeFontControls({
   css,
   onValueChange,
 }: ThemeFontControlsProps) {
+  const { t } = useTranslation();
   const [fontValues, setFontValues] = useState<FontValues>({
     fontFamily: "'Manrope', sans-serif",
     fontSize: "16px",
@@ -241,10 +254,7 @@ export default function ThemeFontControls({
       {/* Help text */}
       <div className="text-xs text-gray-400 flex items-center gap-1.5 mb-2">
         <span className="i-mdi:format-font text-primary text-sm"></span>
-        <span>
-          Customize the font family and base font size used throughout your DEX
-          interface
-        </span>
+        <span>{t("theme.fontControls.helpText")}</span>
       </div>
 
       {/* Font Family Selection */}
@@ -259,7 +269,9 @@ export default function ThemeFontControls({
             </span>
           </div>
           <div className="flex flex-col">
+            {/* i18n-ignore */}
             <span className="text-sm font-medium">Font Family</span>
+            {/* i18n-ignore */}
             <span className="text-xs text-gray-400">--oui-font-family</span>
           </div>
         </div>
@@ -269,6 +281,7 @@ export default function ThemeFontControls({
             onChange={handleFontFamilyChange}
             isOpen={isFontDropdownOpen}
             onToggle={() => setIsFontDropdownOpen(!isFontDropdownOpen)}
+            fontFamilies={getFontFamilies()}
           />
         </div>
       </div>
@@ -288,7 +301,9 @@ export default function ThemeFontControls({
             </span>
           </div>
           <div className="flex flex-col">
+            {/* i18n-ignore */}
             <span className="text-sm font-medium">Font Size</span>
+            {/* i18n-ignore */}
             <span className="text-xs text-gray-400">--oui-font-size-base</span>
           </div>
         </div>
@@ -309,6 +324,7 @@ export default function ThemeFontControls({
               value={fontValues.fontSize}
               onChange={handleFontSizeInputChange}
               className="w-16 sm:w-20 px-2 py-1 bg-background-dark/80 border border-light/20 rounded text-sm text-white focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+              // i18n-ignore
               aria-label="Font size value"
             />
           </div>
@@ -318,7 +334,9 @@ export default function ThemeFontControls({
       {/* Preview Text */}
       <div className="border-t border-light/10 pt-4">
         <div className="mb-2">
-          <span className="text-sm font-medium text-gray-300">Preview</span>
+          <span className="text-sm font-medium text-gray-300">
+            {t("theme.fontControls.preview")}
+          </span>
         </div>
         <div
           className="p-4 bg-background-dark/50 border border-light/10 rounded-lg"
@@ -328,12 +346,10 @@ export default function ThemeFontControls({
           }}
         >
           <p className="text-white mb-2">
-            This is how your DEX interface text will look with the selected font
-            and size.
+            {t("theme.fontControls.previewDesc")}
           </p>
           <p className="text-gray-300 text-sm">
-            Trading pairs, prices, and all interface elements will use this
-            styling.
+            {t("theme.fontControls.previewNote")}
           </p>
         </div>
       </div>

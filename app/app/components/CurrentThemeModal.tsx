@@ -1,4 +1,5 @@
 import { FC, useState, useEffect, ChangeEvent } from "react";
+import { useTranslation } from "~/i18n";
 import { Button } from "./Button";
 import CurrentThemeEditor from "./CurrentThemeEditor";
 import type { ThemeTabType } from "./ThemeCustomizationSection";
@@ -28,6 +29,7 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
   setTradingViewColorConfig,
   onThemeChange,
 }) => {
+  const { t } = useTranslation();
   const [activeThemeTab, setActiveThemeTab] = useState<ThemeTabType>("colors");
   const [showThemeEditor, setShowThemeEditor] = useState(false);
   const [viewCssCode, setViewCssCode] = useState(false);
@@ -106,9 +108,11 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
     >
       <div className="bg-background-card border border-light/20 rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-light/10">
-          <h2 className="text-lg font-bold text-gray-200">Current Theme</h2>
+          <h2 className="text-lg font-bold text-gray-200">
+            {t("theme.currentTheme")}
+          </h2>
           <Button onClick={onClose} variant="secondary" size="sm" type="button">
-            Close
+            {t("common.close")}
           </Button>
         </div>
         <div className="flex-1 overflow-auto p-4">
@@ -128,7 +132,7 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
                         : "i-mdi:pencil h-4 w-4"
                     }
                   ></div>
-                  {showThemeEditor ? "Hide Editor" : "Edit CSS"}
+                  {showThemeEditor ? t("theme.hideEditor") : t("theme.editCss")}
                 </span>
               </Button>
             </div>
@@ -142,7 +146,7 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
                   handleThemeEditorChange(e.target.value)
                 }
                 className="w-full h-80 bg-black/80 text-xs text-gray-300 font-mono p-3 rounded border border-light/10"
-                placeholder="Edit your CSS theme here..."
+                placeholder={t("theme.editYourCssTheme")}
               />
             </div>
           )}
@@ -154,7 +158,11 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
                 className="cursor-pointer text-gray-400 hover:text-gray-300 transition-colors flex items-center"
                 type="button"
               >
-                <span>{viewCssCode ? "Hide" : "View"} CSS code</span>
+                <span>
+                  {viewCssCode
+                    ? t("theme.hideCssCode")
+                    : t("theme.viewCssCode")}
+                </span>
                 <div
                   className={`i-mdi:chevron-down h-4 w-4 ml-1 transition-transform ${viewCssCode ? "rotate-180" : ""}`}
                 ></div>
@@ -187,7 +195,7 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
                 size="sm"
                 type="button"
               >
-                Reset AI Fine-Tune
+                {t("theme.currentThemeModal.resetAIFineTune")}
               </Button>
             )}
             <Button
@@ -202,7 +210,7 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
               size="sm"
               type="button"
             >
-              Reset
+              {t("common.reset")}
             </Button>
           </div>
           <Button
@@ -211,7 +219,7 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
             size="sm"
             type="button"
           >
-            Apply Changes
+            {t("common.applyChanges")}
           </Button>
         </div>
       </div>

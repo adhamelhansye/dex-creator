@@ -1,7 +1,9 @@
+import { useTranslation } from "~/i18n";
 import { useDex } from "~/context/DexContext";
 import { Card } from "../Card";
 import { Button } from "../Button";
 import { cn } from "~/utils/css";
+import { useLocalizedPath } from "~/utils/localizedRoute";
 
 type GraduationAuthGuardProps = {
   children: React.ReactNode;
@@ -9,6 +11,8 @@ type GraduationAuthGuardProps = {
 };
 
 export const GraduationAuthGuard = (props: GraduationAuthGuardProps) => {
+  const { t } = useTranslation();
+  const localizedPath = useLocalizedPath();
   const { isGraduated } = useDex();
 
   if (isGraduated) {
@@ -25,16 +29,19 @@ export const GraduationAuthGuard = (props: GraduationAuthGuardProps) => {
         </div>
         <div>
           <h3 className="text-lg font-medium text-warning mb-2">
-            Graduation Required
+            {t("common.graduationRequired")}
           </h3>
           <p className="text-gray-300 mb-4">
-            The feature you are trying to access is only available for graduated
-            DEXs. You need to graduate your DEX first to access the feature.
+            {t("graduationAuthGuard.description")}
           </p>
 
-          <Button as="a" href="/dex/graduation" className="inline-flex">
+          <Button
+            as="a"
+            href={localizedPath("/dex/graduation")}
+            className="inline-flex"
+          >
             <div className="i-mdi:rocket-launch w-4 h-4"></div>
-            Graduate Your DEX
+            {t("graduationAuthGuard.graduateButton")}
           </Button>
         </div>
       </div>

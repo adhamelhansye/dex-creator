@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { useTranslation } from "~/i18n";
 import { toast } from "react-toastify";
 import { get, post } from "../utils/apiClient";
 import { Button } from "./Button";
@@ -22,6 +23,7 @@ interface UpgradeStatus {
 }
 
 export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
+  const { t } = useTranslation();
   const [upgradeStatus, setUpgradeStatus] = useState<UpgradeStatus | null>(
     null
   );
@@ -75,7 +77,7 @@ export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
 
   const handleUpgrade = async () => {
     if (!dexData || !dexData.id) {
-      toast.error("No DEX data available");
+      toast.error(t("dex.upgrade.noDexData"));
       return;
     }
 
@@ -88,14 +90,12 @@ export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
         token
       );
 
-      toast.success(
-        "DEX upgraded successfully! New features are being deployed."
-      );
+      toast.success(t("dex.upgrade.successToast"));
 
       setUpgradeStatus(null);
     } catch (error) {
       console.error("Error upgrading DEX:", error);
-      toast.error("Failed to upgrade DEX. Please try again.");
+      toast.error(t("dex.upgrade.failedToast"));
     } finally {
       setIsUpgrading(false);
     }
@@ -114,19 +114,18 @@ export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
           </div>
           <div>
             <h3 className="text-lg font-semibold mb-1 flex items-center gap-2">
-              DEX Upgrade Available
+              {t("dex.upgrade.title")}
               <span className="text-xs bg-blue-500/30 text-blue-300 px-2 py-0.5 rounded-full">
-                New
+                {t("dex.upgrade.new")}
               </span>
             </h3>
             <p className="text-gray-300 text-sm mb-2">
-              New features and improvements are ready for your DEX. Click
-              upgrade to get the latest updates.
+              {t("dex.upgrade.desc")}
             </p>
             {filteredUpgradeCommits.length > 0 && (
               <div className="mt-2 space-y-1">
                 <p className="text-xs text-gray-400 font-medium mb-1">
-                  What's new:
+                  {t("dex.upgrade.whatsNew")}:
                 </p>
                 {filteredUpgradeCommits.map((commit, idx) => (
                   <div
@@ -150,12 +149,12 @@ export default function DexUpgrade({ dexData, token }: DexUpgradeProps) {
           {isUpgrading ? (
             <>
               <div className="i-svg-spinners:pulse-rings-multiple h-4 w-4 mr-2"></div>
-              Upgrading...
+              {t("dex.upgrade.upgrading")}
             </>
           ) : (
             <>
               <div className="i-mdi:rocket-launch h-4 w-4 mr-2"></div>
-              Upgrade DEX
+              {t("dex.upgrade.upgradeDex")}
             </>
           )}
         </Button>
