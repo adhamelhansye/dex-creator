@@ -55,7 +55,7 @@ export default function Index() {
 
         {/* Content */}
         <div className="relative z-10">
-          <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 max-w-5xl leading-tight text-white">
+          <h1 className="text-5xl md:text-6xl lg:text-7xl font-semibold mb-6 max-w-5xl leading-tight md:leading- lg:leading-tight text-white">
             {t("home.hero.title")}
           </h1>
           <p className="text-xl text-white/80 max-w-3xl mb-12 leading-relaxed mxa">
