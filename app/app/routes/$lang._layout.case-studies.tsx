@@ -16,7 +16,7 @@ function getCaseStudies() {
       description: i18n.t("caseStudies.aden.description"),
       image: "/aden.webp",
       dexUrl: "https://aden.io",
-      socialUrl: "https://x.com/aden",
+      socialUrl: "https://x.com/Crazy_INBUM",
       stats: [
         {
           value: "$45B+",
