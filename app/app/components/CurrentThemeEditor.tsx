@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "~/i18n";
 import ThemeColorSwatches from "./ThemeColorSwatches";
 import ThemeFontControls from "./ThemeFontControls";
 import ThemeRoundedControls from "./ThemeRoundedControls";
@@ -27,15 +28,22 @@ const CurrentThemeEditor: React.FC<CurrentThemeEditorProps> = ({
   setTradingViewColorConfig,
   ThemeTabButton,
 }) => {
+  const { t } = useTranslation();
   return (
     <>
       <div className="border-b border-light/10 mt-4">
         <div className="flex overflow-x-auto">
-          <ThemeTabButton tab="colors" label="Color Palette" />
-          <ThemeTabButton tab="fonts" label="Fonts" />
-          <ThemeTabButton tab="rounded" label="Border Radius" />
-          <ThemeTabButton tab="spacing" label="Spacing" />
-          <ThemeTabButton tab="tradingview" label="TradingView" />
+          <ThemeTabButton tab="colors" label={t("theme.colorPalette")} />
+          <ThemeTabButton tab="fonts" label={t("theme.fonts")} />
+          <ThemeTabButton tab="rounded" label={t("theme.borderRadius")} />
+          <ThemeTabButton tab="spacing" label={t("theme.spacing")} />
+          <ThemeTabButton
+            tab="tradingview"
+            label={
+              /* i18n-ignore */
+              "TradingView"
+            }
+          />
         </div>
       </div>
       <div className="pt-4">
@@ -43,9 +51,7 @@ const CurrentThemeEditor: React.FC<CurrentThemeEditorProps> = ({
           <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
             <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
               <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-              <span>
-                Click on any color swatch below to edit with a color picker
-              </span>
+              <span>{t("theme.editor.colorsHint")}</span>
             </div>
             <ThemeColorSwatches
               css={currentTheme || defaultTheme}
@@ -57,10 +63,7 @@ const CurrentThemeEditor: React.FC<CurrentThemeEditorProps> = ({
           <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
             <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
               <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-              <span>
-                Customize the font family and base font size used throughout
-                your DEX interface
-              </span>
+              <span>{t("theme.editor.fontsHint")}</span>
             </div>
             <ThemeFontControls
               css={currentTheme || defaultTheme}
@@ -72,9 +75,7 @@ const CurrentThemeEditor: React.FC<CurrentThemeEditorProps> = ({
           <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
             <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
               <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-              <span>
-                Adjust the rounded corners of your UI elements with the sliders
-              </span>
+              <span>{t("theme.editor.roundedHint")}</span>
             </div>
             <ThemeRoundedControls
               css={currentTheme || defaultTheme}
@@ -86,9 +87,7 @@ const CurrentThemeEditor: React.FC<CurrentThemeEditorProps> = ({
           <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
             <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
               <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-              <span>
-                Adjust the spacing values used throughout your DEX interface
-              </span>
+              <span>{t("theme.editor.spacingHint")}</span>
             </div>
             <ThemeSpacingControls
               css={currentTheme || defaultTheme}
@@ -100,7 +99,7 @@ const CurrentThemeEditor: React.FC<CurrentThemeEditorProps> = ({
           <div className="bg-background-dark/50 p-4 rounded-lg border border-light/10 slide-fade-in">
             <div className="flex items-center gap-1 mb-3 text-xs text-gray-400">
               <div className="i-mdi:information-outline h-3.5 w-3.5"></div>
-              <span>Configure TradingView color settings</span>
+              <span>{t("theme.editor.tradingViewHint")}</span>
             </div>
             <TradingViewColorConfig
               value={tradingViewColorConfig}

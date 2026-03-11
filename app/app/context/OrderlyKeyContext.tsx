@@ -16,6 +16,7 @@ interface OrderlyKeyContextType {
   setOrderlyKey: (key: Uint8Array | null) => void;
   clearOrderlyKey: () => void;
   hasValidKey: boolean;
+  isOrderlyKeyReady: boolean;
 }
 
 const OrderlyKeyContext = createContext<OrderlyKeyContextType | undefined>(
@@ -31,29 +32,27 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
   const [accountId, setAccountId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (address && brokerId) {
-      const newAccountId = getAccountId(address, brokerId);
-      setAccountId(newAccountId);
-    } else {
-      setAccountId(null);
-    }
-  }, [address, brokerId]);
-
-  useEffect(() => {
-    if (accountId) {
-      const savedKey = loadOrderlyKey(accountId);
-      setOrderlyKeyState(savedKey || null);
-    } else {
-      setOrderlyKeyState(null);
-    }
-  }, [accountId]);
-
-  useEffect(() => {
     if (!isConnected) {
       setOrderlyKeyState(null);
       setAccountId(null);
+      return;
     }
-  }, [isConnected]);
+
+    if (address && brokerId) {
+      const newAccountId = getAccountId(address, brokerId);
+      const savedKey = loadOrderlyKey(newAccountId);
+      setAccountId(newAccountId);
+      setOrderlyKeyState(savedKey || null);
+    } else {
+      setAccountId(null);
+      setOrderlyKeyState(null);
+    }
+  }, [address, brokerId, isConnected]);
+
+  const expectedAccountId =
+    address && brokerId ? getAccountId(address, brokerId) : null;
+  const isOrderlyKeyReady =
+    !expectedAccountId || accountId === expectedAccountId;
 
   const setOrderlyKey = useCallback(
     (key: Uint8Array | null) => {
@@ -84,6 +83,7 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
         setOrderlyKey,
         clearOrderlyKey,
         hasValidKey,
+        isOrderlyKeyReady,
       }}
     >
       {children}

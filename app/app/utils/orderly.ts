@@ -7,6 +7,7 @@ import {
   JsonRpcSigner,
 } from "ethers";
 import { Address, parseUnits } from "viem";
+import { i18n } from "~/i18n";
 
 export type BrokerInfo = {
   broker_id: string;
@@ -16,7 +17,7 @@ export type BrokerInfo = {
 export async function getBrokers(): Promise<BrokerInfo[]> {
   const res = await fetch(`${getBaseUrl()}/v1/public/broker/name`);
   if (!res.ok) {
-    throw new Error("Failed to fetch brokers");
+    throw new Error(i18n.t("orderly.failedToFetchBrokers"));
   }
   const json = await res.json();
   if (!json.success) {
@@ -129,7 +130,7 @@ export async function checkAccountRegistration(
   );
 
   if (!response.ok) {
-    throw new Error("Failed to check account registration status");
+    throw new Error(i18n.t("orderly.failedToCheckAccountRegistration"));
   }
 
   const json = await response.json();
@@ -172,9 +173,7 @@ export async function pollAccountRegistration(
     }
   }
 
-  throw new Error(
-    "Account registration polling timed out. Please try again later."
-  );
+  throw new Error(i18n.t("orderly.accountRegistrationPollingTimeout"));
 }
 
 export async function registerAccount(
@@ -463,7 +462,7 @@ export async function withdraw(
 
   const json = await response.json();
   if (!json.success) {
-    throw new Error(json.message || "Withdraw request failed");
+    throw new Error(json.message || i18n.t("orderly.withdrawRequestFailed"));
   }
 }
 
@@ -479,7 +478,7 @@ export async function getClientHolding(
 
   const data = await response.json();
   if (!data.success) {
-    throw new Error(data.message || "Failed to fetch holdings");
+    throw new Error(data.message || i18n.t("orderly.failedToFetchHoldings"));
   }
   return data.data?.holding || [];
 }
@@ -492,7 +491,7 @@ export async function privateFetch(
   const encoder = new TextEncoder();
 
   const url = new URL(input);
-  let message = `${String(timestamp)}${init?.method ?? "GET"}${url.pathname}`;
+  let message = `${String(timestamp)}${init?.method ?? "GET"}${url.pathname}${url.search}`;
   if (init?.body) {
     message += init.body;
   }
@@ -522,7 +521,7 @@ async function signAndSendRequest(
   const encoder = new TextEncoder();
 
   const url = new URL(input);
-  let message = `${String(timestamp)}${init?.method ?? "GET"}${url.pathname}`;
+  let message = `${String(timestamp)}${init?.method ?? "GET"}${url.pathname}${url.search}`;
   if (init?.body) {
     message += init.body;
   }
@@ -563,7 +562,9 @@ export async function updateAutoReferral(
 
   const json = await response.json();
   if (!json.success) {
-    throw new Error(json.message || "Failed to update auto referral settings");
+    throw new Error(
+      json.message || i18n.t("orderly.failedToUpdateAutoReferralSettings")
+    );
   }
 }
 
@@ -605,7 +606,7 @@ export async function updateBrokerFees(
 
   const json = await response.json();
   if (!json.success) {
-    throw new Error(json.message || "Failed to update broker fees");
+    throw new Error(json.message || i18n.t("orderly.failedToUpdateBrokerFees"));
   }
 }
 
@@ -621,7 +622,9 @@ export async function getAutoReferralInfo(
 
   const json = await response.json();
   if (!json.success) {
-    throw new Error(json.message || "Failed to get auto referral info");
+    throw new Error(
+      json.message || i18n.t("orderly.failedToGetAutoReferralInfo")
+    );
   }
   return json.data || null;
 }
@@ -734,4 +737,167 @@ function getVerifyingAddress(): Address {
     default:
       return "0x8794E7260517B1766fc7b55cAfcd56e6bf08600e";
   }
+}
+
+export type MultiLevelReferralResponse = {
+  success: boolean;
+  data: {
+    total_rebate: string;
+  };
+  timestamp: number;
+};
+
+export async function enableMultiLevelReferral(
+  accountId: string,
+  orderlyKey: Uint8Array,
+  enable: boolean = false
+): Promise<MultiLevelReferralResponse> {
+  const response = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/referral/multi_level/admin`,
+    {
+      method: "POST",
+      body: JSON.stringify({ enable }),
+    }
+  );
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(
+      json.message || i18n.t("orderly.failedToEnableMultiLevelReferral")
+    );
+  }
+
+  return json;
+}
+
+export type MultiLevelReferralInfo = {
+  enable: boolean;
+  required_volume?: number;
+  max_rebate_rate?: number;
+  direct_bonus_rebate_rate?: number;
+};
+
+export async function getMultiLevelReferralInfo(
+  accountId: string,
+  orderlyKey: Uint8Array
+): Promise<MultiLevelReferralInfo | null> {
+  const response = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/referral/multi_level/admin`,
+    {
+      method: "GET",
+    }
+  );
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(
+      json.message || i18n.t("orderly.failedToGetMultiLevelReferralInfo")
+    );
+  }
+
+  return {
+    enable: json.data?.enable,
+    required_volume: json.data?.required_volume,
+    max_rebate_rate: json.data?.max_rebate_rate,
+    direct_bonus_rebate_rate: json.data?.direct_bonus_rebate_rate,
+  };
+}
+
+export async function updateMultiLevelReferralConfig(
+  accountId: string,
+  orderlyKey: Uint8Array,
+  payload: {
+    required_volume: number;
+    default_rebate_rate: number;
+  }
+): Promise<void> {
+  const response = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/referral/multi_level/admin/update`,
+    {
+      method: "POST",
+      body: JSON.stringify(payload),
+    }
+  );
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(
+      json.message || i18n.t("orderly.failedToUpdateMultiLevelReferralConfig")
+    );
+  }
+}
+
+interface ReferralCode {
+  code: string;
+  max_rebate_rate: number;
+  referrer_rebate_rate: number;
+  referee_rebate_rate: number;
+  total_referrer_rebate: number;
+  total_referee_rebate: number;
+}
+
+interface ReferralInfoRow {
+  account_id: string;
+  user_address: string;
+  number_of_codes: string;
+  total_invites: number;
+  total_traded: number;
+  referee_volume: number;
+  referee_fee: number;
+  orderly_fee: number;
+  distributor_fee: number;
+  referral_codes: ReferralCode[];
+}
+
+interface ReferralInfoResponse {
+  success: boolean;
+  timestamp: number;
+  data: {
+    rows: ReferralInfoRow[];
+    meta: {
+      records_per_page: number;
+      current_page: number;
+      total: number;
+    };
+  };
+}
+
+export async function getReferralAdminInfo(
+  accountId: string,
+  orderlyKey: Uint8Array
+): Promise<ReferralInfoResponse> {
+  const response = await signAndSendRequest(
+    accountId,
+    orderlyKey,
+    `${getBaseUrl()}/v1/referral/admin_info?page=1&size=1`,
+    {
+      method: "GET",
+    }
+  );
+
+  const json = await response.json();
+  if (!json.success) {
+    throw new Error(
+      json.message || i18n.t("orderly.failedToGetReferralAdminInfo")
+    );
+  }
+
+  return json;
+}
+
+export function hasUsedSingleLevelReferral(
+  referralInfo: ReferralInfoResponse | null
+): boolean {
+  if (!referralInfo?.data?.rows || referralInfo.data.rows.length === 0) {
+    return false;
+  }
+  return referralInfo.data.rows.some(
+    row => row.referral_codes && row.referral_codes.length > 0
+  );
 }

@@ -1,4 +1,5 @@
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useMemo } from "react";
+import { useTranslation } from "~/i18n";
 import { toast } from "react-toastify";
 import { postFormData, createDexFormData } from "../utils/apiClient";
 import { buildDexDataToSend } from "../utils/dexDataBuilder";
@@ -6,7 +7,7 @@ import { Button } from "./Button";
 import Form from "./Form";
 import DexSectionRenderer, {
   DEX_SECTION_KEYS,
-  DEX_SECTIONS,
+  getDexSections,
 } from "./DexSectionRenderer";
 import { useDexForm } from "../hooks/useDexForm";
 import { DexData, ThemeTabType } from "../types/dex";
@@ -16,8 +17,6 @@ import { useDistributorCode } from "../hooks/useDistrubutorInfo";
 import { useDistributor } from "../context/DistributorContext";
 import { trackEvent } from "~/analytics/tracking";
 import { useThemeHandlers } from "../hooks/useThemeHandlers";
-
-const TOTAL_STEPS = DEX_SECTIONS.length;
 
 interface DexSetupAssistantProps {
   token: string;
@@ -30,6 +29,7 @@ export default function DexSetupAssistant({
   updateDexData,
   refreshDexData,
 }: DexSetupAssistantProps) {
+  const { t } = useTranslation();
   const form = useDexForm();
   const { bindDistributorCode } = useBindDistrubutorCode();
 
@@ -44,6 +44,22 @@ export default function DexSetupAssistant({
 
   const { distributorInfo } = useDistributor();
   const urlDistributorCode = useDistributorCode();
+
+  const dexSections = useMemo(() => {
+    return getDexSections()
+      .filter(section => {
+        return section.key !== DEX_SECTION_KEYS.AnalyticsConfiguration;
+      })
+      .map((section, index) => ({
+        ...section,
+        // reset the id to the index + 1, otherwise the progress tracker percentage will calculate incorrectly
+        id: index + 1,
+      }));
+  }, [t]);
+
+  const totalSteps = useMemo(() => {
+    return dexSections.length;
+  }, [dexSections]);
 
   const { handleGenerateTheme, handleResetTheme, handleResetToDefault } =
     useThemeHandlers({
@@ -71,7 +87,7 @@ export default function DexSetupAssistant({
   const allRequiredPreviousStepsCompleted = (stepNumber: number) => {
     if (stepNumber === 1) return true;
     for (let i = 1; i < stepNumber; i++) {
-      const stepConfig = DEX_SECTIONS.find(s => s.id === i);
+      const stepConfig = dexSections.find(s => s.id === i);
       if (stepConfig && !stepConfig.isOptional && !completedSteps[i]) {
         return false;
       }
@@ -80,7 +96,7 @@ export default function DexSetupAssistant({
   };
 
   const handleNextStep = async (step: number, skip?: boolean) => {
-    const currentStepConfig = DEX_SECTIONS.find(s => s.id === step);
+    const currentStepConfig = dexSections.find(s => s.id === step);
 
     if (
       currentStepConfig &&
@@ -94,7 +110,7 @@ export default function DexSetupAssistant({
         const distributorCode = form.distributorCode.trim();
 
         if (!distributorCode) {
-          toast.error("Please input distributor code.");
+          toast.error(t("dex.setupAssistant.pleaseInputDistributorCode"));
           return;
         }
 
@@ -110,7 +126,7 @@ export default function DexSetupAssistant({
           toast.error(
             typeof validationError === "string"
               ? validationError
-              : "Distributor code is invalid. It must be between 4 and 10 characters."
+              : t("dex.setupAssistant.distributorCodeInvalid")
           );
           return;
         }
@@ -128,15 +144,13 @@ export default function DexSetupAssistant({
         toast.error(
           typeof validationError === "string"
             ? validationError
-            : "Broker name is invalid. It must be between 3 and 50 characters."
+            : t("dex.setupAssistant.brokerNameInvalid")
         );
         return;
       }
     }
 
-    if (
-      step === DEX_SECTIONS.find(s => s.title === "Privy Configuration")?.id
-    ) {
+    if (step === dexSections.find(s => s.title === "Privy Configuration")?.id) {
       const privyTermsOfUseFilled =
         form.privyTermsOfUse && form.privyTermsOfUse.trim() !== "";
 
@@ -144,13 +158,13 @@ export default function DexSetupAssistant({
         privyTermsOfUseFilled &&
         form.urlValidator(form.privyTermsOfUse.trim()) !== null
       ) {
-        toast.error("Privy Terms of Use URL is not a valid URL.");
+        toast.error(t("dex.setupAssistant.privyTermsInvalid"));
         return;
       }
     }
 
     setCompletedSteps(prev => ({ ...prev, [step]: true }));
-    if (step < TOTAL_STEPS) {
+    if (step < totalSteps) {
       setCurrentStep(step + 1);
 
       setTimeout(() => {
@@ -169,7 +183,7 @@ export default function DexSetupAssistant({
         }
       }, 100);
     } else {
-      setCurrentStep(TOTAL_STEPS + 1);
+      setCurrentStep(totalSteps + 1);
       window.scrollTo({ top: document.body.scrollHeight, behavior: "smooth" });
     }
   };
@@ -183,7 +197,7 @@ export default function DexSetupAssistant({
 
     const validationErrors: string[] = [];
 
-    for (const section of DEX_SECTIONS) {
+    for (const section of dexSections) {
       if (section.key === DEX_SECTION_KEYS.DistributorCode) {
         const code = form.distributorCode.trim();
         if (code && !distributorInfo?.exist) {
@@ -212,9 +226,7 @@ export default function DexSetupAssistant({
 
     const isSwapEnabled = form.enabledMenus.split(",").includes("Swap");
     if (isSwapEnabled && form.swapFeeBps === null) {
-      validationErrors.push(
-        "Navigation Menus: Swap fee configuration is required when Swap page is enabled"
-      );
+      validationErrors.push(t("dex.setupAssistant.navMenusSwapFeeRequired"));
     }
 
     return validationErrors;
@@ -270,7 +282,7 @@ export default function DexSetupAssistant({
         toast.success(options.successMessageWithRepo);
       } else {
         toast.success(options.successMessageWithoutRepo);
-        toast.warning("Repository could not be forked. You can retry later.");
+        toast.warning(t("dex.setupAssistant.repoCouldNotFork"));
       }
 
       trackEvent("create_dex_success");
@@ -284,7 +296,7 @@ export default function DexSetupAssistant({
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       console.error("Error creating DEX:", error);
-      toast.error(errorMessage || "Failed to create DEX. Please try again.");
+      toast.error(errorMessage || t("dex.setupAssistant.failedToCreate"));
     } finally {
       setIsSaving(false);
       setForkingStatus("");
@@ -295,19 +307,20 @@ export default function DexSetupAssistant({
     event.preventDefault();
 
     await createDex({
-      forkingStatus: "Creating DEX and forking repository...",
-      successMessageWithRepo: "DEX created and repository forked successfully!",
-      successMessageWithoutRepo: "DEX information saved successfully!",
+      forkingStatus: t("dex.setupAssistant.creatingDex"),
+      successMessageWithRepo: t("dex.setupAssistant.successWithRepo"),
+      successMessageWithoutRepo: t("dex.setupAssistant.successWithoutRepo"),
     });
   };
 
   const handleQuickSetup = async () => {
     trackEvent("click_quick_setup");
     await createDex({
-      forkingStatus: "Creating DEX with current settings...",
-      successMessageWithRepo:
-        "DEX created with current settings! Repository is being set up.",
-      successMessageWithoutRepo: "DEX created with current settings!",
+      forkingStatus: t("dex.setupAssistant.quickSetupForking"),
+      successMessageWithRepo: t("dex.setupAssistant.quickSetupSuccessWithRepo"),
+      successMessageWithoutRepo: t(
+        "dex.setupAssistant.quickSetupSuccessWithoutRepo"
+      ),
       onSuccess: savedData => {
         updateDexData(savedData);
       },
@@ -323,8 +336,7 @@ export default function DexSetupAssistant({
             {forkingStatus}
           </div>
           <div className="text-xs md:text-sm text-gray-400 max-w-sm mx-auto">
-            This may take a moment. We're setting up your DEX repository and
-            configuring it with your information.
+            {t("dex.setupAssistant.settingUpDex")}
           </div>
         </div>
       </div>
@@ -332,17 +344,17 @@ export default function DexSetupAssistant({
   }
 
   const quickSetup = form.brokerName.trim() &&
-    !(currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS]) && (
+    !(currentStep > totalSteps && completedSteps[totalSteps]) && (
       <div
         id="quick-setup"
         className="mb-4 p-6 bg-primary/5 border border-primary/20 rounded-lg slide-fade-in flex flex-col items-center justify-center"
       >
         <h3 className="text-lg font-semibold text-primary-light mb-2 flex items-center justify-center">
           <div className="i-mdi:lightning-bolt h-5 w-5 mr-2"></div>
-          Quick Setup
+          {t("dex.setupAssistant.quickSetup")}
         </h3>
         <p className="text-gray-300 mb-4">
-          Create your DEX with current settings. You can customize it later.
+          {t("dex.setupAssistant.quickSetupDesc")}
         </p>
         <Button
           variant="primary"
@@ -353,12 +365,12 @@ export default function DexSetupAssistant({
           {isSaving || isForking ? (
             <>
               <div className="i-svg-spinners:pulse-rings-multiple h-4 w-4 mr-2"></div>
-              Creating DEX...
+              {t("dex.setupAssistant.creatingDexShort")}
             </>
           ) : (
             <>
               <div className="i-mdi:rocket-launch h-4 w-4 mr-2"></div>
-              Create DEX Now
+              {t("dex.setupAssistant.createDexNow")}
             </>
           )}
         </Button>
@@ -369,7 +381,7 @@ export default function DexSetupAssistant({
     <div className="container mx-auto p-4 max-w-3xl mt-26 pb-52">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8">
         <h1 className="text-2xl md:text-3xl font-bold gradient-text">
-          Create Your DEX - Step-by-Step
+          {t("dex.setupAssistant.title")}
         </h1>
       </div>
 
@@ -377,22 +389,22 @@ export default function DexSetupAssistant({
         onSubmit={handleSubmit}
         className="flex flex-col gap-4"
         submitText={
-          currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS]
-            ? "Create Your DEX"
+          currentStep > totalSteps && completedSteps[totalSteps]
+            ? t("dex.setupAssistant.createYourDex")
             : ""
         }
         isLoading={isSaving}
-        loadingText="Creating DEX..."
+        loadingText={t("dex.setupAssistant.creatingDexShort")}
         disabled={
           isForking ||
           isSaving ||
-          !(currentStep > TOTAL_STEPS && completedSteps[TOTAL_STEPS])
+          !(currentStep > totalSteps && completedSteps[totalSteps])
         }
         enableRateLimit={false}
       >
         <DexSectionRenderer
           mode="accordion"
-          sections={DEX_SECTIONS}
+          sections={dexSections}
           sectionProps={form.getSectionProps({
             handleResetTheme: () => handleResetTheme(false),
             handleResetToDefault,
@@ -430,28 +442,29 @@ export default function DexSetupAssistant({
           customDescription={section => {
             if (section.key === DEX_SECTION_KEYS.DistributorCode) {
               return distributorInfo?.exist
-                ? "You have been invited by the following distributor."
-                : section.description;
+                ? t("dex.setupAssistant.invitedByDistributor")
+                : section.descriptionKey
+                  ? t(section.descriptionKey)
+                  : section.description;
             }
-            return section.description;
+            return section.descriptionKey
+              ? t(section.descriptionKey)
+              : section.description;
           }}
           isValidating={isValidating}
         />
       </Form>
 
-      {currentStep > TOTAL_STEPS &&
-        completedSteps[TOTAL_STEPS] &&
-        !isSaving && (
-          <div className="mt-8 p-6 bg-success/10 border border-success/20 rounded-lg text-center slide-fade-in">
-            <h3 className="text-lg font-semibold text-success mb-2">
-              All steps completed!
-            </h3>
-            <p className="text-gray-300 mb-4">
-              You're ready to create your DEX. Click the "Create Your DEX"
-              button above to proceed.
-            </p>
-          </div>
-        )}
+      {currentStep > totalSteps && completedSteps[totalSteps] && !isSaving && (
+        <div className="mt-8 p-6 bg-success/10 border border-success/20 rounded-lg text-center slide-fade-in">
+          <h3 className="text-lg font-semibold text-success mb-2">
+            {t("dex.setupAssistant.allStepsCompleted")}
+          </h3>
+          <p className="text-gray-300 mb-4">
+            {t("dex.setupAssistant.readyToCreate")}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
