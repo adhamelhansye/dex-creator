@@ -1,6 +1,5 @@
-import { Context, Hono } from "hono";
-import { z } from "zod";
-import { zValidator } from "@hono/zod-validator";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
+import { z } from "@hono/zod-openapi";
 import { getAllAdmins, isUserAdmin } from "../models/admin";
 import {
   getDexById,
@@ -19,27 +18,30 @@ import {
   deleteRepository,
   triggerRedeployment,
 } from "../lib/github";
+import { AdminCheckResponseSchema } from "../schemas/admin.js";
 
-type AdminContext = Context<{
-  Variables: {
-    userId: string;
-    isAdmin?: boolean;
-  };
-}>;
+const app = new OpenAPIHono();
 
-const adminRoutes = new Hono();
-
-adminRoutes.get("/users", async (c: AdminContext) => {
-  try {
-    const admins = await getAllAdmins();
-    return c.json({ admins });
-  } catch (error) {
-    console.error("Error getting admins:", error);
-    return c.json({ error: "Internal Server Error" }, 500);
-  }
+const checkAdminRoute = createRoute({
+  method: "get",
+  path: "/check",
+  tags: ["Admin"],
+  summary: "Check admin status",
+  description: "Check if the current user is an admin",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: "Admin status retrieved successfully",
+      content: {
+        "application/json": {
+          schema: AdminCheckResponseSchema,
+        },
+      },
+    },
+  },
 });
 
-adminRoutes.get("/check", async c => {
+app.openapi(checkAdminRoute, async c => {
   const userId = c.get("userId") as string | undefined;
 
   if (!userId) {
@@ -50,21 +52,32 @@ adminRoutes.get("/check", async c => {
   return c.json({ isAdmin }, 200);
 });
 
+app.get("/users", async c => {
+  try {
+    const admins = await getAllAdmins();
+    return c.json({ admins });
+  } catch (error) {
+    console.error("Error getting admins:", error);
+    return c.json({ error: "Internal Server Error" }, 500);
+  }
+});
+
 const paginationQuerySchema = z.object({
   limit: z.coerce.number().int().positive().max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),
   search: z.string().optional(),
 });
 
-adminRoutes.get(
-  "/dexes",
-  zValidator("query", paginationQuerySchema),
-  async c => {
-    const query = c.req.valid("query");
-    const result = await getAllDexes(query.limit, query.offset, query.search);
-    return c.json(result);
-  }
-);
+app.get("/dexes", async c => {
+  const query = c.req.query();
+  const validated = paginationQuerySchema.parse(query);
+  const result = await getAllDexes(
+    validated.limit,
+    validated.offset,
+    validated.search
+  );
+  return c.json(result);
+});
 
 function extractRepoInfoFromUrl(
   repoUrl: string
@@ -144,79 +157,74 @@ const customDomainOverrideSchema = z.object({
     .nullish(),
 });
 
-adminRoutes.post(
-  "/dex/:id/broker-id",
-  zValidator("json", brokerIdSchema),
-  async c => {
-    const id = c.req.param("id");
-    const { brokerId } = c.req.valid("json");
+app.post("/dex/:id/broker-id", async c => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const { brokerId } = brokerIdSchema.parse(body);
 
-    try {
-      const dex = await getDexById(id);
-      if (!dex) {
-        return c.json({ message: "DEX not found" }, 404);
-      }
+  try {
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
 
-      const result = await updateBrokerId(id, brokerId);
+    const result = await updateBrokerId(id, brokerId);
 
-      if (!result.success) {
-        return c.json({ message: result.error }, 400);
-      }
+    if (!result.success) {
+      return c.json({ message: result.error }, 400);
+    }
 
-      const updatedDex = result.data;
+    const updatedDex = result.data;
 
-      if (updatedDex.repoUrl) {
-        const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
+    if (updatedDex.repoUrl) {
+      const repoInfo = extractRepoInfoFromUrl(updatedDex.repoUrl);
 
-        if (repoInfo) {
-          try {
-            const prisma = await getPrisma();
-            const user = await prisma.user.findUnique({
-              where: { id: updatedDex.userId },
-              select: { address: true },
-            });
+      if (repoInfo) {
+        try {
+          const prisma = await getPrisma();
+          const user = await prisma.user.findUnique({
+            where: { id: updatedDex.userId },
+            select: { address: true },
+          });
 
-            const dexConfig = convertDexToDexConfig(updatedDex);
-            dexConfig.brokerId = brokerId;
+          const dexConfig = convertDexToDexConfig(updatedDex);
+          dexConfig.brokerId = brokerId;
 
-            await setupRepositoryWithSingleCommit(
-              repoInfo.owner,
-              repoInfo.repo,
-              dexConfig,
-              {
-                primaryLogo: updatedDex.primaryLogo,
-                secondaryLogo: updatedDex.secondaryLogo,
-                favicon: updatedDex.favicon,
-                pnlPosters:
-                  updatedDex.pnlPosters.length > 0
-                    ? updatedDex.pnlPosters
-                    : null,
-              },
-              updatedDex.customDomain,
-              user?.address ?? null
-            );
+          await setupRepositoryWithSingleCommit(
+            repoInfo.owner,
+            repoInfo.repo,
+            dexConfig,
+            {
+              primaryLogo: updatedDex.primaryLogo,
+              secondaryLogo: updatedDex.secondaryLogo,
+              favicon: updatedDex.favicon,
+              pnlPosters:
+                updatedDex.pnlPosters.length > 0 ? updatedDex.pnlPosters : null,
+            },
+            updatedDex.customDomain,
+            user?.address ?? null
+          );
 
-            console.log(
-              `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
-            );
-          } catch (configError) {
-            console.error("Error updating repository files:", configError);
-          }
+          console.log(
+            `Admin updated broker ID in repository for ${updatedDex.brokerName} with a single commit`
+          );
+        } catch (configError) {
+          console.error("Error updating repository files:", configError);
         }
       }
-
-      return c.json(updatedDex);
-    } catch (error) {
-      console.error("Error updating broker ID:", error);
-      return c.json(
-        { message: "Error updating broker ID", error: String(error) },
-        500
-      );
     }
-  }
-);
 
-adminRoutes.delete("/dex/:id", async (c: AdminContext) => {
+    return c.json(updatedDex);
+  } catch (error) {
+    console.error("Error updating broker ID:", error);
+    return c.json(
+      { message: "Error updating broker ID", error: String(error) },
+      500
+    );
+  }
+});
+
+app.delete("/dex/:id", async c => {
   const id = c.req.param("id");
 
   try {
@@ -261,77 +269,72 @@ const renameSchema = z.object({
     ),
 });
 
-adminRoutes.post(
-  "/dex/:id/rename-repo",
-  zValidator("json", renameSchema),
-  async c => {
-    const id = c.req.param("id");
-    const { newName } = c.req.valid("json");
+app.post("/dex/:id/rename-repo", async c => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const { newName } = renameSchema.parse(body);
+
+  try {
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    if (!dex.repoUrl) {
+      return c.json({ message: "This DEX does not have a repository" }, 400);
+    }
+
+    const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+    if (!repoInfo) {
+      return c.json({ message: "Invalid repository URL" }, 400);
+    }
 
     try {
-      const dex = await getDexById(id);
-      if (!dex) {
-        return c.json({ message: "DEX not found" }, 404);
-      }
+      const newRepoUrl = await renameRepository(
+        repoInfo.owner,
+        repoInfo.repo,
+        newName
+      );
 
-      if (!dex.repoUrl) {
-        return c.json({ message: "This DEX does not have a repository" }, 400);
-      }
+      const updatedDex = await updateDexRepoUrl(id, newRepoUrl);
 
-      const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
-      if (!repoInfo) {
-        return c.json({ message: "Invalid repository URL" }, 400);
-      }
+      return c.json({
+        message: "Repository renamed successfully",
+        dex: updatedDex,
+        oldName: repoInfo.repo,
+        newName: newName,
+      });
+    } catch (githubError) {
+      console.error("GitHub API error:", githubError);
 
-      try {
-        const newRepoUrl = await renameRepository(
-          repoInfo.owner,
-          repoInfo.repo,
-          newName
-        );
-
-        const updatedDex = await updateDexRepoUrl(id, newRepoUrl);
-
-        return c.json({
-          message: "Repository renamed successfully",
-          dex: updatedDex,
-          oldName: repoInfo.repo,
-          newName: newName,
-        });
-      } catch (githubError) {
-        console.error("GitHub API error:", githubError);
-
-        if (
-          githubError instanceof Error &&
-          githubError.message.includes(
-            "Repository with this name already exists"
-          )
-        ) {
-          return c.json(
-            {
-              message: "Repository name already exists",
-              error: githubError.message,
-            },
-            400
-          );
-        }
-
+      if (
+        githubError instanceof Error &&
+        githubError.message.includes("Repository with this name already exists")
+      ) {
         return c.json(
-          { message: "Error renaming repository", error: String(githubError) },
-          500
+          {
+            message: "Repository name already exists",
+            error: githubError.message,
+          },
+          400
         );
       }
-    } catch (error) {
-      console.error("Error renaming repository:", error);
+
       return c.json(
-        { message: "Error renaming repository", error: String(error) },
+        { message: "Error renaming repository", error: String(githubError) },
         500
       );
     }
+  } catch (error) {
+    console.error("Error renaming repository:", error);
+    return c.json(
+      { message: "Error renaming repository", error: String(error) },
+      500
+    );
   }
-);
+});
 
-adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
+app.post("/dex/:id/redeploy", async c => {
   const id = c.req.param("id");
 
   try {
@@ -389,278 +392,272 @@ adminRoutes.post("/dex/:id/redeploy", async (c: AdminContext) => {
   }
 });
 
-adminRoutes.post(
-  "/dex/:dexId/create-broker",
-  zValidator("json", manualBrokerCreationSchema),
-  async c => {
-    try {
-      const {
-        brokerId,
-        makerFee,
-        takerFee,
-        rwaMakerFee,
-        rwaTakerFee,
-        txHash,
-        chainId,
-        chain_type,
-      } = c.req.valid("json");
-      const dexId = c.req.param("dexId");
+app.post("/dex/:dexId/create-broker", async c => {
+  try {
+    const body = await c.req.json();
+    const {
+      brokerId,
+      makerFee,
+      takerFee,
+      rwaMakerFee,
+      rwaTakerFee,
+      txHash,
+      chainId,
+      chain_type,
+    } = manualBrokerCreationSchema.parse(body);
+    const dexId = c.req.param("dexId");
 
-      const prismaClient = await getPrisma();
+    const prismaClient = await getPrisma();
 
-      const dex = await prismaClient.dex.findUnique({
-        where: { id: dexId },
-        include: { user: true },
-      });
+    const dex = await prismaClient.dex.findUnique({
+      where: { id: dexId },
+      include: { user: true },
+    });
 
-      if (!dex || !dex.repoUrl) {
-        return c.json(
-          {
-            success: false,
-            message: "User must have a DEX with repository first",
-          },
-          { status: 400 }
-        );
-      }
-
-      const existingDex = await prismaClient.dex.findFirst({
-        where: {
-          brokerId: brokerId,
-        },
-      });
-
-      if (existingDex) {
-        return c.json(
-          {
-            success: false,
-            message:
-              "This broker ID is already taken. Please choose another one.",
-          },
-          { status: 400 }
-        );
-      }
-
-      if (dex.brokerId && dex.brokerId !== "demo") {
-        return c.json(
-          {
-            success: false,
-            message:
-              "User already has a broker ID. Each user can only have one broker ID.",
-          },
-          { status: 400 }
-        );
-      }
-
-      const user = await prismaClient.user.findUnique({
-        where: { id: dex.userId },
-      });
-
-      if (!user) {
-        return c.json(
-          { success: false, message: "User not found" },
-          { status: 404 }
-        );
-      }
-
-      const existingUsedTx = await prismaClient.usedTransactionHash.findUnique({
-        where: {
-          txHash: txHash,
-        },
-      });
-
-      if (existingUsedTx) {
-        return c.json(
-          {
-            success: false,
-            message:
-              "This transaction hash has already been used for graduation. Please use a different transaction.",
-          },
-          { status: 400 }
-        );
-      }
-
-      const brokerCreationResult = await createAutomatedBrokerId(
-        brokerId,
-        getCurrentEnvironment(),
-        {
-          brokerName: dex.brokerName,
-          makerFee: makerFee,
-          takerFee: takerFee,
-          rwaMakerFee: rwaMakerFee!,
-          rwaTakerFee: rwaTakerFee!,
-          address: dex.user.address,
-          chain_id: chainId,
-          chain_type: chain_type,
-        }
-      );
-
-      if (!brokerCreationResult.success) {
-        return c.json(brokerCreationResult, { status: 400 });
-      }
-
-      let updatedDex;
-      try {
-        updatedDex = await prismaClient.dex.update({
-          where: { id: dexId },
-          data: {
-            brokerId,
-            isGraduated: false,
-            graduationTxHash: txHash,
-          },
-        });
-
-        await prismaClient.usedTransactionHash.create({
-          data: {
-            txHash,
-            userId: dex.userId,
-            dexId: updatedDex.id,
-            chainId: chainId ?? null,
-          },
-        });
-      } catch (error: unknown) {
-        if (error && typeof error === "object" && "code" in error) {
-          const prismaError = error as {
-            code: string;
-            meta?: { target?: string[] };
-          };
-          if (
-            prismaError.code === "P2002" &&
-            prismaError.meta?.target?.includes("graduationTxHash")
-          ) {
-            return c.json(
-              {
-                success: false,
-                message:
-                  "This transaction hash has already been used for graduation. Please use a different transaction.",
-              },
-              { status: 400 }
-            );
-          }
-          if (
-            prismaError.code === "P2002" &&
-            prismaError.meta?.target?.includes("txHash")
-          ) {
-            return c.json(
-              {
-                success: false,
-                message:
-                  "This transaction hash has already been used for graduation. Please use a different transaction.",
-              },
-              { status: 400 }
-            );
-          }
-        }
-        throw error;
-      }
-
-      try {
-        console.log(
-          `🔄 Admin updating GitHub repository with new broker ID: ${brokerId}`
-        );
-
-        const repoUrlMatch = dex.repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
-        if (repoUrlMatch) {
-          const [, owner, repo] = repoUrlMatch;
-
-          const user = await prismaClient.user.findUnique({
-            where: { id: dex.userId },
-            select: { address: true },
-          });
-
-          const dexConfig = convertDexToDexConfig(dex);
-          dexConfig.brokerId = brokerId;
-
-          await setupRepositoryWithSingleCommit(
-            owner,
-            repo,
-            dexConfig,
-            {
-              primaryLogo: dex.primaryLogo,
-              secondaryLogo: dex.secondaryLogo,
-              favicon: dex.favicon,
-              pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
-            },
-            dex.customDomain,
-            user?.address ?? null
-          );
-
-          console.log(
-            `✅ Admin successfully updated GitHub repository with broker ID: ${brokerId}`
-          );
-        } else {
-          console.warn(
-            `⚠️ Could not extract repository info from URL: ${dex.repoUrl}`
-          );
-        }
-      } catch (repoError) {
-        console.error("❌ Error updating GitHub repository:", repoError);
-      }
-
-      return c.json({
-        success: true,
-        message: `Admin successfully created broker ID '${brokerId}' for user. DEX has graduated automatically.`,
-        brokerCreationData: {
-          brokerId,
-          transactionHashes: brokerCreationResult.transactionHashes || {},
-        },
-        dex: {
-          id: updatedDex.id,
-          brokerId: updatedDex.brokerId,
-          brokerName: updatedDex.brokerName,
-          isGraduated: updatedDex.isGraduated,
-        },
-      });
-    } catch (error) {
-      console.error("Error in admin manual broker creation:", error);
+    if (!dex || !dex.repoUrl) {
       return c.json(
         {
           success: false,
-          message: `Error processing request: ${error instanceof Error ? error.message : String(error)}`,
+          message: "User must have a DEX with repository first",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
-  }
-);
 
-adminRoutes.post(
-  "/dex/:id/custom-domain-override",
-  zValidator("json", customDomainOverrideSchema),
-  async c => {
-    const id = c.req.param("id");
-    const { customDomainOverride } = c.req.valid("json");
+    const existingDex = await prismaClient.dex.findFirst({
+      where: {
+        brokerId: brokerId,
+      },
+    });
 
-    try {
-      const dex = await getDexById(id);
-      if (!dex) {
-        return c.json({ message: "DEX not found" }, 404);
-      }
-
-      const updatedDex = await updateDexCustomDomainOverride(
-        id,
-        customDomainOverride || null
-      );
-
-      return c.json({
-        message: "Custom domain override updated successfully",
-        dex: {
-          id: updatedDex.id,
-          brokerId: updatedDex.brokerId,
-          brokerName: updatedDex.brokerName,
-          customDomainOverride: updatedDex.customDomainOverride,
-        },
-      });
-    } catch (error) {
-      console.error("Error updating custom domain override:", error);
+    if (existingDex) {
       return c.json(
         {
-          message: "Error updating custom domain override",
-          error: String(error),
+          success: false,
+          message:
+            "This broker ID is already taken. Please choose another one.",
         },
-        500
+        { status: 400 }
       );
     }
-  }
-);
 
-export default adminRoutes;
+    if (dex.brokerId && dex.brokerId !== "demo") {
+      return c.json(
+        {
+          success: false,
+          message:
+            "User already has a broker ID. Each user can only have one broker ID.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const user = await prismaClient.user.findUnique({
+      where: { id: dex.userId },
+    });
+
+    if (!user) {
+      return c.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    const existingUsedTx = await prismaClient.usedTransactionHash.findUnique({
+      where: {
+        txHash: txHash,
+      },
+    });
+
+    if (existingUsedTx) {
+      return c.json(
+        {
+          success: false,
+          message:
+            "This transaction hash has already been used for graduation. Please use a different transaction.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const brokerCreationResult = await createAutomatedBrokerId(
+      brokerId,
+      getCurrentEnvironment(),
+      {
+        brokerName: dex.brokerName,
+        makerFee: makerFee,
+        takerFee: takerFee,
+        rwaMakerFee: rwaMakerFee!,
+        rwaTakerFee: rwaTakerFee!,
+        address: dex.user.address,
+        chain_id: chainId,
+        chain_type: chain_type,
+      }
+    );
+
+    if (!brokerCreationResult.success) {
+      return c.json(brokerCreationResult, { status: 400 });
+    }
+
+    let updatedDex;
+    try {
+      updatedDex = await prismaClient.dex.update({
+        where: { id: dexId },
+        data: {
+          brokerId,
+          isGraduated: false,
+          graduationTxHash: txHash,
+        },
+      });
+
+      await prismaClient.usedTransactionHash.create({
+        data: {
+          txHash,
+          userId: dex.userId,
+          dexId: updatedDex.id,
+          chainId: chainId ?? null,
+        },
+      });
+    } catch (error: unknown) {
+      if (error && typeof error === "object" && "code" in error) {
+        const prismaError = error as {
+          code: string;
+          meta?: { target?: string[] };
+        };
+        if (
+          prismaError.code === "P2002" &&
+          prismaError.meta?.target?.includes("graduationTxHash")
+        ) {
+          return c.json(
+            {
+              success: false,
+              message:
+                "This transaction hash has already been used for graduation. Please use a different transaction.",
+            },
+            { status: 400 }
+          );
+        }
+        if (
+          prismaError.code === "P2002" &&
+          prismaError.meta?.target?.includes("txHash")
+        ) {
+          return c.json(
+            {
+              success: false,
+              message:
+                "This transaction hash has already been used for graduation. Please use a different transaction.",
+            },
+            { status: 400 }
+          );
+        }
+      }
+      throw error;
+    }
+
+    try {
+      console.log(
+        `🔄 Admin updating GitHub repository with new broker ID: ${brokerId}`
+      );
+
+      const repoUrlMatch = dex.repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (repoUrlMatch) {
+        const [, owner, repo] = repoUrlMatch;
+
+        const user = await prismaClient.user.findUnique({
+          where: { id: dex.userId },
+          select: { address: true },
+        });
+
+        const dexConfig = convertDexToDexConfig(dex);
+        dexConfig.brokerId = brokerId;
+
+        await setupRepositoryWithSingleCommit(
+          owner,
+          repo,
+          dexConfig,
+          {
+            primaryLogo: dex.primaryLogo,
+            secondaryLogo: dex.secondaryLogo,
+            favicon: dex.favicon,
+            pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
+          },
+          dex.customDomain,
+          user?.address ?? null
+        );
+
+        console.log(
+          `✅ Admin successfully updated GitHub repository with broker ID: ${brokerId}`
+        );
+      } else {
+        console.warn(
+          `⚠️ Could not extract repository info from URL: ${dex.repoUrl}`
+        );
+      }
+    } catch (repoError) {
+      console.error("❌ Error updating GitHub repository:", repoError);
+    }
+
+    return c.json({
+      success: true,
+      message: `Admin successfully created broker ID '${brokerId}' for user. DEX has graduated automatically.`,
+      brokerCreationData: {
+        brokerId,
+        transactionHashes: brokerCreationResult.transactionHashes || {},
+      },
+      dex: {
+        id: updatedDex.id,
+        brokerId: updatedDex.brokerId,
+        brokerName: updatedDex.brokerName,
+        isGraduated: updatedDex.isGraduated,
+      },
+    });
+  } catch (error) {
+    console.error("Error in admin manual broker creation:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error processing request: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+app.post("/dex/:id/custom-domain-override", async c => {
+  const id = c.req.param("id");
+  const body = await c.req.json();
+  const { customDomainOverride } = customDomainOverrideSchema.parse(body);
+
+  try {
+    const dex = await getDexById(id);
+    if (!dex) {
+      return c.json({ message: "DEX not found" }, 404);
+    }
+
+    const updatedDex = await updateDexCustomDomainOverride(
+      id,
+      customDomainOverride || null
+    );
+
+    return c.json({
+      message: "Custom domain override updated successfully",
+      dex: {
+        id: updatedDex.id,
+        brokerId: updatedDex.brokerId,
+        brokerName: updatedDex.brokerName,
+        customDomainOverride: updatedDex.customDomainOverride,
+      },
+    });
+  } catch (error) {
+    console.error("Error updating custom domain override:", error);
+    return c.json(
+      {
+        message: "Error updating custom domain override",
+        error: String(error),
+      },
+      500
+    );
+  }
+});
+
+export default app;

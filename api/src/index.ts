@@ -1,14 +1,15 @@
 import { serve } from "@hono/node-server";
-import { Hono } from "hono";
+import { OpenAPIHono } from "@hono/zod-openapi";
 import { logger } from "hono/logger";
 import { cors } from "hono/cors";
+import { Scalar } from "@scalar/hono-api-reference";
 import dexRoutes from "./routes/dex";
 import authRoutes from "./routes/auth";
 import adminRoutes from "./routes/admin";
 import themeRoutes from "./routes/theme";
 import graduationRoutes from "./routes/graduation";
-import { leaderboard } from "./routes/leaderboard";
-import { stats } from "./routes/stats";
+import leaderboardRoutes from "./routes/leaderboard";
+import statsRoutes from "./routes/stats";
 import { leaderboardService } from "./services/leaderboardService";
 import { authMiddleware, adminMiddleware } from "./lib/auth";
 import { errorLoggerMiddleware } from "./lib/errorLogger";
@@ -28,7 +29,7 @@ declare module "hono" {
   }
 }
 
-export const app = new Hono();
+export const app = new OpenAPIHono();
 
 let globalPrisma: import("@prisma/client").PrismaClient | null = null;
 
@@ -48,14 +49,100 @@ app.use("/api/admin/*", async (c, next) => {
   }
 });
 
-app.get("/", c => c.json({ message: "Orderly One API is running" }));
+app.get(
+  "/",
+  Scalar({
+    url: "/openapi.json",
+    theme: "moon",
+    pageTitle: "Orderly One API Documentation",
+    metaData: {
+      title: "Orderly One API Documentation",
+      description: "Interactive API documentation for Orderly One DEX Creator",
+    },
+    content: () => {
+      const spec = app.getOpenAPIDocument({
+        openapi: "3.1.0",
+        info: {
+          title: "Orderly One API",
+          version: "1.0.0",
+          description:
+            "Orderly One DEX Creator API - Create and manage decentralized exchanges",
+        },
+        servers: [
+          {
+            url: process.env.API_BASE_URL || "http://localhost:3001",
+            description: "API Server",
+          },
+        ],
+      });
+      return {
+        ...spec,
+        components: {
+          ...(spec.components || {}),
+          securitySchemes: {
+            bearerAuth: {
+              type: "http",
+              scheme: "bearer",
+              bearerFormat: "JWT",
+              description: "JWT token obtained from /api/auth/verify",
+            },
+          },
+        },
+      };
+    },
+  })
+);
 app.route("/api/dex", dexRoutes);
 app.route("/api/auth", authRoutes);
 app.route("/api/admin", adminRoutes);
 app.route("/api/theme", themeRoutes);
 app.route("/api/graduation", graduationRoutes);
-app.route("/api/leaderboard", leaderboard);
-app.route("/api/stats", stats);
+app.route("/api/leaderboard", leaderboardRoutes);
+app.route("/api/stats", statsRoutes);
+
+app.get("/openapi.json", c => {
+  const spec = app.getOpenAPIDocument({
+    openapi: "3.1.0",
+    info: {
+      title: "Orderly One API",
+      version: "1.0.0",
+      description:
+        "Orderly One DEX Creator API - Create and manage decentralized exchanges",
+    },
+    servers: [
+      {
+        url: process.env.API_BASE_URL || "http://localhost:3001",
+        description: "API Server",
+      },
+    ],
+    tags: [
+      { name: "Authentication", description: "Authentication endpoints" },
+      { name: "DEX", description: "DEX management endpoints" },
+      { name: "Admin", description: "Admin-only endpoints" },
+      { name: "Theme", description: "Theme customization endpoints" },
+      { name: "Graduation", description: "DEX graduation endpoints" },
+      { name: "Leaderboard", description: "Trading leaderboards" },
+      { name: "Stats", description: "Platform statistics" },
+    ],
+  });
+
+  const specWithSecurity = {
+    ...spec,
+    components: {
+      ...(spec.components || {}),
+      securitySchemes: {
+        bearerAuth: {
+          type: "http",
+          scheme: "bearer",
+          bearerFormat: "JWT",
+          description: "JWT token obtained from /api/auth/verify",
+        },
+      },
+    },
+  };
+
+  return c.json(specWithSecurity);
+});
 
 app.notFound(c => {
   return c.json(

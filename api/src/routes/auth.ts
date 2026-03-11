@@ -1,16 +1,54 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { ethers } from "ethers";
+import { userStore } from "../models/user";
 import {
-  userStore,
-  authRequestSchema,
-  authVerifySchema,
-  tokenValidationSchema,
-} from "../models/user";
+  AuthRequestSchema,
+  AuthVerifySchema,
+  TokenValidationSchema,
+  NonceResponseSchema,
+  AuthSuccessResponseSchema,
+  TokenValidationResponseSchema,
+  AuthErrorResponseSchema,
+} from "../schemas/auth.js";
 
-const app = new Hono();
+const app = new OpenAPIHono();
 
-app.post("/nonce", zValidator("json", authRequestSchema), async c => {
+const nonceRoute = createRoute({
+  method: "post",
+  path: "/nonce",
+  tags: ["Authentication"],
+  summary: "Generate authentication nonce",
+  description: "Generate a nonce that the user must sign to authenticate",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: AuthRequestSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Nonce generated successfully",
+      content: {
+        "application/json": {
+          schema: NonceResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: AuthErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(nonceRoute, async c => {
   const { address } = c.req.valid("json");
 
   try {
@@ -27,7 +65,58 @@ app.post("/nonce", zValidator("json", authRequestSchema), async c => {
   }
 });
 
-app.post("/verify", zValidator("json", authVerifySchema), async c => {
+const verifyRoute = createRoute({
+  method: "post",
+  path: "/verify",
+  tags: ["Authentication"],
+  summary: "Verify signature and authenticate",
+  description: "Verify the signed message and return an authentication token",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: AuthVerifySchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Authentication successful",
+      content: {
+        "application/json": {
+          schema: AuthSuccessResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: "Invalid signature",
+      content: {
+        "application/json": {
+          schema: AuthErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "User not found",
+      content: {
+        "application/json": {
+          schema: AuthErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: AuthErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(verifyRoute, async c => {
   const { address, signature } = c.req.valid("json");
 
   try {
@@ -66,7 +155,58 @@ app.post("/verify", zValidator("json", authVerifySchema), async c => {
   }
 });
 
-app.post("/validate", zValidator("json", tokenValidationSchema), async c => {
+const validateRoute = createRoute({
+  method: "post",
+  path: "/validate",
+  tags: ["Authentication"],
+  summary: "Validate authentication token",
+  description: "Validate if an authentication token is still valid",
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: TokenValidationSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Token is valid",
+      content: {
+        "application/json": {
+          schema: TokenValidationResponseSchema,
+        },
+      },
+    },
+    401: {
+      description: "Token invalid or expired",
+      content: {
+        "application/json": {
+          schema: TokenValidationResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "User not found",
+      content: {
+        "application/json": {
+          schema: TokenValidationResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: TokenValidationResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(validateRoute, async c => {
   const { address, token } = c.req.valid("json");
 
   try {
@@ -75,7 +215,6 @@ app.post("/validate", zValidator("json", tokenValidationSchema), async c => {
       return c.json({ valid: false, error: "User not found" }, 404);
     }
 
-    // Validate the token
     const isValid = await userStore.validateToken(token, user.id);
 
     if (!isValid) {
