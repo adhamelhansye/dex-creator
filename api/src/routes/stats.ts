@@ -1,12 +1,16 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { getPrisma } from "../lib/prisma";
 import { getOrderlyPrismaClient } from "../lib/orderlyDb";
 import dayjs from "dayjs";
 import { getSwapFeeConfigs } from "../models/stats";
+import {
+  StatsErrorResponseSchema,
+  StatsQuerySchema,
+  DexStatsSchema,
+  SwapFeeConfigSchema,
+} from "../schemas/stats.js";
 
-const stats = new Hono();
+const app = new OpenAPIHono();
 
 interface StatsCacheEntry {
   data: {
@@ -28,10 +32,6 @@ interface StatsCacheEntry {
 }
 
 const statsCache = new Map<string, StatsCacheEntry>();
-
-const statsQuerySchema = z.object({
-  period: z.enum(["daily", "weekly", "30d", "90d"]).default("30d"),
-});
 
 function generateCacheKey(period: string): string {
   return `dex-stats-${period}`;
@@ -69,7 +69,37 @@ function getPeriodStartDate(
   }
 }
 
-stats.get("/", zValidator("query", statsQuerySchema), async c => {
+const getStatsRoute = createRoute({
+  method: "get",
+  path: "/",
+  tags: ["Stats"],
+  summary: "Get DEX statistics",
+  description:
+    "Get aggregate statistics about DEX creation and graduation over a specified time period",
+  request: {
+    query: StatsQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Statistics retrieved successfully",
+      content: {
+        "application/json": {
+          schema: DexStatsSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: StatsErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getStatsRoute, async c => {
   try {
     const { period } = c.req.valid("query");
     const cacheKey = generateCacheKey(period);
@@ -203,7 +233,34 @@ interface GraduatedDexesCacheEntry {
 
 let graduatedDexesCache: GraduatedDexesCacheEntry | null = null;
 
-stats.get("/swap-fee-config", async c => {
+const getSwapFeeConfigRoute = createRoute({
+  method: "get",
+  path: "/swap-fee-config",
+  tags: ["Stats"],
+  summary: "Get swap fee configurations",
+  description:
+    "Get the swap fee configuration for all graduated DEXes (cached for 5 minutes)",
+  responses: {
+    200: {
+      description: "Swap fee configurations retrieved successfully",
+      content: {
+        "application/json": {
+          schema: SwapFeeConfigSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: StatsErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getSwapFeeConfigRoute, async c => {
   try {
     if (graduatedDexesCache && graduatedDexesCache.expires > Date.now()) {
       return c.json(graduatedDexesCache.data);
@@ -224,4 +281,4 @@ stats.get("/swap-fee-config", async c => {
   }
 });
 
-export { stats };
+export default app;

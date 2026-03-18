@@ -125,6 +125,13 @@
     axios "1.7.4"
     got "^11.8.6"
 
+"@asteasolutions/zod-to-openapi@^5.5.0":
+  version "5.5.0"
+  resolved "https://registry.yarnpkg.com/@asteasolutions/zod-to-openapi/-/zod-to-openapi-5.5.0.tgz#f3be8f1e97ece0fcef2e6ff5e9230da8138d20a6"
+  integrity sha512-d5HwrvM6dOKr3XdeF+DmashGvfEc+1oiEfbscugsiwSTrFtuMa7ETpW9sTNnVgn+hJaz+PRxPQUYD7q9/5dUig==
+  dependencies:
+    openapi3-ts "^4.1.2"
+
 "@babel/code-frame@^7.0.0", "@babel/code-frame@^7.26.2":
   version "7.26.2"
   resolved "https://registry.yarnpkg.com/@babel/code-frame/-/code-frame-7.26.2.tgz#4b5fab97d33338eff916235055f0ebc21e573a85"
@@ -1865,6 +1872,19 @@
   version "1.14.0"
   resolved "https://registry.yarnpkg.com/@hono/node-server/-/node-server-1.14.0.tgz#b64f7e6b10dbc0fa0642e8a0a1c03c2abf2b391c"
   integrity sha512-YUCxJwgHRKSqjrdTk9e4VMGKN27MK5r4+MGPyZTgKH+IYbK+KtYbHeOcPGJ91KGGD6RIQiz2dAHxvjauNhOS8g==
+
+"@hono/zod-openapi@0.9.0":
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/@hono/zod-openapi/-/zod-openapi-0.9.0.tgz#a7df7fc9d7a29d72b351f41f98dd929d9f0a2e49"
+  integrity sha512-WEJ5iq3Qy1ciParYdtf2zjgujRVe5uLBIfAru0Vv+vl+LIakT6t6zn/8s9Tg/Q19nPvLIRcwySX7Is6B2fTvng==
+  dependencies:
+    "@asteasolutions/zod-to-openapi" "^5.5.0"
+    "@hono/zod-validator" "^0.1.9"
+
+"@hono/zod-validator@^0.1.9":
+  version "0.1.11"
+  resolved "https://registry.yarnpkg.com/@hono/zod-validator/-/zod-validator-0.1.11.tgz#7d3e900f01d4c7be6a8c7a7ea1986caaffef423b"
+  integrity sha512-PQXeHUP0+36qpRt8yfeD7N2jbK3ETlGvSN6dMof/HwUC/APRokQRjpXZm4rrlG71Ft0aWE01+Bm4XejqPie5Uw==
 
 "@hono/zod-validator@^0.4.3":
   version "0.4.3"
@@ -4818,6 +4838,35 @@
   version "3.22.9"
   resolved "https://registry.yarnpkg.com/@safe-global/safe-gateway-typescript-sdk/-/safe-gateway-typescript-sdk-3.22.9.tgz#7f6571aaf1aecbe1217f6dd294ad2f3d90c2c8c2"
   integrity sha512-7ojVK/crhOaGowEO8uYWaopZzcr5rR76emgllGIfjCLR70aY4PbASpi9Pbs+7jIRzPDBBkM0RBo+zYx5UduX8Q==
+
+"@scalar/core@0.3.38":
+  version "0.3.38"
+  resolved "https://registry.yarnpkg.com/@scalar/core/-/core-0.3.38.tgz#6c1c8ef05ada5975623605527108e1cbaeb0f8d6"
+  integrity sha512-vacEKCx46szDGKI5x8GrFUQygMMoeOVFxeltkLM1kLylAYs7iLprkwkLlEI0zJezE7mqiWIONh9MDJA2lTciIA==
+  dependencies:
+    "@scalar/types" "0.6.3"
+
+"@scalar/helpers@0.2.12":
+  version "0.2.12"
+  resolved "https://registry.yarnpkg.com/@scalar/helpers/-/helpers-0.2.12.tgz#54ca652f4ee603f397c596c4718a0a3f42d5bb36"
+  integrity sha512-Ig/H1Je8nqcDiY+YwFIpATxF2ko7zKrjIZFWK2gGeNTYK4Np9XnqDHg56jM3Xru439Eh4qHq9P/lX7Se5nnxFA==
+
+"@scalar/hono-api-reference@^0.9.41":
+  version "0.9.41"
+  resolved "https://registry.yarnpkg.com/@scalar/hono-api-reference/-/hono-api-reference-0.9.41.tgz#9b21477693d2c21ff269a10c96e42cb26ed2f211"
+  integrity sha512-QPZo3GshWvRU2Y9VRMsl1+FAZv4+Gjud5/Yq6TY/5Xy9Rrez8SMkIgN9cfRjQ5JtU1XqpugtWMBEbiXep4C+Fg==
+  dependencies:
+    "@scalar/core" "0.3.38"
+
+"@scalar/types@0.6.3":
+  version "0.6.3"
+  resolved "https://registry.yarnpkg.com/@scalar/types/-/types-0.6.3.tgz#2461dc58303f8fd7e3570d4a7a76faa7f1f827bd"
+  integrity sha512-uicRSnA29SO+nwywdW5ycjIp24N/6FziPEpgC5nObCy5upUNpArN+xro06T1WX5zFnT9g7ADeTfFkWT+OLk/jA==
+  dependencies:
+    "@scalar/helpers" "0.2.12"
+    nanoid "^5.1.6"
+    type-fest "^5.3.1"
+    zod "^4.3.5"
 
 "@scure/base@^1.1.3", "@scure/base@~1.2.2", "@scure/base@~1.2.4":
   version "1.2.4"
@@ -13755,6 +13804,11 @@ nanoid@^4.0.0:
   resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-4.0.2.tgz#140b3c5003959adbebf521c170f282c5e7f9fb9e"
   integrity sha512-7ZtY5KTCNheRGfEFxnedV5zFiORN1+Y1N6zvPTnHQd8ENUvfaDBeuJDZb2bN/oXwXxu3qkTXDzy57W5vAmDTBw==
 
+nanoid@^5.1.6:
+  version "5.1.6"
+  resolved "https://registry.yarnpkg.com/nanoid/-/nanoid-5.1.6.tgz#30363f664797e7d40429f6c16946d6bd7a3f26c9"
+  integrity sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==
+
 natural-compare@^1.4.0:
   version "1.4.0"
   resolved "https://registry.yarnpkg.com/natural-compare/-/natural-compare-1.4.0.tgz#4abebfeed7541f2c27acfb29bdbbd15c8d5ba4f7"
@@ -14067,6 +14121,13 @@ openai@^4.96.0:
     form-data-encoder "1.7.2"
     formdata-node "^4.3.2"
     node-fetch "^2.6.7"
+
+openapi3-ts@^4.1.2:
+  version "4.5.0"
+  resolved "https://registry.yarnpkg.com/openapi3-ts/-/openapi3-ts-4.5.0.tgz#1241fcdac0a711d654dfa74feebc2ce7a210790a"
+  integrity sha512-jaL+HgTq2Gj5jRcfdutgRGLosCy/hT8sQf6VOy+P+g36cZOjI1iukdPnijC+4CmeRzg/jEllJUboEic2FhxhtQ==
+  dependencies:
+    yaml "^2.8.0"
 
 optionator@^0.9.3:
   version "0.9.4"
@@ -16386,6 +16447,11 @@ table-layout@^1.0.2:
     typical "^5.2.0"
     wordwrapjs "^4.0.0"
 
+tagged-tag@^1.0.0:
+  version "1.0.0"
+  resolved "https://registry.yarnpkg.com/tagged-tag/-/tagged-tag-1.0.0.tgz#a0b5917c2864cba54841495abfa3f6b13edcf4d6"
+  integrity sha512-yEFYrVhod+hdNyx7g5Bnkkb0G6si8HJurOoOEgC8B/O0uXLHlaey/65KRv6cuWBNhBgHKAROVpc7QyYqE5gFng==
+
 tailwind-merge@^2.2.0:
   version "2.6.0"
   resolved "https://registry.yarnpkg.com/tailwind-merge/-/tailwind-merge-2.6.0.tgz#ac5fb7e227910c038d458f396b7400d93a3142d5"
@@ -16885,6 +16951,13 @@ type-check@^0.4.0, type-check@~0.4.0:
   integrity sha512-XleUoc9uwGXqjWwXaUTZAmzMcFZ5858QA2vvx1Ur5xIcixXIP+8LnFDgRplU30us6teqdlskFfu+ae4K79Ooew==
   dependencies:
     prelude-ls "^1.2.1"
+
+type-fest@^5.3.1:
+  version "5.4.4"
+  resolved "https://registry.yarnpkg.com/type-fest/-/type-fest-5.4.4.tgz#577f165b5ecb44cfc686559cc54ca77f62aa374d"
+  integrity sha512-JnTrzGu+zPV3aXIUhnyWJj4z/wigMsdYajGLIYakqyOW1nPllzXEJee0QQbHj+CTIQtXGlAjuK0UY+2xTyjVAw==
+  dependencies:
+    tagged-tag "^1.0.0"
 
 type-is@~1.6.18:
   version "1.6.18"
@@ -17994,6 +18067,11 @@ zod@^3.22.4, zod@^3.24.2:
   version "3.24.2"
   resolved "https://registry.yarnpkg.com/zod/-/zod-3.24.2.tgz#8efa74126287c675e92f46871cfc8d15c34372b3"
   integrity sha512-lY7CDW43ECgW9u1TcT3IoXHflywfVqDYze4waEz812jR/bZ8FHDsl7pFQoSZTz5N+2NqRXs8GBwnAwo3ZNxqhQ==
+
+zod@^4.3.5:
+  version "4.3.6"
+  resolved "https://registry.yarnpkg.com/zod/-/zod-4.3.6.tgz#89c56e0aa7d2b05107d894412227087885ab112a"
+  integrity sha512-rftlrkhHZOcjDwkGlnUtZZkvaPHCsDATp4pGpuOOMDaTdDDXF91wuVDJoWoPsKX/3YPQ5fHuF3STjcYyKr+Qhg==
 
 zustand@5.0.0:
   version "5.0.0"

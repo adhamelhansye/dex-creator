@@ -1,6 +1,4 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { OpenAI } from "openai";
 import {
   themeRateLimiter,
@@ -8,29 +6,18 @@ import {
   createDeploymentRateLimit,
 } from "../lib/rateLimiter";
 import { validateCSS, sanitizeInvalidSelectors } from "../lib/cssValidator";
+import {
+  ThemeErrorResponseSchema,
+  ThemePromptSchema,
+  ThemeModifyResponseSchema,
+  FineTuneSchema,
+  FineTuneResponseSchema,
+} from "../schemas/theme.js";
 
-const themeRoutes = new Hono();
+const app = new OpenAPIHono();
 
 const themeRateLimit = createDeploymentRateLimit(themeRateLimiter);
 const fineTuneRateLimit = createDeploymentRateLimit(fineTuneRateLimiter);
-
-const themePromptSchema = z.object({
-  prompt: z.string().min(3).max(100),
-  currentTheme: z.string().optional(),
-});
-
-const fineTuneSchema = z.object({
-  prompt: z.string().min(3).max(200),
-  html: z.string().min(1),
-  elements: z.array(
-    z.object({
-      elementSelector: z.string(),
-      computedStyles: z.record(z.string(), z.string()),
-    })
-  ),
-  cssVariables: z.record(z.string(), z.string()),
-  existingOverrides: z.string().optional(),
-});
 
 function createOpenAIClient() {
   const apiKey = process.env.CEREBRAS_API_KEY;
@@ -44,17 +31,50 @@ function createOpenAIClient() {
   });
 }
 
-themeRoutes.post(
-  "/modify",
-  themeRateLimit,
-  zValidator("json", themePromptSchema),
-  async c => {
-    try {
-      const { prompt, currentTheme } = c.req.valid("json");
+const modifyThemeRoute = createRoute({
+  method: "post",
+  path: "/modify",
+  tags: ["Theme"],
+  summary: "Modify theme",
+  description: "Generate modified CSS theme variants based on a description",
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: ThemePromptSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Theme modified successfully",
+      content: {
+        "application/json": {
+          schema: ThemeModifyResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ThemeErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
 
-      const openai = createOpenAIClient();
+app.use("/modify", themeRateLimit);
+app.openapi(modifyThemeRoute, async c => {
+  try {
+    const { prompt, currentTheme } = c.req.valid("json");
 
-      const defaultTheme = `:root {
+    const openai = createOpenAIClient();
+
+    const defaultTheme = `:root {
   --oui-font-family: 'Manrope', sans-serif;
 
   /* colors */
@@ -149,9 +169,9 @@ themeRoutes.post(
   --oui-spacing-xl: 33.75rem;
 }`;
 
-      const baseTheme = currentTheme || defaultTheme;
+    const baseTheme = currentTheme || defaultTheme;
 
-      const systemPrompt = `You are a CSS theme designer for dark trading platforms. Modify the provided CSS theme based on the user's description.
+    const systemPrompt = `You are a CSS theme designer for dark trading platforms. Modify the provided CSS theme based on the user's description.
 
 FORMAT: Use RGB values with spaces (e.g., "176 132 233" for RGB(176,132,233)).
 
@@ -191,127 +211,158 @@ COLOR GUIDELINES:
    • Gradient-brand-start: Similar to primary-light
    • Gradient-brand-end: Similar to primary`;
 
-      const themesArray: string[] = [];
+    const themesArray: string[] = [];
 
-      for (let index = 0; index < 3; index++) {
-        try {
-          const response = await openai.chat.completions.create({
-            model: "qwen-3-235b-a22b-instruct-2507",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              {
-                role: "user",
-                content: `Please modify this CSS theme based on the following description: ${prompt}\n\nCurrent theme:\n${baseTheme}`,
-              },
-            ],
-            temperature: 0.7 + index * 0.1,
-          });
+    for (let index = 0; index < 3; index++) {
+      try {
+        const response = await openai.chat.completions.create({
+          model: "qwen-3-235b-a22b-instruct-2507",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: `Please modify this CSS theme based on the following description: ${prompt}\n\nCurrent theme:\n${baseTheme}`,
+            },
+          ],
+          temperature: 0.7 + index * 0.1,
+        });
 
-          let modifiedTheme = response.choices[0]?.message.content?.trim();
+        let modifiedTheme = response.choices[0]?.message.content?.trim();
 
-          if (!modifiedTheme) {
-            throw new Error(`Failed to generate theme variant ${index + 1}`);
-          }
+        if (!modifiedTheme) {
+          throw new Error(`Failed to generate theme variant ${index + 1}`);
+        }
 
-          modifiedTheme = modifiedTheme.replace(
-            /<think>[\s\S]*?<\/think>/gi,
-            ""
+        modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*?<\/think>/gi, "");
+        modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*$/gi, "");
+
+        modifiedTheme = modifiedTheme.replace(/^```(?:css)?\s*/i, "");
+        modifiedTheme = modifiedTheme.replace(/\s*```$/i, "");
+        modifiedTheme = modifiedTheme.trim();
+
+        // Sanitize invalid Tailwind-style selectors (e.g., .class/10 or .class-[10px])
+        modifiedTheme = sanitizeInvalidSelectors(modifiedTheme);
+
+        // Validate generated CSS
+        const validation = validateCSS(modifiedTheme);
+        if (!validation.isValid) {
+          console.error(
+            `Theme variant ${index + 1} validation errors:`,
+            validation.errors
           );
-          modifiedTheme = modifiedTheme.replace(/<think>[\s\S]*$/gi, "");
 
-          modifiedTheme = modifiedTheme.replace(/^```(?:css)?\s*/i, "");
-          modifiedTheme = modifiedTheme.replace(/\s*```$/i, "");
-          modifiedTheme = modifiedTheme.trim();
+          // @ts-ignore
+          return c.json(
+            {
+              message: `CSS validation failed: ${validation.errors.join("; ")}, please try again with a different prompt`,
+            },
+            { status: 500 }
+          );
+        }
 
-          // Sanitize invalid Tailwind-style selectors (e.g., .class/10 or .class-[10px])
-          modifiedTheme = sanitizeInvalidSelectors(modifiedTheme);
-
-          // Validate generated CSS
-          const validation = validateCSS(modifiedTheme);
-          if (!validation.isValid) {
-            console.error(
-              `Theme variant ${index + 1} validation errors:`,
-              validation.errors
-            );
-
-            return c.json(
-              {
-                message: `CSS validation failed: ${validation.errors.join("; ")}, please try again with a different prompt`,
-              },
-              { status: 500 }
-            );
-          }
-
-          themesArray.push(modifiedTheme);
-        } catch (error) {
-          console.error(`Error generating theme variant ${index + 1}:`, error);
-          if (themesArray.length === 0) {
-            throw error;
-          }
-          if (themesArray.length > 0) {
-            themesArray.push(themesArray[themesArray.length - 1]);
-          }
+        themesArray.push(modifiedTheme);
+      } catch (error) {
+        console.error(`Error generating theme variant ${index + 1}:`, error);
+        if (themesArray.length === 0) {
+          throw error;
+        }
+        if (themesArray.length > 0) {
+          themesArray.push(themesArray[themesArray.length - 1]);
         }
       }
-
-      if (themesArray.length === 0) {
-        return c.json(
-          { error: "Failed to generate any theme variants" },
-          { status: 500 }
-        );
-      }
-
-      while (themesArray.length < 3) {
-        themesArray.push(themesArray[themesArray.length - 1]);
-      }
-
-      return c.json({ themes: themesArray.slice(0, 3) }, { status: 200 });
-    } catch (error) {
-      console.error("Error modifying theme:", error);
-      let message = "Failed to modify theme";
-
-      if (error instanceof Error) {
-        message = error.message;
-      }
-
-      return c.json({ error: message }, { status: 500 });
     }
+
+    if (themesArray.length === 0) {
+      return c.json(
+        { error: "Failed to generate any theme variants" },
+        { status: 500 }
+      );
+    }
+
+    while (themesArray.length < 3) {
+      themesArray.push(themesArray[themesArray.length - 1]);
+    }
+
+    return c.json({ themes: themesArray.slice(0, 3) }, { status: 200 });
+  } catch (error) {
+    console.error("Error modifying theme:", error);
+    let message = "Failed to modify theme";
+
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
+    return c.json({ error: message }, { status: 500 });
   }
-);
+});
 
-themeRoutes.post(
-  "/fine-tune",
-  fineTuneRateLimit,
-  zValidator("json", fineTuneSchema),
-  async c => {
-    try {
-      const { prompt, html, elements, cssVariables, existingOverrides } =
-        c.req.valid("json");
+const fineTuneRoute = createRoute({
+  method: "post",
+  path: "/fine-tune",
+  tags: ["Theme"],
+  summary: "Fine-tune element styles",
+  description:
+    "Generate CSS overrides for specific elements based on HTML structure and computed styles",
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: FineTuneSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Fine-tuning completed successfully",
+      content: {
+        "application/json": {
+          schema: FineTuneResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ThemeErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
 
-      const openai = createOpenAIClient();
+app.use("/fine-tune", fineTuneRateLimit);
+app.openapi(fineTuneRoute, async c => {
+  try {
+    const { prompt, html, elements, cssVariables, existingOverrides } =
+      c.req.valid("json");
 
-      const elementsData = elements
-        .map(
-          (el, index) => `Element ${index} (${el.elementSelector}):
+    const openai = createOpenAIClient();
+
+    const elementsData = elements
+      .map(
+        (el, index) => `Element ${index} (${el.elementSelector}):
 Computed Styles (excluding CSS variables):
 ${Object.entries(el.computedStyles)
   .map(([key, value]) => `  ${key}: ${value}`)
   .join("\n")}`
-        )
-        .join("\n\n");
+      )
+      .join("\n\n");
 
-      const cssVariablesStr =
-        Object.keys(cssVariables).length > 0
-          ? `CSS Variables (--oui-*) from root:
+    const cssVariablesStr =
+      Object.keys(cssVariables).length > 0
+        ? `CSS Variables (--oui-*) from root:
 ${Object.entries(cssVariables)
   .map(([key, value]) => `  ${key}: ${value}`)
   .join("\n")}`
-          : "";
+        : "";
 
-      const systemPrompt = `You are a CSS expert specializing in fine-grained UI customization for dark trading platforms.
+    const systemPrompt = `You are a CSS expert specializing in fine-grained UI customization for dark trading platforms.
 
 Your task is to generate CSS overrides that can be applied to an HTML element and its entire child structure to transform its appearance based on the user's description.
 
@@ -350,7 +401,7 @@ SPACING GUIDELINES:
 - Preserve existing spacing and padding values unless the user specifically asks to change them
 - Only modify padding/margin when the user's description explicitly mentions spacing changes
 - If the user doesn't mention padding, spacing, or margins, DO NOT add or modify these properties
-- Focus on colors, borders, backgrounds, and visual effects rather than spacing
+- Focus on colors, borders, backgrounds, shadows, gradients, fonts - NOT spacing
 
 The user will provide:
 - Complete HTML structure including the root element and all its children (up to depth 3)
@@ -361,7 +412,7 @@ The user will provide:
 
 You will receive computed styles for multiple elements in the hierarchy. Use this context to understand the styling relationships and generate more accurate CSS overrides.`;
 
-      const userPrompt = `Generate CSS overrides for this HTML structure (including all child elements) based on the following description: "${prompt}"
+    const userPrompt = `Generate CSS overrides for this HTML structure (including all child elements) based on the following description: "${prompt}"
 
 Complete HTML Structure (root element and all children up to depth 3):
 ${html}
@@ -370,15 +421,17 @@ ${cssVariablesStr ? `${cssVariablesStr}\n\n` : ""}Elements and Their Styles:
 ${elementsData}
 ${
   existingOverrides
-    ? `\nExisting CSS Overrides (INCLUDE ALL of these PLUS your new changes - return everything combined):\n${existingOverrides}`
+    ? `
+Existing CSS Overrides (INCLUDE ALL of these PLUS your new changes - return everything combined):
+${existingOverrides}`
     : ""
 }
 
 Generate CSS overrides that will transform the root element and its child elements according to the description. ${
-        existingOverrides
-          ? "CRITICAL: You must return ALL overrides (existing + new combined). Include EVERY existing override PLUS your new changes. You MAY modify existing overrides if the user's request conflicts with them - update them rather than keeping duplicates. If an existing override targets the same selector and the user wants different styling, UPDATE that override. Do NOT remove or skip existing overrides unless they conflict with the user's request. Return the complete set that includes everything (modified existing + new)."
-          : ""
-      }
+      existingOverrides
+        ? "CRITICAL: You must return ALL overrides (existing + new combined). Include EVERY existing override PLUS your new changes. You MAY modify existing overrides if the user's request conflicts with them - update them rather than keeping duplicates. If an existing override targets the same selector and the user wants different styling, UPDATE that override. Do NOT remove or skip existing overrides unless they conflict with the user's request. Return the complete set that includes everything (modified existing + new)."
+        : ""
+    }
 
 IMPORTANT SPACING RULES:
 - Do NOT add padding or margin properties unless the user explicitly requests spacing changes
@@ -410,98 +463,97 @@ CRITICAL VALIDATION REQUIREMENTS:
 - **CRITICAL**: CSS selectors MUST be valid CSS syntax. Class selectors (starting with .) cannot contain slashes (/) or square brackets ([]). Examples of INVALID selectors: ".class-name/10" or ".class-name-[10px]" - these are Tailwind syntax, not valid CSS. Use ".class-name-10" or ".class-name-10px" instead. If you must target a class with special characters, use attribute selectors like "[class*='class-name/10']", but prefer valid CSS class names.
 
 IMPORTANT: Return ONLY the pure CSS code. Do NOT wrap it in markdown code blocks. Do NOT include any explanations or text before or after the CSS. Return ONLY the CSS rules themselves. ${
-        existingOverrides
-          ? "Return ALL overrides (existing + new) - include everything, not just new changes."
-          : ""
-      }`;
+      existingOverrides
+        ? "Return ALL overrides (existing + new) - include everything, not just new changes."
+        : ""
+    }`;
 
-      const overridesArray: string[] = [];
+    const overridesArray: string[] = [];
 
-      for (let index = 0; index < 3; index++) {
-        try {
-          const response = await openai.chat.completions.create({
-            model: "qwen-3-235b-a22b-instruct-2507",
-            messages: [
-              {
-                role: "system",
-                content: systemPrompt,
-              },
-              {
-                role: "user",
-                content: userPrompt,
-              },
-            ],
-            temperature: 0.7 + index * 0.1,
-            max_completion_tokens: 8_000,
-          });
+    for (let index = 0; index < 3; index++) {
+      try {
+        const response = await openai.chat.completions.create({
+          model: "qwen-3-235b-a22b-instruct-2507",
+          messages: [
+            {
+              role: "system",
+              content: systemPrompt,
+            },
+            {
+              role: "user",
+              content: userPrompt,
+            },
+          ],
+          temperature: 0.7 + index * 0.1,
+          max_completion_tokens: 8_000,
+        });
 
-          let cssOverrides = response.choices[0]?.message.content?.trim();
+        let cssOverrides = response.choices[0]?.message.content?.trim();
 
-          if (!cssOverrides) {
-            throw new Error(
-              `Failed to generate CSS override variant ${index + 1}`
-            );
-          }
+        if (!cssOverrides) {
+          throw new Error(
+            `Failed to generate CSS override variant ${index + 1}`
+          );
+        }
 
-          cssOverrides = cssOverrides.replace(/<think>[\s\S]*?<\/think>/gi, "");
-          cssOverrides = cssOverrides.replace(/^```(?:css)?\s*/i, "");
-          cssOverrides = cssOverrides.replace(/\s*```$/i, "");
-          cssOverrides = cssOverrides.trim();
+        cssOverrides = cssOverrides.replace(/<think>[\s\S]*?<\/think>/gi, "");
+        cssOverrides = cssOverrides.replace(/^```(?:css)?\s*/i, "");
+        cssOverrides = cssOverrides.replace(/\s*```$/i, "");
+        cssOverrides = cssOverrides.trim();
 
-          // Sanitize invalid Tailwind-style selectors (e.g., .class/10 or .class-[10px])
-          cssOverrides = sanitizeInvalidSelectors(cssOverrides);
+        // Sanitize invalid Tailwind-style selectors (e.g., .class/10 or .class-[10px])
+        cssOverrides = sanitizeInvalidSelectors(cssOverrides);
 
-          // Validate generated CSS
-          const validation = validateCSS(cssOverrides);
-          if (!validation.isValid) {
-            console.error(
-              `CSS override variant ${index + 1} validation errors:`,
-              validation.errors
-            );
+        // Validate generated CSS
+        const validation = validateCSS(cssOverrides);
+        if (!validation.isValid) {
+          console.error(
+            `CSS override variant ${index + 1} validation errors:`,
+            validation.errors
+          );
 
-            return c.json(
-              {
-                message: `CSS validation failed: ${validation.errors.join("; ")}, please try again with a different prompt`,
-              },
-              { status: 500 }
-            );
-          }
+          return c.json(
+            {
+              message: `CSS validation failed: ${validation.errors.join("; ")}, please try again with a different prompt`,
+            },
+            { status: 500 }
+          );
+        }
 
-          overridesArray.push(cssOverrides);
-        } catch (error) {
-          console.error(`Error generating variant ${index + 1}:`, error);
-          if (overridesArray.length === 0) {
-            throw error;
-          }
-          if (overridesArray.length > 0) {
-            overridesArray.push(overridesArray[overridesArray.length - 1]);
-          }
+        overridesArray.push(cssOverrides);
+      } catch (error) {
+        console.error(`Error generating variant ${index + 1}:`, error);
+        if (overridesArray.length === 0) {
+          throw error;
+        }
+        if (overridesArray.length > 0) {
+          overridesArray.push(overridesArray[overridesArray.length - 1]);
         }
       }
-
-      if (overridesArray.length === 0) {
-        return c.json(
-          { error: "Failed to generate any CSS override variants" },
-          { status: 500 }
-        );
-      }
-
-      while (overridesArray.length < 3) {
-        overridesArray.push(overridesArray[overridesArray.length - 1]);
-      }
-
-      return c.json({ overrides: overridesArray.slice(0, 3) }, { status: 200 });
-    } catch (error) {
-      console.error("Error fine-tuning element:", error);
-      let message = "Failed to fine-tune element";
-
-      if (error instanceof Error) {
-        message = error.message;
-      }
-
-      return c.json({ error: message }, { status: 500 });
     }
-  }
-);
 
-export default themeRoutes;
+    if (overridesArray.length === 0) {
+      return c.json(
+        { error: "Failed to generate any CSS override variants" },
+        { status: 500 }
+      );
+    }
+
+    while (overridesArray.length < 3) {
+      overridesArray.push(overridesArray[overridesArray.length - 1]);
+    }
+
+    return c.json({ overrides: overridesArray.slice(0, 3) }, { status: 200 });
+  } catch (error) {
+    console.error("Error fine-tuning element:", error);
+    let message = "Failed to fine-tune element";
+
+    if (error instanceof Error) {
+      message = error.message;
+    }
+
+    return c.json({ error: message }, { status: 500 });
+  }
+});
+
+export default app;

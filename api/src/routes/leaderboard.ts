@@ -1,18 +1,17 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import { leaderboardService } from "../services/leaderboardService.js";
 import { getPrisma } from "../lib/prisma.js";
 import dayjs from "dayjs";
+import {
+  LeaderboardErrorResponseSchema,
+  LeaderboardQuerySchema,
+  LeaderboardResponseSchema,
+  BrokerParamSchema,
+  BrokerQuerySchema,
+  BrokerStatsResponseSchema,
+} from "../schemas/leaderboard.js";
 
-const leaderboard = new Hono();
-
-const leaderboardQuerySchema = z.object({
-  sort: z.enum(["volume", "pnl", "fee"]).default("volume"),
-  period: z.enum(["daily", "weekly", "30d", "90d"]).default("weekly"),
-  limit: z.coerce.number().int().positive().max(20).default(20),
-  offset: z.coerce.number().int().min(0).default(0),
-});
+const app = new OpenAPIHono();
 
 interface LeaderboardItem {
   id: string;
@@ -119,7 +118,37 @@ function generateBrokerCacheKey(brokerId: string, period: string): string {
   return `broker-${brokerId}-${period}`;
 }
 
-leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
+const getLeaderboardRoute = createRoute({
+  method: "get",
+  path: "/",
+  tags: ["Leaderboard"],
+  summary: "Get leaderboard",
+  description:
+    "Get a paginated list of graduated DEXes sorted by trading metrics",
+  request: {
+    query: LeaderboardQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Leaderboard retrieved successfully",
+      content: {
+        "application/json": {
+          schema: LeaderboardResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: LeaderboardErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getLeaderboardRoute, async c => {
   try {
     const { sort, period, limit, offset } = c.req.valid("query");
 
@@ -246,122 +275,93 @@ leaderboard.get("/", zValidator("query", leaderboardQuerySchema), async c => {
   }
 });
 
-const brokerParamSchema = z.object({
-  brokerId: z.string().min(1, "Broker ID is required"),
-});
-
-const brokerQuerySchema = z.object({
-  period: z.enum(["daily", "weekly", "30d", "90d"]).default("weekly"),
-});
-
-/**
- * Get detailed stats for a specific broker
- */
-leaderboard.get(
-  "/broker/:brokerId",
-  zValidator("param", brokerParamSchema),
-  zValidator("query", brokerQuerySchema),
-  async c => {
-    try {
-      const { brokerId } = c.req.valid("param");
-      const { period } = c.req.valid("query");
-
-      const cacheKey = generateBrokerCacheKey(brokerId, period);
-      const cached = brokerCache.get(cacheKey);
-
-      if (cached && cached.expires > Date.now()) {
-        return c.json({ data: cached.data });
-      }
-
-      const prisma = await getPrisma();
-      const dex = await prisma.dex.findFirst({
-        where: { brokerId },
-        select: {
-          id: true,
-          brokerId: true,
-          brokerName: true,
-          primaryLogo: true,
-          repoUrl: true,
-          customDomain: true,
-          customDomainOverride: true,
-          description: true,
-          banner: true,
-          logo: true,
-          tokenAddress: true,
-          tokenChain: true,
-          telegramLink: true,
-          discordLink: true,
-          xLink: true,
-          websiteUrl: true,
+const getBrokerStatsRoute = createRoute({
+  method: "get",
+  path: "/broker/{brokerId}",
+  tags: ["Leaderboard"],
+  summary: "Get broker stats",
+  description: "Get detailed statistics for a specific broker/DEX",
+  request: {
+    params: BrokerParamSchema,
+    query: BrokerQuerySchema,
+  },
+  responses: {
+    200: {
+      description: "Broker stats retrieved successfully",
+      content: {
+        "application/json": {
+          schema: BrokerStatsResponseSchema,
         },
-      });
+      },
+    },
+    404: {
+      description: "Broker not found",
+      content: {
+        "application/json": {
+          schema: LeaderboardErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: LeaderboardErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
 
-      if (!dex) {
-        return c.json({ error: "DEX not found" }, 404);
-      }
+app.openapi(getBrokerStatsRoute, async c => {
+  try {
+    const { brokerId } = c.req.valid("param");
+    const { period } = c.req.valid("query");
 
-      const dailyStats = leaderboardService.getDailyStatsForBroker(
-        brokerId,
-        period
-      );
-      const aggregatedStats = leaderboardService.getAggregatedBrokerStats(
-        brokerId,
-        period
-      );
+    const cacheKey = generateBrokerCacheKey(brokerId, period);
+    const cached = brokerCache.get(cacheKey);
 
-      if (!dailyStats || !aggregatedStats) {
-        let dexUrl = null;
-        if (dex.customDomainOverride) {
-          dexUrl = `https://${dex.customDomainOverride}`;
-        } else if (dex.customDomain) {
-          dexUrl = `https://${dex.customDomain}`;
-        } else if (dex.repoUrl) {
-          const match = dex.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
-          if (match) {
-            dexUrl = `https://dex.orderly.network/${match[1]}`;
-          }
-        }
+    if (cached && cached.expires > Date.now()) {
+      return c.json({ data: cached.data });
+    }
 
-        const fallbackData = {
-          dex: {
-            id: dex.id,
-            brokerId: dex.brokerId,
-            brokerName: dex.brokerName,
-            primaryLogo: dex.primaryLogo,
-            dexUrl,
-            description: dex.description,
-            banner: dex.banner,
-            logo: dex.logo,
-            tokenAddress: dex.tokenAddress,
-            tokenChain: dex.tokenChain,
-            telegramLink: dex.telegramLink,
-            discordLink: dex.discordLink,
-            xLink: dex.xLink,
-            websiteUrl: dex.websiteUrl,
-          },
-          aggregated: {
-            brokerId: dex.brokerId,
-            brokerName: dex.brokerName,
-            totalVolume: 0,
-            totalPnl: 0,
-            totalBrokerFee: 0,
-            totalFee: 0,
-            lastUpdated: new Date(),
-            tokenAddress: dex.tokenAddress || undefined,
-            tokenChain: dex.tokenChain || undefined,
-          },
-          daily: [],
-        };
+    const prisma = await getPrisma();
+    const dex = await prisma.dex.findFirst({
+      where: { brokerId },
+      select: {
+        id: true,
+        brokerId: true,
+        brokerName: true,
+        primaryLogo: true,
+        repoUrl: true,
+        customDomain: true,
+        customDomainOverride: true,
+        description: true,
+        banner: true,
+        logo: true,
+        tokenAddress: true,
+        tokenChain: true,
+        telegramLink: true,
+        discordLink: true,
+        xLink: true,
+        websiteUrl: true,
+      },
+    });
 
-        const nextMinute = dayjs().endOf("minute").valueOf();
-        brokerCache.set(cacheKey, {
-          data: fallbackData,
-          expires: nextMinute,
-        });
+    if (!dex) {
+      return c.json({ error: "DEX not found" }, 404);
+    }
 
-        return c.json({ data: fallbackData });
-      }
+    const dailyStats = leaderboardService.getDailyStatsForBroker(
+      brokerId,
+      period
+    );
+    const aggregatedStats = leaderboardService.getAggregatedBrokerStats(
+      brokerId,
+      period
+    );
 
+    if (!dailyStats || !aggregatedStats) {
       let dexUrl = null;
       if (dex.customDomainOverride) {
         dexUrl = `https://${dex.customDomainOverride}`;
@@ -374,7 +374,7 @@ leaderboard.get(
         }
       }
 
-      const responseData = {
+      const fallbackData = {
         dex: {
           id: dex.id,
           brokerId: dex.brokerId,
@@ -391,22 +391,73 @@ leaderboard.get(
           xLink: dex.xLink,
           websiteUrl: dex.websiteUrl,
         },
-        aggregated: aggregatedStats,
-        daily: dailyStats,
+        aggregated: {
+          brokerId: dex.brokerId,
+          brokerName: dex.brokerName,
+          totalVolume: 0,
+          totalPnl: 0,
+          totalBrokerFee: 0,
+          totalFee: 0,
+          lastUpdated: new Date(),
+          tokenAddress: dex.tokenAddress || undefined,
+          tokenChain: dex.tokenChain || undefined,
+        },
+        daily: [],
       };
 
       const nextMinute = dayjs().endOf("minute").valueOf();
       brokerCache.set(cacheKey, {
-        data: responseData,
+        data: fallbackData,
         expires: nextMinute,
       });
 
-      return c.json({ data: responseData });
-    } catch (error) {
-      console.error("Error fetching broker stats:", error);
-      return c.json({ error: "Failed to fetch broker statistics" }, 500);
+      return c.json({ data: fallbackData });
     }
-  }
-);
 
-export { leaderboard };
+    let dexUrl = null;
+    if (dex.customDomainOverride) {
+      dexUrl = `https://${dex.customDomainOverride}`;
+    } else if (dex.customDomain) {
+      dexUrl = `https://${dex.customDomain}`;
+    } else if (dex.repoUrl) {
+      const match = dex.repoUrl.match(/github\.com\/[^\/]+\/([^\/]+)/);
+      if (match) {
+        dexUrl = `https://dex.orderly.network/${match[1]}`;
+      }
+    }
+
+    const responseData = {
+      dex: {
+        id: dex.id,
+        brokerId: dex.brokerId,
+        brokerName: dex.brokerName,
+        primaryLogo: dex.primaryLogo,
+        dexUrl,
+        description: dex.description,
+        banner: dex.banner,
+        logo: dex.logo,
+        tokenAddress: dex.tokenAddress,
+        tokenChain: dex.tokenChain,
+        telegramLink: dex.telegramLink,
+        discordLink: dex.discordLink,
+        xLink: dex.xLink,
+        websiteUrl: dex.websiteUrl,
+      },
+      aggregated: aggregatedStats,
+      daily: dailyStats,
+    };
+
+    const nextMinute = dayjs().endOf("minute").valueOf();
+    brokerCache.set(cacheKey, {
+      data: responseData,
+      expires: nextMinute,
+    });
+
+    return c.json({ data: responseData });
+  } catch (error) {
+    console.error("Error fetching broker stats:", error);
+    return c.json({ error: "Failed to fetch broker statistics" }, 500);
+  }
+});
+
+export default app;

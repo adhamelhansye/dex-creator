@@ -1,6 +1,4 @@
-import { Hono } from "hono";
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
+import { OpenAPIHono, createRoute } from "@hono/zod-openapi";
 import {
   verifyOrderTransaction,
   getDexFees,
@@ -20,246 +18,314 @@ import { getSecret } from "../lib/secretManager.js";
 import { ALL_CHAINS, ChainName } from "../../../config";
 import { createAutomatedBrokerId } from "../lib/brokerCreation";
 import { updateAdminAccount } from "../lib/adminAccount";
+import {
+  ErrorResponseSchema,
+  VerifyTxSchema,
+  VerifyTxSuccessSchema,
+  GraduationStatusSchema,
+  FeeOptionsSchema,
+  DexFeesSchema,
+  BrokerTierSchema,
+  FinalizeAdminWalletSchema,
+  FinalizeAdminWalletResponseSchema,
+  GraduationStatusExtendedSchema,
+} from "../schemas/graduation.js";
 
 let orderPriceCache: { price: number; timestamp: number } | null = null;
 const CACHE_TTL = 60 * 1000;
 
-const verifyTxSchema = z.object({
-  txHash: z.string().min(10).max(100),
-  chain: z.string().min(1).max(50),
-  chainId: z.number().int(),
-  chain_type: z.enum(["EVM", "SOL"]).default("EVM"),
-  brokerId: z
-    .string()
-    .min(5, "Broker ID must be at least 5 characters")
-    .max(15, "Broker ID cannot exceed 15 characters")
-    .regex(
-      /^[a-z0-9_-]+$/,
-      "Broker ID must contain only lowercase letters, numbers, hyphens, and underscores"
-    )
-    .refine(
-      value => !value.includes("orderly"),
-      "Broker ID cannot contain 'orderly'"
-    ),
-  makerFee: z.number().min(0).max(15), // 0-15 bps
-  takerFee: z.number().min(3).max(15), // 3-15 bps
-  rwaMakerFee: z.number().min(0).max(15), // 0-15 bps
-  rwaTakerFee: z.number().min(0).max(15), // 3-15 bps
-  paymentType: z.enum(["usdc", "order"]).default("order"),
+const app = new OpenAPIHono();
+
+const verifyTxRoute = createRoute({
+  method: "post",
+  path: "/verify-tx",
+  tags: ["Graduation"],
+  summary: "Verify graduation transaction",
+  description:
+    "Verify a graduation payment transaction and create the broker ID",
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: VerifyTxSchema,
+        },
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Transaction verified and broker created successfully",
+      content: {
+        "application/json": {
+          schema: VerifyTxSuccessSchema,
+        },
+      },
+    },
+    400: {
+      description: "Invalid request",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "User not found",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
 });
 
-const finalizeAdminWalletSchema = z.object({
-  multisigAddress: z.string().optional(),
-  multisigChainId: z.number().optional(),
-});
+app.openapi(verifyTxRoute, async c => {
+  try {
+    const body = c.req.valid("json");
+    const {
+      txHash,
+      chain,
+      chainId,
+      chain_type,
+      brokerId,
+      makerFee,
+      takerFee,
+      rwaMakerFee,
+      rwaTakerFee,
+      paymentType,
+    } = body;
 
-const graduationRoutes = new Hono();
+    const userId = c.get("userId");
 
-graduationRoutes.post(
-  "/verify-tx",
-  zValidator("json", verifyTxSchema),
-  async c => {
-    try {
-      const {
-        txHash,
-        chain,
-        chainId,
-        chain_type,
-        brokerId,
-        makerFee,
-        takerFee,
-        rwaMakerFee,
-        rwaTakerFee,
-        paymentType,
-      } = c.req.valid("json");
-
-      const userId = c.get("userId");
-
-      const dex = await getUserDex(userId);
-      if (!dex || !dex.repoUrl) {
-        return c.json(
-          { success: false, message: "You must create a DEX first" },
-          { status: 400 }
-        );
-      }
-
-      const prismaClient = await getPrisma();
-      const user = await prismaClient.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        return c.json(
-          { success: false, message: "User not found" },
-          { status: 404 }
-        );
-      }
-
-      if (dex.brokerId && dex.brokerId !== "demo") {
-        return c.json(
-          {
-            success: false,
-            message:
-              "You have already graduated. Each user can only graduate once.",
-          },
-          { status: 400 }
-        );
-      }
-
-      const verificationResult = await verifyOrderTransaction(
-        txHash,
-        chain,
-        user.address,
-        paymentType
+    const dex = await getUserDex(userId);
+    if (!dex || !dex.repoUrl) {
+      return c.json(
+        { success: false, message: "You must create a DEX first" },
+        { status: 400 }
       );
+    }
 
-      if (!verificationResult.success) {
-        return c.json(verificationResult, { status: 400 });
-      }
+    const prismaClient = await getPrisma();
+    const user = await prismaClient.user.findUnique({
+      where: { id: userId },
+    });
 
-      const existingDex = await prismaClient.dex.findFirst({
-        where: {
-          brokerId: brokerId,
-        },
-      });
-
-      if (existingDex) {
-        return c.json(
-          {
-            success: false,
-            message:
-              "This broker ID is already taken. Please choose another one.",
-          },
-          { status: 400 }
-        );
-      }
-
-      const brokerCreationResult = await createAutomatedBrokerId(
-        brokerId,
-        getCurrentEnvironment(),
-        {
-          brokerName: dex.brokerName,
-          makerFee: makerFee,
-          takerFee: takerFee,
-          rwaMakerFee: rwaMakerFee,
-          rwaTakerFee: rwaTakerFee,
-          address: user.address,
-          chain_id: chainId,
-          chain_type,
-        }
+    if (!user) {
+      return c.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
       );
+    }
 
-      if (!brokerCreationResult.success) {
-        return c.json(brokerCreationResult, { status: 400 });
-      }
-
-      try {
-        const updatedDex = await prismaClient.dex.update({
-          where: { userId },
-          data: {
-            brokerId,
-            isGraduated: false,
-            graduationTxHash: txHash,
-          },
-        });
-
-        await prismaClient.usedTransactionHash.create({
-          data: {
-            txHash,
-            userId,
-            dexId: updatedDex.id,
-            chainId: ALL_CHAINS[chain as ChainName]?.chainId,
-          },
-        });
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      } catch (error: any) {
-        if (
-          error.code === "P2002" &&
-          error.meta?.target?.includes("graduationTxHash")
-        ) {
-          return c.json(
-            {
-              success: false,
-              message:
-                "This transaction hash has already been used for graduation. Please use a different transaction.",
-            },
-            { status: 400 }
-          );
-        }
-        if (error.code === "P2002" && error.meta?.target?.includes("txHash")) {
-          return c.json(
-            {
-              success: false,
-              message:
-                "This transaction hash has already been used for graduation. Please use a different transaction.",
-            },
-            { status: 400 }
-          );
-        }
-        throw error;
-      }
-
-      try {
-        console.log(
-          `🔄 Updating GitHub repository with new broker ID: ${brokerId}`
-        );
-
-        const repoUrlMatch = dex.repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
-        if (repoUrlMatch) {
-          const [, owner, repo] = repoUrlMatch;
-
-          const dexConfig = convertDexToDexConfig(dex);
-          dexConfig.brokerId = brokerId;
-
-          await setupRepositoryWithSingleCommit(
-            owner,
-            repo,
-            dexConfig,
-            {
-              primaryLogo: dex.primaryLogo,
-              secondaryLogo: dex.secondaryLogo,
-              favicon: dex.favicon,
-              pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
-            },
-            dex.customDomain,
-            user.address
-          );
-
-          console.log(
-            `✅ Successfully updated GitHub repository with broker ID: ${brokerId}`
-          );
-        } else {
-          console.warn(
-            `⚠️ Could not extract repository info from URL: ${dex.repoUrl}`
-          );
-        }
-      } catch (repoError) {
-        console.error("❌ Error updating GitHub repository:", repoError);
-      }
-
-      return c.json({
-        success: true,
-        message: `Transaction verified and broker ID '${brokerId}' created successfully! Your DEX has graduated automatically.`,
-        amount: verificationResult.amount,
-        brokerCreationData: {
-          brokerId,
-          transactionHashes: brokerCreationResult.transactionHashes || {},
-        },
-      });
-    } catch (error) {
-      console.error("Error in graduation verification:", error);
+    if (dex.brokerId && dex.brokerId !== "demo") {
       return c.json(
         {
           success: false,
-          message: `Error processing request: ${error instanceof Error ? error.message : String(error)}`,
+          message:
+            "You have already graduated. Each user can only graduate once.",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
-  }
-);
 
-graduationRoutes.get("/status", async c => {
+    const verificationResult = await verifyOrderTransaction(
+      txHash,
+      chain,
+      user.address,
+      paymentType
+    );
+
+    if (!verificationResult.success) {
+      return c.json(verificationResult, { status: 400 });
+    }
+
+    const existingDex = await prismaClient.dex.findFirst({
+      where: {
+        brokerId: brokerId,
+      },
+    });
+
+    if (existingDex) {
+      return c.json(
+        {
+          success: false,
+          message:
+            "This broker ID is already taken. Please choose another one.",
+        },
+        { status: 400 }
+      );
+    }
+
+    const brokerCreationResult = await createAutomatedBrokerId(
+      brokerId,
+      getCurrentEnvironment(),
+      {
+        brokerName: dex.brokerName,
+        makerFee: makerFee,
+        takerFee: takerFee,
+        rwaMakerFee: rwaMakerFee,
+        rwaTakerFee: rwaTakerFee,
+        address: user.address,
+        chain_id: chainId,
+        chain_type,
+      }
+    );
+
+    if (!brokerCreationResult.success) {
+      return c.json(brokerCreationResult, { status: 400 });
+    }
+
+    try {
+      const updatedDex = await prismaClient.dex.update({
+        where: { userId },
+        data: {
+          brokerId,
+          isGraduated: false,
+          graduationTxHash: txHash,
+        },
+      });
+
+      await prismaClient.usedTransactionHash.create({
+        data: {
+          txHash,
+          userId,
+          dexId: updatedDex.id,
+          chainId: ALL_CHAINS[chain as ChainName]?.chainId,
+        },
+      });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    } catch (error: any) {
+      if (
+        error.code === "P2002" &&
+        error.meta?.target?.includes("graduationTxHash")
+      ) {
+        return c.json(
+          {
+            success: false,
+            message:
+              "This transaction hash has already been used for graduation. Please use a different transaction.",
+          },
+          { status: 400 }
+        );
+      }
+      if (error.code === "P2002" && error.meta?.target?.includes("txHash")) {
+        return c.json(
+          {
+            success: false,
+            message:
+              "This transaction hash has already been used for graduation. Please use a different transaction.",
+          },
+          { status: 400 }
+        );
+      }
+      throw error;
+    }
+
+    try {
+      console.log(
+        `🔄 Updating GitHub repository with new broker ID: ${brokerId}`
+      );
+
+      const repoUrlMatch = dex.repoUrl.match(/github\.com\/([^/]+)\/([^/]+)/);
+      if (repoUrlMatch) {
+        const [, owner, repo] = repoUrlMatch;
+
+        const dexConfig = convertDexToDexConfig(dex);
+        dexConfig.brokerId = brokerId;
+
+        await setupRepositoryWithSingleCommit(
+          owner,
+          repo,
+          dexConfig,
+          {
+            primaryLogo: dex.primaryLogo,
+            secondaryLogo: dex.secondaryLogo,
+            favicon: dex.favicon,
+            pnlPosters: dex.pnlPosters.length > 0 ? dex.pnlPosters : null,
+          },
+          dex.customDomain,
+          user.address
+        );
+
+        console.log(
+          `✅ Successfully updated GitHub repository with broker ID: ${brokerId}`
+        );
+      } else {
+        console.warn(
+          `⚠️ Could not extract repository info from URL: ${dex.repoUrl}`
+        );
+      }
+    } catch (repoError) {
+      console.error("❌ Error updating GitHub repository:", repoError);
+    }
+
+    return c.json({
+      success: true,
+      message: `Transaction verified and broker ID '${brokerId}' created successfully! Your DEX has graduated automatically.`,
+      amount: verificationResult.amount,
+      brokerCreationData: {
+        brokerId,
+        transactionHashes: brokerCreationResult.transactionHashes || {},
+      },
+    });
+  } catch (error) {
+    console.error("Error in graduation verification:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error processing request: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+const getStatusRoute = createRoute({
+  method: "get",
+  path: "/status",
+  tags: ["Graduation"],
+  summary: "Get graduation status",
+  description: "Get the current graduation status for the user's DEX",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: "Graduation status retrieved successfully",
+      content: {
+        "application/json": {
+          schema: GraduationStatusSchema,
+        },
+      },
+    },
+    400: {
+      description: "Invalid request",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getStatusRoute, async c => {
   try {
     const userId = c.get("userId");
 
@@ -288,7 +354,42 @@ graduationRoutes.get("/status", async c => {
   }
 });
 
-graduationRoutes.get("/fees", async c => {
+const getFeesRoute = createRoute({
+  method: "get",
+  path: "/fees",
+  tags: ["Graduation"],
+  summary: "Get DEX fees",
+  description: "Get the trading fees for the user's DEX",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: "DEX fees retrieved successfully",
+      content: {
+        "application/json": {
+          schema: DexFeesSchema,
+        },
+      },
+    },
+    400: {
+      description: "Invalid request",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getFeesRoute, async c => {
   try {
     const userId = c.get("userId");
 
@@ -317,7 +418,42 @@ graduationRoutes.get("/fees", async c => {
   }
 });
 
-graduationRoutes.get("/tier", async c => {
+const getTierRoute = createRoute({
+  method: "get",
+  path: "/tier",
+  tags: ["Graduation"],
+  summary: "Get broker tier",
+  description: "Get the broker tier information for the user's DEX",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: "Broker tier retrieved successfully",
+      content: {
+        "application/json": {
+          schema: BrokerTierSchema,
+        },
+      },
+    },
+    400: {
+      description: "Invalid request",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getTierRoute, async c => {
   try {
     const userId = c.get("userId");
 
@@ -344,7 +480,7 @@ graduationRoutes.get("/tier", async c => {
   }
 });
 
-graduationRoutes.post("/fees/invalidate-cache", async c => {
+app.post("/fees/invalidate-cache", async c => {
   try {
     const userId = c.get("userId");
 
@@ -366,133 +502,211 @@ graduationRoutes.post("/fees/invalidate-cache", async c => {
   }
 });
 
-graduationRoutes.post(
-  "/finalize-admin-wallet",
-  zValidator("json", finalizeAdminWalletSchema),
-  async c => {
-    try {
-      const userId = c.get("userId");
-
-      const dex = await getUserDex(userId);
-      if (!dex) {
-        return c.json(
-          { success: false, message: "You must create a DEX first" },
-          { status: 400 }
-        );
-      }
-
-      if (!dex.brokerId || dex.brokerId === "demo") {
-        return c.json(
-          { success: false, message: "You must have a broker ID first" },
-          { status: 400 }
-        );
-      }
-
-      const prismaClient = await getPrisma();
-      const user = await prismaClient.user.findUnique({
-        where: { id: userId },
-      });
-
-      if (!user) {
-        return c.json(
-          { success: false, message: "User not found" },
-          { status: 404 }
-        );
-      }
-
-      const { multisigAddress, multisigChainId } = c.req.valid("json");
-      const addressToCheck = multisigAddress || user.address;
-
-      const orderlyResponse = await fetch(
-        `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
-      );
-
-      if (!orderlyResponse.ok) {
-        return c.json(
-          {
-            success: false,
-            message: "Failed to check registration status with Orderly API",
-          },
-          { status: 400 }
-        );
-      }
-
-      const orderlyData = await orderlyResponse.json();
-
-      if (!orderlyData.success || !orderlyData.data) {
-        return c.json(
-          {
-            success: false,
-            message: "You must register your EVM address with Orderly first",
-          },
-          { status: 400 }
-        );
-      }
-
-      try {
-        const adminAccountId = orderlyData.data.account_id;
-        console.log(
-          `🔄 Updating admin account ID for broker ${dex.brokerId} to ${adminAccountId}`
-        );
-
-        // const updateResult = await updateBrokerAdminAccountId(
-        //   dex.brokerId,
-        //   adminAccountId
-        // );
-
-        const updateResult = await updateAdminAccount({
-          broker_id: dex.brokerId,
-          admin_account_id: adminAccountId,
-        });
-
-        if (updateResult.success) {
-          console.log(
-            `✅ Successfully updated admin account ID for broker ${dex.brokerId}`
-          );
-        } else {
-          console.warn(
-            `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.message}`
-          );
-        }
-
-        if (!updateResult.success) {
-          return c.json(updateResult, { status: 400 });
-        }
-      } catch (error) {
-        console.error(
-          `❌ Error updating admin account ID for broker ${dex.brokerId}:`,
-          error
-        );
-      }
-
-      await prismaClient.dex.update({
-        where: { userId },
-        data: {
-          isGraduated: true,
-          multisigChainId: multisigChainId || null,
+const finalizeAdminWalletRoute = createRoute({
+  method: "post",
+  path: "/finalize-admin-wallet",
+  tags: ["Graduation"],
+  summary: "Finalize admin wallet setup",
+  description: "Finalize the admin wallet setup and mark DEX as graduated",
+  security: [{ bearerAuth: [] }],
+  request: {
+    body: {
+      content: {
+        "application/json": {
+          schema: FinalizeAdminWalletSchema,
         },
-      });
+      },
+    },
+  },
+  responses: {
+    200: {
+      description: "Admin wallet setup completed successfully",
+      content: {
+        "application/json": {
+          schema: FinalizeAdminWalletResponseSchema,
+        },
+      },
+    },
+    400: {
+      description: "Invalid request",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    404: {
+      description: "User not found",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
 
-      return c.json({
-        success: true,
-        message:
-          "Admin wallet setup completed successfully. Your DEX has graduated!",
-        isGraduated: true,
-      });
-    } catch (error) {
-      console.error("Error finalizing admin wallet:", error);
+app.openapi(finalizeAdminWalletRoute, async c => {
+  try {
+    const userId = c.get("userId");
+
+    const dex = await getUserDex(userId);
+    if (!dex) {
+      return c.json(
+        { success: false, message: "You must create a DEX first" },
+        { status: 400 }
+      );
+    }
+
+    if (!dex.brokerId || dex.brokerId === "demo") {
+      return c.json(
+        { success: false, message: "You must have a broker ID first" },
+        { status: 400 }
+      );
+    }
+
+    const prismaClient = await getPrisma();
+    const user = await prismaClient.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      return c.json(
+        { success: false, message: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    const { multisigAddress, multisigChainId } = c.req.valid("json");
+    const addressToCheck = multisigAddress || user.address;
+
+    const orderlyResponse = await fetch(
+      `${getOrderlyApiBaseUrl()}/v1/get_account?address=${addressToCheck}&broker_id=${dex.brokerId}`
+    );
+
+    if (!orderlyResponse.ok) {
       return c.json(
         {
           success: false,
-          message: `Error finalizing admin wallet: ${error instanceof Error ? error.message : String(error)}`,
+          message: "Failed to check registration status with Orderly API",
         },
-        { status: 500 }
+        { status: 400 }
       );
     }
-  }
-);
 
-graduationRoutes.get("/graduation-status", async c => {
+    const orderlyData = await orderlyResponse.json();
+
+    if (!orderlyData.success || !orderlyData.data) {
+      return c.json(
+        {
+          success: false,
+          message: "You must register your EVM address with Orderly first",
+        },
+        { status: 400 }
+      );
+    }
+
+    try {
+      const adminAccountId = orderlyData.data.account_id;
+      console.log(
+        `🔄 Updating admin account ID for broker ${dex.brokerId} to ${adminAccountId}`
+      );
+
+      const updateResult = await updateAdminAccount({
+        broker_id: dex.brokerId,
+        admin_account_id: adminAccountId,
+      });
+
+      if (updateResult.success) {
+        console.log(
+          `✅ Successfully updated admin account ID for broker ${dex.brokerId}`
+        );
+      } else {
+        console.warn(
+          `⚠️ Failed to update admin account ID for broker ${dex.brokerId}: ${updateResult.message}`
+        );
+      }
+
+      if (!updateResult.success) {
+        return c.json(updateResult, { status: 400 });
+      }
+    } catch (error) {
+      console.error(
+        `❌ Error updating admin account ID for broker ${dex.brokerId}:`,
+        error
+      );
+    }
+
+    await prismaClient.dex.update({
+      where: { userId },
+      data: {
+        isGraduated: true,
+        multisigChainId: multisigChainId || null,
+      },
+    });
+
+    return c.json({
+      success: true,
+      message:
+        "Admin wallet setup completed successfully. Your DEX has graduated!",
+      isGraduated: true,
+    });
+  } catch (error) {
+    console.error("Error finalizing admin wallet:", error);
+    return c.json(
+      {
+        success: false,
+        message: `Error finalizing admin wallet: ${error instanceof Error ? error.message : String(error)}`,
+      },
+      { status: 500 }
+    );
+  }
+});
+
+const getGraduationStatusRoute = createRoute({
+  method: "get",
+  path: "/graduation-status",
+  tags: ["Graduation"],
+  summary: "Get detailed graduation status",
+  description: "Get detailed graduation status including multisig information",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: "Graduation status retrieved successfully",
+      content: {
+        "application/json": {
+          schema: GraduationStatusExtendedSchema,
+        },
+      },
+    },
+    400: {
+      description: "Invalid request",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getGraduationStatusRoute, async c => {
   try {
     const userId = c.get("userId");
 
@@ -565,7 +779,35 @@ graduationRoutes.get("/graduation-status", async c => {
   }
 });
 
-graduationRoutes.get("/fee-options", async c => {
+const getFeeOptionsRoute = createRoute({
+  method: "get",
+  path: "/fee-options",
+  tags: ["Graduation"],
+  summary: "Get graduation fee options",
+  description:
+    "Get the available fee options for graduation (USDC or ORDER token)",
+  security: [{ bearerAuth: [] }],
+  responses: {
+    200: {
+      description: "Fee options retrieved successfully",
+      content: {
+        "application/json": {
+          schema: FeeOptionsSchema,
+        },
+      },
+    },
+    500: {
+      description: "Server error",
+      content: {
+        "application/json": {
+          schema: ErrorResponseSchema,
+        },
+      },
+    },
+  },
+});
+
+app.openapi(getFeeOptionsRoute, async c => {
   try {
     const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
     const orderRequiredPrice = process.env.GRADUATION_ORDER_REQUIRED_PRICE;
@@ -650,4 +892,4 @@ graduationRoutes.get("/fee-options", async c => {
   }
 });
 
-export default graduationRoutes;
+export default app;
