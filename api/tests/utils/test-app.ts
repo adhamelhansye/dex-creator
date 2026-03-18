@@ -152,6 +152,11 @@ vi.mock("../../src/lib/rateLimiter", () => ({
     recordRequest: vi.fn(),
     getRemainingCooldown: vi.fn().mockReturnValue(0),
   },
+  fineTuneRateLimiter: {
+    isRateLimited: vi.fn().mockReturnValue(false),
+    recordRequest: vi.fn(),
+    getRemainingCooldown: vi.fn().mockReturnValue(0),
+  },
   createDeploymentRateLimit: vi.fn().mockReturnValue(
     vi.fn().mockImplementation(async (c, next) => {
       await next();
@@ -233,6 +238,18 @@ vi.mock("../../src/models/graduation", () => ({
       takerFee: 6,
     });
   }),
+  getDexBrokerTier: vi.fn().mockImplementation(async () => {
+    return Promise.resolve({
+      success: true,
+      data: { tier: "standard", makerFee: 3, takerFee: 6 },
+    });
+  }),
+  invalidateDexFeesCache: vi.fn().mockImplementation(async () => {
+    return Promise.resolve({
+      success: true,
+      data: { message: "Fee cache invalidated" },
+    });
+  }),
 }));
 
 vi.mock("../../src/lib/orderlyDb", async () => {
@@ -266,6 +283,12 @@ vi.mock("../../src/lib/orderlyDb", async () => {
       }),
   };
 });
+
+vi.mock("../../src/lib/errorLogger", () => ({
+  errorLoggerMiddleware: vi.fn().mockImplementation(async (c, next) => {
+    await next();
+  }),
+}));
 
 vi.mock("../../src/lib/auth", () => ({
   authMiddleware: vi.fn().mockImplementation((c, next) => {
