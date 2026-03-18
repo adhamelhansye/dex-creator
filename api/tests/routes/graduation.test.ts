@@ -44,9 +44,12 @@ describe("Graduation Routes", () => {
       const graduationData = {
         txHash,
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -78,9 +81,12 @@ describe("Graduation Routes", () => {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
+        chainId: 1,
         brokerId: "INVALID_BROKER_ID!",
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -106,9 +112,12 @@ describe("Graduation Routes", () => {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
+        chainId: 1,
         brokerId: "my-orderly-dex",
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -136,9 +145,12 @@ describe("Graduation Routes", () => {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 200,
         takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -159,6 +171,7 @@ describe("Graduation Routes", () => {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
+        chainId: 1,
         paymentType: "order" as const,
       };
 
@@ -179,9 +192,12 @@ describe("Graduation Routes", () => {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -219,18 +235,24 @@ describe("Graduation Routes", () => {
       const graduationData1 = {
         txHash: txHash1,
         chain: "ethereum",
+        chainId: 1,
         brokerId: sameBrokerId,
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
       const graduationData2 = {
         txHash: txHash2,
         chain: "ethereum",
+        chainId: 1,
         brokerId: sameBrokerId,
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -277,18 +299,24 @@ describe("Graduation Routes", () => {
       const graduationData1 = {
         txHash: txHash1,
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
       const graduationData2 = {
         txHash: txHash2,
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -315,9 +343,12 @@ describe("Graduation Routes", () => {
       const graduationData1 = {
         txHash,
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -339,9 +370,12 @@ describe("Graduation Routes", () => {
       const graduationData2 = {
         txHash,
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 
@@ -369,9 +403,12 @@ describe("Graduation Routes", () => {
         txHash:
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
+        chainId: 1,
         brokerId: createMockBrokerId(),
         makerFee: 10,
-        takerFee: 30,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         paymentType: "order" as const,
       };
 

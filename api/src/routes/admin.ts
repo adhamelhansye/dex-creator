@@ -160,9 +160,9 @@ const customDomainOverrideSchema = z.object({
 app.post("/dex/:id/broker-id", async c => {
   const id = c.req.param("id");
   const body = await c.req.json();
-  const { brokerId } = brokerIdSchema.parse(body);
 
   try {
+    const { brokerId } = brokerIdSchema.parse(body);
     const dex = await getDexById(id);
     if (!dex) {
       return c.json({ message: "DEX not found" }, 404);
@@ -216,6 +216,9 @@ app.post("/dex/:id/broker-id", async c => {
 
     return c.json(updatedDex);
   } catch (error) {
+    if (error && typeof error === "object" && "issues" in error) {
+      return c.json({ error: (error as { issues: unknown }).issues }, 400);
+    }
     console.error("Error updating broker ID:", error);
     return c.json(
       { message: "Error updating broker ID", error: String(error) },
@@ -612,6 +615,12 @@ app.post("/dex/:dexId/create-broker", async c => {
       },
     });
   } catch (error) {
+    if (error && typeof error === "object" && "issues" in error) {
+      return c.json(
+        { success: false, error: (error as { issues: unknown }).issues },
+        { status: 400 }
+      );
+    }
     console.error("Error in admin manual broker creation:", error);
     return c.json(
       {

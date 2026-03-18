@@ -216,8 +216,10 @@ describe("Admin Routes", () => {
 
       const requestBody = {
         brokerId: "testbroker123",
-        makerFee: 30,
-        takerFee: 60,
+        makerFee: 10,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         txHash: "0x1234567890abcdef1234567890abcdef12345678",
       };
 
@@ -247,8 +249,10 @@ describe("Admin Routes", () => {
 
       const requestBody = {
         brokerId: "newbroker123",
-        makerFee: 30,
-        takerFee: 60,
+        makerFee: 10,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         txHash: "0x1234567890abcdef1234567890abcdef12345678",
       };
 
@@ -279,8 +283,10 @@ describe("Admin Routes", () => {
 
       const requestBody = {
         brokerId: "takenbroker123",
-        makerFee: 30,
-        takerFee: 60,
+        makerFee: 10,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         txHash: "0x1234567890abcdef1234567890abcdef12345678",
       };
 
@@ -305,8 +311,10 @@ describe("Admin Routes", () => {
 
       const requestBody = {
         brokerId: "testbroker123",
-        makerFee: 30,
-        takerFee: 60,
+        makerFee: 10,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         txHash: "0x1234567890abcdef1234567890abcdef12345678",
       };
 
@@ -330,8 +338,10 @@ describe("Admin Routes", () => {
 
       const requestBody = {
         brokerId: "INVALID_BROKER_ID",
-        makerFee: 30,
-        takerFee: 60,
+        makerFee: 10,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         txHash: "0x1234567890abcdef1234567890abcdef12345678",
       };
 
@@ -356,7 +366,9 @@ describe("Admin Routes", () => {
       const requestBody = {
         brokerId: "testbroker123",
         makerFee: -10,
-        takerFee: 200,
+        takerFee: 10,
+        rwaMakerFee: 5,
+        rwaTakerFee: 10,
         txHash: "0x1234567890abcdef1234567890abcdef12345678",
       };
 
