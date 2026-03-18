@@ -6,6 +6,7 @@ import { useCreateOrderlyKey } from "~/hooks/useCreateOrderlyKey";
 import { cn } from "~/utils/css";
 import { useAuth } from "~/context/useAuth";
 import { ConnectWalletAuthGrard } from "./ConnectWalletAuthGuard";
+import { useOrderlyKey } from "~/context/OrderlyKeyContext";
 
 type OrderlyKeyAuthGrardProps = {
   children: React.ReactNode;
@@ -16,6 +17,7 @@ export const OrderlyKeyAuthGrard = (props: OrderlyKeyAuthGrardProps) => {
   const { t } = useTranslation();
   const { brokerId } = useDex();
   const { isAuthenticated } = useAuth();
+  const { isResolvingAccount } = useOrderlyKey();
 
   const { hasValidKey, isCreatingKey, createOrderlyKey, accountId } =
     useCreateOrderlyKey();
@@ -24,11 +26,24 @@ export const OrderlyKeyAuthGrard = (props: OrderlyKeyAuthGrardProps) => {
     if (!brokerId || !accountId) {
       return;
     }
-    createOrderlyKey({ brokerId, accountId }).then(res => {});
+    createOrderlyKey({ brokerId, accountId });
   };
 
   if (!isAuthenticated) {
     return <ConnectWalletAuthGrard className={props.className} />;
+  }
+
+  if (isResolvingAccount) {
+    return (
+      <div
+        className={cn(
+          "flex items-center justify-center py-16",
+          props.className
+        )}
+      >
+        <div className="i-svg-spinners:pulse-rings-multiple w-8 h-8 text-primary"></div>
+      </div>
+    );
   }
 
   if (hasValidKey) {

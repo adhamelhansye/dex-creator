@@ -3,17 +3,14 @@ import { toast } from "react-toastify";
 import { BrowserProvider } from "ethers";
 import { formatUnits, parseUnits } from "viem";
 import { useAccount, useChainId, useSwitchChain, useWalletClient } from "wagmi";
-import {
-  getAccountId,
-  loadOrderlyKey,
-  withdraw,
-} from "../../../../../utils/orderly";
+import { withdraw } from "../../../../../utils/orderly";
 import {
   useTokenInfo,
   useVanguardChains,
   useWithdrawFee,
 } from "../../hooks/useVanguard";
 import { useDex } from "../../../../../context/DexContext";
+import { useOrderlyKey } from "../../../../../context/OrderlyKeyContext";
 import { parseWalletError } from "../../../../../utils/wallet";
 
 export interface RevenueWithdrawModalScriptProps {
@@ -59,13 +56,9 @@ export const useRevenueWithdrawModalScript = (
   const { switchChain } = useSwitchChain();
   const { data: walletClient } = useWalletClient();
   const { brokerId } = useDex();
+  const { accountId, orderlyKey } = useOrderlyKey();
 
   const chainId = hookChainId ?? accountChainId;
-
-  const accountId = useMemo(() => {
-    if (!address || !brokerId) return null;
-    return getAccountId(address, brokerId);
-  }, [address, brokerId]);
 
   const walletName = useMemo(() => connector?.name, [connector]);
 
@@ -220,7 +213,6 @@ export const useRevenueWithdrawModalScript = (
       return;
     }
 
-    const orderlyKey = loadOrderlyKey(accountId);
     if (!orderlyKey) {
       toast.error("Orderly key not found; please create one first");
       return;
@@ -261,6 +253,7 @@ export const useRevenueWithdrawModalScript = (
     isSubmitting,
     onClose,
     onWithdrawSuccess,
+    orderlyKey,
     selectedChainId,
     tokenDecimals,
     walletClient,

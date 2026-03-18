@@ -1,11 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "react-toastify";
-import { useAccount } from "wagmi";
-import {
-  getClientHolding,
-  getAccountId,
-  loadOrderlyKey,
-} from "../../../../../utils/orderly";
+import { getClientHolding } from "../../../../../utils/orderly";
 import {
   useVanguardSummary,
   useUpdateDistributorCode,
@@ -13,8 +8,8 @@ import {
 import { useConfigureDistributorCodeModalScript } from "../configureDistributorCodeModal/ConfigureDistributorCodeModal.script";
 import { useDex } from "../../../../../context/DexContext";
 import { useDistributor } from "../../../../../context/DistributorContext";
+import { useOrderlyKey } from "../../../../../context/OrderlyKeyContext";
 export const useOverviewScript = () => {
-  const { address } = useAccount();
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isWithdrawModalOpen, setIsWithdrawModalOpen] = useState(false);
   const [availableBalance, setAvailableBalance] = useState<number>(0);
@@ -23,24 +18,15 @@ export const useOverviewScript = () => {
   const { trigger: updateCode } = useUpdateDistributorCode();
   const { brokerId } = useDex();
   const { isAmbassador } = useDistributor();
-
-  const accountId = useMemo(() => {
-    if (!address || !brokerId) return null;
-    return getAccountId(address, brokerId);
-  }, [address, brokerId]);
+  const { accountId, orderlyKey } = useOrderlyKey();
 
   const refreshBalance = useCallback(async () => {
-    if (!accountId) {
+    if (!accountId || !orderlyKey) {
       setAvailableBalance(0);
       return;
     }
     setIsLoadingBalance(true);
     try {
-      const orderlyKey = loadOrderlyKey(accountId);
-      if (!orderlyKey) {
-        setAvailableBalance(0);
-        return;
-      }
       const holdings = await getClientHolding(accountId, orderlyKey);
       const usdcHolding = holdings.find(holding => holding.token === "USDC");
       setAvailableBalance(usdcHolding?.holding || 0);
@@ -50,7 +36,7 @@ export const useOverviewScript = () => {
     } finally {
       setIsLoadingBalance(false);
     }
-  }, [accountId]);
+  }, [accountId, orderlyKey]);
 
   // Fetch available balance when accountId is available
   useEffect(() => {
