@@ -44,6 +44,7 @@ export default function ReferralRoute() {
     hasValidKey,
     setOrderlyKey,
     isOrderlyKeyReady,
+    isResolvingAccount,
   } = useOrderlyKey();
   const { openModal } = useModal();
   const { address } = useAccount();
@@ -181,6 +182,7 @@ export default function ReferralRoute() {
   const isPageLoading =
     isLoading ||
     (isAuthenticated && isDexLoading) ||
+    isResolvingAccount ||
     (!!dexData && isGraduated && !isOrderlyKeyReady) ||
     (!!dexData &&
       isGraduated &&

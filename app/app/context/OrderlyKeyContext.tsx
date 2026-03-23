@@ -8,7 +8,10 @@ import {
 } from "react";
 import { useAccount } from "wagmi";
 import { useDex } from "./DexContext";
+import { useAuth } from "./useAuth";
 import { loadOrderlyKey, saveOrderlyKey, getAccountId } from "../utils/orderly";
+import { cleanMultisigAddress } from "../utils/multisig";
+import { get } from "../utils/apiClient";
 
 interface OrderlyKeyContextType {
   orderlyKey: Uint8Array | null;
@@ -17,6 +20,7 @@ interface OrderlyKeyContextType {
   clearOrderlyKey: () => void;
   hasValidKey: boolean;
   isOrderlyKeyReady: boolean;
+  isResolvingAccount: boolean;
 }
 
 const OrderlyKeyContext = createContext<OrderlyKeyContextType | undefined>(
@@ -28,8 +32,47 @@ export { OrderlyKeyContext };
 export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
   const { address, isConnected } = useAccount();
   const { brokerId } = useDex();
+  const { isAuthenticated, token } = useAuth();
   const [orderlyKey, setOrderlyKeyState] = useState<Uint8Array | null>(null);
   const [accountId, setAccountId] = useState<string | null>(null);
+  const [multisigAddress, setMultisigAddress] = useState<string | null>(null);
+  const [isResolvingAccount, setIsResolvingAccount] = useState(false);
+  const [multisigChecked, setMultisigChecked] = useState(false);
+
+  useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setMultisigAddress(null);
+      setMultisigChecked(true);
+      setIsResolvingAccount(false);
+      return;
+    }
+
+    setIsResolvingAccount(true);
+    setMultisigChecked(false);
+
+    const fetchGraduationStatus = async () => {
+      try {
+        const data = await get<{
+          isMultisig?: boolean;
+          multisigAddress?: string;
+        }>("/api/graduation/graduation-status", token, {
+          showToastOnError: false,
+        });
+        if (data.isMultisig && data.multisigAddress) {
+          setMultisigAddress(data.multisigAddress);
+        } else {
+          setMultisigAddress(null);
+        }
+      } catch {
+        setMultisigAddress(null);
+      } finally {
+        setMultisigChecked(true);
+        setIsResolvingAccount(false);
+      }
+    };
+
+    fetchGraduationStatus();
+  }, [isAuthenticated, token]);
 
   useEffect(() => {
     if (!isConnected) {
@@ -38,8 +81,17 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    if (!multisigChecked) {
+      setOrderlyKeyState(null);
+      setAccountId(null);
+      return;
+    }
+
     if (address && brokerId) {
-      const newAccountId = getAccountId(address, brokerId);
+      const effectiveAddress = multisigAddress
+        ? cleanMultisigAddress(multisigAddress)
+        : address;
+      const newAccountId = getAccountId(effectiveAddress, brokerId);
       const savedKey = loadOrderlyKey(newAccountId);
       setAccountId(newAccountId);
       setOrderlyKeyState(savedKey || null);
@@ -47,10 +99,16 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
       setAccountId(null);
       setOrderlyKeyState(null);
     }
-  }, [address, brokerId, isConnected]);
+  }, [address, brokerId, isConnected, multisigAddress, multisigChecked]);
+
+  const effectiveAddress = multisigAddress
+    ? cleanMultisigAddress(multisigAddress)
+    : address;
 
   const expectedAccountId =
-    address && brokerId ? getAccountId(address, brokerId) : null;
+    effectiveAddress && brokerId
+      ? getAccountId(effectiveAddress, brokerId)
+      : null;
   const isOrderlyKeyReady =
     !expectedAccountId || accountId === expectedAccountId;
 
@@ -84,6 +142,7 @@ export function OrderlyKeyProvider({ children }: { children: ReactNode }) {
         clearOrderlyKey,
         hasValidKey,
         isOrderlyKeyReady,
+        isResolvingAccount,
       }}
     >
       {children}

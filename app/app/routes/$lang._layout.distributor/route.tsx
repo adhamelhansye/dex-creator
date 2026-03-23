@@ -28,7 +28,7 @@ export default function DistributorRoute() {
   const { isAuthenticated } = useAuth();
   const { setBrokerId } = useDex();
 
-  const { hasValidKey } = useOrderlyKey();
+  const { hasValidKey, isResolvingAccount } = useOrderlyKey();
   // flag to prevent showing the create key card when creating ambassador profile
   const isCreatingAmbassador = useRef(false);
 
@@ -65,7 +65,7 @@ export default function DistributorRoute() {
     return <VanguardDistributorProgramme />;
   }
 
-  if (isInitialLoading) {
+  if (isInitialLoading || isResolvingAccount) {
     return (
       <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center">
         <div className="i-svg-spinners:pulse-rings-multiple h-20 w-20 text-primary-light"></div>
