@@ -233,8 +233,7 @@ export const useRevenueWithdrawModalScript = (
         quantity,
         address,
         brokerId,
-        false,
-        tokenDecimals
+        false
       );
 
       toast.success("Withdrawal request submitted");

@@ -59,20 +59,22 @@ export function FeeWithdrawalModal({
 
   useEffect(() => {
     if (orderlyKey && accountId) {
-      fetchUsdcBalance();
+      fetchData();
     }
   }, [orderlyKey, accountId]);
 
-  const fetchUsdcBalance = async () => {
+  const fetchData = async () => {
     if (!orderlyKey || !accountId) return;
 
     setIsLoadingBalance(true);
     try {
       const holdings = await getClientHolding(accountId, orderlyKey);
-      const usdcHolding = holdings.find(h => h.token === "USDC");
+      const usdcHolding = holdings.find(
+        (h: { token: string }) => h.token === "USDC"
+      );
       setUsdcBalance(usdcHolding?.holding || 0);
     } catch (error) {
-      console.error("Error fetching USDC balance:", error);
+      console.error("Error fetching data:", error);
     } finally {
       setIsLoadingBalance(false);
     }
@@ -127,7 +129,7 @@ export function FeeWithdrawalModal({
         brokerId,
         cleanAddress,
         "USDC",
-        Number(amount),
+        amount,
         accountId,
         orderlyKey
       );
@@ -243,6 +245,14 @@ export function FeeWithdrawalModal({
             />
           </div>
 
+          {usdcBalance !== null &&
+            amount &&
+            parseFloat(amount) > usdcBalance && (
+              <p className="text-xs text-warning">
+                {t("feeWithdrawalModal.amountExceedsBalance")}
+              </p>
+            )}
+
           {!isOnCorrectChain && (
             <div className="bg-warning/10 border border-warning/20 rounded-lg p-3">
               <div className="flex items-start gap-2">
@@ -269,7 +279,11 @@ export function FeeWithdrawalModal({
               className="w-full"
               isLoading={isProcessing}
               loadingText={t("feeWithdrawalModal.processing")}
-              disabled={!amount.trim() || !orderlyKey}
+              disabled={
+                !amount.trim() ||
+                !orderlyKey ||
+                (usdcBalance !== null && parseFloat(amount) > usdcBalance)
+              }
             >
               {t("feeWithdrawalModal.withdrawFees")}
             </Button>

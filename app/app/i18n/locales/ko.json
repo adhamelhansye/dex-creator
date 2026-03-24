@@ -1706,6 +1706,7 @@
   "feeWithdrawalModal.enterValidAmount": "유효한 금액을 입력하세요",
   "feeWithdrawalModal.withdrawalSuccess": "출금 요청이 성공적으로 제출되었습니다!",
   "feeWithdrawalModal.withdrawalFailed": "출금 실패",
+  "feeWithdrawalModal.amountExceedsBalance": "금액이 사용 가능 잔액을 초과합니다",
   "form.submitting": "제출 중",
   "form.pleaseWait": "잠시만 기다려 주세요",
   "form.rateLimitMessage": "DEX는 2분에 한 번만 업데이트할 수 있습니다.",

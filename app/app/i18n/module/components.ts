@@ -792,6 +792,7 @@ export const components = {
   "feeWithdrawalModal.withdrawalSuccess":
     "Withdrawal request submitted successfully!",
   "feeWithdrawalModal.withdrawalFailed": "Failed to withdraw",
+  "feeWithdrawalModal.amountExceedsBalance": "Amount exceeds available balance",
 
   // Form
   "form.submitting": "Submitting",

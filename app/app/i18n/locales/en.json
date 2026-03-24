@@ -1706,6 +1706,7 @@
   "feeWithdrawalModal.enterValidAmount": "Please enter valid amount",
   "feeWithdrawalModal.withdrawalSuccess": "Withdrawal request submitted successfully!",
   "feeWithdrawalModal.withdrawalFailed": "Failed to withdraw",
+  "feeWithdrawalModal.amountExceedsBalance": "Amount exceeds available balance",
   "form.submitting": "Submitting",
   "form.pleaseWait": "Please Wait",
   "form.rateLimitMessage": "You can only update your DEX once every 2 minutes.",

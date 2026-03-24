@@ -1706,6 +1706,7 @@
   "feeWithdrawalModal.enterValidAmount": "请输入有效金额",
   "feeWithdrawalModal.withdrawalSuccess": "提款请求已成功提交！",
   "feeWithdrawalModal.withdrawalFailed": "提款失败",
+  "feeWithdrawalModal.amountExceedsBalance": "金额超出可用余额",
   "form.submitting": "提交中",
   "form.pleaseWait": "请稍候",
   "form.rateLimitMessage": "您只能每 2 分钟更新一次 DEX。",

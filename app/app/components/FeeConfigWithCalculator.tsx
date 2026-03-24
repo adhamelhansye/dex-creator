@@ -13,7 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./select";
-import { i18n, Trans, useTranslation } from "~/i18n";
+import { Trans, useTranslation } from "~/i18n";
 
 const MIN_MAKER_FEE = 0;
 const MIN_TAKER_FEE = 3;
