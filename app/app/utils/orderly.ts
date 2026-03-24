@@ -331,10 +331,11 @@ export async function delegateWithdraw(
   brokerId: string,
   receiver: string,
   token: string,
-  amount: number,
+  amount: string,
   accountId: string,
   orderlyKey: Uint8Array
 ): Promise<void> {
+  const decimals = await fetchTokenDecimals(Number(chainId), token);
   const nonceRes = await signAndSendRequest(
     accountId,
     orderlyKey,
@@ -343,13 +344,15 @@ export async function delegateWithdraw(
   const nonceJson = await nonceRes.json();
   const withdrawNonce = nonceJson.data.withdraw_nonce as string;
 
+  const amountInSmallestUnit = parseUnits(amount, decimals).toString();
+
   const delegateWithdrawMessage = {
     delegateContract,
     brokerId,
     chainId: Number(chainId),
     receiver,
     token,
-    amount,
+    amount: amountInSmallestUnit,
     timestamp: Date.now(),
     withdrawNonce,
   };
@@ -392,9 +395,9 @@ export async function withdraw(
   amount: string,
   receiver: string,
   brokerId: string,
-  allowCrossChainWithdraw: boolean,
-  decimals: number = 6
+  allowCrossChainWithdraw: boolean
 ): Promise<void> {
+  const decimals = await fetchTokenDecimals(chainId, token);
   const nonceRes = await signAndSendRequest(
     accountId,
     orderlyKey,
@@ -481,6 +484,23 @@ export async function getClientHolding(
     throw new Error(data.message || i18n.t("orderly.failedToFetchHoldings"));
   }
   return data.data?.holding || [];
+}
+
+export async function fetchTokenDecimals(
+  chainId: number,
+  token: string
+): Promise<number> {
+  const res = await fetch(
+    `${getBaseUrl()}/v1/public/token?chain_id=${chainId}`
+  );
+  const json = await res.json();
+  const tokenData = json.data?.rows?.find(
+    (t: { token: string }) => t.token === token
+  );
+  const chainDetail = tokenData?.chain_details?.find(
+    (c: { chain_id: number }) => c.chain_id === chainId
+  );
+  return chainDetail?.decimals ?? 6;
 }
 
 export async function privateFetch(

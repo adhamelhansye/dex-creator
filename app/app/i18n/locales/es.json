@@ -1706,6 +1706,7 @@
   "feeWithdrawalModal.enterValidAmount": "Por favor, introduce una cantidad válida",
   "feeWithdrawalModal.withdrawalSuccess": "¡Solicitud de retiro enviada correctamente!",
   "feeWithdrawalModal.withdrawalFailed": "Error al retirar",
+  "feeWithdrawalModal.amountExceedsBalance": "La cantidad excede el saldo disponible",
   "form.submitting": "Enviando",
   "form.pleaseWait": "Por favor espera",
   "form.rateLimitMessage": "Solo puedes actualizar tu DEX una vez cada 2 minutos.",
