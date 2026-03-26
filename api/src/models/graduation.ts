@@ -2,7 +2,6 @@ import { getPrisma } from "../lib/prisma";
 import { ethers } from "ethers";
 import {
   ALL_CHAINS,
-  ORDER_ADDRESSES,
   USDC_ADDRESSES,
   GRADUATION_SUPPORTED_CHAINS,
   type ChainName,
@@ -42,7 +41,7 @@ export enum TransactionVerificationError {
   CHAIN_NOT_SUPPORTED = "Chain not supported",
   TX_ALREADY_USED = "This transaction hash has already been used for graduation",
   INSUFFICIENT_AMOUNT = "Insufficient amount transferred",
-  NO_TRANSFERS_FOUND = "No ORDER token transfers to the required address found",
+  NO_TRANSFERS_FOUND = "No token transfers to the required address found",
   CONFIGURATION_ERROR = "Graduation fee configuration is incomplete",
 }
 
@@ -67,8 +66,7 @@ const ERC20_TRANSFER_EVENT_ABI = [
 export async function verifyOrderTransaction(
   txHash: string,
   chain: string,
-  userWalletAddress: string,
-  paymentType: "usdc" | "order" = "order"
+  userWalletAddress: string
 ): Promise<{ success: boolean; message: string; amount?: string }> {
   if (!(ACCEPTED_CHAINS as readonly string[]).includes(chain)) {
     return {
@@ -92,15 +90,12 @@ export async function verifyOrderTransaction(
     };
   }
 
-  const tokenAddress =
-    paymentType === "usdc"
-      ? USDC_ADDRESSES[chain as keyof typeof USDC_ADDRESSES]
-      : ORDER_ADDRESSES[chain as keyof typeof ORDER_ADDRESSES];
+  const tokenAddress = USDC_ADDRESSES[chain as keyof typeof USDC_ADDRESSES];
 
   if (!tokenAddress) {
     return {
       success: false,
-      message: `No ${paymentType.toUpperCase()} token address configured for chain: ${chain}`,
+      message: `No USDC token address configured for chain: ${chain}`,
     };
   }
 
@@ -184,7 +179,7 @@ export async function verifyOrderTransaction(
     if (validTransfers.length === 0) {
       return {
         success: false,
-        message: `No ${paymentType.toUpperCase()} ${TransactionVerificationError.NO_TRANSFERS_FOUND} in this transaction`,
+        message: `No USDC ${TransactionVerificationError.NO_TRANSFERS_FOUND} in this transaction`,
       };
     }
 
@@ -194,7 +189,7 @@ export async function verifyOrderTransaction(
       return sum + amount;
     }, ethers.getBigInt(0));
 
-    let tokenDecimals = paymentType === "usdc" ? 6 : 18;
+    let tokenDecimals = 6;
     try {
       const tokenContract = new ethers.Contract(
         tokenAddress,
@@ -208,7 +203,7 @@ export async function verifyOrderTransaction(
       );
     } catch (error) {
       console.warn(
-        `Could not read decimals for token ${tokenAddress}, using default 18:`,
+        `Could not read decimals for token ${tokenAddress}, using default 6:`,
         error
       );
     }
@@ -219,21 +214,15 @@ export async function verifyOrderTransaction(
     );
 
     const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
-    const orderRequiredPrice = process.env.GRADUATION_ORDER_REQUIRED_PRICE;
 
-    if (!usdcAmount || !orderRequiredPrice) {
+    if (!usdcAmount) {
       return {
         success: false,
         message: TransactionVerificationError.CONFIGURATION_ERROR,
       };
     }
 
-    let requiredAmount: string;
-    if (paymentType === "usdc") {
-      requiredAmount = usdcAmount;
-    } else {
-      requiredAmount = orderRequiredPrice;
-    }
+    const requiredAmount = usdcAmount;
 
     const transferredAmount = parseFloat(totalTransferredDecimal);
     const requiredAmountFloat = parseFloat(requiredAmount);
@@ -241,18 +230,18 @@ export async function verifyOrderTransaction(
     if (transferredAmount < requiredAmountFloat) {
       return {
         success: false,
-        message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredAmount} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
+        message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredAmount} USDC, Received: ${totalTransferredDecimal} USDC`,
         amount: totalTransferredDecimal,
       };
     }
 
     return {
       success: true,
-      message: `Successfully verified ${paymentType.toUpperCase()} transfer of ${totalTransferredDecimal}`,
+      message: `Successfully verified USDC transfer of ${totalTransferredDecimal}`,
       amount: totalTransferredDecimal,
     };
   } catch (error) {
-    console.error("Error verifying ORDER transaction:", error);
+    console.error("Error verifying USDC transaction:", error);
     return {
       success: false,
       message: `Error verifying transaction: ${error instanceof Error ? error.message : String(error)}`,

@@ -31,9 +31,6 @@ import {
   GraduationStatusExtendedSchema,
 } from "../schemas/graduation.js";
 
-let orderPriceCache: { price: number; timestamp: number } | null = null;
-const CACHE_TTL = 60 * 1000;
-
 const app = new OpenAPIHono();
 
 const verifyTxRoute = createRoute({
@@ -102,7 +99,6 @@ app.openapi(verifyTxRoute, async c => {
       takerFee,
       rwaMakerFee,
       rwaTakerFee,
-      paymentType,
     } = body;
 
     const userId = c.get("userId");
@@ -141,8 +137,7 @@ app.openapi(verifyTxRoute, async c => {
     const verificationResult = await verifyOrderTransaction(
       txHash,
       chain,
-      user.address,
-      paymentType
+      user.address
     );
 
     if (!verificationResult.success) {
@@ -784,8 +779,7 @@ const getFeeOptionsRoute = createRoute({
   path: "/fee-options",
   tags: ["Graduation"],
   summary: "Get graduation fee options",
-  description:
-    "Get the available fee options for graduation (USDC or ORDER token)",
+  description: "Get the graduation fee amount (USDC) and receiver address",
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -810,9 +804,7 @@ const getFeeOptionsRoute = createRoute({
 app.openapi(getFeeOptionsRoute, async c => {
   try {
     const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
-    const orderRequiredPrice = process.env.GRADUATION_ORDER_REQUIRED_PRICE;
-    const orderMinimumPrice = process.env.GRADUATION_ORDER_MINIMUM_PRICE;
-    if (!usdcAmount || !orderRequiredPrice || !orderMinimumPrice) {
+    if (!usdcAmount) {
       return c.json(
         {
           success: false,
@@ -822,62 +814,9 @@ app.openapi(getFeeOptionsRoute, async c => {
       );
     }
 
-    const now = Date.now();
-    if (!orderPriceCache || now - orderPriceCache.timestamp >= CACHE_TTL) {
-      const coingeckoResponse = await fetch(
-        "https://api.coingecko.com/api/v3/simple/price?ids=orderly-network&vs_currencies=usd"
-      );
-
-      if (!coingeckoResponse.ok) {
-        return c.json(
-          {
-            success: false,
-            message: "Failed to fetch ORDER token price",
-          },
-          { status: 500 }
-        );
-      }
-
-      const priceData = await coingeckoResponse.json();
-      const currentOrderPrice = priceData["orderly-network"]?.usd;
-
-      if (!currentOrderPrice) {
-        return c.json(
-          {
-            success: false,
-            message: "ORDER token price not available",
-          },
-          { status: 500 }
-        );
-      }
-
-      orderPriceCache = {
-        price: currentOrderPrice,
-        timestamp: now,
-      };
-    }
-
-    const currentOrderPrice = orderPriceCache!.price;
-
-    const requiredPrice = parseFloat(orderRequiredPrice);
-    const minimumPrice = parseFloat(orderMinimumPrice);
-
-    const orderAmount = requiredPrice / currentOrderPrice;
-
     return c.json({
-      usdc: {
-        amount: parseFloat(usdcAmount),
-        currency: "USDC",
-        stable: true,
-      },
-      order: {
-        amount: orderAmount,
-        currentPrice: currentOrderPrice,
-        requiredPrice: requiredPrice,
-        minimumPrice: minimumPrice,
-        currency: "ORDER",
-        stable: false,
-      },
+      amount: parseFloat(usdcAmount),
+      currency: "USDC",
       receiverAddress: await getSecret("orderReceiverAddress"),
     });
   } catch (error) {
