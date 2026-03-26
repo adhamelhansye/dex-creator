@@ -1,7 +1,7 @@
 export const graduation = {
   "graduation.title": "Graduate Your DEX",
   "graduation.subtitle":
-    "By sending ORDER tokens, you can graduate your DEX to earn fee splits and unlock additional features.",
+    "By paying the graduation fee, you can graduate your DEX to earn fee splits and unlock additional features.",
   "graduation.dexSetupRequired.title": "DEX Setup Required",
   "graduation.dexSetupRequired.description":
     "Before you can graduate your DEX to earn trading fees, you need to create a DEX first. Please go to the DEX creation page to set up your own customized decentralized exchange powered by Orderly.",
@@ -34,6 +34,8 @@ export const graduation = {
 
   // Graduation form (migrated from components)
   "graduation.form.brokerIdCreated": "Broker ID Created!",
+  "graduation.form.brokerIdCreatedDescription":
+    "Your DEX has been created with broker ID: <0>{{brokerId}}</0>",
   "graduation.form.completeYourGraduation": "Complete Your Graduation",
   "graduation.form.graduatedSuccessfully": "Graduated Successfully!",
   "graduation.form.congratulations": "Congratulations!",
@@ -216,38 +218,28 @@ export const graduation = {
   "graduation.form.doNotSendTokensManuallyDescription":
     "The system will handle the token transfer automatically when you click the button below. Do not send tokens to any address manually - this will not complete your graduation.",
   "graduation.form.autoTransferDescription":
-    "The system will automatically transfer the required tokens when you click the button below.",
-  "graduation.form.needOrderTokensCta": "Need ORDER tokens? Buy here",
-  "graduation.form.sendTokensTitle": "Send {{token}} Tokens",
-  "graduation.form.sendTokensDescription":
-    "Send {{token}} tokens and verify in one step directly from your wallet.",
-  "graduation.form.insufficientForGraduation": "Insufficient for graduation",
-  "graduation.form.buyOrderCta": "Buy ORDER",
-  "graduation.form.saveWithOrderTitle": "Save 25% by paying with ORDER tokens!",
-  "graduation.form.saveWithOrderDescription":
-    "Instead of ${{usdcAmount}} USDC, pay only {{orderAmount}} ORDER (~${{orderValue}}).",
-  "graduation.form.discount25Off": "25% OFF",
+    "The system will automatically transfer the required USDC when you click the button below.",
   "graduation.form.loading": "Loading...",
   "graduation.form.confirmInWallet": "Confirm in wallet...",
   "graduation.form.confirming": "Confirming...",
   "graduation.form.verifyingTransactionLoading":
     "Verifying transaction... This may take 1-2 minutes",
-  "graduation.form.transferTokensCta": "Transfer {{token}} Tokens",
+  "graduation.form.transferTokensCta": "Transfer USDC Tokens",
   "graduation.form.switchChainCta": "Switch Chain",
   "graduation.form.viewOnExplorer": "View on Explorer",
   "graduation.form.hideManualOption": "Hide manual option",
-  "graduation.form.showManualOption": "I already sent {{token}} tokens",
+  "graduation.form.insufficientForGraduation": "Insufficient for graduation",
   "graduation.form.manualVerificationTitle": "Manual Transaction Verification",
   "graduation.form.manualVerificationDescription":
-    "If you've already sent {{token}} tokens, enter the transaction hash to verify and complete your graduation.",
-  "graduation.form.tokenAddressLabel": "{{token}} Token Address",
+    "If you've already sent USDC tokens, enter the transaction hash to verify and complete your graduation.",
+  "graduation.form.tokenAddressLabel": "USDC Token Address",
   "graduation.form.buyTokenCta": "Buy {{token}}",
   "graduation.form.transactionVerificationTitle": "Transaction Verification",
   "graduation.form.transactionVerificationDescription":
     "Verification involves checking the blockchain transaction and may take 1-2 minutes to complete. Please be patient and do not refresh the page during this process.",
   "graduation.form.txHashHelpText":
-    "The transaction hash of your {{token}} token transfer",
+    "The transaction hash of your USDC token transfer",
   "graduation.form.verifyTransactionButton": "Verify Transaction",
   "graduation.form.verifiedTransfer":
-    "Verified transfer of {{amount}} {{token}} tokens",
+    "Verified transfer of {{amount}} USDC tokens",
 };
