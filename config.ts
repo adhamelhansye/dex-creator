@@ -435,6 +435,17 @@ export const ORDER_ADDRESSES: Record<OrderTokenChainName, string> = {
   "solana-devnet": "4zMMC9srt5Ri5X14GAgXhaHii3GnPAEERYPJgZJDncDU",
 };
 
+export const USDT_ADDRESSES: Record<OrderTokenChainName, string> = {
+  ethereum: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+  arbitrum: "0xFd086bC7CD5C481DCC9C85ebE478A1C0b69FCbb9",
+  base: "0xfde4C96c8593536E31F229EA8f37b2ADa2699bb2",
+  sepolia: "0x01a6810727db185bbf7f30ec158c3ac8b8112627",
+  "arbitrum-sepolia": "0xEf54C221Fc94517877F0F40eCd71E0A3866D66C2",
+  "base-sepolia": "0x323e78f944A9a1FcF3a10efcC5319DBb0bB6e673",
+  "solana-mainnet-beta": "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB",
+  "solana-devnet": "0x0000000000000000000000000000000000000000",
+};
+
 export const USDC_ADDRESSES: Record<OrderTokenChainName, string> = {
   ethereum: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
   arbitrum: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",

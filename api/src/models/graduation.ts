@@ -4,6 +4,7 @@ import {
   ALL_CHAINS,
   ORDER_ADDRESSES,
   USDC_ADDRESSES,
+  USDT_ADDRESSES,
   GRADUATION_SUPPORTED_CHAINS,
   type ChainName,
 } from "../../../config";
@@ -16,6 +17,34 @@ import {
   type BrokerTier,
 } from "../lib/orderlyDb";
 import { type Result } from "../lib/types";
+
+const CACHE_TTL = 60 * 1000;
+let orderPriceCache: { price: number; timestamp: number } | null = null;
+
+export async function getOrderPrice(): Promise<number | null> {
+  const now = Date.now();
+  if (orderPriceCache && now - orderPriceCache.timestamp < CACHE_TTL) {
+    return orderPriceCache.price;
+  }
+
+  try {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=orderly-network&vs_currencies=usd"
+    );
+    if (response.ok) {
+      const priceData = await response.json();
+      const price = priceData["orderly-network"]?.usd;
+      if (price) {
+        orderPriceCache = { price, timestamp: now };
+        return price;
+      }
+    }
+  } catch {
+    console.warn("Failed to fetch ORDER price from CoinGecko");
+  }
+
+  return orderPriceCache?.price ?? null;
+}
 
 async function withRPCTimeout<T>(
   promise: Promise<T>,
@@ -68,7 +97,7 @@ export async function verifyOrderTransaction(
   txHash: string,
   chain: string,
   userWalletAddress: string,
-  paymentType: "usdc" | "order" = "order"
+  paymentType: "usdc" | "order" | "usdt" = "order"
 ): Promise<{ success: boolean; message: string; amount?: string }> {
   if (!(ACCEPTED_CHAINS as readonly string[]).includes(chain)) {
     return {
@@ -92,10 +121,13 @@ export async function verifyOrderTransaction(
     };
   }
 
-  const tokenAddress =
-    paymentType === "usdc"
-      ? USDC_ADDRESSES[chain as keyof typeof USDC_ADDRESSES]
-      : ORDER_ADDRESSES[chain as keyof typeof ORDER_ADDRESSES];
+  const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
+    usdc: USDC_ADDRESSES as Record<string, string>,
+    order: ORDER_ADDRESSES as Record<string, string>,
+    usdt: USDT_ADDRESSES as Record<string, string>,
+  };
+
+  const tokenAddress = TOKEN_ADDRESSES[paymentType]?.[chain];
 
   if (!tokenAddress) {
     return {
@@ -218,32 +250,35 @@ export async function verifyOrderTransaction(
       tokenDecimals
     );
 
-    const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
-    const orderRequiredPrice = process.env.GRADUATION_ORDER_REQUIRED_PRICE;
+    const graduationFeeAmount = process.env.GRADUATION_USDC_AMOUNT;
 
-    if (!usdcAmount || !orderRequiredPrice) {
+    if (!graduationFeeAmount) {
       return {
         success: false,
         message: TransactionVerificationError.CONFIGURATION_ERROR,
       };
     }
 
-    let requiredAmount: string;
-    if (paymentType === "usdc") {
-      requiredAmount = usdcAmount;
-    } else {
-      requiredAmount = orderRequiredPrice;
-    }
-
     const transferredAmount = parseFloat(totalTransferredDecimal);
-    const requiredAmountFloat = parseFloat(requiredAmount);
+    const requiredFeeUsd = parseFloat(graduationFeeAmount);
 
-    if (transferredAmount < requiredAmountFloat) {
-      return {
-        success: false,
-        message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredAmount} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
-        amount: totalTransferredDecimal,
-      };
+    if (paymentType === "order") {
+      const currentPrice = await getOrderPrice();
+      if (currentPrice && transferredAmount * currentPrice < requiredFeeUsd) {
+        return {
+          success: false,
+          message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: $${requiredFeeUsd} USD worth of ORDER, Received: ~$${(transferredAmount * currentPrice).toFixed(2)} (${totalTransferredDecimal} ORDER)`,
+          amount: totalTransferredDecimal,
+        };
+      }
+    } else {
+      if (transferredAmount < requiredFeeUsd) {
+        return {
+          success: false,
+          message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredFeeUsd} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
+          amount: totalTransferredDecimal,
+        };
+      }
     }
 
     return {

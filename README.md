@@ -232,9 +232,7 @@ The application requires several environment variables for proper operation. Bel
 | Variable | Description | Required |
 |----------|-------------|----------|
 | `ORDER_RECEIVER_ADDRESS` | Wallet address to receive graduation payments (used for all chains) | Yes |
-| `GRADUATION_USDC_AMOUNT` | Fixed USDC amount required for graduation (e.g., "50") | Yes |
-| `GRADUATION_ORDER_REQUIRED_PRICE` | Required USD amount for ORDER token graduation (e.g., "50") | Yes |
-| `GRADUATION_ORDER_MINIMUM_PRICE` | Minimum USD amount for ORDER token graduation (e.g., "45") | Yes |
+| `GRADUATION_USDC_AMOUNT` | Fixed USD amount required for graduation (applies to all payment tokens, e.g., "1000") | Yes |
 | `ORDERLY_DATABASE_URL` | MySQL connection string for Orderly database (e.g., "mysql://user:pass@localhost:3307/db") | Yes |
 
 #### Solana Configuration
@@ -258,32 +256,30 @@ The application requires several environment variables for proper operation. Bel
 
 Orderly One includes a graduation system that allows DEX owners to graduate their exchange to earn fee revenue and enable trader rewards. The graduation process involves:
 
-1. Users choosing between USDC or ORDER token payment
-2. Sending the required amount based on their choice
+1. Users choose their preferred payment token (ORDER, USDC, or USDT)
+2. Sending the required USD-equivalent amount
 3. Choosing a unique broker ID for their DEX
 4. Configuring custom maker and taker fees
 
 ### Payment Options
 
-The graduation system supports two payment methods:
+The graduation system supports three payment methods, all with the same USD value:
 
-- **USDC Payment**: Fixed amount set by `GRADUATION_USDC_AMOUNT` (e.g., $50 USDC)
-- **ORDER Payment**: Dynamic amount calculated based on current ORDER token price to match `GRADUATION_ORDER_REQUIRED_PRICE` (e.g., ~454 ORDER tokens worth $50)
+- **USDC Payment**: Fixed amount set by `GRADUATION_USDC_AMOUNT` (e.g., $1000 USDC)
+- **USDT Payment**: Fixed amount set by `GRADUATION_USDC_AMOUNT` (e.g., $1000 USDT)
+- **ORDER Payment**: Dynamic amount calculated based on current ORDER token price to equal `GRADUATION_USDC_AMOUNT` in USD value (e.g., ~500 ORDER tokens worth $1000)
 
 ### Setting Up the Graduation System
 
 For the graduation system to work properly, you need to:
 
 1. Set a valid address for `ORDER_RECEIVER_ADDRESS` in the API environment
-2. Configure graduation amounts:
-   - `GRADUATION_USDC_AMOUNT`: Fixed USDC amount (e.g., "50")
-   - `GRADUATION_ORDER_REQUIRED_PRICE`: Target USD amount for ORDER payments (e.g., "50")
-   - `GRADUATION_ORDER_MINIMUM_PRICE`: Minimum USD amount for price validation (e.g., "45")
+2. Configure the graduation fee: `GRADUATION_USDC_AMOUNT` — the USD amount required (e.g., "1000"). All payment tokens require the same USD value.
 3. Configure `VITE_DEPLOYMENT_ENV` to match your deployment environment (mainnet/staging/qa/dev)
 
 The token addresses are automatically configured based on the deployment environment:
-- **Mainnet**: Uses mainnet ORDER and USDC token addresses for Ethereum and Arbitrum
-- **Testnet environments**: Uses testnet ORDER and USDC token addresses for Sepolia and Arbitrum Sepolia
+- **Mainnet**: Uses mainnet ORDER, USDC, and USDT token addresses for Ethereum, Arbitrum, and Base
+- **Testnet environments**: Uses testnet token addresses for Sepolia, Arbitrum Sepolia, and Base Sepolia
 
 ## Deployment
 
@@ -321,8 +317,6 @@ docker run -d \
   -e BROKER_CREATION_PRIVATE_KEY=-x<broker-creation-private-key> \
   -e BROKER_CREATION_PRIVATE_KEY_SOL=broker-creation-private-key-sol \
   -e GRADUATION_USDC_AMOUNT=1000 \
-  -e GRADUATION_ORDER_REQUIRED_PRICE=750 \
-  -e GRADUATION_ORDER_MINIMUM_PRICE=725 \
   -e MIGRATE_DB=true \
   dex-creator-api
 ```

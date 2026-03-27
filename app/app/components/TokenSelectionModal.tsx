@@ -3,6 +3,7 @@ import { useAccount, useBalance, useSwitchChain, useChainId } from "wagmi";
 import {
   ORDER_ADDRESSES,
   USDC_ADDRESSES,
+  USDT_ADDRESSES,
   OrderTokenChainName,
   getChainIcon,
 } from "../../../config";
@@ -18,9 +19,12 @@ import { useTranslation } from "~/i18n";
 interface TokenSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (chain: OrderTokenChainName, paymentType: "usdc" | "order") => void;
+  onSelect: (
+    chain: OrderTokenChainName,
+    paymentType: "usdc" | "order" | "usdt"
+  ) => void;
   currentChain: OrderTokenChainName;
-  currentPaymentType: "usdc" | "order";
+  currentPaymentType: "usdc" | "order" | "usdt";
 }
 
 interface TokenOption {
@@ -29,11 +33,10 @@ interface TokenOption {
   symbol: string;
   icon: string;
   chain: OrderTokenChainName;
-  paymentType: "usdc" | "order";
+  paymentType: "usdc" | "order" | "usdt";
   balance?: string;
   value?: string;
   graduationFee?: string;
-  discountInfo?: string;
 }
 
 interface FeeOptionsResponse {
@@ -45,13 +48,43 @@ interface FeeOptionsResponse {
   order: {
     amount: number;
     currentPrice: number;
-    requiredPrice: number;
-    minimumPrice: number;
+    currency: string;
+    stable: boolean;
+  };
+  usdt: {
+    amount: number;
     currency: string;
     stable: boolean;
   };
   receiverAddress: string;
 }
+
+const TOKEN_CONFIG = [
+  {
+    paymentType: "usdc" as const,
+    symbol: "USDC",
+    icon: "https://assets.coingecko.com/coins/images/6319/standard/usdc.png",
+    getAddresses: USDC_ADDRESSES,
+    nameKey: "tokenSelectionModal.usdCoinOnChain",
+    isStable: true,
+  },
+  {
+    paymentType: "usdt" as const,
+    symbol: "USDT",
+    icon: "https://assets.coingecko.com/coins/images/325/standard/Tether.png",
+    getAddresses: USDT_ADDRESSES,
+    nameKey: "tokenSelectionModal.usdtOnChain",
+    isStable: true,
+  },
+  {
+    paymentType: "order" as const,
+    symbol: "ORDER",
+    icon: "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png",
+    getAddresses: ORDER_ADDRESSES,
+    nameKey: "tokenSelectionModal.orderTokenOnChain",
+    isStable: false,
+  },
+];
 
 export function TokenSelectionModal({
   isOpen,
@@ -128,7 +161,7 @@ export function TokenSelectionModal({
   const balanceQueries = useMemo(() => {
     const queries: Array<{
       chain: OrderTokenChainName;
-      paymentType: "usdc" | "order";
+      paymentType: "usdc" | "order" | "usdt";
       chainId: number;
       tokenAddress: string;
     }> = [];
@@ -138,27 +171,18 @@ export function TokenSelectionModal({
       const chainId =
         SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
 
-      const usdcAddress = USDC_ADDRESSES[preferredChain as OrderTokenChainName];
-      const orderAddress =
-        ORDER_ADDRESSES[preferredChain as OrderTokenChainName];
-
-      if (usdcAddress) {
-        queries.push({
-          chain: chain.id as OrderTokenChainName,
-          paymentType: "usdc",
-          chainId,
-          tokenAddress: usdcAddress,
-        });
-      }
-
-      if (orderAddress) {
-        queries.push({
-          chain: chain.id as OrderTokenChainName,
-          paymentType: "order",
-          chainId,
-          tokenAddress: orderAddress,
-        });
-      }
+      TOKEN_CONFIG.forEach(cfg => {
+        const tokenAddress =
+          cfg.getAddresses[preferredChain as OrderTokenChainName];
+        if (tokenAddress) {
+          queries.push({
+            chain: chain.id as OrderTokenChainName,
+            paymentType: cfg.paymentType,
+            chainId,
+            tokenAddress,
+          });
+        }
+      });
     });
 
     return queries;
@@ -179,7 +203,7 @@ export function TokenSelectionModal({
 
   const getBalance = (
     chain: OrderTokenChainName,
-    paymentType: "usdc" | "order"
+    paymentType: "usdc" | "order" | "usdt"
   ) => {
     const index = balanceQueries.findIndex(
       q => q.chain === chain && q.paymentType === paymentType
@@ -197,61 +221,51 @@ export function TokenSelectionModal({
         SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.name ||
         preferredChain;
 
-      const usdcBalance = getBalance(chain.id as OrderTokenChainName, "usdc");
-      const orderBalance = getBalance(chain.id as OrderTokenChainName, "order");
+      TOKEN_CONFIG.forEach(cfg => {
+        const balance = getBalance(
+          chain.id as OrderTokenChainName,
+          cfg.paymentType
+        );
 
-      const usdcValue = usdcBalance ? parseFloat(usdcBalance.formatted) : 0;
-      const usdcValueFormatted = `$${usdcValue.toFixed(2)}`;
+        let valueFormatted: string;
+        if (cfg.isStable) {
+          const balanceValue = balance ? parseFloat(balance.formatted) : 0;
+          valueFormatted = `$${balanceValue.toFixed(2)}`;
+        } else {
+          const balanceValue =
+            balance && orderTokenPrice
+              ? parseFloat(balance.formatted) * orderTokenPrice
+              : 0;
+          valueFormatted = priceLoading
+            ? t("tokenSelectionModal.loading")
+            : `$${balanceValue.toFixed(2)}`;
+        }
 
-      const orderValue =
-        orderBalance && orderTokenPrice
-          ? parseFloat(orderBalance.formatted) * orderTokenPrice
-          : 0;
-      const orderValueFormatted = priceLoading
-        ? t("tokenSelectionModal.loading")
-        : `$${orderValue.toFixed(2)}`;
+        let graduationFee: string;
+        if (feeOptions) {
+          const option = feeOptions[cfg.paymentType];
+          if (cfg.isStable) {
+            graduationFee = `${option.amount.toLocaleString()} ${cfg.symbol}`;
+          } else {
+            graduationFee = `${option.amount.toLocaleString()} ${cfg.symbol}`;
+          }
+        } else {
+          graduationFee = t("tokenSelectionModal.loading");
+        }
 
-      const usdcGraduationFee = feeOptions
-        ? `${feeOptions.usdc.amount.toLocaleString()} USDC`
-        : t("tokenSelectionModal.loading");
-      const orderGraduationFee = feeOptions
-        ? `${feeOptions.order.amount.toLocaleString()} ORDER`
-        : t("tokenSelectionModal.loading");
-      const orderDiscountInfo = feeOptions
-        ? t("tokenSelectionModal.save25Percent", {
-            amount: (
-              feeOptions.order.amount * feeOptions.order.currentPrice
-            ).toFixed(2),
-          })
-        : "";
-
-      options.push({
-        id: `usdc-${chain.id}`,
-        name: t("tokenSelectionModal.usdCoinOnChain", { chainName }),
-        symbol: "USDC",
-        icon: "https://assets.coingecko.com/coins/images/6319/standard/usdc.png",
-        chain: chain.id as OrderTokenChainName,
-        paymentType: "usdc",
-        balance: usdcBalance
-          ? `${parseFloat(usdcBalance.formatted).toFixed(2)} USDC`
-          : "0 USDC",
-        value: usdcValueFormatted,
-        graduationFee: usdcGraduationFee,
-      });
-
-      options.push({
-        id: `order-${chain.id}`,
-        name: t("tokenSelectionModal.orderTokenOnChain", { chainName }),
-        symbol: "ORDER",
-        icon: "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png",
-        chain: chain.id as OrderTokenChainName,
-        paymentType: "order",
-        balance: orderBalance
-          ? `${parseFloat(orderBalance.formatted).toFixed(2)} ORDER`
-          : "0 ORDER",
-        value: orderValueFormatted,
-        graduationFee: orderGraduationFee,
-        discountInfo: orderDiscountInfo,
+        options.push({
+          id: `${cfg.paymentType}-${chain.id}`,
+          name: t(cfg.nameKey as any, { chainName }),
+          symbol: cfg.symbol,
+          icon: cfg.icon,
+          chain: chain.id as OrderTokenChainName,
+          paymentType: cfg.paymentType,
+          balance: balance
+            ? `${parseFloat(balance.formatted).toFixed(2)} ${cfg.symbol}`
+            : `0 ${cfg.symbol}`,
+          value: valueFormatted,
+          graduationFee,
+        });
       });
     });
 
@@ -263,6 +277,7 @@ export function TokenSelectionModal({
     orderTokenPrice,
     priceLoading,
     feeOptions,
+    t,
   ]);
 
   const handleTokenSelect = async (token: TokenOption) => {
@@ -294,7 +309,6 @@ export function TokenSelectionModal({
         className="w-full max-w-md mx-auto bg-background-light rounded-xl border border-light/10 shadow-2xl"
         onClick={e => e.stopPropagation()}
       >
-        {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-light/10">
           <button
             onClick={onClose}
@@ -305,10 +319,9 @@ export function TokenSelectionModal({
           <h2 className="text-lg font-semibold text-white">
             {t("tokenSelectionModal.selectToken")}
           </h2>
-          <div className="w-6"></div> {/* Spacer for centering */}
+          <div className="w-6"></div>
         </div>
 
-        {/* Token List */}
         <div className="max-h-96 overflow-y-auto progress-tracker-scrollbar">
           {tokenOptions.map(token => (
             <button
@@ -337,7 +350,6 @@ export function TokenSelectionModal({
                       alt={getChainName(token.chain)}
                       className="w-3 h-3 rounded-full"
                     />
-                    <div className="w-2 h-2 rounded-full bg-primary hidden"></div>
                     <span>{getChainName(token.chain)}</span>
                     <span>•</span>
                     <span>{token.balance}</span>
@@ -357,11 +369,6 @@ export function TokenSelectionModal({
                 {token.graduationFee && (
                   <div className="text-xs text-gray-500 mt-1">
                     {t("tokenSelectionModal.graduation")}: {token.graduationFee}
-                  </div>
-                )}
-                {token.discountInfo && (
-                  <div className="text-xs text-warning mt-1 font-medium">
-                    {token.discountInfo}
                   </div>
                 )}
               </div>

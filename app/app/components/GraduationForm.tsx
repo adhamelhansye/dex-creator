@@ -52,6 +52,7 @@ import {
 import {
   ORDER_ADDRESSES,
   USDC_ADDRESSES,
+  USDT_ADDRESSES,
   OrderTokenChainName,
   getChainIcon,
 } from "../../../config";
@@ -75,17 +76,33 @@ const ERC20_ABI = [
 
 const SUPPORTED_CHAINS = getSupportedChains();
 
-const validateAddress = (address: string): boolean => {
-  return /^0x[a-fA-F0-9]{40}$/.test(address);
+const TOKEN_META: Record<
+  string,
+  {
+    symbol: string;
+    icon: string;
+    emoji: string;
+  }
+> = {
+  usdc: {
+    symbol: "USDC",
+    icon: "https://assets.coingecko.com/coins/images/6319/standard/usdc.png",
+    emoji: "💵",
+  },
+  usdt: {
+    symbol: "USDT",
+    icon: "https://assets.coingecko.com/coins/images/325/standard/Tether.png",
+    emoji: "💵",
+  },
+  order: {
+    symbol: "ORDER",
+    icon: "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png",
+    emoji: "🪙",
+  },
 };
 
-const getSwapUrl = (chainId: string) => {
-  const tokenAddress = ORDER_ADDRESSES[chainId as OrderTokenChainName];
-  if (!tokenAddress) {
-    console.warn(`No ORDER token address configured for chain: ${chainId}`);
-    return "#";
-  }
-  return `https://swap.defillama.com/?chain=${chainId}&from=0x0000000000000000000000000000000000000000&tab=swap&to=${tokenAddress}`;
+const validateAddress = (address: string): boolean => {
+  return /^0x[a-fA-F0-9]{40}$/.test(address);
 };
 
 interface VerifyTxResponse {
@@ -132,8 +149,11 @@ interface FeeOptionsResponse {
   order: {
     amount: number;
     currentPrice: number;
-    requiredPrice: number;
-    minimumPrice: number;
+    currency: string;
+    stable: boolean;
+  };
+  usdt: {
+    amount: number;
     currency: string;
     stable: boolean;
   };
@@ -185,7 +205,9 @@ export function GraduationForm({
   const [isFinalizingAdminWallet, setIsFinalizingAdminWallet] = useState(false);
   const [dexData, setDexData] = useState<{ repoUrl?: string } | null>(null);
   const [feeOptions, setFeeOptions] = useState<FeeOptionsResponse | null>(null);
-  const [paymentType, setPaymentType] = useState<"usdc" | "order">("order");
+  const [paymentType, setPaymentType] = useState<"usdc" | "order" | "usdt">(
+    "order"
+  );
   const [brokerTier, setBrokerTier] = useState<BrokerTierResponse | null>(null);
   const { openModal } = useModal();
   const [walletType, setWalletType] = useState<"eoa" | "multisig">("eoa");
@@ -349,11 +371,14 @@ export function GraduationForm({
   };
 
   const preferredChain = useMemo(() => getPreferredChain(chain), [chain]);
+  const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
+    usdc: USDC_ADDRESSES as Record<string, string>,
+    order: ORDER_ADDRESSES as Record<string, string>,
+    usdt: USDT_ADDRESSES as Record<string, string>,
+  };
+
   const currentTokenAddress = useMemo(
-    () =>
-      paymentType === "usdc"
-        ? USDC_ADDRESSES[preferredChain as OrderTokenChainName]
-        : ORDER_ADDRESSES[preferredChain as OrderTokenChainName],
+    () => TOKEN_ADDRESSES[paymentType]?.[preferredChain] ?? "",
     [preferredChain, paymentType]
   );
 
@@ -367,11 +392,16 @@ export function GraduationForm({
   const { switchChain } = useSwitchChain();
 
   useEffect(() => {
-    Object.entries(ORDER_ADDRESSES).forEach(([chain, address]) => {
+    const allAddresses = {
+      ...ORDER_ADDRESSES,
+      ...USDC_ADDRESSES,
+      ...USDT_ADDRESSES,
+    };
+    Object.entries(allAddresses).forEach(([chain, address]) => {
       if (!address) {
-        console.log(`Missing ORDER token address for ${chain}`);
+        console.log(`Missing token address for ${chain}`);
       } else if (!validateAddress(address)) {
-        console.log(`Invalid ORDER token address format for ${chain}`);
+        console.log(`Invalid token address format for ${chain}`);
       }
     });
   }, []);
@@ -389,7 +419,7 @@ export function GraduationForm({
 
   const handleTokenSelection = (
     selectedChain: OrderTokenChainName,
-    selectedPaymentType: "usdc" | "order"
+    selectedPaymentType: "usdc" | "order" | "usdt"
   ) => {
     setChain(selectedChain);
     setPaymentType(selectedPaymentType);
@@ -729,9 +759,11 @@ export function GraduationForm({
       }
 
       const selectedOption =
-        paymentType === "usdc" ? feeOptions.usdc : feeOptions.order;
+        feeOptions[
+          paymentType as keyof Omit<FeeOptionsResponse, "receiverAddress">
+        ];
 
-      const decimals = tokenDecimals ?? (paymentType === "usdc" ? 6 : 18);
+      const decimals = tokenDecimals ?? (paymentType !== "order" ? 6 : 18);
       const amount = parseUnits(selectedOption.amount.toString(), decimals);
 
       console.log({
@@ -1550,12 +1582,8 @@ export function GraduationForm({
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-background-card flex items-center justify-center overflow-hidden">
                       <img
-                        src={
-                          paymentType === "usdc"
-                            ? "https://assets.coingecko.com/coins/images/6319/standard/usdc.png"
-                            : "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png"
-                        }
-                        alt={paymentType === "usdc" ? "USDC" : "ORDER"}
+                        src={TOKEN_META[paymentType].icon}
+                        alt={TOKEN_META[paymentType].symbol}
                         className="w-6 h-6 rounded-full"
                         onError={e => {
                           const target = e.currentTarget as HTMLImageElement;
@@ -1568,12 +1596,12 @@ export function GraduationForm({
                         }}
                       />
                       <span className="text-lg hidden">
-                        {paymentType === "usdc" ? "💵" : "🪙"}
+                        {TOKEN_META[paymentType].emoji}
                       </span>
                     </div>
                     <div>
                       <div className="font-medium">
-                        {paymentType === "usdc" ? "USDC" : "ORDER"}
+                        {TOKEN_META[paymentType].symbol}
                       </div>
                       <div className="text-xs text-gray-400 flex items-center gap-1 mt-1">
                         <img
@@ -1598,23 +1626,17 @@ export function GraduationForm({
                           ?.name || preferredChain}
                       </div>
                       <div className="text-sm text-gray-400 mt-1">
-                        {paymentType === "usdc" ? (
-                          `$${feeOptions.usdc.amount.toLocaleString()} USDC`
+                        {paymentType !== "order" ? (
+                          `$${feeOptions[paymentType].amount.toLocaleString()} ${TOKEN_META[paymentType].symbol}`
                         ) : (
-                          <div className="flex items-center gap-2">
-                            <span>
-                              {feeOptions.order.amount.toLocaleString()} ORDER{" "}
-                              (~$
-                              {(
-                                feeOptions.order.amount *
-                                feeOptions.order.currentPrice
-                              ).toFixed(2)}
-                              )
-                            </span>
-                            <div className="bg-warning/20 text-warning px-2 py-1 rounded-full text-xs font-medium">
-                              {t("graduation.form.discount25Off")}
-                            </div>
-                          </div>
+                          <span>
+                            {feeOptions.order.amount.toLocaleString()} ORDER (~$
+                            {(
+                              feeOptions.order.amount *
+                              feeOptions.order.currentPrice
+                            ).toFixed(2)}
+                            )
+                          </span>
                         )}
                       </div>
                     </div>
@@ -1627,7 +1649,7 @@ export function GraduationForm({
                   <div className="mt-2 text-xs text-gray-400">
                     {t("graduation.form.yourBalance")}:{" "}
                     {parseFloat(tokenBalance.formatted).toFixed(2)}{" "}
-                    {paymentType === "usdc" ? "USDC" : "ORDER"}
+                    {TOKEN_META[paymentType].symbol}
                   </div>
                 )}
               </button>
@@ -1649,17 +1671,6 @@ export function GraduationForm({
 
             <p className="text-gray-300 text-sm">
               {t("graduation.form.autoTransferDescription")}
-              {paymentType === "order" && (
-                <a
-                  href={getSwapUrl(preferredChain)}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="ml-1 text-primary-light hover:underline inline-flex items-center"
-                >
-                  {t("graduation.form.needOrderTokensCta")}
-                  <span className="i-mdi:open-in-new w-3.5 h-3.5 ml-1"></span>
-                </a>
-              )}
             </p>
           </div>
         )}
@@ -1669,12 +1680,12 @@ export function GraduationForm({
             <h3 className="text-md font-medium mb-2 flex items-center">
               <div className="w-5 h-5 mr-2 i-mdi:rocket-launch text-primary"></div>
               {t("graduation.form.sendTokensTitle", {
-                token: paymentType === "usdc" ? "USDC" : "ORDER",
+                token: TOKEN_META[paymentType].symbol,
               })}
             </h3>
             <p className="text-sm text-gray-300 mb-4">
               {t("graduation.form.sendTokensDescription", {
-                token: paymentType === "usdc" ? "USDC" : "ORDER",
+                token: TOKEN_META[paymentType].symbol,
               })}
             </p>
 
@@ -1688,7 +1699,7 @@ export function GraduationForm({
                   <span>
                     {SUPPORTED_CHAINS.find(c => c.id === preferredChain)
                       ?.name || preferredChain}{" "}
-                    {paymentType === "usdc" ? "USDC" : "ORDER"}
+                    {TOKEN_META[paymentType].symbol}
                   </span>
                 </div>
               </div>
@@ -1703,65 +1714,38 @@ export function GraduationForm({
                       minimumFractionDigits: 2,
                       maximumFractionDigits: 2,
                     }).format(parseFloat(tokenBalance?.formatted || "0"))}{" "}
-                    {paymentType === "usdc" ? "USDC" : "ORDER"}
+                    {TOKEN_META[paymentType].symbol}
                   </span>
                   {feeOptions &&
                     parseFloat(tokenBalance?.formatted || "0") <
-                      (paymentType === "usdc"
-                        ? feeOptions.usdc.amount
+                      (paymentType !== "order"
+                        ? feeOptions[paymentType].amount
                         : feeOptions.order.amount) && (
                       <div className="ml-2 text-warning flex items-center">
                         {t("graduation.form.insufficientForGraduation")}
-                        {paymentType === "order" && (
-                          <a
-                            href={getSwapUrl(preferredChain)}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="ml-2 text-primary-light hover:underline inline-flex items-center"
-                          >
-                            {t("graduation.form.buyOrderCta")}
-                            <span className="i-mdi:open-in-new w-3 h-3 ml-0.5"></span>
-                          </a>
-                        )}
                       </div>
                     )}
                 </div>
               )}
             </div>
 
-            {paymentType === "order" && (
-              <div className="bg-warning/10 border border-warning/20 rounded-lg p-3 mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="i-mdi:tag text-warning w-4 h-4"></div>
-                  <span className="text-warning font-medium text-sm">
-                    {t("graduation.form.saveWithOrderTitle")}
-                  </span>
-                </div>
-                <div className="text-xs text-gray-400 mt-1">
-                  {t("graduation.form.saveWithOrderDescription", {
-                    usdcAmount: feeOptions?.usdc.amount.toLocaleString(),
-                    orderAmount: feeOptions?.order.amount.toLocaleString(),
-                    orderValue: (
-                      (feeOptions?.order.amount || 0) *
-                      (feeOptions?.order.currentPrice || 0)
-                    ).toFixed(2),
-                  })}
-                </div>
-              </div>
-            )}
-
             <div className="flex items-center gap-2 mb-4">
               <div className="text-sm">{t("graduation.form.amount")}:</div>
               <div className="font-medium flex items-center gap-2">
                 {feeOptions ? (
-                  paymentType === "usdc" ? (
-                    `${feeOptions.usdc.amount.toLocaleString()} USDC`
+                  paymentType !== "order" ? (
+                    `$${feeOptions[paymentType].amount.toLocaleString()} ${TOKEN_META[paymentType].symbol}`
                   ) : (
                     <>
                       {feeOptions.order.amount.toLocaleString()} ORDER
-                      <div className="bg-warning/20 text-warning px-2 py-1 rounded-full text-xs font-medium">
-                        {t("graduation.form.discount25Off")}
-                      </div>
+                      <span className="text-gray-500 text-xs ml-1">
+                        (~$
+                        {(
+                          feeOptions.order.amount *
+                          feeOptions.order.currentPrice
+                        ).toFixed(2)}
+                        )
+                      </span>
                     </>
                   )
                 ) : (
@@ -1792,8 +1776,8 @@ export function GraduationForm({
                   isLoading ||
                   (feeOptions && tokenBalance
                     ? parseFloat(tokenBalance?.formatted || "0") <
-                      (paymentType === "usdc"
-                        ? feeOptions.usdc.amount
+                      (paymentType !== "order"
+                        ? feeOptions[paymentType].amount
                         : feeOptions.order.amount)
                     : false))
               }
@@ -1804,7 +1788,7 @@ export function GraduationForm({
                 ? !brokerId
                   ? t("graduation.form.enterBrokerIdToContinue")
                   : t("graduation.form.transferTokensCta", {
-                      token: paymentType === "usdc" ? "USDC" : "ORDER",
+                      token: TOKEN_META[paymentType].symbol,
                     })
                 : t("graduation.form.switchChainCta")}
             </Button>
@@ -1848,7 +1832,7 @@ export function GraduationForm({
               {showManualInput
                 ? t("graduation.form.hideManualOption")
                 : t("graduation.form.showManualOption", {
-                    token: paymentType === "usdc" ? "USDC" : "ORDER",
+                    token: TOKEN_META[paymentType].symbol,
                   })}
             </button>
           </div>
@@ -1862,7 +1846,7 @@ export function GraduationForm({
               </h3>
               <p className="text-sm text-gray-300 mb-4">
                 {t("graduation.form.manualVerificationDescription", {
-                  token: paymentType === "usdc" ? "USDC" : "ORDER",
+                  token: TOKEN_META[paymentType].symbol,
                 })}
               </p>
 
@@ -1895,21 +1879,10 @@ export function GraduationForm({
                 <div className="flex justify-between items-center mb-1">
                   <p className="text-xs text-gray-400">
                     {t("graduation.form.tokenAddressLabel", {
-                      token: paymentType === "usdc" ? "USDC" : "ORDER",
+                      token: TOKEN_META[paymentType].symbol,
                     })}
                     :
                   </p>
-                  <a
-                    href={getSwapUrl(preferredChain)}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-primary-light hover:text-primary text-xs flex items-center"
-                  >
-                    <div className="i-mdi:cart w-3 h-3 mr-1"></div>
-                    {t("graduation.form.buyTokenCta", {
-                      token: paymentType === "usdc" ? "USDC" : "ORDER",
-                    })}
-                  </a>
                 </div>
                 <div className="bg-background-dark/70 p-2 rounded overflow-hidden">
                   <code className="text-xs font-mono break-all w-full block">
@@ -1944,7 +1917,7 @@ export function GraduationForm({
                   placeholder="0x..."
                   required
                   helpText={t("graduation.form.txHashHelpText", {
-                    token: paymentType === "usdc" ? "USDC" : "ORDER",
+                    token: TOKEN_META[paymentType].symbol,
                   })}
                 />
 
@@ -1991,7 +1964,7 @@ export function GraduationForm({
             <p className="text-gray-300 text-sm mt-2">
               {t("graduation.form.verifiedTransfer", {
                 amount: result.amount,
-                token: paymentType === "usdc" ? "USDC" : "ORDER",
+                token: TOKEN_META[paymentType].symbol,
               })}
             </p>
           )}
