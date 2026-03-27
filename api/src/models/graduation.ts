@@ -2,7 +2,9 @@ import { getPrisma } from "../lib/prisma";
 import { ethers } from "ethers";
 import {
   ALL_CHAINS,
+  ORDER_ADDRESSES,
   USDC_ADDRESSES,
+  USDT_ADDRESSES,
   GRADUATION_SUPPORTED_CHAINS,
   type ChainName,
 } from "../../../config";
@@ -15,6 +17,34 @@ import {
   type BrokerTier,
 } from "../lib/orderlyDb";
 import { type Result } from "../lib/types";
+
+const CACHE_TTL = 60 * 1000;
+let orderPriceCache: { price: number; timestamp: number } | null = null;
+
+export async function getOrderPrice(): Promise<number | null> {
+  const now = Date.now();
+  if (orderPriceCache && now - orderPriceCache.timestamp < CACHE_TTL) {
+    return orderPriceCache.price;
+  }
+
+  try {
+    const response = await fetch(
+      "https://api.coingecko.com/api/v3/simple/price?ids=orderly-network&vs_currencies=usd"
+    );
+    if (response.ok) {
+      const priceData = await response.json();
+      const price = priceData["orderly-network"]?.usd;
+      if (price) {
+        orderPriceCache = { price, timestamp: now };
+        return price;
+      }
+    }
+  } catch {
+    console.warn("Failed to fetch ORDER price from CoinGecko");
+  }
+
+  return orderPriceCache?.price ?? null;
+}
 
 async function withRPCTimeout<T>(
   promise: Promise<T>,
@@ -41,7 +71,7 @@ export enum TransactionVerificationError {
   CHAIN_NOT_SUPPORTED = "Chain not supported",
   TX_ALREADY_USED = "This transaction hash has already been used for graduation",
   INSUFFICIENT_AMOUNT = "Insufficient amount transferred",
-  NO_TRANSFERS_FOUND = "No token transfers to the required address found",
+  NO_TRANSFERS_FOUND = "No ORDER token transfers to the required address found",
   CONFIGURATION_ERROR = "Graduation fee configuration is incomplete",
 }
 
@@ -66,7 +96,8 @@ const ERC20_TRANSFER_EVENT_ABI = [
 export async function verifyOrderTransaction(
   txHash: string,
   chain: string,
-  userWalletAddress: string
+  userWalletAddress: string,
+  paymentType: "usdc" | "order" | "usdt" = "order"
 ): Promise<{ success: boolean; message: string; amount?: string }> {
   if (!(ACCEPTED_CHAINS as readonly string[]).includes(chain)) {
     return {
@@ -90,12 +121,18 @@ export async function verifyOrderTransaction(
     };
   }
 
-  const tokenAddress = USDC_ADDRESSES[chain as keyof typeof USDC_ADDRESSES];
+  const TOKEN_ADDRESSES: Record<string, Record<string, string>> = {
+    usdc: USDC_ADDRESSES as Record<string, string>,
+    order: ORDER_ADDRESSES as Record<string, string>,
+    usdt: USDT_ADDRESSES as Record<string, string>,
+  };
+
+  const tokenAddress = TOKEN_ADDRESSES[paymentType]?.[chain];
 
   if (!tokenAddress) {
     return {
       success: false,
-      message: `No USDC token address configured for chain: ${chain}`,
+      message: `No ${paymentType.toUpperCase()} token address configured for chain: ${chain}`,
     };
   }
 
@@ -179,7 +216,7 @@ export async function verifyOrderTransaction(
     if (validTransfers.length === 0) {
       return {
         success: false,
-        message: `No USDC ${TransactionVerificationError.NO_TRANSFERS_FOUND} in this transaction`,
+        message: `No ${paymentType.toUpperCase()} ${TransactionVerificationError.NO_TRANSFERS_FOUND} in this transaction`,
       };
     }
 
@@ -189,7 +226,7 @@ export async function verifyOrderTransaction(
       return sum + amount;
     }, ethers.getBigInt(0));
 
-    let tokenDecimals = 6;
+    let tokenDecimals = paymentType === "usdc" ? 6 : 18;
     try {
       const tokenContract = new ethers.Contract(
         tokenAddress,
@@ -203,7 +240,7 @@ export async function verifyOrderTransaction(
       );
     } catch (error) {
       console.warn(
-        `Could not read decimals for token ${tokenAddress}, using default 6:`,
+        `Could not read decimals for token ${tokenAddress}, using default 18:`,
         error
       );
     }
@@ -213,35 +250,44 @@ export async function verifyOrderTransaction(
       tokenDecimals
     );
 
-    const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
+    const graduationFeeAmount = process.env.GRADUATION_USDC_AMOUNT;
 
-    if (!usdcAmount) {
+    if (!graduationFeeAmount) {
       return {
         success: false,
         message: TransactionVerificationError.CONFIGURATION_ERROR,
       };
     }
 
-    const requiredAmount = usdcAmount;
-
     const transferredAmount = parseFloat(totalTransferredDecimal);
-    const requiredAmountFloat = parseFloat(requiredAmount);
+    const requiredFeeUsd = parseFloat(graduationFeeAmount);
 
-    if (transferredAmount < requiredAmountFloat) {
-      return {
-        success: false,
-        message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredAmount} USDC, Received: ${totalTransferredDecimal} USDC`,
-        amount: totalTransferredDecimal,
-      };
+    if (paymentType === "order") {
+      const currentPrice = await getOrderPrice();
+      if (currentPrice && transferredAmount * currentPrice < requiredFeeUsd) {
+        return {
+          success: false,
+          message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: $${requiredFeeUsd} USD worth of ORDER, Received: ~$${(transferredAmount * currentPrice).toFixed(2)} (${totalTransferredDecimal} ORDER)`,
+          amount: totalTransferredDecimal,
+        };
+      }
+    } else {
+      if (transferredAmount < requiredFeeUsd) {
+        return {
+          success: false,
+          message: `${TransactionVerificationError.INSUFFICIENT_AMOUNT}. Required: ${requiredFeeUsd} ${paymentType.toUpperCase()}, Received: ${totalTransferredDecimal} ${paymentType.toUpperCase()}`,
+          amount: totalTransferredDecimal,
+        };
+      }
     }
 
     return {
       success: true,
-      message: `Successfully verified USDC transfer of ${totalTransferredDecimal}`,
+      message: `Successfully verified ${paymentType.toUpperCase()} transfer of ${totalTransferredDecimal}`,
       amount: totalTransferredDecimal,
     };
   } catch (error) {
-    console.error("Error verifying USDC transaction:", error);
+    console.error("Error verifying ORDER transaction:", error);
     return {
       success: false,
       message: `Error verifying transaction: ${error instanceof Error ? error.message : String(error)}`,

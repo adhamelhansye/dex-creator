@@ -218,28 +218,31 @@ export const graduation = {
   "graduation.form.doNotSendTokensManuallyDescription":
     "The system will handle the token transfer automatically when you click the button below. Do not send tokens to any address manually - this will not complete your graduation.",
   "graduation.form.autoTransferDescription":
-    "The system will automatically transfer the required USDC when you click the button below.",
+    "The system will automatically transfer the required tokens when you click the button below.",
+  "graduation.form.sendTokensTitle": "Send {{token}} Tokens",
+  "graduation.form.sendTokensDescription":
+    "Send {{token}} tokens and verify in one step directly from your wallet.",
+  "graduation.form.insufficientForGraduation": "Insufficient for graduation",
   "graduation.form.loading": "Loading...",
   "graduation.form.confirmInWallet": "Confirm in wallet...",
   "graduation.form.confirming": "Confirming...",
   "graduation.form.verifyingTransactionLoading":
     "Verifying transaction... This may take 1-2 minutes",
-  "graduation.form.transferTokensCta": "Transfer USDC Tokens",
+  "graduation.form.transferTokensCta": "Transfer {{token}} Tokens",
   "graduation.form.switchChainCta": "Switch Chain",
   "graduation.form.viewOnExplorer": "View on Explorer",
   "graduation.form.hideManualOption": "Hide manual option",
-  "graduation.form.insufficientForGraduation": "Insufficient for graduation",
+  "graduation.form.showManualOption": "I already sent {{token}} tokens",
   "graduation.form.manualVerificationTitle": "Manual Transaction Verification",
   "graduation.form.manualVerificationDescription":
-    "If you've already sent USDC tokens, enter the transaction hash to verify and complete your graduation.",
-  "graduation.form.tokenAddressLabel": "USDC Token Address",
-  "graduation.form.buyTokenCta": "Buy {{token}}",
+    "If you've already sent {{token}} tokens, enter the transaction hash to verify and complete your graduation.",
+  "graduation.form.tokenAddressLabel": "{{token}} Token Address",
   "graduation.form.transactionVerificationTitle": "Transaction Verification",
   "graduation.form.transactionVerificationDescription":
     "Verification involves checking the blockchain transaction and may take 1-2 minutes to complete. Please be patient and do not refresh the page during this process.",
   "graduation.form.txHashHelpText":
-    "The transaction hash of your USDC token transfer",
+    "The transaction hash of your {{token}} token transfer",
   "graduation.form.verifyTransactionButton": "Verify Transaction",
   "graduation.form.verifiedTransfer":
-    "Verified transfer of {{amount}} USDC tokens",
+    "Verified transfer of {{amount}} {{token}} tokens",
 };

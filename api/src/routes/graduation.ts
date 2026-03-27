@@ -4,6 +4,7 @@ import {
   getDexFees,
   getDexBrokerTier,
   invalidateDexFeesCache,
+  getOrderPrice,
 } from "../models/graduation";
 import {
   getUserDex,
@@ -99,6 +100,7 @@ app.openapi(verifyTxRoute, async c => {
       takerFee,
       rwaMakerFee,
       rwaTakerFee,
+      paymentType,
     } = body;
 
     const userId = c.get("userId");
@@ -137,7 +139,8 @@ app.openapi(verifyTxRoute, async c => {
     const verificationResult = await verifyOrderTransaction(
       txHash,
       chain,
-      user.address
+      user.address,
+      paymentType
     );
 
     if (!verificationResult.success) {
@@ -779,7 +782,8 @@ const getFeeOptionsRoute = createRoute({
   path: "/fee-options",
   tags: ["Graduation"],
   summary: "Get graduation fee options",
-  description: "Get the graduation fee amount (USDC) and receiver address",
+  description:
+    "Get the available fee options for graduation (USDC, ORDER, or USDT)",
   security: [{ bearerAuth: [] }],
   responses: {
     200: {
@@ -803,8 +807,8 @@ const getFeeOptionsRoute = createRoute({
 
 app.openapi(getFeeOptionsRoute, async c => {
   try {
-    const usdcAmount = process.env.GRADUATION_USDC_AMOUNT;
-    if (!usdcAmount) {
+    const graduationFeeAmount = process.env.GRADUATION_USDC_AMOUNT;
+    if (!graduationFeeAmount) {
       return c.json(
         {
           success: false,
@@ -814,9 +818,28 @@ app.openapi(getFeeOptionsRoute, async c => {
       );
     }
 
+    const feeAmount = parseFloat(graduationFeeAmount);
+    const currentOrderPrice = await getOrderPrice();
+
+    const orderAmount = currentOrderPrice ? feeAmount / currentOrderPrice : 0;
+
     return c.json({
-      amount: parseFloat(usdcAmount),
-      currency: "USDC",
+      usdc: {
+        amount: feeAmount,
+        currency: "USDC",
+        stable: true,
+      },
+      order: {
+        amount: orderAmount,
+        currentPrice: currentOrderPrice,
+        currency: "ORDER",
+        stable: false,
+      },
+      usdt: {
+        amount: feeAmount,
+        currency: "USDT",
+        stable: true,
+      },
       receiverAddress: await getSecret("orderReceiverAddress"),
     });
   } catch (error) {
