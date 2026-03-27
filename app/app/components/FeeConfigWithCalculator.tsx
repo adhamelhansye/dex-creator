@@ -19,7 +19,7 @@ const MIN_MAKER_FEE = 0;
 const MIN_TAKER_FEE = 3;
 const MAX_FEE = 15;
 const MIN_RWA_MAKER_FEE = 0;
-const MIN_RWA_TAKER_FEE = 0;
+const MIN_RWA_TAKER_FEE = 5;
 const MAX_RWA_FEE = 15;
 
 interface FeeConfigWithCalculatorProps {
