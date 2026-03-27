@@ -1,6 +1,7 @@
 import { useMemo, useState, useEffect } from "react";
 import { useAccount, useBalance, useSwitchChain, useChainId } from "wagmi";
 import {
+  ORDER_ADDRESSES,
   USDC_ADDRESSES,
   OrderTokenChainName,
   getChainIcon,
@@ -17,8 +18,9 @@ import { useTranslation } from "~/i18n";
 interface TokenSelectionModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelect: (chain: OrderTokenChainName) => void;
+  onSelect: (chain: OrderTokenChainName, paymentType: "usdc" | "order") => void;
   currentChain: OrderTokenChainName;
+  currentPaymentType: "usdc" | "order";
 }
 
 interface TokenOption {
@@ -27,14 +29,27 @@ interface TokenOption {
   symbol: string;
   icon: string;
   chain: OrderTokenChainName;
+  paymentType: "usdc" | "order";
   balance?: string;
   value?: string;
   graduationFee?: string;
+  discountInfo?: string;
 }
 
 interface FeeOptionsResponse {
-  amount: number;
-  currency: string;
+  usdc: {
+    amount: number;
+    currency: string;
+    stable: boolean;
+  };
+  order: {
+    amount: number;
+    currentPrice: number;
+    requiredPrice: number;
+    minimumPrice: number;
+    currency: string;
+    stable: boolean;
+  };
   receiverAddress: string;
 }
 
@@ -43,16 +58,46 @@ export function TokenSelectionModal({
   onClose,
   onSelect,
   currentChain,
+  currentPaymentType,
 }: TokenSelectionModalProps) {
   const { t } = useTranslation();
   const { address } = useAccount();
   const { switchChain } = useSwitchChain();
   const connectedChainId = useChainId();
   const { token } = useAuth();
+  const [orderTokenPrice, setOrderTokenPrice] = useState<number | null>(null);
+  const [priceLoading, setPriceLoading] = useState(false);
   const [feeOptions, setFeeOptions] = useState<FeeOptionsResponse | null>(null);
 
   const SUPPORTED_CHAINS = getSupportedChains();
   const ORDER_TOKEN_CHAINS = getOrderTokenSupportedChains();
+
+  useEffect(() => {
+    const fetchOrderPrice = async () => {
+      if (orderTokenPrice !== null) return;
+
+      setPriceLoading(true);
+      try {
+        const response = await fetch(
+          "https://api.coingecko.com/api/v3/simple/price?ids=orderly-network&vs_currencies=usd"
+        );
+
+        if (response.ok) {
+          const data = await response.json();
+          const price = data["orderly-network"]?.usd;
+          if (price) {
+            setOrderTokenPrice(price);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch ORDER token price:", error);
+      } finally {
+        setPriceLoading(false);
+      }
+    };
+
+    fetchOrderPrice();
+  }, [orderTokenPrice]);
 
   useEffect(() => {
     const fetchFeeOptions = async () => {
@@ -83,6 +128,7 @@ export function TokenSelectionModal({
   const balanceQueries = useMemo(() => {
     const queries: Array<{
       chain: OrderTokenChainName;
+      paymentType: "usdc" | "order";
       chainId: number;
       tokenAddress: string;
     }> = [];
@@ -93,12 +139,24 @@ export function TokenSelectionModal({
         SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.chainId || 1;
 
       const usdcAddress = USDC_ADDRESSES[preferredChain as OrderTokenChainName];
+      const orderAddress =
+        ORDER_ADDRESSES[preferredChain as OrderTokenChainName];
 
       if (usdcAddress) {
         queries.push({
           chain: chain.id as OrderTokenChainName,
+          paymentType: "usdc",
           chainId,
           tokenAddress: usdcAddress,
+        });
+      }
+
+      if (orderAddress) {
+        queries.push({
+          chain: chain.id as OrderTokenChainName,
+          paymentType: "order",
+          chainId,
+          tokenAddress: orderAddress,
         });
       }
     });
@@ -119,8 +177,13 @@ export function TokenSelectionModal({
     })
   );
 
-  const getBalance = (chain: OrderTokenChainName) => {
-    const index = balanceQueries.findIndex(q => q.chain === chain);
+  const getBalance = (
+    chain: OrderTokenChainName,
+    paymentType: "usdc" | "order"
+  ) => {
+    const index = balanceQueries.findIndex(
+      q => q.chain === chain && q.paymentType === paymentType
+    );
     if (index === -1) return null;
     return balances[index]?.data;
   };
@@ -134,14 +197,33 @@ export function TokenSelectionModal({
         SUPPORTED_CHAINS.find(c => c.id === preferredChain)?.name ||
         preferredChain;
 
-      const usdcBalance = getBalance(chain.id as OrderTokenChainName);
+      const usdcBalance = getBalance(chain.id as OrderTokenChainName, "usdc");
+      const orderBalance = getBalance(chain.id as OrderTokenChainName, "order");
 
       const usdcValue = usdcBalance ? parseFloat(usdcBalance.formatted) : 0;
       const usdcValueFormatted = `$${usdcValue.toFixed(2)}`;
 
+      const orderValue =
+        orderBalance && orderTokenPrice
+          ? parseFloat(orderBalance.formatted) * orderTokenPrice
+          : 0;
+      const orderValueFormatted = priceLoading
+        ? t("tokenSelectionModal.loading")
+        : `$${orderValue.toFixed(2)}`;
+
       const usdcGraduationFee = feeOptions
-        ? `${feeOptions.amount.toLocaleString()} USDC`
+        ? `${feeOptions.usdc.amount.toLocaleString()} USDC`
         : t("tokenSelectionModal.loading");
+      const orderGraduationFee = feeOptions
+        ? `${feeOptions.order.amount.toLocaleString()} ORDER`
+        : t("tokenSelectionModal.loading");
+      const orderDiscountInfo = feeOptions
+        ? t("tokenSelectionModal.save25Percent", {
+            amount: (
+              feeOptions.order.amount * feeOptions.order.currentPrice
+            ).toFixed(2),
+          })
+        : "";
 
       options.push({
         id: `usdc-${chain.id}`,
@@ -149,16 +231,39 @@ export function TokenSelectionModal({
         symbol: "USDC",
         icon: "https://assets.coingecko.com/coins/images/6319/standard/usdc.png",
         chain: chain.id as OrderTokenChainName,
+        paymentType: "usdc",
         balance: usdcBalance
           ? `${parseFloat(usdcBalance.formatted).toFixed(2)} USDC`
           : "0 USDC",
         value: usdcValueFormatted,
         graduationFee: usdcGraduationFee,
       });
+
+      options.push({
+        id: `order-${chain.id}`,
+        name: t("tokenSelectionModal.orderTokenOnChain", { chainName }),
+        symbol: "ORDER",
+        icon: "https://assets.coingecko.com/coins/images/38501/standard/Orderly_Network_Coingecko_200*200.png",
+        chain: chain.id as OrderTokenChainName,
+        paymentType: "order",
+        balance: orderBalance
+          ? `${parseFloat(orderBalance.formatted).toFixed(2)} ORDER`
+          : "0 ORDER",
+        value: orderValueFormatted,
+        graduationFee: orderGraduationFee,
+        discountInfo: orderDiscountInfo,
+      });
     });
 
     return options;
-  }, [ORDER_TOKEN_CHAINS, SUPPORTED_CHAINS, balances, feeOptions, t]);
+  }, [
+    ORDER_TOKEN_CHAINS,
+    SUPPORTED_CHAINS,
+    balances,
+    orderTokenPrice,
+    priceLoading,
+    feeOptions,
+  ]);
 
   const handleTokenSelect = async (token: TokenOption) => {
     const preferredChain = getPreferredChain(token.chain);
@@ -174,7 +279,7 @@ export function TokenSelectionModal({
       }
     }
 
-    onSelect(token.chain);
+    onSelect(token.chain, token.paymentType);
     onClose();
   };
 
@@ -198,19 +303,20 @@ export function TokenSelectionModal({
             <div className="i-mdi:arrow-left w-6 h-6"></div>
           </button>
           <h2 className="text-lg font-semibold text-white">
-            {t("tokenSelectionModal.selectChain")}
+            {t("tokenSelectionModal.selectToken")}
           </h2>
-          <div className="w-6"></div>
+          <div className="w-6"></div> {/* Spacer for centering */}
         </div>
 
-        {/* Chain List */}
+        {/* Token List */}
         <div className="max-h-96 overflow-y-auto progress-tracker-scrollbar">
           {tokenOptions.map(token => (
             <button
               key={token.id}
               onClick={() => handleTokenSelect(token)}
               className={`w-full p-4 flex items-center justify-between hover:bg-light/5 transition-colors ${
-                token.chain === currentChain
+                token.chain === currentChain &&
+                token.paymentType === currentPaymentType
                   ? "bg-primary/5 border-l-2 border-primary"
                   : ""
               }`}
@@ -231,6 +337,7 @@ export function TokenSelectionModal({
                       alt={getChainName(token.chain)}
                       className="w-3 h-3 rounded-full"
                     />
+                    <div className="w-2 h-2 rounded-full bg-primary hidden"></div>
                     <span>{getChainName(token.chain)}</span>
                     <span>•</span>
                     <span>{token.balance}</span>
@@ -240,15 +347,21 @@ export function TokenSelectionModal({
               <div className="text-right">
                 <div className="text-white font-medium">{token.value}</div>
                 <div className="text-sm text-gray-400">
-                  {token.chain === currentChain && (
-                    <span className="text-primary">
-                      {t("tokenSelectionModal.selected")}
-                    </span>
-                  )}
+                  {token.chain === currentChain &&
+                    token.paymentType === currentPaymentType && (
+                      <span className="text-primary">
+                        {t("tokenSelectionModal.selected")}
+                      </span>
+                    )}
                 </div>
                 {token.graduationFee && (
                   <div className="text-xs text-gray-500 mt-1">
                     {t("tokenSelectionModal.graduation")}: {token.graduationFee}
+                  </div>
+                )}
+                {token.discountInfo && (
+                  <div className="text-xs text-warning mt-1 font-medium">
+                    {token.discountInfo}
                   </div>
                 )}
               </div>

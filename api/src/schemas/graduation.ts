@@ -53,6 +53,10 @@ export const VerifyTxSchema = z.object({
     description: "RWA taker fee in basis points (0-15)",
     example: 10,
   }),
+  paymentType: z.enum(["usdc", "order"]).default("order").openapi({
+    description: "Payment token type",
+    example: "order",
+  }),
 });
 
 export const VerifyTxSuccessSchema = z
@@ -104,13 +108,41 @@ export const GraduationStatusSchema = z
 
 export const FeeOptionsSchema = z
   .object({
-    amount: z.number().openapi({
-      description: "USDC amount required for graduation",
-      example: 50,
+    usdc: z.object({
+      amount: z.number().openapi({
+        description: "USDC amount required",
+        example: 1000,
+      }),
+      currency: z.string().openapi({
+        example: "USDC",
+      }),
+      stable: z.boolean().openapi({
+        example: true,
+      }),
     }),
-    currency: z.string().openapi({
-      description: "Payment currency",
-      example: "USDC",
+    order: z.object({
+      amount: z.number().openapi({
+        description: "ORDER token amount required",
+        example: 500,
+      }),
+      currentPrice: z.number().openapi({
+        description: "Current ORDER token price in USD",
+        example: 2.5,
+      }),
+      requiredPrice: z.number().openapi({
+        description: "Required ORDER price for graduation",
+        example: 2.0,
+      }),
+      minimumPrice: z.number().openapi({
+        description: "Minimum ORDER price allowed",
+        example: 1.5,
+      }),
+      currency: z.string().openapi({
+        example: "ORDER",
+      }),
+      stable: z.boolean().openapi({
+        example: false,
+      }),
     }),
     receiverAddress: z.string().optional().openapi({
       description: "Address to send graduation payment",

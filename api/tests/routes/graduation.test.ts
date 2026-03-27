@@ -50,6 +50,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
@@ -86,6 +87,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
@@ -116,6 +118,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
@@ -148,6 +151,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
@@ -168,6 +172,7 @@ describe("Graduation Routes", () => {
           "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
         chain: "ethereum",
         chainId: 1,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
@@ -193,6 +198,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
@@ -235,6 +241,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const graduationData2 = {
@@ -246,6 +253,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const request1 = createAuthenticatedRequest(app, firstUser.id);
@@ -297,6 +305,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const graduationData2 = {
@@ -308,6 +317,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const [response1, response2] = await Promise.all([
@@ -339,6 +349,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response1 = await request.post(
@@ -365,6 +376,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response2 = await request2.post(
@@ -397,6 +409,7 @@ describe("Graduation Routes", () => {
         takerFee: 10,
         rwaMakerFee: 5,
         rwaTakerFee: 10,
+        paymentType: "order" as const,
       };
 
       const response = await request.post(
