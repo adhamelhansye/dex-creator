@@ -19,6 +19,14 @@ export const MAX_BROKER_COUNT =
     (process.env.DEPLOYMENT_ENV as Environment) || "staging"
   ];
 
+/**
+ * Commit SHA prefixes that introduced Campaigns menu defaults in template repo.
+ * Only upgrades that include one of these commits should auto-add Campaigns.
+ */
+export const CAMPAIGNS_INTRO_COMMIT_PREFIXES = [
+  "de1df410dcc1a684d17b1bf45c4bfbe46a8b819a",
+];
+
 export type ChainNameTestnet =
   | "sepolia"
   | "arbitrum-sepolia"

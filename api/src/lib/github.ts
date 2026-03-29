@@ -647,7 +647,7 @@ function prepareDexConfigContent(
 
     // Navigation
     VITE_ENABLED_MENUS:
-      config.enabledMenus || "Trading,Portfolio,Markets,Leaderboard",
+      config.enabledMenus || "Trading,Portfolio,Markets,Leaderboard,Campaigns",
     VITE_CUSTOM_MENUS: config.customMenus || "",
     VITE_ENABLE_SERVICE_DISCLAIMER_DIALOG: String(
       config.enableServiceDisclaimerDialog ?? false

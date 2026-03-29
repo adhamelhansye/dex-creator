@@ -1,6 +1,11 @@
 import { useMemo, HTMLAttributeAnchorTarget, ReactNode } from "react";
 import { useDistributor } from "../context/DistributorContext";
 import { useTranslation } from "~/i18n";
+import { CampaignsNavTitle } from "~/components/CampaignsNavTitle";
+
+const CAMPAIGNS_URL =
+  "https://app.orderly.network/campaigns/?utm_source=orderly_website&utm_medium=navbar";
+
 export interface NavItem {
   path: string;
   title: ReactNode;
@@ -14,6 +19,11 @@ export function useNavigationMenu() {
 
   const navigationItems = useMemo(() => {
     return [
+      {
+        path: CAMPAIGNS_URL,
+        title: <CampaignsNavTitle title={t("navigation.campaigns")} />,
+        target: "_blank",
+      },
       {
         path: "/",
         title: t("navigation.home"),

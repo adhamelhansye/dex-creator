@@ -12,7 +12,13 @@ export default function Navigation() {
     <nav className="flex items-center">
       <div className="flex lg:gap-4">
         {menuItems.map(item => {
-          const localizedTargetPath = localizedPath(item.path);
+          const isExternalPath =
+            item.path.startsWith("http://") ||
+            item.path.startsWith("https://") ||
+            item.path.startsWith("//");
+          const localizedTargetPath = isExternalPath
+            ? item.path
+            : localizedPath(item.path);
           const isActive =
             item.path === "/"
               ? location.pathname === localizedTargetPath ||
@@ -33,6 +39,7 @@ export default function Navigation() {
               key={item.path}
               to={fullPath}
               target={item.target}
+              rel={item.target === "_blank" ? "noopener noreferrer" : undefined}
               className={`inline-flex items-center gap-1 text-sm md:text-base font-medium px-3 py-1.5 md:px-4 md:py-2 rounded-full transition-all duration-200 ${
                 isActive
                   ? "bg-light/10 text-white"
