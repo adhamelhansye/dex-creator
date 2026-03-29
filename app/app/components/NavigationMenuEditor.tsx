@@ -57,7 +57,7 @@ export function getAvailableMenus(): NavigationMenuItem[] {
         </svg>
       ),
       isDefault: true,
-      editable: false,
+      editable: true,
     },
     {
       id: "Swap",
