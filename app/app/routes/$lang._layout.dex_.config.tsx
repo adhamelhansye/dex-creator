@@ -190,7 +190,13 @@ export default function DexConfigRoute() {
         pnlPosters: form.pnlPosters,
       };
 
-      const dexDataToSend = buildDexDataToSend(formValues);
+      const builtDexData = buildDexDataToSend(formValues);
+      // Omit analyticsScript when no custom domain so PUT does not clear DB column (createDexFormData skips undefined).
+      const hasCustomDomain =
+        form.dexData?.customDomain || form.dexData?.customDomainOverride;
+      const dexDataToSend = hasCustomDomain
+        ? builtDexData
+        : (({ analyticsScript: _omit, ...rest }) => rest)(builtDexData);
 
       const formData = createDexFormData(dexDataToSend, imageBlobs);
 
