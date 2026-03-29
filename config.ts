@@ -24,7 +24,7 @@ export const MAX_BROKER_COUNT =
  * Only upgrades that include one of these commits should auto-add Campaigns.
  */
 export const CAMPAIGNS_INTRO_COMMIT_PREFIXES = [
-  "de1df410dcc1a684d17b1bf45c4bfbe46a8b819a",
+  "7c22d430cfad35809e9b43c4068ff532e429c6b5",
 ];
 
 export type ChainNameTestnet =
