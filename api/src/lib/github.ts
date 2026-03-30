@@ -68,6 +68,11 @@ interface CachedTemplateUpdateStatus extends TemplateUpdateStatus {
 const templateUpdatesCache = new Map<string, CachedTemplateUpdateStatus>();
 const CACHE_TTL_TEMPLATE_UPDATES_MS = 60 * 1000;
 
+function templateUpdatesCacheKey(owner: string, repo: string): string {
+  const env = process.env.DEPLOYMENT_ENV?.trim() || "mainnet";
+  return `${owner}/${repo}/e:${env}`;
+}
+
 const workflowsDir = path.resolve(__dirname, "../workflows");
 const deployYmlContent = fs.readFileSync(
   path.join(workflowsDir, "deploy.yml"),
@@ -1450,9 +1455,7 @@ async function templateBranchExists(
 
 /**
  * Resolve the appropriate template branch based on DEPLOYMENT_ENV with fallbacks
- * @param octokit The authenticated Octokit instance
- * @param deploymentEnv The deployment environment (e.g. qa, testnet, mainnet)
- * @returns The name of the template branch to use
+ * (same rules as fork deploy workflow).
  */
 async function resolveTemplateBranchForEnv(
   octokit: Awaited<ReturnType<typeof getOctokit>>,
@@ -1491,8 +1494,13 @@ export function invalidateTemplateUpdatesCache(
   owner: string,
   repo: string
 ): void {
-  const cacheKey = `${owner}/${repo}`;
-  templateUpdatesCache.delete(cacheKey);
+  const legacyKey = `${owner}/${repo}`;
+  const prefix = `${owner}/${repo}/`;
+  for (const key of templateUpdatesCache.keys()) {
+    if (key === legacyKey || key.startsWith(prefix)) {
+      templateUpdatesCache.delete(key);
+    }
+  }
 }
 
 /**
@@ -1505,7 +1513,7 @@ export async function checkForTemplateUpdates(
   owner: string,
   repo: string
 ): Promise<TemplateUpdateStatus> {
-  const cacheKey = `${owner}/${repo}`;
+  const cacheKey = templateUpdatesCacheKey(owner, repo);
   const cached = templateUpdatesCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_TEMPLATE_UPDATES_MS) {
@@ -1521,14 +1529,12 @@ export async function checkForTemplateUpdates(
   try {
     const octokit = await getOctokit();
 
-    // Determine branch based on DEPLOYMENT_ENV with fallbacks
-    const deploymentEnv = process.env.DEPLOYMENT_ENV;
+    // Align with fork workflow: unset or blank DEPLOYMENT_ENV => mainnet
+    const deploymentEnv = process.env.DEPLOYMENT_ENV?.trim() || undefined;
     const templateBranch = await resolveTemplateBranchForEnv(
       octokit,
       deploymentEnv
     );
-
-    console.log("templateBranch", templateBranch);
 
     const [templateRef, userRef] = await Promise.all([
       octokit.rest.git.getRef({
