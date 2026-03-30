@@ -81,9 +81,11 @@ jobs:
           git remote add upstream https://github.com/OrderlyNetworkDexCreator/dex-creator-template.git || true
           git fetch upstream
 
-          # Determine branch based on VITE_DEPLOYMENT_ENV (same rules as api template branch resolver)
+          # Match api/src/lib/github.ts resolveTemplateBranchForEnv (VITE_DEPLOYMENT_ENV aligns with API DEPLOYMENT_ENV)
           DEPLOYMENT_ENV="${{ vars.VITE_DEPLOYMENT_ENV }}"
-          [ -z "$DEPLOYMENT_ENV" ] && DEPLOYMENT_ENV="main"
+          if [ -z "$DEPLOYMENT_ENV" ]; then
+            DEPLOYMENT_ENV="mainnet"
+          fi
 
           if [ "$DEPLOYMENT_ENV" = "mainnet" ]; then
             UPSTREAM_BRANCH="main"
@@ -94,7 +96,7 @@ jobs:
               UPSTREAM_BRANCH="main"
             fi
           else
-            # qa, dev: prefer qa, then testnet, fallback to main
+            # dev, qa, staging, etc.: prefer qa, then testnet, fallback to main
             if git rev-parse --verify upstream/qa >/dev/null 2>&1; then
               UPSTREAM_BRANCH="qa"
             elif git rev-parse --verify upstream/testnet >/dev/null 2>&1; then
@@ -104,9 +106,17 @@ jobs:
             fi
           fi
 
+          # Non-mainnet template lines (qa/testnet): on merge conflicts, prefer upstream hunks.
+          # mainnet and fallback-to-main merges stay default (manual resolution if conflict).
+          MERGE_EXTRA=""
+          if [ "$UPSTREAM_BRANCH" = "qa" ] || [ "$UPSTREAM_BRANCH" = "testnet" ]; then
+            MERGE_EXTRA="-X theirs"
+            echo "Merging upstream/$UPSTREAM_BRANCH with -X theirs (conflicted hunks favor upstream)"
+          fi
+
           BEFORE_MERGE=$(git rev-parse HEAD)
 
-          if git merge upstream/$UPSTREAM_BRANCH --no-edit; then
+          if git merge "upstream/$UPSTREAM_BRANCH" --no-edit $MERGE_EXTRA; then
             AFTER_MERGE=$(git rev-parse HEAD)
             
             if [ "$BEFORE_MERGE" != "$AFTER_MERGE" ]; then
