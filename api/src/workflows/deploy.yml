@@ -81,11 +81,8 @@ jobs:
           git remote add upstream https://github.com/OrderlyNetworkDexCreator/dex-creator-template.git || true
           git fetch upstream
 
-          # Match api/src/lib/github.ts resolveTemplateBranchForEnv (VITE_DEPLOYMENT_ENV aligns with API DEPLOYMENT_ENV)
+          # dex-creator API replaces vars.VITE_DEPLOYMENT_ENV (see github.ts) with a literal when committing; forks often have no var set.
           DEPLOYMENT_ENV="${{ vars.VITE_DEPLOYMENT_ENV }}"
-          if [ -z "$DEPLOYMENT_ENV" ]; then
-            DEPLOYMENT_ENV="mainnet"
-          fi
 
           if [ "$DEPLOYMENT_ENV" = "mainnet" ]; then
             UPSTREAM_BRANCH="main"
@@ -95,8 +92,7 @@ jobs:
             else
               UPSTREAM_BRANCH="main"
             fi
-          else
-            # dev, qa, staging, etc.: prefer qa, then testnet, fallback to main
+          elif [ "$DEPLOYMENT_ENV" = "qa" ]; then
             if git rev-parse --verify upstream/qa >/dev/null 2>&1; then
               UPSTREAM_BRANCH="qa"
             elif git rev-parse --verify upstream/testnet >/dev/null 2>&1; then
@@ -104,6 +100,8 @@ jobs:
             else
               UPSTREAM_BRANCH="main"
             fi
+          else
+            UPSTREAM_BRANCH="main"
           fi
 
           # Non-mainnet template lines (qa/testnet): on merge conflicts, prefer upstream hunks.

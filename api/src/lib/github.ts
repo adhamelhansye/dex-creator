@@ -79,6 +79,22 @@ const deployYmlContent = fs.readFileSync(
   "utf-8"
 );
 
+/** Matches the expression substring in deploy.yml; replaced with a literal so fork repos work without vars. */
+const DEPLOY_YML_ENV_PLACEHOLDER = "${{ vars.VITE_DEPLOYMENT_ENV }}";
+
+/**
+ * Replaces the vars.VITE_DEPLOYMENT_ENV expression in deploy.yml with process.env.DEPLOYMENT_ENV (literal).
+ * Template keeps standard GitHub syntax; committed user repos get a baked value (same as resolveTemplateBranchForEnv).
+ */
+function getDeployYmlContentForRepo(): string {
+  const deploymentEnv = process.env.DEPLOYMENT_ENV?.trim() || "mainnet";
+  if (!deployYmlContent.includes(DEPLOY_YML_ENV_PLACEHOLDER)) {
+    console.error("deploy.yml template missing deployment env placeholder");
+    return deployYmlContent;
+  }
+  return deployYmlContent.replaceAll(DEPLOY_YML_ENV_PLACEHOLDER, deploymentEnv);
+}
+
 /**
  * Returns stats about the GitHub ETag cache
  */
@@ -860,7 +876,10 @@ export async function updateDexConfig(
     );
 
     const fileContents = new Map<string, string>();
-    fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
+    fileContents.set(
+      ".github/workflows/deploy.yml",
+      getDeployYmlContentForRepo()
+    );
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -955,7 +974,10 @@ export async function setupRepositoryWithSingleCommit(
     );
 
     const fileContents = new Map<string, string>();
-    fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
+    fileContents.set(
+      ".github/workflows/deploy.yml",
+      getDeployYmlContentForRepo()
+    );
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -1468,20 +1490,28 @@ async function resolveTemplateBranchForEnv(
     return "main";
   }
 
-  const candidates =
-    env === "testnet"
-      ? ["testnet", "main"]
-      : // dev or qa
-        ["qa", "testnet", "main"];
-
-  for (const branch of candidates) {
-    const exists = await templateBranchExists(octokit, branch);
-    if (exists) {
-      return branch;
+  if (env === "testnet") {
+    for (const branch of ["testnet", "main"] as const) {
+      if (await templateBranchExists(octokit, branch)) {
+        return branch;
+      }
     }
+    return "main";
   }
 
-  // Safety fallback – should not normally be hit, but preserves behavior
+  if (env === "qa") {
+    for (const branch of ["qa", "testnet", "main"] as const) {
+      if (await templateBranchExists(octokit, branch)) {
+        return branch;
+      }
+    }
+    return "main";
+  }
+
+  // dev, staging, etc.: same-named branch only (aligned with fork deploy workflow)
+  if (await templateBranchExists(octokit, env)) {
+    return env;
+  }
   return "main";
 }
 
