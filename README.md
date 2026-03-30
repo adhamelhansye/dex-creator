@@ -218,6 +218,7 @@ The application requires several environment variables for proper operation. Bel
 |----------|-------------|----------|
 | `GITHUB_TOKEN` | GitHub token for repo forking (needs 'admin:org' and 'repo' scopes) | Yes |
 | `GITHUB_TEMPLATE_REPO` | Template repository to fork | Yes |
+| `DEPLOYMENT_ENV` | API deployment environment (e.g. mainnet, testnet, qa, staging, dev). Drives template branch selection for upgrade checks (same rules as fork deploy workflow); should match `VITE_DEPLOYMENT_ENV` on the frontend and fork workflows. | No |
 | `TEMPLATE_PAT` | Token for GitHub Pages deployments (needs 'repo' and 'workflow' permissions) | Yes |
 
 #### Theme Generation
