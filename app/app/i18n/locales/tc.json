@@ -479,6 +479,7 @@
   "distributor.ambassador": "大使計劃",
   "distributor.ambassadorDesc": "不是 Builder？沒關係！你可以註冊為大使*。",
   "distributor.ambassadorFooter": "*註冊成為大使後，你將無法使用同一地址建立自己的 DEX。",
+  "distributor.boostedBanner": "在此申請成為 Boosted 分銷商",
   "distributor.availableBalance": "可用餘額",
   "distributor.baseMakerFee": "基礎掛單費率",
   "distributor.baseMakerFeeRwa": "基礎掛單費率（RWA）",

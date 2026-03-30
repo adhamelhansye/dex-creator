@@ -479,6 +479,7 @@
   "distributor.ambassador": "Embajador",
   "distributor.ambassadorDesc": "¿No eres builder? No hay problema. Puedes registrarte como embajador*.",
   "distributor.ambassadorFooter": "*Tras registrarte como embajador, no podrás crear tu propio DEX con la misma dirección.",
+  "distributor.boostedBanner": "Solicita aquí convertirte en Distribuidor Boosted",
   "distributor.availableBalance": "Saldo disponible",
   "distributor.baseMakerFee": "Comisión base de maker",
   "distributor.baseMakerFeeRwa": "Comisión base de maker (RWA)",

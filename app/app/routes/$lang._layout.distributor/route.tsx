@@ -23,13 +23,30 @@ export const meta: MetaFunction = () => [
 
 export const AMBASSADOR_BROKER_ID = "ambassador";
 
+function BoostedDistributorBanner() {
+  const { t } = useTranslation();
+
+  return (
+    <a
+      href="https://forms.gle/qARKWqC7X66TJAKy9"
+      target="_blank"
+      rel="noopener noreferrer"
+      className="block w-full bg-gradient-to-r from-purple-700 via-blue-600 to-purple-700 py-3 text-center text-white text-sm md:text-base font-medium hover:from-purple-600 hover:via-blue-500 hover:to-purple-600 transition-all mt-[56px] md:mt-[100px]"
+    >
+      <span className="inline-flex items-center gap-2">
+        {t("distributor.boostedBanner")}
+        <div className="i-mdi:open-in-new w-4 h-4" />
+      </span>
+    </a>
+  );
+}
+
 export default function DistributorRoute() {
   const { t } = useTranslation();
   const { isAuthenticated } = useAuth();
   const { setBrokerId } = useDex();
 
   const { hasValidKey, isResolvingAccount } = useOrderlyKey();
-  // flag to prevent showing the create key card when creating ambassador profile
   const isCreatingAmbassador = useRef(false);
 
   const {
@@ -44,9 +61,7 @@ export default function DistributorRoute() {
 
   const handleCreateAmbassador = () => {
     isCreatingAmbassador.current = true;
-    // when broker id is set, we can calculate the account id
     setBrokerId(AMBASSADOR_BROKER_ID);
-    // mutate the account info to get the latest account info
     mutateAccountInfo();
   };
 
@@ -61,51 +76,48 @@ export default function DistributorRoute() {
     </div>
   );
 
-  if (!isAuthenticated) {
-    return <VanguardDistributorProgramme />;
-  }
+  const renderContent = () => {
+    if (!isAuthenticated) {
+      return <VanguardDistributorProgramme />;
+    }
 
-  if (isInitialLoading || isResolvingAccount) {
-    return (
-      <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center">
-        <div className="i-svg-spinners:pulse-rings-multiple h-20 w-20 text-primary-light"></div>
-      </div>
-    );
-  }
+    if (isInitialLoading || isResolvingAccount) {
+      return (
+        <div className="w-full h-[calc(100vh-64px)] flex items-center justify-center">
+          <div className="i-svg-spinners:pulse-rings-multiple h-20 w-20 text-primary-light"></div>
+        </div>
+      );
+    }
 
-  if (isAmbassador && !hasValidKey && !isCreatingAmbassador.current) {
-    return createKeyCard;
-  }
-
-  if (ambassadorCompleted || builderCompleted) {
-    if (!hasValidKey) {
+    if (isAmbassador && !hasValidKey && !isCreatingAmbassador.current) {
       return createKeyCard;
     }
 
-    // Show vanguard distributor dashboard when key is valid
-    return <VanguardDashboard />;
-  }
+    if (ambassadorCompleted || builderCompleted) {
+      if (!hasValidKey) {
+        return createKeyCard;
+      }
 
-  if (isBuilder) {
-    return <CompleteBuilderProfile />;
-  }
+      return (
+        <>
+          <BoostedDistributorBanner />
+          <VanguardDashboard />
+        </>
+      );
+    }
 
-  return (
-    <CompleteAmbassadorProfile
-      brokerId={AMBASSADOR_BROKER_ID}
-      onCreateAmbassadorSuccess={handleCreateAmbassador}
-      onUpdateDistributorNameSuccess={handleUpdateDistributorNameSuccess}
-    />
-  );
+    if (isBuilder) {
+      return <CompleteBuilderProfile />;
+    }
 
-  // if (isAmbassador) {
-  //   return <CompleteAmbassadorProfile onSuccess={handleCompleteAmbassador} />;
-  // }
+    return (
+      <CompleteAmbassadorProfile
+        brokerId={AMBASSADOR_BROKER_ID}
+        onCreateAmbassadorSuccess={handleCreateAmbassador}
+        onUpdateDistributorNameSuccess={handleUpdateDistributorNameSuccess}
+      />
+    );
+  };
 
-  // return (
-  //   <CreateDistributorProfile
-  //     brokerId={AMBASSADOR_BROKER_ID}
-  //     onSuccess={handleCreateAmbassador}
-  //   />
-  // );
+  return <>{renderContent()}</>;
 }
