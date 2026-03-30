@@ -479,6 +479,7 @@
   "distributor.ambassador": "大使计划",
   "distributor.ambassadorDesc": "不是 Builder？没关系！你可以注册为大使*。",
   "distributor.ambassadorFooter": "*注册成为大使后，你将无法使用同一地址创建自己的 DEX。",
+  "distributor.boostedBanner": "在此申请成为 Boosted 分销商",
   "distributor.availableBalance": "可用余额",
   "distributor.baseMakerFee": "基础挂单费率",
   "distributor.baseMakerFeeRwa": "基础挂单费率（RWA）",
