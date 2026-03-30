@@ -115,21 +115,26 @@ jobs:
           fi
 
           BEFORE_MERGE=$(git rev-parse HEAD)
+          UPSTREAM_TIP=$(git rev-parse "upstream/$UPSTREAM_BRANCH")
 
-          echo "Resolved upstream branch: upstream/$UPSTREAM_BRANCH (DEPLOYMENT_ENV=$DEPLOYMENT_ENV)"
+          echo "=== Upstream sync ==="
+          echo "DEPLOYMENT_ENV=$DEPLOYMENT_ENV  →  merge target: upstream/$UPSTREAM_BRANCH"
+          echo "Local HEAD (before merge): $BEFORE_MERGE"
+          echo "Upstream tip:              $UPSTREAM_TIP"
 
           if git merge "upstream/$UPSTREAM_BRANCH" --no-edit $MERGE_EXTRA; then
             AFTER_MERGE=$(git rev-parse HEAD)
-            
+
             if [ "$BEFORE_MERGE" != "$AFTER_MERGE" ]; then
-              echo "Successfully merged upstream changes"
+              echo "RESULT: Merge succeeded — new commits integrated (HEAD $BEFORE_MERGE → $AFTER_MERGE). Pushing to origin."
               echo "sync_happened=true" >> $GITHUB_OUTPUT
               git push origin main
             else
-              echo "Already up to date with upstream"
+              echo "RESULT: Merge succeeded — nothing to integrate (local main already contains all commits from upstream/$UPSTREAM_BRANCH)."
+              echo "         The 'Already up to date.' line above is from git merge; it means no upstream changes were missing."
             fi
           else
-            echo "Merge failed"
+            echo "RESULT: Merge failed — upstream could not be merged cleanly. Aborting merge."
             git merge --abort 2>/dev/null || true
           fi
 
