@@ -1,5 +1,4 @@
 import { OpenAPIHono, createRoute, z } from "@hono/zod-openapi";
-
 import {
   createDex,
   getUserDex,
@@ -15,6 +14,7 @@ import {
   socialCardFormSchema,
   convertSocialCardFormDataToInternal,
   convertDexToDexConfig,
+  withCampaignsMenuEnabledIfCustom,
 } from "../models/dex";
 import { DexErrorType } from "../lib/types";
 import { getPrisma } from "../lib/prisma";
@@ -323,7 +323,7 @@ app.openapi(createDexRoute, async c => {
     const data = await convertFormDataToInternal(formData);
 
     // Ignore analyticsScript parameter in POST requests
-    const { analyticsScript, ...rest } = data;
+    const { analyticsScript: _analyticsScript, ...rest } = data;
     const result = await createDex(rest, userId);
 
     if (!result.success) {
@@ -1200,10 +1200,13 @@ app.openapi(upgradeDexRoute, async c => {
       select: { address: true },
     });
 
+    const dexForConfig = await withCampaignsMenuEnabledIfCustom(prisma, dex);
+    const dexConfig = convertDexToDexConfig(dexForConfig);
+
     await triggerRedeployment(
       repoInfo.owner,
       repoInfo.repo,
-      convertDexToDexConfig(dex),
+      dexConfig,
       {
         primaryLogo: dex.primaryLogo,
         secondaryLogo: dex.secondaryLogo,

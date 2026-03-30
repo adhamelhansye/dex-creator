@@ -11,13 +11,15 @@ import Navigation from "../components/Navigation";
 import MobileNavigation from "../components/MobileNavigation";
 import { ToastContainer } from "react-toastify";
 import { useState } from "react";
-import { useEffect } from "react";
 import Footer from "../components/Footer";
 import { ChainsSelect } from "../components/ChainsSelect";
 import { DistributorProvider } from "../context/DistributorContext";
 import { useGoogleAnalysis } from "../hooks/useGoogleAnalysis";
 import { TooltipProvider } from "../components/tooltip";
-import { ModalProvider as OrderlyModalProvider } from "@orderly.network/ui";
+import {
+  ModalProvider as OrderlyModalProvider,
+  useScreen,
+} from "@orderly.network/ui";
 import { LanguageSwitcherWidget } from "~/components/languageSwitcher";
 import { LocaleProvider } from "~/i18n";
 
@@ -27,23 +29,10 @@ import { LocaleProvider } from "~/i18n";
  * It just renders the child route content directly.
  */
 export default function Layout() {
-  const [isMobile, setIsMobile] = useState(false);
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  const { isMobile } = useScreen();
 
   useGoogleAnalysis();
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 768);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-
-    return () => {
-      window.removeEventListener("resize", checkMobile);
-    };
-  }, []);
 
   return (
     <LocaleProvider>

@@ -9,14 +9,9 @@ export const PointSystemIcon = (props: SVGProps<SVGSVGElement>) => (
     xmlns="http://www.w3.org/2000/svg"
     {...props}
   >
-    <path
-      d="M0 20C0 8.954 8.954 0 20 0s20 8.954 20 20-8.954 20-20 20S0 31.046 0 20"
-      fill="#f0b100"
-      fillOpacity={0.2}
-    />
     <g
       clipPath="url(#a)"
-      stroke="#fdc700"
+      stroke="#fff"
       strokeWidth={1.667}
       strokeLinecap="round"
       strokeLinejoin="round"

@@ -2,6 +2,15 @@ import { useState, useEffect, useCallback, useMemo } from "react";
 import { cn } from "~/utils/css";
 import { i18n, useTranslation } from "~/i18n";
 
+interface NavigationMenuItem {
+  id: string;
+  label: string;
+  icon?: string;
+  iconNode?: React.ReactNode;
+  isDefault: boolean;
+  editable?: boolean;
+}
+
 interface NavigationMenuEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -10,7 +19,7 @@ interface NavigationMenuEditorProps {
   onOpenSwapFeeConfig: () => void;
 }
 
-export function getAvailableMenus() {
+export function getAvailableMenus(): NavigationMenuItem[] {
   return [
     {
       id: "Trading",
@@ -37,6 +46,20 @@ export function getAvailableMenus() {
       isDefault: true,
     },
     {
+      id: "Campaigns",
+      label: i18n.t("navigationMenuEditor.menuCampaigns"),
+      iconNode: (
+        <svg viewBox="0 0 8 11" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path
+            d="M0.000489424 6.785C-0.00634591 5.73247 0.369598 4.79952 1.04416 3.96991C1.42095 3.50697 1.85329 3.09279 2.25144 2.64902C2.571 2.29275 2.86363 1.91857 3.04264 1.47147C3.21224 1.04646 3.24727 0.609775 3.17293 0.162259C3.1708 0.148508 3.16695 0.135174 3.16567 0.121423C3.16268 0.0805887 3.14986 0.0372538 3.19814 0.00975272C3.24086 -0.0144149 3.27205 0.0114195 3.30494 0.0322536C3.55742 0.190176 3.7911 0.371433 4.00513 0.576441C4.59553 1.14105 4.96593 1.81441 5.07828 2.61985C5.13553 3.02987 5.0817 3.42863 4.99454 3.82781C4.94627 4.04866 4.90441 4.27283 4.95097 4.49826C5.03556 4.90702 5.44995 5.2287 5.87587 5.22453C6.31975 5.22037 6.70895 4.90577 6.79608 4.48201C6.81788 4.37533 6.81828 4.26825 6.81362 4.16075C6.81149 4.11074 6.79008 4.04991 6.85928 4.02657C6.92808 4.00365 6.95115 4.06616 6.98148 4.10491C7.32455 4.54409 7.55695 5.03536 7.70222 5.56705C8.00549 6.67873 7.92308 7.75047 7.30488 8.74887C6.63588 9.82927 5.65757 10.4797 4.36698 10.6381C2.34159 10.8869 0.414878 9.48427 0.0632914 7.52507C0.0201408 7.2846 -0.00378258 7.0438 0.000489424 6.785ZM3.46813 5.80247C3.47711 5.6558 3.48565 5.51038 3.49505 5.36496C3.49804 5.32121 3.49718 5.27995 3.44848 5.25953C3.4032 5.24037 3.37458 5.27121 3.34638 5.29704C3.02469 5.59788 2.71966 5.91248 2.47018 6.27457C2.05706 6.8742 1.86653 7.5346 1.99426 8.24967C2.13012 9.01133 2.60047 9.53133 3.3562 9.76013C4.1239 9.9926 4.81298 9.80473 5.36322 9.23553C5.91048 8.66967 6.04209 7.99753 5.78915 7.25793C5.74173 7.1192 5.70798 7.1138 5.58879 7.21087C4.94157 7.7388 3.97566 7.52673 3.62279 6.78C3.4754 6.46791 3.47241 6.13498 3.46813 5.80247Z"
+            fill="#fff"
+          />
+        </svg>
+      ),
+      isDefault: true,
+      editable: true,
+    },
+    {
       id: "Swap",
       label: i18n.t("navigationMenuEditor.menuSwap"),
       icon: "i-mdi:swap-horizontal",
@@ -57,7 +80,23 @@ export function getAvailableMenus() {
     {
       id: "Points",
       label: i18n.t("navigationMenuEditor.menuPoints"),
-      icon: "i-mdi:trophy",
+      iconNode: (
+        <svg
+          viewBox="10 10 20 20"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <g
+            stroke="#fff"
+            strokeWidth={1.667}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <path d="M18.334 22.217v1.355a1.67 1.67 0 0 1-.814 1.413 4.17 4.17 0 0 0-1.686 3.33m5.833-6.098v1.355a1.67 1.67 0 0 0 .813 1.413 4.17 4.17 0 0 1 1.686 3.33M25 17.5h1.25a2.083 2.083 0 0 0 0-4.167H25m-11.666 15h13.333" />
+            <path d="M15 17.5a5 5 0 0 0 10 0v-5a.833.833 0 0 0-.833-.833h-8.334A.833.833 0 0 0 15 12.5zm0 0h-1.25a2.083 2.083 0 0 1 0-4.167H15" />
+          </g>
+        </svg>
+      ),
       isDefault: false,
       editable: false,
     },
@@ -189,6 +228,18 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
     setDraggedOverItem(null);
   };
 
+  const renderMenuIcon = (menu: NavigationMenuItem) => {
+    if (menu.iconNode) {
+      return (
+        <div className="h-5 w-5 flex items-center justify-center [&>svg]:h-full [&>svg]:w-full">
+          {menu.iconNode}
+        </div>
+      );
+    }
+
+    return <div className={`${menu.icon} h-5 w-5`}></div>;
+  };
+
   return (
     <div className={`space-y-4 ${className}`}>
       {/* Add info card explaining optional configuration */}
@@ -244,7 +295,7 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
                   className="form-checkbox rounded bg-dark border-gray-500 text-primary focus:ring-primary disabled:opacity-50 disabled:cursor-not-allowed"
                 />
                 <div className="flex items-center space-x-2">
-                  <div className={`${menu.icon} h-5 w-5`}></div>
+                  {renderMenuIcon(menu)}
                   <span>
                     {menu.label}{" "}
                     {menu.isDefault && `(${t("navigationMenuEditor.default")})`}
@@ -347,7 +398,7 @@ const NavigationMenuEditor: React.FC<NavigationMenuEditorProps> = ({
                   >
                     <div className="flex items-center gap-2">
                       <div className="i-mdi:drag h-5 w-5 text-gray-400"></div>
-                      <div className={`${menu.icon} h-5 w-5`}></div>
+                      {renderMenuIcon(menu)}
                       <span>{menu.label}</span>
                       {menuId === "Swap" && swapFeeBps !== null && (
                         <div className="flex items-center gap-1.5 ml-2">
