@@ -86,17 +86,17 @@ jobs:
 
           if [ "$DEPLOYMENT_ENV" = "mainnet" ]; then
             UPSTREAM_BRANCH="main"
-          elif [ "$DEPLOYMENT_ENV" = "testnet" ]; then
-            if git rev-parse --verify upstream/testnet >/dev/null 2>&1; then
-              UPSTREAM_BRANCH="testnet"
+          elif [ "$DEPLOYMENT_ENV" = "staging" ]; then
+            if git rev-parse --verify upstream/staging >/dev/null 2>&1; then
+              UPSTREAM_BRANCH="staging"
             else
               UPSTREAM_BRANCH="main"
             fi
           elif [ "$DEPLOYMENT_ENV" = "qa" ]; then
             if git rev-parse --verify upstream/qa >/dev/null 2>&1; then
               UPSTREAM_BRANCH="qa"
-            elif git rev-parse --verify upstream/testnet >/dev/null 2>&1; then
-              UPSTREAM_BRANCH="testnet"
+            elif git rev-parse --verify upstream/staging >/dev/null 2>&1; then
+              UPSTREAM_BRANCH="staging"
             else
               UPSTREAM_BRANCH="main"
             fi
@@ -104,10 +104,10 @@ jobs:
             UPSTREAM_BRANCH="main"
           fi
 
-          # Non-mainnet template lines (qa/testnet): on merge conflicts, prefer upstream hunks.
+          # Non-mainnet template lines (qa/staging): on merge conflicts, prefer upstream hunks.
           # mainnet and fallback-to-main merges stay default (manual resolution if conflict).
           MERGE_EXTRA=""
-          if [ "$UPSTREAM_BRANCH" = "qa" ] || [ "$UPSTREAM_BRANCH" = "testnet" ]; then
+          if [ "$UPSTREAM_BRANCH" = "qa" ] || [ "$UPSTREAM_BRANCH" = "staging" ]; then
             MERGE_EXTRA="-X theirs"
             echo "Merging upstream/$UPSTREAM_BRANCH with -X theirs (conflicted hunks favor upstream)"
           fi

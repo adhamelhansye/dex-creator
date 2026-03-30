@@ -218,7 +218,7 @@ The application requires several environment variables for proper operation. Bel
 |----------|-------------|----------|
 | `GITHUB_TOKEN` | GitHub token for repo forking (needs 'admin:org' and 'repo' scopes) | Yes |
 | `GITHUB_TEMPLATE_REPO` | Template repository to fork | Yes |
-| `DEPLOYMENT_ENV` | API deployment environment (e.g. mainnet, testnet, qa, staging, dev). Drives template branch selection for upgrade checks (same rules as fork deploy workflow); should match `VITE_DEPLOYMENT_ENV` on the frontend and fork workflows. | No |
+| `DEPLOYMENT_ENV` | API deployment environment (e.g. mainnet, staging, qa, dev). Drives template branch selection for upgrade checks (same rules as fork deploy workflow); should match `VITE_DEPLOYMENT_ENV` on the frontend and fork workflows. | No |
 | `TEMPLATE_PAT` | Token for GitHub Pages deployments (needs 'repo' and 'workflow' permissions) | Yes |
 
 #### Theme Generation
@@ -284,7 +284,7 @@ For the graduation system to work properly, you need to:
 
 The token addresses are automatically configured based on the deployment environment:
 - **Mainnet**: Uses mainnet ORDER and USDC token addresses for Ethereum and Arbitrum
-- **Testnet environments**: Uses testnet ORDER and USDC token addresses for Sepolia and Arbitrum Sepolia
+- **Non-mainnet environments (staging/qa/dev)**: Uses testnet ORDER and USDC token addresses for Sepolia and Arbitrum Sepolia
 
 ## Deployment
 

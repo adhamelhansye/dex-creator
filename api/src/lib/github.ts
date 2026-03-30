@@ -1490,8 +1490,8 @@ async function resolveTemplateBranchForEnv(
     return "main";
   }
 
-  if (env === "testnet") {
-    for (const branch of ["testnet", "main"] as const) {
+  if (env === "staging") {
+    for (const branch of ["staging", "main"] as const) {
       if (await templateBranchExists(octokit, branch)) {
         return branch;
       }
@@ -1500,7 +1500,7 @@ async function resolveTemplateBranchForEnv(
   }
 
   if (env === "qa") {
-    for (const branch of ["qa", "testnet", "main"] as const) {
+    for (const branch of ["qa", "staging", "main"] as const) {
       if (await templateBranchExists(octokit, branch)) {
         return branch;
       }
