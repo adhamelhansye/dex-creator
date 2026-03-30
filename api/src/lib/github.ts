@@ -68,11 +68,32 @@ interface CachedTemplateUpdateStatus extends TemplateUpdateStatus {
 const templateUpdatesCache = new Map<string, CachedTemplateUpdateStatus>();
 const CACHE_TTL_TEMPLATE_UPDATES_MS = 60 * 1000;
 
+function templateUpdatesCacheKey(owner: string, repo: string): string {
+  const env = process.env.DEPLOYMENT_ENV?.trim() || "mainnet";
+  return `${owner}/${repo}/e:${env}`;
+}
+
 const workflowsDir = path.resolve(__dirname, "../workflows");
 const deployYmlContent = fs.readFileSync(
   path.join(workflowsDir, "deploy.yml"),
   "utf-8"
 );
+
+/** Matches the expression substring in deploy.yml; replaced with a literal so fork repos work without vars. */
+const DEPLOY_YML_ENV_PLACEHOLDER = "${{ vars.VITE_DEPLOYMENT_ENV }}";
+
+/**
+ * Replaces the vars.VITE_DEPLOYMENT_ENV expression in deploy.yml with process.env.DEPLOYMENT_ENV (literal).
+ * Template keeps standard GitHub syntax; committed user repos get a baked value (same as resolveTemplateBranchForEnv).
+ */
+function getDeployYmlContentForRepo(): string {
+  const deploymentEnv = process.env.DEPLOYMENT_ENV?.trim() || "mainnet";
+  if (!deployYmlContent.includes(DEPLOY_YML_ENV_PLACEHOLDER)) {
+    console.error("deploy.yml template missing deployment env placeholder");
+    return deployYmlContent;
+  }
+  return deployYmlContent.replaceAll(DEPLOY_YML_ENV_PLACEHOLDER, deploymentEnv);
+}
 
 /**
  * Returns stats about the GitHub ETag cache
@@ -647,7 +668,7 @@ function prepareDexConfigContent(
 
     // Navigation
     VITE_ENABLED_MENUS:
-      config.enabledMenus || "Trading,Portfolio,Markets,Leaderboard",
+      config.enabledMenus || "Trading,Portfolio,Markets,Leaderboard,Campaigns",
     VITE_CUSTOM_MENUS: config.customMenus || "",
     VITE_ENABLE_SERVICE_DISCLAIMER_DIALOG: String(
       config.enableServiceDisclaimerDialog ?? false
@@ -855,7 +876,10 @@ export async function updateDexConfig(
     );
 
     const fileContents = new Map<string, string>();
-    fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
+    fileContents.set(
+      ".github/workflows/deploy.yml",
+      getDeployYmlContentForRepo()
+    );
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -950,7 +974,10 @@ export async function setupRepositoryWithSingleCommit(
     );
 
     const fileContents = new Map<string, string>();
-    fileContents.set(".github/workflows/deploy.yml", deployYmlContent);
+    fileContents.set(
+      ".github/workflows/deploy.yml",
+      getDeployYmlContentForRepo()
+    );
     fileContents.set("public/config.js", configJsContent);
     fileContents.set(".env", envContent);
 
@@ -1419,6 +1446,76 @@ export async function triggerRedeployment(
 }
 
 /**
+ * Check if a template branch exists in the template repository
+ * @param octokit The authenticated Octokit instance
+ * @param branch The branch name to check
+ * @returns A boolean indicating whether the branch exists
+ */
+async function templateBranchExists(
+  octokit: Awaited<ReturnType<typeof getOctokit>>,
+  branch: string
+): Promise<boolean> {
+  try {
+    await octokit.rest.git.getRef({
+      owner: templateOwner,
+      repo: templateRepoName,
+      ref: `heads/${branch}`,
+    });
+    return true;
+  } catch (error) {
+    if (isRequestError(error) && error.status === 404) {
+      return false;
+    }
+
+    console.error(
+      `Error checking existence of template branch ${branch} in ${templateOwner}/${templateRepoName}:`,
+      error
+    );
+    throw error;
+  }
+}
+
+/**
+ * Resolve the appropriate template branch based on DEPLOYMENT_ENV with fallbacks
+ * (same rules as fork deploy workflow).
+ */
+async function resolveTemplateBranchForEnv(
+  octokit: Awaited<ReturnType<typeof getOctokit>>,
+  deploymentEnv?: string
+): Promise<string> {
+  const env = deploymentEnv ?? "mainnet";
+
+  if (env === "mainnet") {
+    // For mainnet we always use main; if it somehow doesn't exist, we let the error propagate
+    return "main";
+  }
+
+  if (env === "testnet") {
+    for (const branch of ["testnet", "main"] as const) {
+      if (await templateBranchExists(octokit, branch)) {
+        return branch;
+      }
+    }
+    return "main";
+  }
+
+  if (env === "qa") {
+    for (const branch of ["qa", "testnet", "main"] as const) {
+      if (await templateBranchExists(octokit, branch)) {
+        return branch;
+      }
+    }
+    return "main";
+  }
+
+  // dev, staging, etc.: same-named branch only (aligned with fork deploy workflow)
+  if (await templateBranchExists(octokit, env)) {
+    return env;
+  }
+  return "main";
+}
+
+/**
  * Invalidate the template updates cache for a specific repository
  * @param owner The repository owner (username or organization)
  * @param repo The repository name
@@ -1427,8 +1524,13 @@ export function invalidateTemplateUpdatesCache(
   owner: string,
   repo: string
 ): void {
-  const cacheKey = `${owner}/${repo}`;
-  templateUpdatesCache.delete(cacheKey);
+  const legacyKey = `${owner}/${repo}`;
+  const prefix = `${owner}/${repo}/`;
+  for (const key of templateUpdatesCache.keys()) {
+    if (key === legacyKey || key.startsWith(prefix)) {
+      templateUpdatesCache.delete(key);
+    }
+  }
 }
 
 /**
@@ -1441,7 +1543,7 @@ export async function checkForTemplateUpdates(
   owner: string,
   repo: string
 ): Promise<TemplateUpdateStatus> {
-  const cacheKey = `${owner}/${repo}`;
+  const cacheKey = templateUpdatesCacheKey(owner, repo);
   const cached = templateUpdatesCache.get(cacheKey);
 
   if (cached && Date.now() - cached.timestamp < CACHE_TTL_TEMPLATE_UPDATES_MS) {
@@ -1457,11 +1559,18 @@ export async function checkForTemplateUpdates(
   try {
     const octokit = await getOctokit();
 
+    // Align with fork workflow: unset or blank DEPLOYMENT_ENV => mainnet
+    const deploymentEnv = process.env.DEPLOYMENT_ENV?.trim() || undefined;
+    const templateBranch = await resolveTemplateBranchForEnv(
+      octokit,
+      deploymentEnv
+    );
+
     const [templateRef, userRef] = await Promise.all([
       octokit.rest.git.getRef({
         owner: templateOwner,
         repo: templateRepoName,
-        ref: "heads/main",
+        ref: `heads/${templateBranch}`,
       }),
       octokit.rest.git.getRef({
         owner,
