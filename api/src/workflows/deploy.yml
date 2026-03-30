@@ -116,6 +116,8 @@ jobs:
 
           BEFORE_MERGE=$(git rev-parse HEAD)
 
+          echo "Resolved upstream branch: upstream/$UPSTREAM_BRANCH (DEPLOYMENT_ENV=$DEPLOYMENT_ENV)"
+
           if git merge "upstream/$UPSTREAM_BRANCH" --no-edit $MERGE_EXTRA; then
             AFTER_MERGE=$(git rev-parse HEAD)
             
