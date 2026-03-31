@@ -28,7 +28,7 @@ export default function MobileNavigation({
   };
 
   return (
-    <div className="relative z-30">
+    <div className="relative z-30 flex-shrink-0">
       {/* Hamburger button */}
       <button
         className="flex items-center justify-center w-10 h-10 rounded-full bg-background-light/30 border border-light/10 text-white"
@@ -66,7 +66,13 @@ export default function MobileNavigation({
           </h2>
           <nav className="flex flex-col gap-4">
             {menuItems.map(item => {
-              const localizedTargetPath = localizedPath(item.path);
+              const isExternalPath =
+                item.path.startsWith("http://") ||
+                item.path.startsWith("https://") ||
+                item.path.startsWith("//");
+              const localizedTargetPath = isExternalPath
+                ? item.path
+                : localizedPath(item.path);
               const isActive =
                 item.path === "/"
                   ? location.pathname === localizedTargetPath ||
@@ -87,6 +93,9 @@ export default function MobileNavigation({
                   key={item.path}
                   to={fullPath}
                   target={item.target}
+                  rel={
+                    item.target === "_blank" ? "noopener noreferrer" : undefined
+                  }
                   className={`inline-flex items-center gap-1 py-3 px-4 rounded-lg font-medium text-base transition-all duration-200 ${
                     isActive
                       ? "bg-light/10 text-white"

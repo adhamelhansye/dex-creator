@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { getPrisma } from "../lib/prisma";
-import type { Prisma, Dex } from "@prisma/client";
+import type { Prisma, Dex, PrismaClient } from "@prisma/client";
 import type { DexResult, Result } from "../lib/types";
 import { DexErrorType, GitHubErrorType } from "../lib/types";
 import {
@@ -9,7 +9,9 @@ import {
   deleteRepository,
   setCustomDomain,
   removeCustomDomain,
+  checkForTemplateUpdates,
 } from "../lib/github";
+import { CAMPAIGNS_INTRO_COMMIT_PREFIXES } from "../../../config";
 import type { DexConfig } from "../lib/types";
 import { generateRepositoryName } from "../lib/nameGenerator";
 import { validateTradingViewColorConfig } from "./tradingViewConfig.js";
@@ -1342,4 +1344,86 @@ export async function updateDexCustomDomainOverride(
       updatedAt: new Date(),
     },
   });
+}
+
+export async function withCampaignsMenuEnabledIfCustom(
+  prisma: PrismaClient,
+  dex: Dex
+): Promise<Dex> {
+  if (!dex.repoUrl) return dex;
+  const repoInfo = extractRepoInfoFromUrl(dex.repoUrl);
+  if (!repoInfo) return dex;
+
+  const updateStatus = await checkForTemplateUpdates(
+    repoInfo.owner,
+    repoInfo.repo
+  );
+  const shouldAutoAddCampaigns =
+    CAMPAIGNS_INTRO_COMMIT_PREFIXES.length > 0 &&
+    (updateStatus.commits || []).some(commit =>
+      CAMPAIGNS_INTRO_COMMIT_PREFIXES.some(prefix =>
+        commit.sha.startsWith(prefix)
+      )
+    );
+  if (!shouldAutoAddCampaigns) return dex;
+
+  const hasCustomEnabledMenus = parseEnabledMenus(dex.enabledMenus).length > 0;
+  if (!hasCustomEnabledMenus) return dex;
+
+  const nextEnabledMenus = ensureMenuEnabled(dex.enabledMenus, "Campaigns");
+
+  if (nextEnabledMenus !== (dex.enabledMenus ?? null)) {
+    await prisma.dex.update({
+      where: { id: dex.id },
+      data: { enabledMenus: nextEnabledMenus, updatedAt: new Date() },
+    });
+  }
+
+  return { ...dex, enabledMenus: nextEnabledMenus };
+}
+
+export const DEFAULT_ENABLED_MENUS = [
+  "Trading",
+  "Portfolio",
+  "Markets",
+  "Leaderboard",
+  "Campaigns",
+] as const;
+
+function parseEnabledMenus(enabledMenus: string | null): string[] {
+  if (!enabledMenus) return [];
+  return enabledMenus
+    .split(",")
+    .map(item => item.trim())
+    .filter(Boolean);
+}
+
+function formatEnabledMenus(menus: string[]): string {
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+  for (const item of menus) {
+    const trimmed = item.trim();
+    if (!trimmed) continue;
+    if (seen.has(trimmed)) continue;
+    seen.add(trimmed);
+    deduped.push(trimmed);
+  }
+  return deduped.join(",");
+}
+
+function ensureMenuEnabled(
+  enabledMenus: string | null,
+  menuId: string,
+  defaults: readonly string[] = DEFAULT_ENABLED_MENUS
+): string {
+  const current = parseEnabledMenus(enabledMenus);
+  if (current.length === 0) {
+    const base = [...defaults];
+    if (!base.includes(menuId)) base.push(menuId);
+    return formatEnabledMenus(base);
+  }
+  if (current.includes(menuId)) {
+    return formatEnabledMenus(current);
+  }
+  return formatEnabledMenus([...current, menuId]);
 }
