@@ -116,7 +116,6 @@ const DexPreview: FC<DexPreviewProps> = ({
         return fontFamilyMatch[1].trim();
       }
     }
-    // Fall back to prop if customStyles doesn't have font-family
     return fontFamilyProp || null;
   }, [customStyles, fontFamilyProp]);
 
@@ -159,18 +158,13 @@ const DexPreview: FC<DexPreviewProps> = ({
     }
     const styleId = styleIdRef.current;
 
-    requestAnimationFrame(() => {
-      requestAnimationFrame(() => {
-        const existingStyle = document.getElementById(styleId);
-        if (existingStyle) {
-          existingStyle.remove();
-        }
-
-        const style = document.createElement("style");
-        style.id = styleId;
-        // Target the container itself (which has both data-preview-id and orderly-app-container)
-        // AND any descendant orderly-app-container elements, plus all their descendants
-        style.textContent = `
+    let style = document.getElementById(styleId);
+    if (!style) {
+      style = document.createElement("style");
+      style.id = styleId;
+      document.head.appendChild(style);
+    }
+    style.textContent = `
           [data-preview-id="${containerId}"].orderly-app-container,
           [data-preview-id="${containerId}"] .orderly-app-container,
           [data-preview-id="${containerId}"].orderly-app-container *,
@@ -182,9 +176,6 @@ const DexPreview: FC<DexPreviewProps> = ({
             font-family: ${fontFamily} !important;
           }
         `;
-        document.head.appendChild(style);
-      });
-    });
 
     return () => {
       if (styleIdRef.current) {
@@ -195,7 +186,7 @@ const DexPreview: FC<DexPreviewProps> = ({
         styleIdRef.current = null;
       }
     };
-  }, [customStyles, fontFamily]);
+  }, [fontFamily]);
 
   useEffect(() => {
     const originalError = console.error;
@@ -284,10 +275,7 @@ const DexPreview: FC<DexPreviewProps> = ({
       ref={previewContainerRef}
       className={`relative h-full w-full orderly-app-container orderly-scrollbar bg-[rgb(var(--oui-color-base-7))] text-[rgb(var(--oui-color-base-foreground))] ${className}`}
     >
-      <style
-        key={`theme-${customStyles || "empty"}`}
-        dangerouslySetInnerHTML={{ __html: customStyles || "" }}
-      />
+      <style dangerouslySetInnerHTML={{ __html: customStyles || "" }} />
       <LocaleProvider>
         <WalletConnectorProvider
           solanaInitial={{

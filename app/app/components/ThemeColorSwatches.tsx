@@ -147,6 +147,15 @@ export default function ThemeColorSwatches({
     const handleColorChange = (e: React.ChangeEvent<HTMLInputElement>) => {
       const newColorHex = e.target.value;
       onColorChange(`oui-color-${name}`, newColorHex);
+
+      if (syncBrandWithPrimary) {
+        if (name === "primary-light") {
+          onColorChange("gradient-brand-start", newColorHex);
+        }
+        if (name === "primary-darken") {
+          onColorChange("gradient-brand-end", newColorHex);
+        }
+      }
     };
 
     return (

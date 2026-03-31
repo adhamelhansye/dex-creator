@@ -1,5 +1,14 @@
-import { FC, useState, useEffect, ChangeEvent } from "react";
+import {
+  FC,
+  useState,
+  useEffect,
+  useCallback,
+  useRef,
+  ChangeEvent,
+} from "react";
 import { useTranslation } from "~/i18n";
+import { parseCSSVariables, generateThemeCSS } from "~/utils/cssParser";
+import { hexToRgbSpaceSeparated } from "~/utils/colorUtils";
 import { Button } from "./Button";
 import CurrentThemeEditor from "./CurrentThemeEditor";
 import type { ThemeTabType } from "./ThemeCustomizationSection";
@@ -10,8 +19,6 @@ export interface CurrentThemeModalProps {
   currentTheme: string | null;
   defaultTheme: string;
   savedTheme?: string | null;
-  updateCssColor: (variableName: string, newColorHex: string) => void;
-  updateCssValue: (variableName: string, newValue: string) => void;
   tradingViewColorConfig: string | null;
   setTradingViewColorConfig: (config: string | null) => void;
   onThemeChange?: (newTheme: string) => void;
@@ -23,8 +30,6 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
   currentTheme,
   defaultTheme,
   savedTheme,
-  updateCssColor,
-  updateCssValue,
   tradingViewColorConfig,
   setTradingViewColorConfig,
   onThemeChange,
@@ -35,24 +40,87 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
   const [viewCssCode, setViewCssCode] = useState(false);
   const [localTheme, setLocalTheme] = useState(currentTheme || defaultTheme);
 
+  const globalSyncTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const latestThemeRef = useRef(localTheme);
+  latestThemeRef.current = localTheme;
+
   useEffect(() => {
     if (!isOpen) {
       setActiveThemeTab("colors");
       setShowThemeEditor(false);
       setViewCssCode(false);
+      if (globalSyncTimerRef.current) {
+        clearTimeout(globalSyncTimerRef.current);
+        globalSyncTimerRef.current = null;
+      }
     } else {
       setLocalTheme(currentTheme || defaultTheme);
     }
   }, [isOpen, currentTheme, defaultTheme]);
 
+  useEffect(() => {
+    return () => {
+      if (globalSyncTimerRef.current) {
+        clearTimeout(globalSyncTimerRef.current);
+      }
+    };
+  }, []);
+
+  const syncToGlobal = useCallback(
+    (theme: string) => {
+      if (globalSyncTimerRef.current) {
+        clearTimeout(globalSyncTimerRef.current);
+      }
+      globalSyncTimerRef.current = setTimeout(() => {
+        if (onThemeChange) {
+          onThemeChange(theme);
+        }
+      }, 150);
+    },
+    [onThemeChange]
+  );
+
   const handleThemeEditorChange = (value: string) => {
     setLocalTheme(value);
-    if (onThemeChange) {
-      onThemeChange(value);
-    }
+    syncToGlobal(value);
   };
 
+  const handleLocalCssColorChange = useCallback(
+    (variableName: string, newColorHex: string) => {
+      setLocalTheme(prev => {
+        const cssVariables = parseCSSVariables(prev || defaultTheme);
+        const newColorRgb = hexToRgbSpaceSeparated(newColorHex);
+        if (variableName.startsWith("oui-color")) {
+          cssVariables[variableName] = newColorRgb;
+        } else if (variableName.startsWith("gradient")) {
+          cssVariables[`oui-${variableName}`] = newColorRgb;
+        }
+        const next = generateThemeCSS(cssVariables);
+        syncToGlobal(next);
+        return next;
+      });
+    },
+    [defaultTheme, syncToGlobal]
+  );
+
+  const handleLocalCssValueChange = useCallback(
+    (variableName: string, newValue: string) => {
+      setLocalTheme(prev => {
+        const cssVariables = parseCSSVariables(prev || defaultTheme);
+        cssVariables[variableName] = newValue;
+        const next = generateThemeCSS(cssVariables);
+        syncToGlobal(next);
+        return next;
+      });
+    },
+    [defaultTheme, syncToGlobal]
+  );
+
   const handleApply = () => {
+    if (globalSyncTimerRef.current) {
+      clearTimeout(globalSyncTimerRef.current);
+      globalSyncTimerRef.current = null;
+    }
     if (onThemeChange) {
       onThemeChange(localTheme);
     }
@@ -176,11 +244,11 @@ const CurrentThemeModal: FC<CurrentThemeModalProps> = ({
           )}
 
           <CurrentThemeEditor
-            currentTheme={currentTheme}
+            currentTheme={localTheme}
             defaultTheme={defaultTheme}
             activeThemeTab={activeThemeTab}
-            updateCssColor={updateCssColor}
-            updateCssValue={updateCssValue}
+            updateCssColor={handleLocalCssColorChange}
+            updateCssValue={handleLocalCssValueChange}
             tradingViewColorConfig={tradingViewColorConfig}
             setTradingViewColorConfig={setTradingViewColorConfig}
             ThemeTabButton={ModalTabButton}

@@ -1,4 +1,4 @@
-import { FC, useState, useRef, useEffect, useCallback } from "react";
+import { FC, useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { useTranslation, Trans } from "~/i18n";
 import DexPreview, { DexPreviewProps } from "./DexPreview";
 import CSSVariableInspector from "./CSSVariableInspector";
@@ -162,6 +162,12 @@ const EditModeModal: FC<EditModeModalProps> = ({
   const prevThemeRef = useRef<string | null>(null);
   const hasInitializedFontRef = useRef(false);
 
+  const currentFontFamily = useMemo(() => {
+    const themeToUse = currentTheme || defaultTheme;
+    const match = themeToUse.match(/--oui-font-family:\s*([^;]+);/);
+    return match ? match[1].trim() : null;
+  }, [currentTheme, defaultTheme]);
+
   useEffect(() => {
     if (
       isOpen &&
@@ -198,39 +204,31 @@ const EditModeModal: FC<EditModeModalProps> = ({
 
   useEffect(() => {
     const isFirstMount = !hasInitializedFontRef.current;
-    const themeChanged = currentTheme !== prevThemeRef.current;
 
-    if (isOpen && (isFirstMount || themeChanged)) {
+    if (isOpen && (isFirstMount || currentFontFamily)) {
       hasInitializedFontRef.current = true;
       requestAnimationFrame(() => {
-        const themeToUse = currentTheme || defaultTheme;
-        const fontFamilyMatch = themeToUse.match(
-          /--oui-font-family:\s*([^;]+);/
-        );
-        if (fontFamilyMatch) {
-          const fontFamily = fontFamilyMatch[1].trim();
-          const styleId = "dex-preview-font-override";
+        const styleId = "dex-preview-font-override";
 
-          let style = document.getElementById(styleId);
-          if (!style) {
-            style = document.createElement("style");
-            style.id = styleId;
-            document.head.appendChild(style);
-          }
+        let style = document.getElementById(styleId);
+        if (!style) {
+          style = document.createElement("style");
+          style.id = styleId;
+          document.head.appendChild(style);
+        }
 
-          style.textContent = `
+        style.textContent = `
           .orderly-app-container,
           .orderly-app-container *,
           .orderly-app-container *::before,
           .orderly-app-container *::after {
-            font-family: ${fontFamily} !important;
+            font-family: ${currentFontFamily || "'Manrope', sans-serif"} !important;
           }
         `;
-        }
       });
     }
     prevThemeRef.current = currentTheme;
-  }, [isOpen, currentTheme, defaultTheme]);
+  }, [isOpen, currentFontFamily]);
 
   const wrappedOnGenerateTheme = useCallback(
     (prompt: string, vm: "desktop" | "mobile") => {
@@ -515,8 +513,6 @@ const EditModeModal: FC<EditModeModalProps> = ({
                 currentTheme,
                 defaultTheme,
                 savedTheme,
-                updateCssColor,
-                updateCssValue,
                 tradingViewColorConfig,
                 setTradingViewColorConfig,
                 onThemeChange,
