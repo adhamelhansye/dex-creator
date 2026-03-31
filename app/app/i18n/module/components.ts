@@ -1027,6 +1027,7 @@ export const components = {
   "navigationMenuEditor.menuRewards": "Rewards",
   "navigationMenuEditor.menuVaults": "Vaults",
   "navigationMenuEditor.menuPoints": "Points",
+  "navigationMenuEditor.menuCampaigns": "Campaigns",
 
   // ReownConfigSection
   "reownConfigSection.enhancedWalletConnectivity":
@@ -1226,6 +1227,7 @@ export const components = {
   "modalContext.defaultConfirmMessage": "Are you sure you want to proceed?",
 
   // navigation (utils/navigation.tsx)
+  "navigation.campaigns": "Campaigns",
   "navigation.home": "Home",
   "navigation.board": "Board",
   "navigation.distributor": "Distributor",
