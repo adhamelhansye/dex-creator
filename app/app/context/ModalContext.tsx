@@ -330,8 +330,6 @@ function ModalManager() {
           currentTheme={currentModalProps.currentTheme}
           defaultTheme={currentModalProps.defaultTheme}
           savedTheme={currentModalProps.savedTheme}
-          updateCssColor={currentModalProps.updateCssColor}
-          updateCssValue={currentModalProps.updateCssValue}
           tradingViewColorConfig={currentModalProps.tradingViewColorConfig}
           setTradingViewColorConfig={
             currentModalProps.setTradingViewColorConfig
