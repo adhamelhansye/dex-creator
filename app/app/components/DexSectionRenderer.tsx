@@ -19,6 +19,7 @@ import ProgressTracker from "./ProgressTracker";
 import { DexSectionProps } from "../hooks/useDexForm";
 import DistributorCodeSection from "./DistributorCodeSection";
 import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
+import BuildPathSection from "./BuildPathSection";
 import { DexPreviewProps } from "./DexPreview";
 
 export interface DexSectionConfig {
@@ -40,6 +41,7 @@ export interface DexSectionConfig {
 export enum DEX_SECTION_KEYS {
   DistributorCode = "distributorCode",
   BrokerDetails = "brokerDetails",
+  BuildPath = "buildPath",
   Branding = "branding",
   ThemeCustomization = "themeCustomization",
   PnLPosters = "pnlPosters",
@@ -96,6 +98,15 @@ export function getDexSections(): DexSectionConfig[] {
     },
     {
       id: 3,
+      key: DEX_SECTION_KEYS.BuildPath,
+      title: i18n.t("dex.buildPath.title"),
+      description: i18n.t("dex.buildPath.lowCode.description"),
+      isOptional: false,
+      component: BuildPathSection,
+      getProps: (_props: any) => ({}),
+    },
+    {
+      id: 4,
       key: DEX_SECTION_KEYS.Branding,
       title: i18n.t("dex.sectionRenderer.branding.title"),
       description: i18n.t("dex.sectionRenderer.branding.description"),
@@ -109,7 +120,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 4,
+      id: 5,
       key: DEX_SECTION_KEYS.ThemeCustomization,
       title: i18n.t("dex.sectionRenderer.themeCustomization.title"),
       description: i18n.t("dex.sectionRenderer.themeCustomization.description"),
@@ -139,7 +150,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 5,
+      id: 6,
       key: DEX_SECTION_KEYS.PnLPosters,
       title: i18n.t("dex.sectionRenderer.pnlPosters.title"),
       description: i18n.t("dex.sectionRenderer.pnlPosters.description"),
@@ -151,7 +162,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 6,
+      id: 7,
       key: DEX_SECTION_KEYS.SocialLinks,
       title: i18n.t("dexCard.socialMediaLinks"),
       description: i18n.t("dex.sectionRenderer.socialLinks.description"),
@@ -166,7 +177,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 7,
+      id: 8,
       key: DEX_SECTION_KEYS.SEOConfiguration,
       title: i18n.t("dex.sectionRenderer.seoConfiguration.title"),
       description: i18n.t("dex.sectionRenderer.seoConfiguration.description"),
@@ -185,7 +196,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 8,
+      id: 9,
       key: DEX_SECTION_KEYS.AnalyticsConfiguration,
       title: i18n.t("dex.sectionRenderer.analyticsConfiguration.title"),
       description: i18n.t(
@@ -199,7 +210,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 9,
+      id: 10,
       key: DEX_SECTION_KEYS.ReownConfiguration,
       title: i18n.t("dex.sectionRenderer.reownConfiguration.title"),
       description: i18n.t("dex.sectionRenderer.reownConfiguration.description"),
@@ -211,7 +222,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 10,
+      id: 11,
       key: DEX_SECTION_KEYS.PrivyConfiguration,
       title: i18n.t("dex.sectionRenderer.privyConfiguration.title"),
       description: i18n.t("dex.sectionRenderer.privyConfiguration.description"),
@@ -237,7 +248,7 @@ export function getDexSections(): DexSectionConfig[] {
           : true,
     },
     {
-      id: 11,
+      id: 12,
       key: DEX_SECTION_KEYS.BlockchainConfiguration,
       title: i18n.t("dex.sectionRenderer.blockchainConfiguration.title"),
       description: i18n.t(
@@ -257,7 +268,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 12,
+      id: 13,
       key: DEX_SECTION_KEYS.AssetFilter,
       title: i18n.t("assetFilterSection.assetFiltering"),
       description: i18n.t("dex.sectionRenderer.assetFilter.description"),
@@ -269,7 +280,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 13,
+      id: 14,
       key: DEX_SECTION_KEYS.LanguageSupport,
       title: i18n.t("dex.sectionRenderer.languageSupport.title"),
       description: i18n.t("dex.sectionRenderer.languageSupport.description"),
@@ -281,7 +292,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 14,
+      id: 15,
       key: DEX_SECTION_KEYS.NavigationMenus,
       title: i18n.t("dex.sectionRenderer.navigationMenus.title"),
       description: i18n.t("dex.sectionRenderer.navigationMenus.description"),
@@ -299,7 +310,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 15,
+      id: 16,
       key: DEX_SECTION_KEYS.ServiceDisclaimer,
       title: i18n.t("dex.sectionRenderer.serviceDisclaimer.title"),
       description: i18n.t("dex.sectionRenderer.serviceDisclaimer.description"),
@@ -312,7 +323,7 @@ export function getDexSections(): DexSectionConfig[] {
       }),
     },
     {
-      id: 16,
+      id: 17,
       key: DEX_SECTION_KEYS.ServiceRestrictions,
       title: i18n.t("dex.sectionRenderer.serviceRestrictions.title"),
       description: i18n.t(
