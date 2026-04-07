@@ -25,7 +25,10 @@ import { useDistributor } from "../context/DistributorContext";
 import { trackEvent } from "~/analytics/tracking";
 import { useThemeHandlers } from "../hooks/useThemeHandlers";
 import { setBuildPathSelectCallback } from "./BuildPathSection";
-import { setDexCreateCallback } from "./GraduationPaymentSection";
+import {
+  setDexCreateCallback,
+  resetPaymentDone,
+} from "./GraduationPaymentSection";
 import type { IntegrationType } from "./BuildPathSection";
 
 interface DexSetupAssistantProps {
@@ -200,6 +203,7 @@ export default function DexSetupAssistant({
     }
     return () => {
       setBuildPathSelectCallback(null);
+      resetPaymentDone();
       if (isCustomPath) {
         setDexCreateCallback(null);
       }
