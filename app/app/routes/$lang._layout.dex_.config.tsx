@@ -67,6 +67,14 @@ export default function DexConfigRoute() {
           return false;
         }
 
+        // graduation payment and admin wallet registration are inline steps, not config
+        if (
+          section.key === DEX_SECTION_KEYS.GraduationPayment ||
+          section.key === DEX_SECTION_KEYS.AdminWalletRegistration
+        ) {
+          return false;
+        }
+
         // when the DEX is not configured with a custom domain, we need to hide the analytics configuration section
         if (
           section.key === DEX_SECTION_KEYS.AnalyticsConfiguration &&
