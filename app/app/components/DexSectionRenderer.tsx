@@ -20,7 +20,9 @@ import { DexSectionProps } from "../hooks/useDexForm";
 import DistributorCodeSection from "./DistributorCodeSection";
 import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
 import BuildPathSection from "./BuildPathSection";
-import GraduationPaymentSection from "./GraduationPaymentSection";
+import GraduationPaymentSection, {
+  getIsPaymentDone,
+} from "./GraduationPaymentSection";
 import AdminWalletRegistrationSection from "./AdminWalletRegistrationSection";
 import { DexPreviewProps } from "./DexPreview";
 
@@ -350,7 +352,7 @@ export function getDexSections(): DexSectionConfig[] {
       isOptional: false,
       component: GraduationPaymentSection,
       getProps: () => ({}),
-      getValidationTest: () => true,
+      getValidationTest: () => getIsPaymentDone(),
     },
     {
       id: 19,
