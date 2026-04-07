@@ -20,6 +20,8 @@ import { DexSectionProps } from "../hooks/useDexForm";
 import DistributorCodeSection from "./DistributorCodeSection";
 import ServiceDisclaimerSection from "./ServiceDisclaimerSection";
 import BuildPathSection from "./BuildPathSection";
+import GraduationPaymentSection from "./GraduationPaymentSection";
+import AdminWalletRegistrationSection from "./AdminWalletRegistrationSection";
 import { DexPreviewProps } from "./DexPreview";
 
 export interface DexSectionConfig {
@@ -56,6 +58,8 @@ export enum DEX_SECTION_KEYS {
   NavigationMenus = "navigationMenus",
   ServiceDisclaimer = "serviceDisclaimer",
   ServiceRestrictions = "serviceRestrictions",
+  GraduationPayment = "graduationPayment",
+  AdminWalletRegistration = "adminWalletRegistration",
 }
 
 export function getDexSections(): DexSectionConfig[] {
@@ -337,6 +341,28 @@ export function getDexSections(): DexSectionConfig[] {
         whitelistedIps: props.whitelistedIps,
         onWhitelistedIpsChange: props.onWhitelistedIpsChange,
       }),
+    },
+    {
+      id: 18,
+      key: DEX_SECTION_KEYS.GraduationPayment,
+      title: i18n.t("dex.sectionRenderer.graduationPayment.title"),
+      description: i18n.t("dex.sectionRenderer.graduationPayment.description"),
+      isOptional: false,
+      component: GraduationPaymentSection,
+      getProps: () => ({}),
+      getValidationTest: () => true,
+    },
+    {
+      id: 19,
+      key: DEX_SECTION_KEYS.AdminWalletRegistration,
+      title: i18n.t("dex.sectionRenderer.adminWalletRegistration.title"),
+      description: i18n.t(
+        "dex.sectionRenderer.adminWalletRegistration.description"
+      ),
+      isOptional: true,
+      component: AdminWalletRegistrationSection,
+      getProps: () => ({}),
+      getValidationTest: () => true,
     },
   ];
 }
