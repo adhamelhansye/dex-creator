@@ -1,4 +1,5 @@
-import { useState, FormEvent, useMemo } from "react";
+import { useState, FormEvent, useMemo, useEffect } from "react";
+import { useAccount } from "wagmi";
 import { useTranslation } from "~/i18n";
 import { toast } from "react-toastify";
 import { postFormData, createDexFormData } from "../utils/apiClient";
@@ -42,6 +43,8 @@ export default function DexSetupAssistant({
   );
   const [isValidating, setIsValidating] = useState(false);
 
+  const { address } = useAccount();
+
   const { distributorInfo } = useDistributor();
   const urlDistributorCode = useDistributorCode();
 
@@ -52,10 +55,15 @@ export default function DexSetupAssistant({
       })
       .map((section, index) => ({
         ...section,
-        // reset the id to the index + 1, otherwise the progress tracker percentage will calculate incorrectly
         id: index + 1,
       }));
   }, [t]);
+
+  useEffect(() => {
+    trackEvent("dex_form_start", {
+      wallet_address: address || "",
+    });
+  }, []);
 
   const totalSteps = useMemo(() => {
     return dexSections.length;
@@ -164,6 +172,16 @@ export default function DexSetupAssistant({
     }
 
     setCompletedSteps(prev => ({ ...prev, [step]: true }));
+
+    trackEvent("dex_form_step_complete", {
+      step_number: step,
+      step_name: currentStepConfig?.key || "",
+      step_title: currentStepConfig?.title || "",
+      is_skipped: !!skip,
+      wallet_address: address || "",
+      broker_name: form.brokerName.trim() || undefined,
+    });
+
     if (step < totalSteps) {
       setCurrentStep(step + 1);
 
@@ -237,6 +255,7 @@ export default function DexSetupAssistant({
     successMessageWithRepo: string;
     successMessageWithoutRepo: string;
     onSuccess?: (savedData: DexData) => void | Promise<void>;
+    isQuickSetup?: boolean;
   }) => {
     const validationErrors = await validateAllSections();
     if (validationErrors.length > 0) {
@@ -285,7 +304,13 @@ export default function DexSetupAssistant({
         toast.warning(t("dex.setupAssistant.repoCouldNotFork"));
       }
 
-      trackEvent("create_dex_success");
+      trackEvent("create_dex_success", {
+        broker_name: form.brokerName.trim(),
+        wallet_address: address || "",
+        is_quick_setup: !!options.isQuickSetup,
+        sections_completed: Object.keys(completedSteps).length,
+        total_sections: totalSteps,
+      });
 
       if (options.onSuccess) {
         await options.onSuccess(savedData);
@@ -314,13 +339,17 @@ export default function DexSetupAssistant({
   };
 
   const handleQuickSetup = async () => {
-    trackEvent("click_quick_setup");
+    trackEvent("click_quick_setup", {
+      wallet_address: address || "",
+      broker_name: form.brokerName.trim(),
+    });
     await createDex({
       forkingStatus: t("dex.setupAssistant.quickSetupForking"),
       successMessageWithRepo: t("dex.setupAssistant.quickSetupSuccessWithRepo"),
       successMessageWithoutRepo: t(
         "dex.setupAssistant.quickSetupSuccessWithoutRepo"
       ),
+      isQuickSetup: true,
       onSuccess: savedData => {
         updateDexData(savedData);
       },
