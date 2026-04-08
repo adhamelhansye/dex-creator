@@ -67,22 +67,20 @@ export const dex = {
   // dex.buildPath.*
   "dex.buildPath.title": "How do you want to build your DEX?",
   "dex.buildPath.lowCode.title": "Low Code",
-  "dex.buildPath.lowCode.description":
-    "DEX-in-a-box solution. We handle deployment, hosting, and configuration for you.",
+  "dex.buildPath.lowCode.description": "Choose your path",
   "dex.buildPath.custom.title": "Custom SDK/API Integration",
   "dex.buildPath.custom.description":
     "Build a bespoke trading experience using the Orderly SDK and API. You manage your own deployment.",
   "dex.buildPath.selectRequired": "Please select a build path to continue.",
-  "dex.custom.title": "Setup Your Broker - step-by-step",
-  "dex.custom.createButton": "Create Broker",
-  "dex.custom.allStepsCompleted": "All steps completed!",
+  "dex.custom.title": "Set up your builder profile - step-by-step",
+  "dex.custom.createButton": "Create profile",
   "dex.custom.readyToCreate":
     "You're all set! Click the button below to create your broker.",
   "dex.custom.settingUp": "Creating your broker configuration...",
   "dex.custom.creating": "Creating your broker...",
   "dex.custom.quickSetupDesc":
     "Set up your broker with just a name. You can configure more settings later.",
-  "dex.custom.createNow": "Create Broker Now",
+  "dex.custom.createNow": "Create profile now",
   "dex.custom.successMessage":
     "Broker created successfully! You can now proceed to graduation to activate your Broker ID.",
 
@@ -219,7 +217,7 @@ export const dex = {
   "dex.sectionRenderer.distributorCode.label": "Distributor code",
   "dex.sectionRenderer.distributorCode.description":
     "If you have been referred by a distributor and given a distributor code, please input below for binding.",
-  "dex.sectionRenderer.brokerDetails.title": "Broker Details",
+  "dex.sectionRenderer.brokerDetails.title": "Builder details",
   "dex.sectionRenderer.brokerDetails.description":
     "Configure your DEX's basic information and trading broker details. Broker name can only contain letters, numbers, spaces, dots, hyphens, and underscores.",
   "dex.sectionRenderer.branding.title": "Branding",
