@@ -149,10 +149,10 @@ export function useGoogleUserId(address?: string | null) {
 
     try {
       gtag("config", gaID, {
-        user_id: address ?? null,
+        user_id: address ? `addr_${address}` : null,
       });
       gtag("set", {
-        user_id: address ?? null,
+        user_id: address ? `addr_${address}` : null,
       });
     } catch (e) {
       console.error("Failed to set GA user_id", e);

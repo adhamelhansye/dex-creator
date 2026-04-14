@@ -61,7 +61,7 @@ export default function DexSetupAssistant({
 
   useEffect(() => {
     trackEvent("dex_form_start", {
-      wallet_address: address || "",
+      wallet_address: address ? `addr_${address}` : "",
     });
   }, []);
 
@@ -178,7 +178,7 @@ export default function DexSetupAssistant({
       step_name: currentStepConfig?.key || "",
       step_title: currentStepConfig?.title || "",
       is_skipped: !!skip,
-      wallet_address: address || "",
+      wallet_address: address ? `addr_${address}` : "",
       broker_name: form.brokerName.trim() || undefined,
     });
 
@@ -306,7 +306,7 @@ export default function DexSetupAssistant({
 
       trackEvent("create_dex_success", {
         broker_name: form.brokerName.trim(),
-        wallet_address: address || "",
+        wallet_address: address ? `addr_${address}` : "",
         is_quick_setup: !!options.isQuickSetup,
         sections_completed: Object.keys(completedSteps).length,
         total_sections: totalSteps,
@@ -340,7 +340,7 @@ export default function DexSetupAssistant({
 
   const handleQuickSetup = async () => {
     trackEvent("click_quick_setup", {
-      wallet_address: address || "",
+      wallet_address: address ? `addr_${address}` : "",
       broker_name: form.brokerName.trim(),
     });
     await createDex({
